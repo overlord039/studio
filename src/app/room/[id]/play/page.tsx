@@ -16,6 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, Award, Users, XCircle, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 
 
 const MOCK_USERNAME = "Player123";
@@ -280,3 +281,6 @@ export default function GameRoomPage() {
     </div>
   );
 }
+
+
+    
