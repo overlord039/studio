@@ -20,7 +20,7 @@ export default function LobbyPage() {
   const routeParams = useParams();
   const roomId = routeParams.id as string;
   const { currentUser, loading: authLoading } = useAuth();
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams(); // Kept for fallback gameSettings if roomData fails
 
   const [roomData, setRoomData] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,28 +56,38 @@ export default function LobbyPage() {
       const data: Room = await response.json();
       setRoomData(data);
       
-      const userInRoomData = data.players.find(p => p.id === currentUser?.username);
-      if (userInRoomData && userInRoomData.tickets.length > 0) {
-        setSelectedTicketsToBuy(userInRoomData.tickets.length);
-      } else if (userInRoomData && userInRoomData.tickets.length === 0) {
-        setSelectedTicketsToBuy(data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
-      } else if (!userInRoomData) {
+      // Initialize or update selectedTicketsToBuy based on the fetched data for the current user
+      if (currentUser) {
+        const userInRoomData = data.players.find(p => p.id === currentUser.username);
+        if (userInRoomData && userInRoomData.tickets.length > 0) {
+          setSelectedTicketsToBuy(userInRoomData.tickets.length);
+        } else if (userInRoomData && userInRoomData.tickets.length === 0) { // e.g. host after room creation
+          setSelectedTicketsToBuy(data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
+        } else if (!userInRoomData) { // New player contemplating joining
+          setSelectedTicketsToBuy(data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
+        }
+      } else if (data.settings) { // Fallback if currentUser is not yet available but room data is
         setSelectedTicketsToBuy(data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
       }
 
     } catch (err) {
       console.error(`Error fetching room ${roomId} details:`, err);
-      if (isInitialLoad || !roomData) {
+      if (isInitialLoad) { // Only set critical error on initial load
          setError((err as Error).message || "An unexpected error occurred while fetching room details.");
-         setRoomData(null);
+         setRoomData(null); // Clear roomData on critical initial load error
+      } else {
+        // For polling errors, maybe just log or show a transient toast, don't wipe roomData
+        console.warn("Polling error fetching room details:", err);
+        // Optionally, you could set a transient error message here that doesn't clear roomData
+        // toast({ title: "Lobby Update Failed", description: "Could not refresh lobby data.", variant: "destructive", duration: 3000});
       }
     } finally {
       if(isInitialLoad) setIsLoading(false);
     }
-  }, [roomId, currentUser?.username, roomData]);
+  }, [roomId, currentUser]); // currentUser dependency is fine here, it's stable unless auth state changes.
 
   useEffect(() => {
-    if (currentUser && roomId) {
+    if (currentUser && roomId && !authLoading) { // Ensure auth is resolved
         fetchRoomDetails(true);
     } else if (!authLoading && !currentUser) {
         setIsLoading(false);
@@ -114,7 +124,7 @@ export default function LobbyPage() {
         throw new Error(errorData.message || "Failed to confirm tickets or join room.");
       }
       const updatedRoom: Room = await response.json();
-      setRoomData(updatedRoom); 
+      setRoomData(updatedRoom); // Update with response, polling will also refresh
       toast({ title: "Tickets Confirmed!", description: `You now have ${selectedTicketsToBuy} ticket(s).` });
     } catch (err) {
       console.error("Error confirming/joining tickets:", err);
@@ -179,25 +189,25 @@ export default function LobbyPage() {
   
   const handleGoToGame = () => {
     if (!roomData || !currentUser) return;
-    const ticketsToTake = roomData.players.find(p => p.id === currentUser.username)?.tickets.length || 0;
-    router.push(`/room/${roomId}/play?playerTickets=${ticketsToTake}`);
+    const ticketsCount = currentUserInRoom?.tickets.length || 0;
+    router.push(`/room/${roomId}/play?playerTickets=${ticketsCount}`);
   };
 
   let gameSettings: GameSettings | null = null;
 
-  if (roomData) {
-    gameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
-  } else if (!isLoading) {
-    const ticketPriceParam = parseInt(searchParams.get('ticketPrice') || '', 10);
-    const lobbySizeParam = parseInt(searchParams.get('lobbySize') || '', 10);
+  if (roomData?.settings) {
+    gameSettings = roomData.settings;
+  } else if (!isLoading && !roomData) { // Fallback if roomData fetch failed but we have query params
+    const ticketPriceParamString = searchParams.get('ticketPrice');
+    const lobbySizeParamString = searchParams.get('lobbySize');
     const prizeFormatParam = searchParams.get('prizeFormat');
-    const numTicketsPerPlayerParam = parseInt(searchParams.get('numberOfTicketsPerPlayer') || '', 10);
+    const numTicketsPerPlayerParamString = searchParams.get('numberOfTicketsPerPlayer');
 
     gameSettings = {
-        ticketPrice: (ticketPriceParam && !isNaN(ticketPriceParam) ? ticketPriceParam : DEFAULT_GAME_SETTINGS.ticketPrice) as GameSettings['ticketPrice'],
-        lobbySize: (lobbySizeParam && !isNaN(lobbySizeParam) ? lobbySizeParam : DEFAULT_GAME_SETTINGS.lobbySize),
+        ticketPrice: (ticketPriceParamString && !isNaN(parseInt(ticketPriceParamString)) ? parseInt(ticketPriceParamString) : DEFAULT_GAME_SETTINGS.ticketPrice) as GameSettings['ticketPrice'],
+        lobbySize: (lobbySizeParamString && !isNaN(parseInt(lobbySizeParamString)) ? parseInt(lobbySizeParamString) : DEFAULT_GAME_SETTINGS.lobbySize),
         prizeFormat: (prizeFormatParam || DEFAULT_GAME_SETTINGS.prizeFormat) as GameSettings['prizeFormat'],
-        numberOfTicketsPerPlayer: (numTicketsPerPlayerParam && !isNaN(numTicketsPerPlayerParam) ? numTicketsPerPlayerParam : DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer),
+        numberOfTicketsPerPlayer: (numTicketsPerPlayerParamString && !isNaN(parseInt(numTicketsPerPlayerParamString)) ? parseInt(numTicketsPerPlayerParamString) : DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer),
     };
   }
 
@@ -233,7 +243,7 @@ export default function LobbyPage() {
     );
   }
 
-  if (!roomData || !gameSettings) {
+  if (!roomData || !gameSettings) { // Ensure both roomData and gameSettings are available
     return (
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
             <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
@@ -261,7 +271,7 @@ export default function LobbyPage() {
   if (isCurrentUserHost && !doesCurrentUserHaveTickets) {
       buttonTextForConfirm = `Confirm Host Tickets (${selectedTicketsToBuy})`;
       cardTitleForTickets = "Buy Your Host Tickets";
-  } else if (currentUserInRoom && !doesCurrentUserHaveTickets) {
+  } else if (currentUserInRoom && !doesCurrentUserHaveTickets) { // Could be a non-host who hasn't confirmed yet
       buttonTextForConfirm = `Confirm My Tickets (${selectedTicketsToBuy})`;
       cardTitleForTickets = "Confirm Your Tickets";
   }
@@ -408,7 +418,7 @@ export default function LobbyPage() {
             (roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart || (isCurrentUserHost && !doesCurrentUserHaveTickets)) && (
             <p className="text-center text-sm text-destructive mt-2">
               {isCurrentUserHost && !doesCurrentUserHaveTickets ? "Host must confirm their tickets first. " : ""}
-              {roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart && !(isCurrentUserHost && !doesCurrentUserHaveTickets) ? `At least ${minPlayersToStart} player(s) must have tickets. ` : ""}
+              {roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart && !(isCurrentUserHost && !doesCurrentUserHaveTickets) && `At least ${minPlayersToStart} player(s) must have tickets. `}
             </p>
           )}
 
@@ -423,7 +433,7 @@ export default function LobbyPage() {
           )}
            {roomData.isGameOver && (
              <Button 
-                onClick={() => router.push(`/room/${roomId}/play`)} 
+                onClick={() => router.push(`/room/${roomId}/play`)} // Go to play page to see results
                 size="lg" 
                 className="w-full mt-4"
               >
@@ -435,3 +445,5 @@ export default function LobbyPage() {
     </div>
   );
 }
+
+    
