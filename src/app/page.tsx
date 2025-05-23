@@ -7,8 +7,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { PlayCircle, Users, LogIn as LogInIcon, Info } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useToast } from "@/hooks/use-toast";
 
 export default function HomePage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [joinRoomId, setJoinRoomId] = useState('');
+
+  const handleJoinRoom = () => {
+    const trimmedRoomId = joinRoomId.trim();
+    if (trimmedRoomId) {
+      router.push(`/room/${trimmedRoomId}/lobby`);
+    } else {
+      toast({
+        title: "Room ID Required",
+        description: "Please enter a Room ID to join.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-8">
       <section className="text-center py-12 bg-gradient-to-r from-primary to-accent rounded-lg shadow-xl">
@@ -47,8 +67,14 @@ export default function HomePage() {
               <Button className="w-full" size="lg">Create Multiplayer Room</Button>
             </Link>
             <div className="space-y-2">
-              <Input type="text" placeholder="Enter Room ID" className="text-base"/>
-              <Button variant="outline" className="w-full" size="lg" onClick={() => alert('Join Room functionality to be implemented.')}>
+              <Input 
+                type="text" 
+                placeholder="Enter Room ID" 
+                className="text-base"
+                value={joinRoomId}
+                onChange={(e) => setJoinRoomId(e.target.value)}
+              />
+              <Button variant="outline" className="w-full" size="lg" onClick={handleJoinRoom}>
                 Join Room
               </Button>
             </div>
