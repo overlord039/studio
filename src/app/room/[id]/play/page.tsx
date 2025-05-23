@@ -201,7 +201,7 @@ export default function GameRoomPage() {
     if (isCurrentUserHost && roomData && roomData.isGameStarted && !roomData.isGameOver && !isCallingNumber) {
       intervalId = setInterval(() => {
         handleCallNextNumber();
-      }, 5000); // Updated interval to 5 seconds
+      }, 4000); // Updated interval to 4 seconds
     }
 
     return () => {
