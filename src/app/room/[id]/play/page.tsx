@@ -14,7 +14,7 @@ import { PRIZE_TYPES } from '@/types';
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut } from 'lucide-react';
+import { AlertCircle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, ListOrdered } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 
@@ -54,6 +54,11 @@ export default function GameRoomPage() {
   const [isGameOver, setIsGameOver] = useState(false);
   const [gameMessage, setGameMessage] = useState<string | null>(null);
   const [fullHouseWinTime, setFullHouseWinTime] = useState<Date | null>(null);
+
+  const [isPrizesStatusMinimized, setIsPrizesStatusMinimized] = useState(true);
+  const [isPrizeInfoMinimized, setIsPrizeInfoMinimized] = useState(true);
+  const [isOtherPlayersMinimized, setIsOtherPlayersMinimized] = useState(true);
+
 
   const initializeGame = useCallback(() => {
     setTickets([generateImprovedHousieTicket(), generateImprovedHousieTicket()]); 
@@ -247,8 +252,9 @@ export default function GameRoomPage() {
       case PRIZE_TYPES.FULL_HOUSE: 
         return ticket.flat().filter(n => n !== null) as number[];
       default: 
-        const exhaustiveCheck: never = prize; 
-        console.warn("Unknown prize type in getNumbersForPrizePattern:", exhaustiveCheck);
+        // This should ideally not happen with TypeScript ensuring prize is PrizeType
+        // const exhaustiveCheck: never = prize; 
+        console.warn("Unknown prize type in getNumbersForPrizePattern:", prize);
         return [];
     }
   }
@@ -375,7 +381,13 @@ export default function GameRoomPage() {
           <CalledNumberDisplay currentNumber={currentNumber} />
           <LiveNumberBoard calledNumbers={calledNumbers} currentNumber={currentNumber} />
           <Card>
-            <CardHeader><CardTitle className="text-lg flex items-center"><Award className="mr-2 h-5 w-5 text-primary" />Prizes Status</CardTitle></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-lg flex items-center"><Award className="mr-2 h-5 w-5 text-primary" />Prizes Status</CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setIsPrizesStatusMinimized(!isPrizesStatusMinimized)} aria-label={isPrizesStatusMinimized ? "Expand Prizes Status" : "Minimize Prizes Status"}>
+                {isPrizesStatusMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
+                </Button>
+            </CardHeader>
+            {!isPrizesStatusMinimized && (
             <CardContent>
               <ScrollArea className="h-40">
                 <ul className="space-y-1 text-sm">
@@ -395,6 +407,7 @@ export default function GameRoomPage() {
                 </ul>
               </ScrollArea>
             </CardContent>
+            )}
           </Card>
         </div>
 
@@ -419,7 +432,13 @@ export default function GameRoomPage() {
 
         <div className="space-y-4 lg:col-span-1">
           <Card>
-            <CardHeader><CardTitle className="text-lg">Prize Info</CardTitle></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-lg">Prize Info</CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setIsPrizeInfoMinimized(!isPrizeInfoMinimized)} aria-label={isPrizeInfoMinimized ? "Expand Prize Info" : "Minimize Prize Info"}>
+                    {isPrizeInfoMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
+                </Button>
+            </CardHeader>
+            {!isPrizeInfoMinimized && (
             <CardContent>
               <p className="text-sm text-muted-foreground">Potential prize money based on current game settings.</p>
               <ul className="space-y-1 mt-2 text-sm">
@@ -431,9 +450,16 @@ export default function GameRoomPage() {
                 })}
               </ul>
             </CardContent>
+            )}
           </Card>
           <Card>
-            <CardHeader><CardTitle className="text-lg flex items-center"><Users className="mr-2 h-5 w-5 text-primary"/>Other Players</CardTitle></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-lg flex items-center"><Users className="mr-2 h-5 w-5 text-primary"/>Other Players</CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => setIsOtherPlayersMinimized(!isOtherPlayersMinimized)} aria-label={isOtherPlayersMinimized ? "Expand Other Players" : "Minimize Other Players"}>
+                    {isOtherPlayersMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
+                </Button>
+            </CardHeader>
+            {!isOtherPlayersMinimized && (
             <CardContent>
               <ScrollArea className="h-40">
                 <ul className="space-y-1 mt-2 text-sm">
@@ -446,6 +472,7 @@ export default function GameRoomPage() {
                 </ul>
               </ScrollArea>
             </CardContent>
+            )}
           </Card>
         </div>
       </div>
