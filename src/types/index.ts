@@ -8,7 +8,7 @@ export interface Player {
 
 export type TicketPrice = 5 | 10 | 20 | 25 | 50 | 100;
 
-export type PrizeFormat = "Format 1" | "Format 2";
+export type PrizeFormat = "Format 1"; // Simplified to one standard format
 
 export interface GameSettings {
   ticketPrice: TicketPrice;
@@ -38,19 +38,15 @@ export interface Claim {
 export interface Prize {
   name: string;
   amount: number; // Or percentage of prize pool
-  claimedBy?: string; // Player ID
+  claimedBy?: string[]; // Player IDs, changed to array for multiple winners
   isClaimable: boolean;
 }
 
 export const PRIZE_TYPES = {
   JALDI_5: "Jaldi 5",
-  FIRST_JALDI_5: "1st Jaldi 5",
-  SECOND_JALDI_5: "2nd Jaldi 5",
   TOP_LINE: "Top Line",
   MIDDLE_LINE: "Middle Line",
   BOTTOM_LINE: "Bottom Line",
-  FIRST_FULL_HOUSE: "1st Full House",
-  SECOND_FULL_HOUSE: "2nd Full House",
   FULL_HOUSE: "Full House",
 } as const;
 

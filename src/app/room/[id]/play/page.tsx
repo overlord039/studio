@@ -10,7 +10,7 @@ import HousieTicket from '@/components/game/housie-ticket';
 import LiveNumberBoard from '@/components/game/live-number-board';
 import CalledNumberDisplay from '@/components/game/called-number-display';
 import type { HousieTicketGrid, PrizeType } from '@/types';
-import { PRIZE_TYPES } from '@/types';
+import { PRIZE_TYPES } from '@/types'; // Import the PRIZE_TYPES object
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +23,7 @@ const MOCK_USERNAME = "Player123"; // Represents the current user
 const MOCK_TOTAL_MONEY = 2000; // Example total prize pool
 const MOCK_PLAYER_COUNT = 6; // Example player count
 
+// Use the PRIZE_TYPES object to define available prizes
 const AVAILABLE_PRIZES: PrizeType[] = [
   PRIZE_TYPES.JALDI_5,
   PRIZE_TYPES.TOP_LINE,
@@ -49,7 +50,7 @@ export default function GameRoomPage() {
 
   const initializeGame = useCallback(() => {
     setTickets([generateImprovedHousieTicket(), generateImprovedHousieTicket()]); // User gets 2 tickets
-    const initialClaims: Record<PrizeType, string[] | null> = {};
+    const initialClaims: Record<PrizeType, string[] | null> = {} as Record<PrizeType, string[] | null>;
     AVAILABLE_PRIZES.forEach(prize => {
       initialClaims[prize] = null; // Initialize with null, meaning no one has claimed yet
     });
@@ -99,6 +100,8 @@ export default function GameRoomPage() {
 
   const handleNumberClick = (ticketIndex: number, numberValue: number, rowIndex: number, colIndex: number) => {
     if (isGameOver) return;
+    const key = `${ticketIndex}-${rowIndex}-${colIndex}`;
+    if (markedNumbers.has(key)) return; // If already marked, do nothing
 
     if (!calledNumbers.includes(numberValue)) {
       toast({
@@ -108,13 +111,10 @@ export default function GameRoomPage() {
       });
       return;
     }
-    const key = `${ticketIndex}-${rowIndex}-${colIndex}`;
     setMarkedNumbers(prev => {
       const newMarked = new Set(prev);
-      if (!newMarked.has(key)) { // Only add if not already marked
-        newMarked.add(key);
-      }
-      return newMarked; // Return the set, potentially unchanged if already marked
+      newMarked.add(key); // Add if not already marked (already checked, but good practice)
+      return newMarked;
     });
   };
 
@@ -131,8 +131,14 @@ export default function GameRoomPage() {
     }
     
     // For Full House, if anyone has claimed it, the game is over.
-    if (prizeType === PRIZE_TYPES.FULL_HOUSE && (claimedPrizes[PRIZE_TYPES.FULL_HOUSE]?.length || 0) > 0) {
-        toast({ title: "Claim Failed", description: `Full House already claimed. Game is over.`, variant: "destructive" });
+    // This check needs to be before attempting to validate the current player's claim for Full House
+    // if the prizeType IS Full House.
+    if ((claimedPrizes[PRIZE_TYPES.FULL_HOUSE]?.length || 0) > 0) {
+        if (prizeType === PRIZE_TYPES.FULL_HOUSE) {
+             toast({ title: "Claim Failed", description: `Full House already claimed. Game is over.`, variant: "destructive" });
+        } else {
+             toast({ title: "Claim Failed", description: `Game is over (Full House claimed). No more claims for ${prizeType}.`, variant: "destructive" });
+        }
         return;
     }
 
@@ -184,20 +190,16 @@ export default function GameRoomPage() {
     const getRowNumbers = (rowIndex: number) => ticket[rowIndex].filter(n => n !== null) as number[];
     switch(prize) {
       case PRIZE_TYPES.JALDI_5: 
-      case PRIZE_TYPES.FIRST_JALDI_5:
-      case PRIZE_TYPES.SECOND_JALDI_5:
-        // For Jaldi 5, the condition is _any_ 5 numbers on the ticket.
-        // The `checkWinningCondition` function handles the "at least 5" logic.
-        // Here, we return all numbers, and `checkWinningCondition` will verify against marked and called.
         return ticket.flat().filter(n => n !== null) as number[];
       case PRIZE_TYPES.TOP_LINE: return getRowNumbers(0);
       case PRIZE_TYPES.MIDDLE_LINE: return getRowNumbers(1);
       case PRIZE_TYPES.BOTTOM_LINE: return getRowNumbers(2);
       case PRIZE_TYPES.FULL_HOUSE: 
-      case PRIZE_TYPES.FIRST_FULL_HOUSE:
-      case PRIZE_TYPES.SECOND_FULL_HOUSE:
         return ticket.flat().filter(n => n !== null) as number[];
-      default: return [];
+      default: // Should not happen with PrizeType
+        const exhaustiveCheck: never = prize;
+        console.warn("Unknown prize type in getNumbersForPrizePattern:", exhaustiveCheck);
+        return [];
     }
   }
 
@@ -289,21 +291,21 @@ export default function GameRoomPage() {
             }
           }
           
-          const isFullHouseClaimedByAnyone = prizeType => prizeType === PRIZE_TYPES.FULL_HOUSE && (claimedPrizes[PRIZE_TYPES.FULL_HOUSE]?.length || 0) > 0;
+          const isFullHouseClaimedByAnyone = (claimedPrizes[PRIZE_TYPES.FULL_HOUSE]?.length || 0) > 0;
 
 
           return (
             <Button
               key={prize}
               onClick={() => handleClaimPrize(prize)}
-              disabled={isGameOver || hasPlayerClaimedThis || isFullHouseClaimedByAnyone(prize)}
+              disabled={isGameOver || hasPlayerClaimedThis || (isFullHouseClaimedByAnyone && prize !== PRIZE_TYPES.FULL_HOUSE) }
               variant={winnersOfThisPrize.length > 0 ? "secondary" : "default"}
               className={cn("px-2 py-1 rounded-md text-xs sm:text-sm", 
                 !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Jaldi") ? "bg-green-500 hover:bg-green-600" :
                 !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Line") ? "bg-yellow-400 hover:bg-yellow-500 text-black" :
                 !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Full House") ? "bg-red-500 hover:bg-red-600" : "",
-                (hasPlayerClaimedThis || (winnersOfThisPrize.length > 0 && prize !== PRIZE_TYPES.FULL_HOUSE && !hasPlayerClaimedThis)) ? "opacity-70" : "",
-                (isGameOver || isFullHouseClaimedByAnyone(prize)) ? "cursor-not-allowed opacity-50" : ""
+                (hasPlayerClaimedThis || (winnersOfThisPrize.length > 0 && !hasPlayerClaimedThis)) ? "opacity-70" : "", // Dim if claimed by someone else, or by current player
+                (isGameOver || (isFullHouseClaimedByAnyone && prize !== PRIZE_TYPES.FULL_HOUSE)) ? "cursor-not-allowed opacity-50" : "" // Disable non-FH claims if FH is claimed
               )}
             >
               {buttonText}
@@ -403,4 +405,3 @@ export default function GameRoomPage() {
     </div>
   );
 }
-

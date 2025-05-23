@@ -1,8 +1,9 @@
 
-import type { TicketPrice, PrizeFormat, Prize, PrizeType } from '@/types';
+import type { TicketPrice, PrizeFormat, PrizeType } from '@/types';
+import { PRIZE_TYPES } from '@/types';
 
 export const TICKET_PRICES: TicketPrice[] = [5, 10, 20, 25, 50, 100];
-export const PRIZE_FORMATS: PrizeFormat[] = ["Format 1", "Format 2"];
+export const PRIZE_FORMATS: PrizeFormat[] = ["Format 1"]; // Only one standard format
 
 export const MIN_LOBBY_SIZE = 5;
 export const MAX_LOBBY_SIZE = 50;
@@ -13,49 +14,22 @@ export const DEFAULT_PRIZE_FORMAT: PrizeFormat = "Format 1";
 
 export const PRIZE_DEFINITIONS: Record<PrizeFormat, PrizeType[]> = {
   "Format 1": [
-    "Jaldi 5",
-    "Top Line",
-    "Middle Line",
-    "Bottom Line",
-    "Full House",
-  ],
-  "Format 2": [
-    "1st Jaldi 5",
-    "2nd Jaldi 5",
-    "Top Line",
-    "Middle Line",
-    "Bottom Line",
-    "2nd Full House",
-    "1st Full House",
+    PRIZE_TYPES.JALDI_5,
+    PRIZE_TYPES.TOP_LINE,
+    PRIZE_TYPES.MIDDLE_LINE,
+    PRIZE_TYPES.BOTTOM_LINE,
+    PRIZE_TYPES.FULL_HOUSE,
   ],
 };
 
-// Example prize money distribution percentages (sum to 100 for each format)
-// This needs careful design based on game rules. These are placeholders.
+// Prize money distribution percentages, must sum to 100 for "Format 1"
 export const PRIZE_DISTRIBUTION_PERCENTAGES: Record<PrizeFormat, Record<PrizeType, number>> = {
   "Format 1": {
-    "Jaldi 5": 10,
-    "Top Line": 15,
-    "Middle Line": 15,
-    "Bottom Line": 15,
-    "Full House": 45,
-    // Ensure all prizes in PRIZE_DEFINITIONS for Format 1 are covered
-    "1st Jaldi 5": 0, // Not in Format 1
-    "2nd Jaldi 5": 0, // Not in Format 1
-    "1st Full House": 0, // Not in Format 1
-    "2nd Full House": 0, // Not in Format 1
-  },
-  "Format 2": {
-    "1st Jaldi 5": 10,
-    "2nd Jaldi 5": 5, // Smaller prize for 2nd
-    "Top Line": 10,
-    "Middle Line": 10,
-    "Bottom Line": 10,
-    "2nd Full House": 20,
-    "1st Full House": 35,
-    // Ensure all prizes in PRIZE_DEFINITIONS for Format 2 are covered
-    "Jaldi 5": 0, // Not in Format 2 (replaced by 1st/2nd)
-    "Full House": 0, // Not in Format 2 (replaced by 1st/2nd)
+    [PRIZE_TYPES.JALDI_5]: 10,
+    [PRIZE_TYPES.TOP_LINE]: 15,
+    [PRIZE_TYPES.MIDDLE_LINE]: 15,
+    [PRIZE_TYPES.BOTTOM_LINE]: 15,
+    [PRIZE_TYPES.FULL_HOUSE]: 45,
   },
 };
 

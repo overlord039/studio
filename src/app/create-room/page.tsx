@@ -47,7 +47,7 @@ export default function CreateRoomPage() {
     defaultValues: {
       ticketPrice: DEFAULT_TICKET_PRICE,
       lobbySize: DEFAULT_LOBBY_SIZE,
-      prizeFormat: DEFAULT_PRIZE_FORMAT,
+      prizeFormat: DEFAULT_PRIZE_FORMAT, // Will be "Format 1"
     },
   });
 
@@ -129,13 +129,13 @@ export default function CreateRoomPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {PRIZE_FORMATS.map(format => (
+                        {PRIZE_FORMATS.map(format => ( // Will now only show "Format 1"
                           <SelectItem key={format} value={format}>{format}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                      <FormDescription>
-                      Choose the set of winning combinations for this game.
+                      The game uses a standard set of winning combinations.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
