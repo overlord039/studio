@@ -24,8 +24,6 @@ const MAX_TICKETS_PER_PLAYER = 6;
 export default function LobbyPage() {
   const { toast } = useToast();
   const router = useRouter();
-  // The `routeParams` object from `useParams` in a Client Component is a plain object, not a Promise.
-  // The Next.js warning about `React.use(params)` is typically for `params` props in Server Components.
   const routeParams = useParams();
   const searchParams = useSearchParams();
   const roomId = routeParams.id as string;
@@ -68,9 +66,9 @@ export default function LobbyPage() {
   };
 
   const handleStartGame = () => {
-    // TODO: Pass player ticket info to game page
     toast({ title: "Game Starting (Mock)!", description: `Navigating to game room ${roomId}.` });
-    router.push(`/room/${roomId}/play`);
+    // Pass the host's ticket selection to the play page
+    router.push(`/room/${roomId}/play?playerTickets=${hostTicketSelection}`);
   };
 
   const handleLeaveRoom = () => {
