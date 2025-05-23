@@ -6,25 +6,30 @@ import { cn } from '@/lib/utils';
 import React from 'react';
 
 interface HousieTicketProps {
+  ticketIndex: number; // Added to identify the ticket
   ticket: HousieTicketGrid;
   calledNumbers: number[];
   onNumberClick?: (number: number, rowIndex: number, colIndex: number) => void;
-  markedNumbers?: Set<string>; // "row-col" format for marked numbers
+  markedNumbers?: Set<string>; // Expects "ticketIndex-rowIndex-colIndex" format for marked numbers
   className?: string;
 }
 
-export default function HousieTicket({ ticket, calledNumbers, onNumberClick, markedNumbers, className }: HousieTicketProps) {
+export default function HousieTicket({ ticketIndex, ticket, calledNumbers, onNumberClick, markedNumbers, className }: HousieTicketProps) {
   const rows = ticket.length;
   const cols = ticket[0]?.length || 0;
 
-  const getNumberStatus = (num: HousieTicketNumber, r: number, c: number) => {
+  const getNumberStatus = (num: HousieTicketNumber, r: number, c: number): 'empty' | 'called-marked' | 'default' => {
     if (num === null) return 'empty';
-    const isMarked = markedNumbers?.has(`${r}-${c}`);
-    const isCalled = calledNumbers.includes(num);
-
-    if (isMarked && isCalled) return 'called-marked'; // Green background
-    if (isCalled) return 'called-unmarked'; // Highlighted or outlined
-    return 'not-called'; // Greyed out or normal
+    
+    const currentNumberKey = `${ticketIndex}-${r}-${c}`;
+    // markedNumbers comes from parent state, updated when player clicks a *called* number.
+    // So, if isMarkedByPlayer is true, it implies the number was also in calledNumbers at the time of marking.
+    const isMarkedByPlayer = markedNumbers?.has(currentNumberKey);
+    
+    if (isMarkedByPlayer) {
+      return 'called-marked'; // Player has marked this (it must have been a called number)
+    }
+    return 'default'; // Number is not marked by player (could be called or not-called by system)
   };
 
   return (
@@ -32,23 +37,23 @@ export default function HousieTicket({ ticket, calledNumbers, onNumberClick, mar
       {ticket.map((row, r) =>
         row.map((number, c) => {
           const status = getNumberStatus(number, r, c);
-          const cellKey = `${r}-${c}`;
+          const cellKey = `${ticketIndex}-${r}-${c}`; // Unique key for React rendering
           
           return (
             <div
               key={cellKey}
               onClick={() => number && onNumberClick?.(number, r, c)}
               className={cn(
-                "aspect-square flex items-center justify-center text-sm md:text-base lg:text-lg font-medium border border-border/50 transition-all duration-150 ease-in-out",
-                status === 'empty' ? 'bg-muted/30' : 'cursor-pointer',
-                status === 'called-marked' ? 'bg-green-500 text-white scale-105 ring-2 ring-green-300' : '',
-                status === 'called-unmarked' ? 'bg-yellow-300 text-yellow-800 ring-1 ring-yellow-500 animate-pulse' : '',
-                status === 'not-called' && number !== null ? 'bg-card hover:bg-secondary/50' : '',
-                status !== 'empty' && onNumberClick ? 'hover:scale-110 hover:shadow-lg' : ''
+                "aspect-square flex items-center justify-center text-sm md:text-base lg:text-lg font-medium border border-border/50 transition-colors duration-150 ease-in-out",
+                status === 'empty' ? 'bg-muted/30 text-transparent' : 'cursor-pointer', // Make empty cells non-interactive text-wise
+                status === 'called-marked' ? 'bg-green-500 text-white' : '', // Player marked: green, static
+                status === 'default' && number !== null ? 'bg-card text-card-foreground hover:bg-secondary/50' : '', // Default state for un-marked numbers
+                // Apply hover effects only if clickable and not already marked green
+                status === 'default' && number !== null && onNumberClick ? 'hover:scale-105 hover:shadow-lg' : ''
               )}
               aria-label={number ? `Number ${number}` : "Empty cell"}
               role={number ? "button" : "cell"}
-              tabIndex={number ? 0 : -1}
+              tabIndex={number && status !== 'empty' ? 0 : -1}
             >
               {number !== null ? number : ''}
             </div>

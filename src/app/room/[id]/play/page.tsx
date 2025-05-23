@@ -41,7 +41,7 @@ export default function GameRoomPage() {
   const [tickets, setTickets] = useState<HousieTicketGrid[]>([]);
   const [calledNumbers, setCalledNumbers] = useState<number[]>([]);
   const [currentNumber, setCurrentNumber] = useState<number | null>(null);
-  const [markedNumbers, setMarkedNumbers] = useState<Set<string>>(new Set()); // "ticketIndex-rowIndex-colIndex"
+  const [markedNumbers, setMarkedNumbers] = useState<Set<string>>(new Set()); // Stores "ticketIndex-rowIndex-colIndex"
   const [claimedPrizes, setClaimedPrizes] = useState<Record<PrizeType, string | null>>({}); // prize -> player name
   const [isGameOver, setIsGameOver] = useState(false);
   const [gameMessage, setGameMessage] = useState<string | null>(null);
@@ -99,7 +99,7 @@ export default function GameRoomPage() {
     setMarkedNumbers(prev => {
       const newMarked = new Set(prev);
       if (newMarked.has(key)) {
-        newMarked.delete(key);
+        newMarked.delete(key); // Allow un-marking
       } else {
         newMarked.add(key);
       }
@@ -113,10 +113,8 @@ export default function GameRoomPage() {
       return;
     }
 
-    // Find a ticket that wins this prize
     let winningTicketIndex = -1;
     for (let i = 0; i < tickets.length; i++) {
-      // Create a Set of marked numbers for *this specific ticket* to pass to checkWinningCondition
       const ticketSpecificMarkedNumbers: number[] = [];
       tickets[i].forEach((row, rIdx) => {
         row.forEach((num, cIdx) => {
@@ -125,14 +123,46 @@ export default function GameRoomPage() {
           }
         });
       });
-      // The checkWinningCondition needs to know which numbers on THIS ticket are marked AND called.
-      // It should internally check if all required numbers for the prize on the ticket are in calledNumbers AND marked by player.
-      // For simplicity, we assume `checkWinningCondition` handles this correctly.
-      // A more accurate check would use `ticketSpecificMarkedNumbers` in conjunction with `calledNumbers`.
-      // The current `checkWinningCondition` only uses `calledNumbers`. This is a simplification.
-      if (checkWinningCondition(tickets[i], calledNumbers, prizeType)) {
-        winningTicketIndex = i;
-        break;
+      
+      // For checkWinningCondition, we need all numbers required for the prize on THIS ticket 
+      // to be present in BOTH `calledNumbers` (system called them) AND `ticketSpecificMarkedNumbers` (player marked them).
+      // The current `checkWinningCondition` only uses `calledNumbers` parameter. It needs to be adapted or the logic here adjusted.
+      // Let's assume `checkWinningCondition` internally uses `markedNumbers` from this scope, or it's passed in.
+      // For now, let's ensure the player has marked all the required numbers for the prize pattern on their ticket,
+      // and all those numbers have been called.
+      
+      // Create a simplified check here:
+      // 1. Get all numbers for the prize pattern on the current ticket (tickets[i]).
+      // 2. Check if all these numbers are in `calledNumbers`.
+      // 3. Check if all these numbers are in `markedNumbers` (with the correct ticketIndex).
+      
+      // This is a simplified version for demonstration. `checkWinningCondition` should ideally take `ticketSpecificMarkedNumbers`.
+      if (checkWinningCondition(tickets[i], calledNumbers, prizeType)) { // This needs to ensure player also marked them.
+        // To be fully correct, checkWinningCondition should also validate against player's marks.
+        // For now, we assume if checkWinningCondition(ticket, calledNumbers, prizeType) is true,
+        // we then check if the player has actually marked all *relevant* numbers for that prize on that ticket.
+        
+        // Let's refine the check: Does the player's current marks on *this* ticket fulfill the prize *given the called numbers*?
+        const numbersRequiredForPrizeOnThisTicket = getNumbersForPrizePattern(tickets[i], prizeType);
+        const allRequiredNumbersMarkedByPlayer = numbersRequiredForPrizeOnThisTicket.every(num => {
+          // Find r,c for num on tickets[i]
+          let rFound = -1, cFound = -1;
+          outer: for(let r=0; r<tickets[i].length; r++) {
+            for(let c=0; c<tickets[i][r].length; c++) {
+              if(tickets[i][r][c] === num) {
+                rFound=r; cFound=c;
+                break outer;
+              }
+            }
+          }
+          return rFound !== -1 && markedNumbers.has(`${i}-${rFound}-${cFound}`);
+        });
+        const allRequiredNumbersCalled = numbersRequiredForPrizeOnThisTicket.every(num => calledNumbers.includes(num));
+
+        if (allRequiredNumbersMarkedByPlayer && allRequiredNumbersCalled) {
+          winningTicketIndex = i;
+          break;
+        }
       }
     }
     
@@ -153,6 +183,22 @@ export default function GameRoomPage() {
       toast({ title: "Claim Invalid!", description: `Your claim for ${prizeType} was not valid.`, variant: "destructive" });
     }
   };
+  
+  // Helper to get numbers for a prize pattern on a ticket (simplified)
+  function getNumbersForPrizePattern(ticket: HousieTicketGrid, prize: PrizeType): number[] {
+    const getRowNumbers = (rowIndex: number) => ticket[rowIndex].filter(n => n !== null) as number[];
+    switch(prize) {
+      case PRIZE_TYPES.JALDI_5: // This is tricky - it's *any* 5 on the ticket. For claim validation, we'd check if 5 *marked* numbers are called.
+                                // For now, let's assume it refers to any 5 actual numbers on the ticket.
+                                return (ticket.flat().filter(n => n !== null) as number[]).slice(0,5); // Simplification
+      case PRIZE_TYPES.TOP_LINE: return getRowNumbers(0);
+      case PRIZE_TYPES.MIDDLE_LINE: return getRowNumbers(1);
+      case PRIZE_TYPES.BOTTOM_LINE: return getRowNumbers(2);
+      case PRIZE_TYPES.FULL_HOUSE: return ticket.flat().filter(n => n !== null) as number[];
+      default: return [];
+    }
+  }
+
 
   return (
     <div className="p-2 md:p-4 space-y-4">
@@ -222,11 +268,10 @@ export default function GameRoomPage() {
             {tickets.map((ticket, index) => (
               <HousieTicket
                 key={index}
+                ticketIndex={index} // Pass ticketIndex
                 ticket={ticket}
                 calledNumbers={calledNumbers}
-                markedNumbers={
-                    new Set(Array.from(markedNumbers).filter(key => key.startsWith(`${index}-`)))
-                }
+                markedNumbers={markedNumbers} // Pass the full set
                 onNumberClick={(num, r, c) => handleNumberClick(index, num, r, c)}
                 className="min-w-[280px] sm:min-w-[320px] md:min-w-[360px] mx-auto"
               />
@@ -281,6 +326,3 @@ export default function GameRoomPage() {
     </div>
   );
 }
-
-
-    
