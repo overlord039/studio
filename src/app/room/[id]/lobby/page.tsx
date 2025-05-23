@@ -245,11 +245,29 @@ export default function LobbyPage() {
               <p><strong>Max Players:</strong> {gameSettings.lobbySize}</p>
               <p><strong>Prize Format:</strong> {gameSettings.prizeFormat}</p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <Button onClick={handleCopyInviteLink} variant="outline" className="w-full sm:w-auto">
+            <div className="flex flex-col items-stretch gap-3 w-full sm:max-w-xs">
+              <div className="flex items-center justify-between gap-2 p-2 border rounded-md bg-secondary/20">
+                <div className="flex items-baseline">
+                  <span className="text-sm font-medium mr-1">Room ID:</span>
+                  <span className="text-lg font-bold text-primary select-all">{roomData.id}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    navigator.clipboard.writeText(roomData.id);
+                    toast({ title: "Room ID Copied!", description: "You can now share this ID with your friends." });
+                  }}
+                  className="h-8 w-8"
+                  aria-label="Copy Room ID"
+                >
+                  <ClipboardCopy className="h-4 w-4" />
+                </Button>
+              </div>
+              <Button onClick={handleCopyInviteLink} variant="outline">
                 <ClipboardCopy className="mr-2 h-4 w-4" /> Copy Invite Link
               </Button>
-              <Button onClick={handleLeaveRoom} variant="destructive" className="w-full sm:w-auto">
+              <Button onClick={handleLeaveRoom} variant="destructive">
                 <LogOut className="mr-2 h-4 w-4" /> Leave Room
               </Button>
             </div>
@@ -351,3 +369,6 @@ export default function LobbyPage() {
     </div>
   );
 }
+
+
+    
