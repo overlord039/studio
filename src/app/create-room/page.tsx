@@ -19,8 +19,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { TICKET_PRICES, PRIZE_FORMATS, MIN_LOBBY_SIZE, MAX_LOBBY_SIZE, DEFAULT_TICKET_PRICE, DEFAULT_LOBBY_SIZE, DEFAULT_PRIZE_FORMAT } from "@/lib/constants";
-import type { TicketPrice, PrizeFormat } from "@/types";
+import type { TicketPrice, PrizeFormat, Player, Room, GameSettings } from "@/types";
 import { Settings } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import { useState } from "react";
 
 const createRoomFormSchema = z.object({
   ticketPrice: z.coerce.number().refine(price => TICKET_PRICES.includes(price as TicketPrice), {
@@ -37,6 +39,8 @@ type CreateRoomFormValues = z.infer<typeof createRoomFormSchema>;
 export default function CreateRoomPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const { currentUser, loading: authLoading } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<CreateRoomFormValues>({
     resolver: zodResolver(createRoomFormSchema),
@@ -48,16 +52,60 @@ export default function CreateRoomPage() {
   });
 
   async function onSubmit(values: CreateRoomFormValues) {
-    console.log("Creating room with settings:", values);
-    // In a real app, you'd send this to a backend to create the room
-    // For now, we'll simulate room creation and navigate to a mock lobby
-    
-    const mockRoomId = `mock-${Math.random().toString(36).substr(2, 9)}`;
-    toast({
-      title: "Room Created!",
-      description: `Room ID: ${mockRoomId}. Settings: Price ₹${values.ticketPrice}, Size ${values.lobbySize}, Format ${values.prizeFormat}`,
-    });
-    router.push(`/room/${mockRoomId}/lobby?ticketPrice=${values.ticketPrice}&lobbySize=${values.lobbySize}&prizeFormat=${encodeURIComponent(values.prizeFormat)}`);
+    if (!currentUser) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to create a room.",
+        variant: "destructive",
+      });
+      router.push('/auth/login');
+      return;
+    }
+    setIsSubmitting(true);
+
+    const hostPlayer: Player = {
+      id: currentUser.username, // Using username as ID for mock
+      name: currentUser.username,
+      isHost: true,
+    };
+
+    const roomSettings: GameSettings = {
+      ticketPrice: values.ticketPrice,
+      lobbySize: values.lobbySize,
+      prizeFormat: values.prizeFormat,
+    };
+
+    try {
+      const response = await fetch('/api/rooms/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ host: hostPlayer, settings: roomSettings }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to create room: ${response.statusText}`);
+      }
+
+      const newRoom: Room = await response.json();
+      
+      toast({
+        title: "Room Created!",
+        description: `Room ID: ${newRoom.id}. Settings: Price ₹${newRoom.settings.ticketPrice}, Size ${newRoom.settings.lobbySize}, Format ${newRoom.settings.prizeFormat}`,
+      });
+      // Pass settings via query params to the lobby page
+      router.push(`/room/${newRoom.id}/lobby?ticketPrice=${newRoom.settings.ticketPrice}&lobbySize=${newRoom.settings.lobbySize}&prizeFormat=${encodeURIComponent(newRoom.settings.prizeFormat)}`);
+
+    } catch (error) {
+      console.error("Error creating room:", error);
+      toast({
+        title: "Error",
+        description: (error as Error).message || "Could not create room. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -79,7 +127,11 @@ export default function CreateRoomPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Ticket Price (₹)</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value)}>
+                    <Select 
+                        onValueChange={(value) => field.onChange(Number(value))} 
+                        defaultValue={String(field.value)}
+                        disabled={isSubmitting || authLoading}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select ticket price" />
@@ -102,7 +154,13 @@ export default function CreateRoomPage() {
                   <FormItem>
                     <FormLabel>Lobby Size (Max Players)</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder={`e.g., ${DEFAULT_LOBBY_SIZE}`} {...field} />
+                      <Input 
+                        type="number" 
+                        placeholder={`e.g., ${DEFAULT_LOBBY_SIZE}`} 
+                        {...field} 
+                        onChange={e => field.onChange(parseInt(e.target.value,10) || 0)}
+                        disabled={isSubmitting || authLoading}
+                        />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -114,7 +172,11 @@ export default function CreateRoomPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Prize Format</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                     <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        disabled={isSubmitting || authLoading}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select prize format" />
@@ -130,8 +192,8 @@ export default function CreateRoomPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" size="lg">
-                Create Room
+              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || authLoading}>
+                {isSubmitting ? "Creating Room..." : "Create Room"}
               </Button>
             </form>
           </Form>

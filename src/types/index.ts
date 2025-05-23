@@ -1,9 +1,9 @@
 
 export interface Player {
-  id: string;
+  id: string; // Will typically be derived from username or a unique auth ID
   name: string;
   isHost?: boolean;
-  ticketsToBuy?: number; // Added for players to specify ticket quantity
+  ticketsToBuy?: number; // Lobby UI state, may not be persisted on server player object initially
 }
 
 export type TicketPrice = 5 | 10 | 20 | 25 | 50 | 100;
@@ -21,7 +21,8 @@ export interface Room {
   host: Player;
   players: Player[];
   settings: GameSettings;
-  createdAt: Date;
+  createdAt: Date | string; // Allow string for serialization
+  isGameStarted?: boolean;
 }
 
 // A Housie ticket is a 3x9 grid. Each cell can be a number or null (empty).

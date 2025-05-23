@@ -6,17 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket } from "lucide-react";
-import type { Player, GameSettings, PrizeType } from "@/types";
-import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES } from "@/lib/constants";
-import React, { useEffect, useState } from "react";
-
-// Mock data - replace with actual data fetching and state management
-const mockPlayers: Player[] = [
-  { id: "hostUser123", name: "You (Host)", isHost: true, ticketsToBuy: 1 },
-  { id: "player2", name: "Alice", ticketsToBuy: 1 },
-  { id: "player3", name: "Bob", ticketsToBuy: 1 },
-];
+import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangle } from "lucide-react";
+import type { Player, GameSettings, PrizeType, Room } from "@/types";
+import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_TICKET_PRICE, DEFAULT_LOBBY_SIZE, DEFAULT_PRIZE_FORMAT } from "@/lib/constants";
+import React, { useEffect, useState, useCallback } from "react";
+import { useAuth } from "@/contexts/auth-context";
 
 const MAX_TICKETS_PER_PLAYER = 6;
 
@@ -26,36 +20,78 @@ export default function LobbyPage() {
   const routeParams = useParams();
   const searchParams = useSearchParams();
   const roomId = routeParams.id as string;
+  const { currentUser, loading: authLoading } = useAuth();
 
-  const [gameSettings, setGameSettings] = useState<GameSettings | null>(null);
-  const [players, setPlayers] = useState<Player[]>(mockPlayers);
-  const [hostTicketSelection, setHostTicketSelection] = useState<number>(mockPlayers.find(p => p.isHost)?.ticketsToBuy || 1);
+  const [roomData, setRoomData] = useState<Room | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Client-side state for current player's ticket selection, if they are the host.
+  // This is not directly from server roomData.players yet.
+  const [hostTicketSelection, setHostTicketSelection] = useState<number>(1); 
+  
+  // Derived state, assuming current user is one of the players from roomData
+  const currentPlayerInRoom = roomData?.players.find(p => p.id === currentUser?.username);
+  const isHost = currentPlayerInRoom?.isHost || false;
+
+  // This will hold client-side ticket choices for display, merging with server player list
+  const [displayPlayers, setDisplayPlayers] = useState<Player[]>([]);
+
+
+  const fetchRoomDetails = useCallback(async () => {
+    if (!roomId) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/rooms/${roomId}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Room not found. It might have expired or never existed.");
+        }
+        throw new Error(`Failed to fetch room details: ${response.statusText}`);
+      }
+      const data: Room = await response.json();
+      setRoomData(data);
+      // Initialize displayPlayers from fetched room data, adding default ticketsToBuy
+      setDisplayPlayers(data.players.map(p => ({ ...p, ticketsToBuy: p.id === data.host.id ? hostTicketSelection : 1 })));
+
+    } catch (err) {
+      console.error(err);
+      setError((err as Error).message);
+      setRoomData(null); // Clear room data on error
+    } finally {
+      setIsLoading(false);
+    }
+  }, [roomId, hostTicketSelection]); // hostTicketSelection might not be needed here if it's set after fetch
 
   useEffect(() => {
-    const ticketPrice = parseInt(searchParams.get('ticketPrice') || '10', 10) as GameSettings['ticketPrice'];
-    const lobbySize = parseInt(searchParams.get('lobbySize') || '10', 10);
-    const prizeFormat = (searchParams.get('prizeFormat') || 'Format 1') as GameSettings['prizeFormat'];
-    
-    if (ticketPrice && lobbySize && prizeFormat) {
-      setGameSettings({ ticketPrice, lobbySize, prizeFormat });
-    }
-     // In a real app, you'd fetch player list for the room or manage this via websockets
-  }, [searchParams]);
+    fetchRoomDetails();
+  }, [fetchRoomDetails]);
 
-  const hostPlayer = players.find(p => p.isHost);
+  // Update hostTicketSelection if currentUser is the host from fetched data
+  useEffect(() => {
+    if (roomData && currentUser && roomData.host.id === currentUser.username) {
+       const hostPlayerDetails = displayPlayers.find(p => p.id === currentUser.username);
+       if(hostPlayerDetails && hostPlayerDetails.ticketsToBuy){
+            setHostTicketSelection(hostPlayerDetails.ticketsToBuy);
+       }
+    }
+  }, [roomData, currentUser, displayPlayers]);
+
 
   const handleConfirmHostTickets = () => {
-    if (hostPlayer) {
-      setPlayers(prevPlayers =>
+     if (!currentUser || !roomData || roomData.host.id !== currentUser.username) return;
+    
+    setDisplayPlayers(prevPlayers =>
         prevPlayers.map(p =>
-          p.id === hostPlayer.id ? { ...p, ticketsToBuy: hostTicketSelection } : p
+          p.id === currentUser.username ? { ...p, ticketsToBuy: hostTicketSelection } : p
         )
       );
-      toast({
-        title: "Tickets Confirmed",
-        description: `You (host) will play with ${hostTicketSelection} ticket(s).`,
-      });
-    }
+    // Here you might want an API call to inform other players or persist this choice if needed
+    toast({
+      title: "Tickets Updated",
+      description: `You will play with ${hostTicketSelection} ticket(s).`,
+    });
   };
 
   const handleCopyInviteLink = () => {
@@ -63,33 +99,135 @@ export default function LobbyPage() {
     toast({ title: "Invite Link Copied!", description: "Share it with your friends." });
   };
 
-  const handleStartGame = () => {
-    toast({ title: "Game Starting (Mock)!", description: `Navigating to game room ${roomId}.` });
-    router.push(`/room/${roomId}/play?playerTickets=${hostTicketSelection}`);
+  const handleStartGame = async () => {
+    if (!roomData || !currentUser || roomData.host.id !== currentUser.username) {
+      toast({ title: "Error", description: "Only the host can start the game.", variant: "destructive" });
+      return;
+    }
+    if (displayPlayers.length < 2 && process.env.NODE_ENV !== 'development') { // Allow solo start in dev
+       toast({ title: "Cannot Start", description: "Need at least 2 players to start the game.", variant: "destructive" });
+       return;
+    }
+    const totalTicketsConfirmed = displayPlayers.reduce((sum, p) => sum + (p.ticketsToBuy || 0), 0);
+    if (totalTicketsConfirmed === 0) {
+        toast({ title: "Cannot Start", description: "At least one player needs to have tickets.", variant: "destructive" });
+        return;
+    }
+
+    try {
+      const response = await fetch(`/api/rooms/${roomId}/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hostId: currentUser.id }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to start game.");
+      }
+      const updatedRoom: Room = await response.json();
+      setRoomData(updatedRoom); // Update local room state
+      toast({ title: "Game Starting!", description: `Navigating to game room ${roomId}.` });
+      // Pass confirmed number of tickets for the current player (host)
+      router.push(`/room/${roomId}/play?playerTickets=${hostTicketSelection}`);
+    } catch (err) {
+      console.error("Error starting game:", err);
+      toast({ title: "Error Starting Game", description: (err as Error).message, variant: "destructive" });
+    }
   };
 
   const handleLeaveRoom = () => {
-    toast({ title: "Left Room (Mock)", description: "You have left the lobby." });
+    // Future: Call API to remove player from room
+    toast({ title: "Left Room", description: "You have left the lobby." });
     router.push("/");
   };
+  
+  // Effect to handle user joining if they are not already in players list (e.g. via shared link)
+  useEffect(() => {
+    const joinRoomIfNeeded = async () => {
+      if (roomData && currentUser && !authLoading && !roomData.players.find(p => p.id === currentUser.username) && !roomData.isGameStarted) {
+        console.log(`Attempting to auto-join room ${roomId} for user ${currentUser.username}`);
+        try {
+          const playerToJoin: Player = { id: currentUser.username, name: currentUser.username };
+          const response = await fetch(`/api/rooms/${roomId}/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(playerToJoin),
+          });
+          if (response.ok) {
+            const updatedRoomData: Room = await response.json();
+            setRoomData(updatedRoomData);
+            setDisplayPlayers(updatedRoomData.players.map(p => ({ ...p, ticketsToBuy: p.id === currentUser.username ? 1 : (displayPlayers.find(dp => dp.id === p.id)?.ticketsToBuy || 1) })));
+            toast({ title: "Joined Room!", description: `Welcome to room ${roomId}, ${currentUser.name}!`});
+          } else {
+            const errorData = await response.json();
+            // Don't show error toast if room is full or game started, as that's expected for late joiners
+            if (response.status !== 400 || (errorData.message !== "Room is full." && errorData.message !== "Game has already started." && errorData.message !== "Player already in room.")) {
+                 toast({ title: "Could Not Join", description: errorData.message || "Failed to automatically join the room.", variant: "destructive"});
+            }
+             if (errorData.message === "Room is full." || errorData.message === "Game has already started.") {
+                setError(`Cannot join: ${errorData.message}`); // Show a persistent error on page
+            }
+          }
+        } catch (err) {
+          console.error("Error auto-joining room:", err);
+          // Avoid toast for network errors in auto-join to prevent spam on reconnections
+        }
+      }
+    };
+    if(!isLoading && !error) { // Only attempt to join if initial fetch is done and no major error
+        joinRoomIfNeeded();
+    }
+  }, [roomData, currentUser, authLoading, roomId, toast, isLoading, error]);
 
-  if (!gameSettings) {
-    return <div className="text-center py-10">Loading room details...</div>;
+
+  if (isLoading || authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="ml-4 text-xl">Loading Room...</p>
+      </div>
+    );
   }
 
-  const currentPrizeFormat = gameSettings.prizeFormat || "Format 1";
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
+        <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
+        <h2 className="text-2xl font-semibold mb-2">Error Loading Room</h2>
+        <p className="text-muted-foreground mb-6">{error}</p>
+        <Button onClick={() => router.push('/')} size="lg">Go to Homepage</Button>
+      </div>
+    );
+  }
+  
+  if (!roomData) {
+     // This case should ideally be covered by the error state after fetch failure
+    return <div className="text-center py-10">Room data could not be loaded.</div>;
+  }
+  
+  // Fallback if query params for settings are missing but roomData exists (e.g. direct navigation)
+  const gameSettings: GameSettings = {
+    ticketPrice: roomData.settings.ticketPrice || parseInt(searchParams.get('ticketPrice') || String(DEFAULT_TICKET_PRICE), 10) as GameSettings['ticketPrice'],
+    lobbySize: roomData.settings.lobbySize || parseInt(searchParams.get('lobbySize') || String(DEFAULT_LOBBY_SIZE), 10),
+    prizeFormat: roomData.settings.prizeFormat || (searchParams.get('prizeFormat') || DEFAULT_PRIZE_FORMAT) as GameSettings['prizeFormat'],
+  };
+
+
+  const currentPrizeFormat = gameSettings.prizeFormat;
   const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat];
   const prizeDistribution = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat];
   
-  const totalTicketsBought = players.reduce((sum, player) => sum + (player.ticketsToBuy || 0), 0);
+  const totalTicketsBought = displayPlayers.reduce((sum, player) => sum + (player.ticketsToBuy || 0), 0);
   const currentTotalPrizePool = gameSettings.ticketPrice * totalTicketsBought;
 
   return (
     <div className="space-y-8">
       <Card className="shadow-xl">
         <CardHeader>
-          <CardTitle className="text-3xl font-bold">Lobby: #{roomId}</CardTitle>
-          <CardDescription>Waiting for players. Set your tickets and the host can start the game.</CardDescription>
+          <CardTitle className="text-3xl font-bold">Lobby: #{roomData.id}</CardTitle>
+          <CardDescription>
+            {roomData.isGameStarted ? "Game has started. Spectating..." : "Waiting for players. Set your tickets and the host can start the game."}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -108,7 +246,7 @@ export default function LobbyPage() {
             </div>
           </div>
 
-          {hostPlayer && (
+          {isHost && !roomData.isGameStarted && (
             <Card className="bg-secondary/20">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center"><Ticket className="mr-2 h-5 w-5 text-primary"/>Your Tickets (Host)</CardTitle>
@@ -117,6 +255,7 @@ export default function LobbyPage() {
                 <Select
                   value={String(hostTicketSelection)}
                   onValueChange={(value) => setHostTicketSelection(Number(value))}
+                  disabled={roomData.isGameStarted}
                 >
                   <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="Select tickets" />
@@ -129,7 +268,7 @@ export default function LobbyPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button onClick={handleConfirmHostTickets} className="w-full sm:w-auto">
+                <Button onClick={handleConfirmHostTickets} className="w-full sm:w-auto" disabled={roomData.isGameStarted}>
                   Confirm My Tickets
                 </Button>
               </CardContent>
@@ -138,17 +277,16 @@ export default function LobbyPage() {
 
           <div>
             <h3 className="text-xl font-semibold mb-2 flex items-center">
-              <Users className="mr-2 h-5 w-5 text-primary" /> Players ({players.length}/{gameSettings.lobbySize})
+              <Users className="mr-2 h-5 w-5 text-primary" /> Players ({displayPlayers.length}/{gameSettings.lobbySize})
             </h3>
             <ul className="space-y-2 rounded-md border p-4 max-h-60 overflow-y-auto">
-              {players.map(player => (
+              {displayPlayers.map(player => (
                 <li key={player.id} className="flex justify-between items-center p-2 bg-secondary/30 rounded">
-                  <span>{player.name} ({player.ticketsToBuy || 0} ticket{ (player.ticketsToBuy || 0) === 1 ? '' : 's'})</span>
+                  <span>{player.name}{player.id === currentUser?.username ? " (You)" : ""} ({player.ticketsToBuy || 0} ticket{ (player.ticketsToBuy || 0) === 1 ? '' : 's'})</span>
                   {player.isHost && <span className="text-xs font-semibold text-primary">(Host)</span>}
                 </li>
               ))}
-              {players.length === 0 && <li className="text-muted-foreground">No players yet.</li>}
-               {/* In a real app, this list would update as players join */}
+              {displayPlayers.length === 0 && <li className="text-muted-foreground">No players yet.</li>}
             </ul>
           </div>
           
@@ -160,7 +298,7 @@ export default function LobbyPage() {
               <CardContent className="p-4 space-y-2">
                  <p className="text-sm font-semibold">Current Total Prize Pool: ₹{currentTotalPrizePool.toFixed(2)}</p>
                  <p className="text-xs text-muted-foreground">
-                   (Max possible pool if lobby full & each player buys {MAX_TICKETS_PER_PLAYER} tickets: ₹{(gameSettings.ticketPrice * gameSettings.lobbySize * MAX_TICKETS_PER_PLAYER).toFixed(2)})
+                   (Max possible pool if lobby full & each player buys 1 ticket: ₹{(gameSettings.ticketPrice * gameSettings.lobbySize * 1).toFixed(2)})
                  </p>
                 {prizesForFormat.map((prizeName) => {
                   const percentage = prizeDistribution[prizeName as PrizeType] || 0;
@@ -176,15 +314,20 @@ export default function LobbyPage() {
             </Card>
           </div>
 
-          {hostPlayer && (
-            <Button onClick={handleStartGame} size="lg" className="w-full mt-4" disabled={players.length < 2 || totalTicketsBought === 0}>
+          {isHost && !roomData.isGameStarted && (
+            <Button onClick={handleStartGame} size="lg" className="w-full mt-4" disabled={ (displayPlayers.length < 2 && process.env.NODE_ENV !== 'development') || totalTicketsBought === 0}>
               <Play className="mr-2 h-5 w-5" /> Start Game
             </Button>
           )}
-          {hostPlayer && (players.length < 2 || totalTicketsBought === 0) && (
+          {isHost && !roomData.isGameStarted && ((displayPlayers.length < 2 && process.env.NODE_ENV !== 'development') || totalTicketsBought === 0) && (
             <p className="text-center text-sm text-destructive mt-2">
-              {totalTicketsBought === 0 ? "At least one player needs to have tickets to start." : "Need at least 2 players to start the game."}
+              {totalTicketsBought === 0 ? "At least one player needs to have tickets to start." : "Need at least 2 players to start the game (unless in development mode)."}
             </p>
+          )}
+          {roomData.isGameStarted && (
+             <Button onClick={() => router.push(`/room/${roomId}/play?playerTickets=${displayPlayers.find(p => p.id === currentUser?.username)?.ticketsToBuy || 1}`)} size="lg" className="w-full mt-4">
+              <Play className="mr-2 h-5 w-5" /> Go to Game / Spectate
+            </Button>
           )}
         </CardContent>
       </Card>
