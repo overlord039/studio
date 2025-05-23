@@ -25,6 +25,9 @@ const PrizeStatusList = React.memo(({ prizeStatus, prizesForFormat, players }: {
   prizesForFormat: PrizeType[];
   players: BackendPlayerInRoom[];
 }) => {
+  if (!prizeStatus || !prizesForFormat || !players) {
+    return <p className="text-sm text-muted-foreground">Loading prize status...</p>;
+  }
   return (
     <ul className="space-y-1 text-sm">
       {prizesForFormat.map(prize => {
@@ -78,7 +81,7 @@ export default function GameRoomPage() {
   const isCurrentUserHost = roomData?.host.id === currentUser?.username;
 
   const fetchGameDetails = useCallback(async (isInitialLoad = false) => {
-    if (!roomId || !currentUser) {
+    if (!roomId || !currentUser?.username) {
       if (isInitialLoad) {
         setError("Room ID or User not available for fetching game details.");
         setIsLoading(false);
@@ -113,15 +116,15 @@ export default function GameRoomPage() {
       } else if (isInitialLoad && (!me || !me.tickets || me.tickets.length === 0)) {
         const ticketsParam = searchParams.get('playerTickets');
         const numTickets = ticketsParam ? parseInt(ticketsParam, 10) : 0;
-        if (numTickets === 0 && !data.isGameOver && data.isGameStarted) {
-            if (!gameMessage?.toLocaleLowerCase().includes("game over")) {
+        if (numTickets === 0 && data.isGameStarted && !data.isGameOver) {
+            if (roomDataRef.current && !roomDataRef.current.isGameOver) { // Check ref to avoid state lag
                  setGameMessage("You are spectating. You don't have tickets in this game.");
             }
         }
         setMyTickets([]);
       }
 
-      if (data.isGameOver && !gameMessage?.toLocaleLowerCase().includes("game over")) {
+      if (data.isGameOver) {
         const fhClaim = data.prizeStatus[PRIZE_TYPES.FULL_HOUSE];
         let gameOverMsg = "🎉 Game Over!";
         if (fhClaim && fhClaim.claimedBy.length > 0) {
@@ -148,7 +151,7 @@ export default function GameRoomPage() {
         setIsLoading(false);
       }
     }
-  }, [roomId, currentUser, searchParams, toast, gameMessage]); 
+  }, [roomId, currentUser, searchParams, toast]); 
 
   useEffect(() => {
     if (currentUser && roomId && !authLoading) {
@@ -201,19 +204,19 @@ export default function GameRoomPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        if (!gameMessage?.toLocaleLowerCase().includes("game over")) {
+        if (roomDataRef.current && !roomDataRef.current.isGameOver) {
             setGameMessage(result.message || "Failed to call number.");
         }
         toast({ title: "Error Calling Number", description: result.message, variant: "destructive"});
       } else {
         setRoomData(result as Room); 
-         if (result.message && !gameMessage?.toLocaleLowerCase().includes("game over")) { 
+         if (result.message && roomDataRef.current && !roomDataRef.current.isGameOver) { 
             setGameMessage(result.message);
         }
       }
     } catch (err) {
       console.error("Error calling next number:", err);
-      if (!gameMessage?.toLocaleLowerCase().includes("game over")) {
+      if (roomDataRef.current && !roomDataRef.current.isGameOver) {
         setGameMessage("Network error calling number.");
       }
       toast({ title: "Network Error", description: "Could not call next number.", variant: "destructive" });
@@ -224,31 +227,36 @@ export default function GameRoomPage() {
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout | undefined;
-    const canAutoCall = isCurrentUserHost && roomDataRef.current?.isGameStarted && !roomDataRef.current?.isGameOver && !isCallingNumber;
+    
+    const currentRoomData = roomDataRef.current; // Use ref for current data in interval setup
+    const canAutoCall = isCurrentUserHost && currentRoomData?.isGameStarted && !currentRoomData?.isGameOver && !isCallingNumber;
 
     if (canAutoCall) {
-      if (roomDataRef.current?.calledNumbers.length === 0) {
-        handleCallNextNumber();
-      } else {
-        intervalId = setInterval(() => {
-          if (isCurrentUserHost && roomDataRef.current?.isGameStarted && !roomDataRef.current?.isGameOver && !isCallingNumber) {
-             handleCallNextNumber();
-          } else {
-            if (intervalId) clearInterval(intervalId);
-          }
-        }, 4000); 
+      if (currentRoomData.calledNumbers.length === 0) {
+        // Call immediately if it's the first number
+        handleCallNextNumber(); 
       }
+      // Set up interval for subsequent calls
+      intervalId = setInterval(() => {
+        // Re-check conditions inside interval using the ref to ensure they are current
+        if (isCurrentUserHost && roomDataRef.current?.isGameStarted && !roomDataRef.current?.isGameOver && !isCallingNumber) {
+           handleCallNextNumber();
+        } else {
+          if (intervalId) clearInterval(intervalId); // Clear if conditions no longer met
+        }
+      }, 4000); // 4-second interval
     }
+    
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [
+  }, [ // Dependencies that define when to re-evaluate setting up/clearing the interval
     isCurrentUserHost,
-    isCallingNumber, 
-    handleCallNextNumber,
-    roomData?.isGameStarted, 
-    roomData?.isGameOver,
-    roomData?.calledNumbers.length 
+    roomData?.isGameStarted, // Use state here to trigger re-evaluation
+    roomData?.isGameOver,   // Use state here
+    isCallingNumber,        // Use state here
+    roomData?.calledNumbers.length, // Trigger on first call
+    handleCallNextNumber  // Ensure stable reference or include its true dependencies
   ]);
 
 
@@ -291,35 +299,44 @@ export default function GameRoomPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        if (!gameMessage?.toLocaleLowerCase().includes("game over")) {
+        // Use roomDataRef to check current game over status to avoid race conditions with state
+        if (roomDataRef.current && !roomDataRef.current.isGameOver) {
             setGameMessage(result.message || `Failed to claim ${prizeType}.`);
         }
         toast({ title: `${prizeType} Claim Invalid!`, description: result.message, variant: "destructive" });
       } else {
         const updatedRoom: Room = result;
-        setRoomData(updatedRoom); 
+        setRoomData(updatedRoom); // UI updates instantly for the current player
+
+        let toastMessageAlert = result.message; 
+        let localGameMessageAlert = result.message; 
 
         const claimStatus = updatedRoom.prizeStatus[prizeType];
-        let successMsg = `🔔 ${currentUser.username} has claimed ${prizeType}!`; 
 
         if (claimStatus?.claimedBy.includes(currentUser.username)) {
             const allClaimantsNames = claimStatus.claimedBy.map(id => updatedRoom.players.find(p=>p.id===id)?.name || id);
             if (allClaimantsNames.length > 1) {
-                 successMsg = `🔔 ${prizeType} claimed by ${allClaimantsNames.join(' & ')}! (You are one of them!)`;
+                 localGameMessageAlert = `🔔 ${prizeType} claimed by ${allClaimantsNames.join(' & ')}! (You are one of them!)`;
+            } else {
+                 localGameMessageAlert = `🔔 ${currentUser.username} has claimed ${prizeType}!`;
             }
+            toastMessageAlert = localGameMessageAlert;
             
-            if (prizeType === PRIZE_TYPES.FULL_HOUSE) {
+            if (prizeType === PRIZE_TYPES.FULL_HOUSE && updatedRoom.isGameOver) {
                 let autoAwardMsg = "";
                 const linePrizes: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
                 linePrizes.forEach(linePrize => {
                     const lineClaimStatus = updatedRoom.prizeStatus[linePrize];
-                    const oldLineClaimStatus = roomData?.prizeStatus[linePrize]; // Compare with previous state if needed
-                    if (lineClaimStatus?.claimedBy.includes(currentUser.username) && 
-                        (!oldLineClaimStatus || !oldLineClaimStatus.claimedBy.includes(currentUser.username))) { 
-                        autoAwardMsg += `\nAlso awarded ${linePrize}.`;
+                    // Check if line was auto-awarded by the backend (i.e., present in updatedRoom.prizeStatus but potentially not in roomDataRef.current.prizeStatus for this player)
+                    // Or more simply, just report what the backend says is now claimed for this player.
+                    if (lineClaimStatus?.claimedBy.includes(currentUser.username)) {
+                        const previousClaim = roomDataRef.current?.prizeStatus[linePrize];
+                        if (!previousClaim || !previousClaim.claimedBy.includes(currentUser.username)) {
+                             autoAwardMsg += `\nAlso awarded ${linePrize}.`;
+                        }
                     }
                 });
-                if (autoAwardMsg) successMsg += autoAwardMsg;
+                if (autoAwardMsg) localGameMessageAlert += autoAwardMsg;
 
                 const fhFinalClaim = updatedRoom.prizeStatus[PRIZE_TYPES.FULL_HOUSE];
                 let finalGameOverMsg = "🎉 Game Over!";
@@ -331,28 +348,30 @@ export default function GameRoomPage() {
                         finalGameOverMsg += ` at ${claimTimestamp.toLocaleTimeString()}`;
                     }
                 }
-                setGameMessage(finalGameOverMsg); 
-            } else { 
-                 if (!gameMessage?.toLocaleLowerCase().includes("game over")) {
-                    setGameMessage(successMsg);
-                 }
+                setGameMessage(finalGameOverMsg); // Set game over message
+                toastMessageAlert = finalGameOverMsg; // Toast should also reflect game over
+            } else if (!updatedRoom.isGameOver) { // Only set non-FH game messages if game is not over
+                setGameMessage(localGameMessageAlert);
             }
-        } else if (claimStatus?.claimedBy.length) { 
-             successMsg = `🔔 ${prizeType} was claimed by ${claimStatus.claimedBy.map(id => updatedRoom.players.find(p=>p.id===id)?.name || id).join(' & ')}.`;
-             if (!gameMessage?.toLocaleLowerCase().includes("game over")) {
-                setGameMessage(successMsg);
+        } else if (claimStatus?.claimedBy.length) { // Claimed by someone else
+             localGameMessageAlert = `🔔 ${prizeType} was claimed by ${claimStatus.claimedBy.map(id => updatedRoom.players.find(p=>p.id===id)?.name || id).join(' & ')}.`;
+             toastMessageAlert = localGameMessageAlert;
+             if (!updatedRoom.isGameOver) {
+                setGameMessage(localGameMessageAlert);
              }
-        } else { 
-            if (!gameMessage?.toLocaleLowerCase().includes("game over")) {
-                setGameMessage(result.message || `Claim status for ${prizeType} is unclear.`);
+        } else { // Unclear status from backend (but response was ok)
+            localGameMessageAlert = result.message || `Claim status for ${prizeType} is unclear.`;
+            toastMessageAlert = localGameMessageAlert;
+            if (!updatedRoom.isGameOver) {
+                setGameMessage(localGameMessageAlert);
             }
         }
         
-        toast({ title: "Claim Processed!", description: result.message || successMsg, className: (result.message || successMsg).includes("Bogey") ? "bg-destructive" : "bg-green-500 text-white" });
+        toast({ title: "Claim Processed!", description: toastMessageAlert, className: (toastMessageAlert.includes("Bogey") || toastMessageAlert.includes("Invalid")) ? "bg-destructive" : "bg-green-500 text-white" });
       }
     } catch (err) {
       console.error(`Error claiming ${prizeType}:`, err);
-      if (!gameMessage?.toLocaleLowerCase().includes("game over")) {
+      if (roomDataRef.current && !roomDataRef.current.isGameOver) {
         setGameMessage(`Network error claiming ${prizeType}.`);
       }
       toast({ title: "Network Error", description: `Could not claim ${prizeType}.`, variant: "destructive" });
@@ -485,7 +504,7 @@ export default function GameRoomPage() {
                 <p className="text-sm text-muted-foreground">Loading prize status...</p>
               ) : (
                 <ScrollArea className="h-40">
-                  <PrizeStatusList
+                   <PrizeStatusList
                     prizeStatus={roomData.prizeStatus}
                     prizesForFormat={prizesForFormat}
                     players={roomData.players}
