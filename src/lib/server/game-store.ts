@@ -1,8 +1,8 @@
 
-import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim } from '@/types';
+import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { generateImprovedHousieTicket } from '@/lib/housie';
-import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE } from '@/lib/constants';
+import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE, PRIZE_DEFINITIONS } from '@/lib/constants';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -27,7 +27,11 @@ function initializeNumberPool(): number[] {
 
 function initializePrizeStatus(): Record<PrizeType, PrizeClaim | null> {
   const status: Record<PrizeType, PrizeClaim | null> = {} as Record<PrizeType, PrizeClaim | null>;
-  (Object.values(PRIZE_TYPES) as PrizeType[]).forEach(prize => {
+  // Initialize based on the default prize format or the room's specific format
+  const defaultPrizeFormat = DEFAULT_GAME_SETTINGS.prizeFormat;
+  const prizesForFormat = PRIZE_DEFINITIONS[defaultPrizeFormat] || Object.values(PRIZE_TYPES);
+
+  (prizesForFormat as PrizeType[]).forEach(prize => {
     status[prize] = null; // No one has claimed initially
   });
   return status;
@@ -37,17 +41,16 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
   const roomId = generateRoomId();
   const gameSettings: GameSettings = { ...DEFAULT_GAME_SETTINGS, ...clientSettings };
 
-  // Host is added with NO tickets initially. They will "join" from the lobby to get tickets.
   const hostPlayerInRoom: BackendPlayerInRoom = {
     ...host,
     isHost: true,
-    tickets: [], 
+    tickets: [], // Host gets tickets upon "joining" from lobby
   };
 
   const newRoom: Room = {
     id: roomId,
-    host: { id: host.id, name: host.name, isHost: true }, // Keep simple host info here
-    players: [hostPlayerInRoom], // Host is in players list, but needs to "buy" tickets
+    host: { id: host.id, name: host.name, isHost: true },
+    players: [hostPlayerInRoom],
     settings: gameSettings,
     createdAt: new Date(),
     isGameStarted: false,
@@ -55,7 +58,7 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
     currentNumber: null,
     calledNumbers: [],
     numberPool: initializeNumberPool(),
-    prizeStatus: initializePrizeStatus(),
+    prizeStatus: initializePrizeStatus(), // Initialize with game-specific prizes if settings dictate
   };
   rooms.set(roomId, newRoom);
   console.log(`Room created: ${roomId} by host ${host.id}. Host needs to confirm tickets.`);
@@ -64,7 +67,6 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
 
 export function getRoomStore(roomId: string): Room | undefined {
   const room = rooms.get(roomId);
-  // Simple way to expire rooms: delete if older than X hours and not started
   if (room && !room.isGameStarted && (new Date().getTime() - new Date(room.createdAt).getTime()) > 24 * 60 * 60 * 1000) { // 24 hours
     rooms.delete(roomId);
     console.log(`Room ${roomId} expired and deleted.`);
@@ -80,12 +82,13 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; n
   }
   
   const existingPlayerIndex = room.players.findIndex(p => p.id === playerInfo.id);
+  const ticketsToGenerate = Math.max(1, numberOfTickets); // Ensure at least 1 ticket
 
   if (existingPlayerIndex !== -1) {
     // Player exists, update their tickets if they don't have any yet and game hasn't started
-    if (room.players[existingPlayerIndex].tickets.length === 0 && numberOfTickets > 0 && !room.isGameStarted) {
-        room.players[existingPlayerIndex].tickets = Array.from({ length: numberOfTickets }, () => generateImprovedHousieTicket());
-        console.log(`Player ${playerInfo.id} (existing) confirmed ${numberOfTickets} tickets in room ${roomId}.`);
+    if (room.players[existingPlayerIndex].tickets.length === 0 && ticketsToGenerate > 0 && !room.isGameStarted) {
+        room.players[existingPlayerIndex].tickets = Array.from({ length: ticketsToGenerate }, () => generateImprovedHousieTicket());
+        console.log(`Player ${playerInfo.id} (existing) confirmed ${ticketsToGenerate} tickets in room ${roomId}.`);
     } else if (room.players[existingPlayerIndex].tickets.length > 0) {
         console.log(`Player ${playerInfo.id} already has tickets. No change.`);
     } else if (room.isGameStarted) {
@@ -105,10 +108,10 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; n
       id: playerInfo.id,
       name: playerInfo.name,
       isHost: playerInfo.id === room.host.id, 
-      tickets: Array.from({ length: numberOfTickets }, () => generateImprovedHousieTicket()),
+      tickets: Array.from({ length: ticketsToGenerate }, () => generateImprovedHousieTicket()),
     };
     room.players.push(newPlayer);
-    console.log(`New player ${playerInfo.name} (${playerInfo.id}) joined room ${roomId} with ${numberOfTickets} tickets.`);
+    console.log(`New player ${playerInfo.name} (${playerInfo.id}) joined room ${roomId} with ${ticketsToGenerate} tickets.`);
   }
   
   rooms.set(roomId, room);
@@ -139,13 +142,12 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
     return { error: `Host must confirm their tickets before starting.`};
   }
 
-
   room.isGameStarted = true;
+  room.isGameOver = false;
   room.numberPool = initializeNumberPool(); 
   room.calledNumbers = [];
   room.currentNumber = null;
-  room.prizeStatus = initializePrizeStatus();
-  room.isGameOver = false;
+  room.prizeStatus = initializePrizeStatus(); // Re-initialize prizes for a new game
 
   rooms.set(roomId, room);
   console.log(`Game started in room: ${roomId}`);
@@ -160,12 +162,11 @@ export function callNextNumberStore(roomId: string): Room | { error: string; num
   if (room.numberPool.length === 0) {
     room.isGameOver = true; 
     rooms.set(roomId, room);
-    // Set current number to something to indicate all numbers called, e.g., the last called number or specific flag
     return { error: "All numbers called.", number: room.currentNumber ?? undefined };
   }
 
-  const nextNumber = room.numberPool.pop(); // Assumes pool is shuffled and we take from end
-  if (nextNumber === undefined) { // Should not happen if length check passed, but good for safety
+  const nextNumber = room.numberPool.pop(); 
+  if (nextNumber === undefined) { 
      room.isGameOver = true;
      rooms.set(roomId, room);
      return { error: "Error getting next number from pool (pool might be unexpectedly empty).", number: room.currentNumber ?? undefined };
@@ -193,13 +194,10 @@ export function claimPrizeStore(
   
   const ticket = player.tickets[ticketIndex];
 
-  // Check if game is over BEFORE checking if the specific prize has been claimed by this player
-  // This allows a player who won FH to still have that claim processed even if it was the last action.
   if (room.isGameOver && prizeType !== PRIZE_TYPES.FULL_HOUSE) { 
-     // If game is over, only FH can be processed (or auto-awarded lines during FH claim)
      return { error: "Game is over. No more claims." };
   }
-  // Check if this specific prize was already claimed by THIS player
+  
   if (room.prizeStatus[prizeType]?.claimedBy.includes(playerId)) {
     return { error: `You have already claimed ${prizeType}.` };
   }
@@ -209,7 +207,6 @@ export function claimPrizeStore(
      return { error: "Full House already claimed, no more claims for other prizes." };
   }
 
-  // Dynamic import for checkWinningCondition - ensure it's available
   const housieLib = require('@/lib/housie'); 
   if (typeof housieLib.checkWinningCondition !== 'function') {
       console.error("housie.checkWinningCondition is not a function. Check lib/housie.ts exports.");
@@ -221,22 +218,21 @@ export function claimPrizeStore(
 
   if (!room.prizeStatus[prizeType] || !Array.isArray(room.prizeStatus[prizeType]?.claimedBy)) {
     room.prizeStatus[prizeType] = { claimedBy: [], timestamp: new Date() };
+  } else if (!room.prizeStatus[prizeType]!.timestamp) { // Ensure timestamp is set if claim object exists
+    room.prizeStatus[prizeType]!.timestamp = new Date();
   }
   room.prizeStatus[prizeType]!.claimedBy.push(playerId);
   
   if (prizeType === PRIZE_TYPES.FULL_HOUSE) {
     room.isGameOver = true;
-    // Auto-award unclaimed lines for the FH winner on the winning ticket
     const linePrizesToAutoCheck: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
     for (const linePrize of linePrizesToAutoCheck) {
       const linePrizeClaim = room.prizeStatus[linePrize];
-      // Check if this line prize is still available (not claimed by anyone OR claimed by someone else but not this FH winner yet)
       if (!linePrizeClaim || linePrizeClaim.claimedBy.length === 0 || !linePrizeClaim.claimedBy.includes(playerId)) {
         if (housieLib.checkWinningCondition(ticket, room.calledNumbers, linePrize)) {
           if (!room.prizeStatus[linePrize] || !Array.isArray(room.prizeStatus[linePrize]?.claimedBy)) {
             room.prizeStatus[linePrize] = { claimedBy: [], timestamp: new Date() };
           }
-          // Only add if not already there for this prize (for safety, though logic above should cover it)
           if (!room.prizeStatus[linePrize]!.claimedBy.includes(playerId)) {
             room.prizeStatus[linePrize]!.claimedBy.push(playerId);
             console.log(`Auto-awarded ${linePrize} to ${playerId} during Full House claim on room ${roomId}`);
@@ -250,33 +246,61 @@ export function claimPrizeStore(
   return room; 
 }
 
-// Prepares room data for client-side consumption.
-// Omits sensitive or large data like the full numberPool.
 export function getRoomStateForClient(roomId: string): Omit<Room, 'numberPool'> | undefined {
-    const room = getRoomStore(roomId); 
-    if (!room) return undefined;
+    const room = getRoomStore(roomId);
+    if (!room) {
+        console.warn(`getRoomStateForClient: Room ${roomId} not found in store.`);
+        return undefined;
+    }
 
-    // Deep copy to avoid modifying the original store object
-    const roomCopy = JSON.parse(JSON.stringify(room)) as Room;
-    const { numberPool, ...restOfRoom } = roomCopy;
-    
-    // Ensure player tickets are included for the client
-    const playersForClient = restOfRoom.players.map(p => ({
-        id: p.id,
-        name: p.name,
-        isHost: p.isHost,
-        tickets: p.tickets || [], // Ensure tickets array is present, even if empty
-    }));
+    try {
+        const playersForClient = room.players.map(p => ({
+            id: p.id,
+            name: p.name,
+            isHost: p.isHost,
+            // Ensure tickets are an array, even if empty. Assuming HousieTicketGrid is serializable.
+            tickets: Array.isArray(p.tickets) ? p.tickets : [], 
+        }));
 
-    // Ensure prizeStatus has all prize types initialized for client display
-    const prizeStatusForClient = { ...initializePrizeStatus(), ...restOfRoom.prizeStatus };
-    
-    return {
-        ...restOfRoom,
-        players: playersForClient,
-        prizeStatus: prizeStatusForClient
-    };
+        const prizeStatusForClient: Record<PrizeType, PrizeClaim | null> = {} as any;
+        // Use the room's settings to determine relevant prizes, or fallback to default PRIZE_TYPES
+        const currentPrizeFormat = room.settings?.prizeFormat || DEFAULT_GAME_SETTINGS.prizeFormat;
+        const prizesToConsider = PRIZE_DEFINITIONS[currentPrizeFormat] || Object.values(PRIZE_TYPES);
+
+        prizesToConsider.forEach(prizeKey => {
+            const prize = prizeKey as PrizeType;
+            const claim = room.prizeStatus[prize];
+            if (claim) {
+                prizeStatusForClient[prize] = {
+                    claimedBy: claim.claimedBy,
+                    // Ensure timestamp is ISO string if it exists
+                    timestamp: claim.timestamp ? new Date(claim.timestamp).toISOString() : undefined,
+                };
+            } else {
+                prizeStatusForClient[prize] = null;
+            }
+        });
+        
+        // Construct the client-facing room object
+        const clientRoomData = {
+            id: room.id,
+            host: room.host, // Player type should be serializable
+            players: playersForClient,
+            settings: room.settings, // GameSettings should be serializable
+            createdAt: new Date(room.createdAt).toISOString(), // Ensure createdAt is ISO string
+            isGameStarted: room.isGameStarted,
+            isGameOver: room.isGameOver,
+            currentNumber: room.currentNumber,
+            calledNumbers: room.calledNumbers,
+            prizeStatus: prizeStatusForClient,
+            // numberPool is intentionally omitted
+        };
+        return clientRoomData;
+
+    } catch (e) {
+        console.error(`Error preparing room data for client for room ${roomId}:`, e);
+        // If any error occurs during preparation, return undefined to signal an issue.
+        // The API route will then typically return a 404 or 500.
+        return undefined; 
+    }
 }
-
-// TODO: Add function to remove player (leave room)
-// TODO: Add function to reset room for new game
