@@ -1,20 +1,19 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useParams, useRouter } from 'next/navigation';
-import { checkWinningCondition } from '@/lib/housie'; // generateImprovedHousieTicket is now backend
+import { useParams, useRouter, useSearchParams } from 'next/navigation'; // Added useSearchParams
 import HousieTicket from '@/components/game/housie-ticket';
 import LiveNumberBoard from '@/components/game/live-number-board';
 import CalledNumberDisplay from '@/components/game/called-number-display';
-import type { HousieTicketGrid, PrizeType, Room, BackendPlayerInRoom } from '@/types';
+import type { HousieTicketGrid, PrizeType, Room } from '@/types';
 import { PRIZE_TYPES, GameSettings } from '@/types'; 
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { AlertCircle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, ListOrdered, Loader2, Speaker } from 'lucide-react';
+import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, ListOrdered, Loader2, Speaker } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
@@ -24,6 +23,7 @@ import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTING
 export default function GameRoomPage() {
   const routeParams = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const roomId = routeParams.id as string;
   const { toast } = useToast();
   const { currentUser, loading: authLoading } = useAuth();
@@ -33,7 +33,7 @@ export default function GameRoomPage() {
   const [error, setError] = useState<string | null>(null);
   
   const [myTickets, setMyTickets] = useState<HousieTicketGrid[]>([]);
-  const [markedNumbers, setMarkedNumbers] = useState<Set<string>>(new Set()); // "ticketIndex-rowIndex-colIndex"
+  const [markedNumbers, setMarkedNumbers] = useState<Set<string>>(new Set()); 
   const [gameMessage, setGameMessage] = useState<string | null>(null);
   
   const [isPrizesStatusMinimized, setIsPrizesStatusMinimized] = useState(true);
@@ -41,33 +41,43 @@ export default function GameRoomPage() {
   const [isOtherPlayersMinimized, setIsOtherPlayersMinimized] = useState(true);
   const [isCallingNumber, setIsCallingNumber] = useState(false);
 
+  const previousCurrentNumberRef = useRef<number | null>(null);
+
   const isCurrentUserHost = roomData?.host.id === currentUser?.username;
 
   const fetchGameDetails = useCallback(async (isInitialLoad = false) => {
     if (!roomId || !currentUser) return;
     if (isInitialLoad) setIsLoading(true);
-    // setError(null); // Don't clear error on auto-refresh if game is over etc.
 
     try {
       const response = await fetch(`/api/rooms/${roomId}`);
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch game details.");
+        if (response.status === 404) {
+          setError("Room not found. It might have expired or never existed.");
+        } else {
+          setError(errorData.message || `Failed to fetch room details: ${response.statusText}`);
+        }
+        setRoomData(null);
+        if(isInitialLoad) setIsLoading(false);
+        return;
       }
       const data: Room = await response.json();
-      setRoomData(data);
+      setRoomData(data); // This will trigger the useEffect for currentNumber announcement if needed
 
-      // Set my tickets if not already set or if roomData changed
       const me = data.players.find(p => p.id === currentUser.username);
       if (me && me.tickets) {
         setMyTickets(me.tickets);
       } else if (isInitialLoad && (!me || !me.tickets)) {
-        // If on initial load the current user has no tickets (e.g. spectator), set to empty
-        setMyTickets([]);
+        const ticketsParam = searchParams.get('playerTickets');
+        const numTickets = ticketsParam ? parseInt(ticketsParam, 10) : 0;
+        if (numTickets === 0 && !data.isGameOver) { // If spectator and game not over
+             setGameMessage("You are spectating. You don't have tickets in this game.");
+        }
+        setMyTickets([]); // Spectator or player with no tickets from backend
       }
       
       if (data.isGameOver && !gameMessage?.includes("Game Over")) {
-         // Determine the winner display
         const fhClaim = data.prizeStatus[PRIZE_TYPES.FULL_HOUSE];
         let gameOverMsg = "🎉 Game Over!";
         if (fhClaim && fhClaim.claimedBy.length > 0) {
@@ -76,22 +86,24 @@ export default function GameRoomPage() {
            if (fhClaim.timestamp) {
              gameOverMsg += ` at ${new Date(fhClaim.timestamp).toLocaleTimeString()}`;
            }
-        } else if (data.calledNumbers.length === (DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer > 0 ? 90 : 0) ) { // Check if all numbers called
+        } else if (data.calledNumbers.length === (DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer > 0 ? 90 : 0) ) { 
             gameOverMsg = "All numbers called. No Full House winner.";
         }
         setGameMessage(gameOverMsg);
       }
 
-
     } catch (err) {
       console.error("Error fetching game details:", err);
-      if (isInitialLoad || !roomData) { // Only set critical error on initial load or if no data yet
+      if (isInitialLoad || !roomData) { 
         setError((err as Error).message);
+      } else {
+        // For polling errors, maybe just log or show a transient toast
+        // console.warn("Polling error fetching game details:", err);
       }
     } finally {
       if (isInitialLoad) setIsLoading(false);
     }
-  }, [roomId, currentUser, gameMessage]); // Added gameMessage
+  }, [roomId, currentUser, gameMessage, searchParams, roomData?.currentNumber]); // roomData?.currentNumber to help capture old value for comparison
 
   useEffect(() => {
     if (currentUser && roomId) {
@@ -102,18 +114,34 @@ export default function GameRoomPage() {
     }
   }, [currentUser, roomId, authLoading, fetchGameDetails]);
 
-  // Periodic refresh for game state
   useEffect(() => {
     if (!roomId || !currentUser || roomData?.isGameOver || isLoading) return;
-
     const intervalId = setInterval(() => {
-      if (!document.hidden) { // Basic check to avoid fetching if tab is not active
+      if (!document.hidden) { 
         fetchGameDetails(false);
       }
-    }, 3000); // Refresh every 3 seconds
-
+    }, 3000); 
     return () => clearInterval(intervalId);
   }, [roomId, currentUser, roomData?.isGameOver, isLoading, fetchGameDetails]);
+
+  useEffect(() => {
+    if (roomData && roomData.currentNumber !== null && roomData.currentNumber !== previousCurrentNumberRef.current) {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        const utterance = new SpeechSynthesisUtterance(String(roomData.currentNumber));
+        // utterance.lang = 'en-US'; // Optional: set language, e.g., 'en-IN' for Indian English
+        window.speechSynthesis.speak(utterance);
+        console.log(`Client-side TTS announced: ${roomData.currentNumber}`);
+
+        // Call the AI flow for potential logging or other non-speech purposes
+        announceCalledNumber({ number: roomData.currentNumber })
+          .then(() => console.log(`AI flow 'announceCalledNumber' invoked for: ${roomData.currentNumber}`))
+          .catch(err => console.error("Error invoking announceCalledNumber AI flow:", err));
+      } else if (typeof window !== 'undefined' && !window.speechSynthesis) {
+        console.log("Client-side TTS (SpeechSynthesis) not available in this browser.");
+      }
+      previousCurrentNumberRef.current = roomData.currentNumber;
+    }
+  }, [roomData?.currentNumber]);
 
 
   const handleCallNextNumber = async () => {
@@ -124,7 +152,7 @@ export default function GameRoomPage() {
       const response = await fetch(`/api/rooms/${roomId}/call-number`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostId: currentUser?.username }) // Optional: backend can verify host
+        body: JSON.stringify({ hostId: currentUser?.username }) 
       });
       
       const result = await response.json();
@@ -133,12 +161,8 @@ export default function GameRoomPage() {
         setGameMessage(result.message || "Failed to call number.");
         toast({ title: "Error Calling Number", description: result.message, variant: "destructive"});
       } else {
-        setRoomData(result as Room); // Update with full room state from API
-        if (result.currentNumber) {
-           announceCalledNumber({ number: result.currentNumber })
-            .then(() => console.log(`Announced: ${result.currentNumber}`))
-            .catch(err => console.error("Error announcing number:", err));
-        }
+        // setRoomData will trigger the useEffect for announcement
+        setRoomData(result as Room); 
       }
     } catch (err) {
       console.error("Error calling next number:", err);
@@ -148,7 +172,6 @@ export default function GameRoomPage() {
       setIsCallingNumber(false);
     }
   };
-
 
   const handleNumberClick = (ticketIndex: number, numberValue: number, rowIndex: number, colIndex: number) => {
     if (!roomData || roomData.isGameOver || myTickets.length === 0) return;
@@ -171,8 +194,8 @@ export default function GameRoomPage() {
   };
 
   const handleClaimPrize = async (prizeType: PrizeType, ticketIndex: number) => {
-    if (!roomData || roomData.isGameOver || !currentUser || myTickets.length === 0) {
-      toast({ title: "Cannot Claim", description: "Game is over or you have no tickets.", variant: "destructive" });
+    if (!roomData || !currentUser || myTickets.length === 0) { // Game over check is handled by backend now
+      toast({ title: "Cannot Claim", description: "Room data missing, not logged in, or you have no tickets.", variant: "destructive" });
       return;
     }
     setGameMessage(null);
@@ -191,27 +214,22 @@ export default function GameRoomPage() {
         toast({ title: `Claim ${prizeType} Invalid!`, description: result.message, variant: "destructive" });
       } else {
         const updatedRoom: Room = result;
-        setRoomData(updatedRoom);
+        setRoomData(updatedRoom); // This will update the UI and potentially trigger game over logic
+
         const claimStatus = updatedRoom.prizeStatus[prizeType];
         let successMsg = `🔔 ${currentUser.username} has claimed ${prizeType}!`;
-        if (claimStatus?.claimedBy.length && claimStatus.claimedBy.length > 1) {
-            successMsg = `🔔 ${prizeType} claimed by ${claimStatus.claimedBy.join(' & ')}!`;
+        if (claimStatus?.claimedBy.length && claimStatus.claimedBy.includes(currentUser.username)) {
+            if (claimStatus.claimedBy.length > 1) {
+                 successMsg = `🔔 ${prizeType} claimed by ${claimStatus.claimedBy.map(id => updatedRoom.players.find(p=>p.id===id)?.name || id).join(' & ')}! (You are one of them!)`;
+            }
+        } else if (claimStatus?.claimedBy.length) { // Claimed by others but not you (should be rare if UI disables correctly)
+             successMsg = `🔔 ${prizeType} was claimed by ${claimStatus.claimedBy.map(id => updatedRoom.players.find(p=>p.id===id)?.name || id).join(' & ')}.`;
         }
+        
         setGameMessage(successMsg);
-        toast({ title: "Claim Successful!", description: successMsg, className: "bg-green-500 text-white" });
+        toast({ title: "Claim Submitted!", description: successMsg, className: "bg-green-500 text-white" });
 
-        if (updatedRoom.isGameOver && !gameMessage?.includes("Game Over")) {
-           const fhClaim = updatedRoom.prizeStatus[PRIZE_TYPES.FULL_HOUSE];
-           let gameOverMsg = "🎉 Game Over!";
-           if (fhClaim && fhClaim.claimedBy.length > 0) {
-             const winnerNames = fhClaim.claimedBy.map(winnerId => updatedRoom.players.find(p=>p.id === winnerId)?.name || winnerId).join(' & ');
-             gameOverMsg = `🎉 ${winnerNames} won Full House! Game Over!`;
-              if (fhClaim.timestamp) {
-                gameOverMsg += ` at ${new Date(fhClaim.timestamp).toLocaleTimeString()}`;
-              }
-           }
-           setGameMessage(gameOverMsg);
-        }
+        // Game over message is now handled by fetchGameDetails based on updatedRoom.isGameOver
       }
     } catch (err) {
       console.error(`Error claiming ${prizeType}:`, err);
@@ -220,13 +238,9 @@ export default function GameRoomPage() {
     }
   };
   
-
   const handlePlayAgain = () => {
-    // This should ideally trigger a room reset on backend and re-fetch.
-    // For now, simple client-side re-init might look broken if backend state isn't reset.
-    // Consider navigating to lobby to "start a new game" properly.
     router.push(`/room/${roomId}/lobby`); 
-    toast({title: "New Game", description: "Returning to lobby to start a new game."});
+    toast({title: "New Game", description: "Returning to lobby."});
   };
 
   const handleLeaveRoom = () => {
@@ -254,8 +268,7 @@ export default function GameRoomPage() {
   }
   
   if (!roomData || !currentUser) {
-    // This case should be rare if loading and error states are handled above
-    return <div className="text-center p-8">Preparing your game... If this persists, please try refreshing.</div>;
+    return <div className="text-center p-8">Preparing your game... If this persists, please try refreshing or ensure you are logged in.</div>;
   }
   
   const gameSettings: GameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
@@ -365,10 +378,10 @@ export default function GameRoomPage() {
         <div className="lg:col-span-2">
            <div className="max-w-xl mx-auto space-y-4">
             {gameMessage && ( 
-              <Alert variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") ? "destructive" : (gameMessage.includes("claimed") || gameMessage.includes("won") ? "default" : "default")} 
-                    className={cn((gameMessage.includes("claimed") || gameMessage.includes("won")) && !gameMessage.includes("Bogey") && !gameMessage.includes("not valid") ? "bg-green-100 dark:bg-green-900 border-green-500" : "")}>
-                {gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                <AlertTitle>{gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") ? "Update" : (gameMessage.includes("claimed") || gameMessage.includes("won") ? "Prize Update!" : "Game Message")}</AlertTitle>
+              <Alert variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") || gameMessage.includes("Error") ? "destructive" : (gameMessage.includes("claimed") || gameMessage.includes("won") || gameMessage.includes("Game Over") ? "default" : "default")} 
+                    className={cn((gameMessage.includes("claimed") || gameMessage.includes("won") || gameMessage.includes("Game Over")) && !gameMessage.includes("Bogey") && !gameMessage.includes("not valid") ? "bg-green-100 dark:bg-green-900 border-green-500" : "")}>
+                {gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") || gameMessage.includes("Error") ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                <AlertTitle>{gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed")  || gameMessage.includes("Error") ? "Update" : (gameMessage.includes("claimed") || gameMessage.includes("won") || gameMessage.includes("Game Over") ? "Game Update!" : "Game Message")}</AlertTitle>
                 <AlertDescription>{gameMessage}</AlertDescription>
               </Alert>
             )}
@@ -385,22 +398,18 @@ export default function GameRoomPage() {
                     if (hasPlayerClaimedThis) {
                         buttonText = `You Claimed ${prizeType}`;
                     } else  {
-                        buttonText = `${prizeType} (Claimed by others)`;
+                        buttonText = `${prizeType} (Claimed)`; // Simplified when others claimed
                     }
                   }
                   
                   const isFullHouseClaimedByAnyone = roomData.prizeStatus[PRIZE_TYPES.FULL_HOUSE] && roomData.prizeStatus[PRIZE_TYPES.FULL_HOUSE]!.claimedBy.length > 0;
-
-                  // For simplicity, we assume a player claims on one of their tickets.
-                  // A more complex UI might let them pick which ticket if they have multiples.
-                  // For now, using ticketIndex 0 for any claim action.
                   const ticketIndexForClaim = 0; 
 
                   return (
                     <Button
                       key={prizeType}
                       onClick={() => handleClaimPrize(prizeType, ticketIndexForClaim)}
-                      disabled={roomData.isGameOver || hasPlayerClaimedThis || (isFullHouseClaimedByAnyone && prizeType !== PRIZE_TYPES.FULL_HOUSE) }
+                      disabled={roomData.isGameOver || hasPlayerClaimedThis || (isPrizeClaimedByAnyone && prizeType !== PRIZE_TYPES.FULL_HOUSE && !claimInfo?.claimedBy.includes(currentUser.username)) } // More refined disable logic
                       variant={isPrizeClaimedByAnyone ? "secondary" : "default"}
                       className={cn("px-2 py-1 rounded-md text-xs sm:text-sm", 
                         !isPrizeClaimedByAnyone && prizeType.includes("Jaldi") ? "bg-green-500 hover:bg-green-600" :
@@ -418,7 +427,7 @@ export default function GameRoomPage() {
             )}
             
             <h2 className="text-xl font-semibold text-center">Your Tickets ({myTickets.length})</h2>
-             {myTickets.length === 0 && <p className="text-center text-muted-foreground">You are spectating or have no tickets in this game.</p>}
+             {myTickets.length === 0 && !roomData.isGameOver && <p className="text-center text-muted-foreground">You are spectating or have no tickets in this game.</p>}
             <ScrollArea className="max-h-[60vh] lg:max-h-none">
               <div className="flex flex-wrap justify-center gap-4">
               {myTickets.map((ticket, index) => (
@@ -429,7 +438,7 @@ export default function GameRoomPage() {
                   calledNumbers={roomData.calledNumbers}
                   markedNumbers={markedNumbers}
                   onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
-                  className="min-w-[280px] sm:min-w-[320px] md:min-w-[360px]"
+                  className="min-w-[280px] sm:min-w-[300px] md:min-w-[320px]" // Adjusted min-widths
                 />
               ))}
               </div>
@@ -447,7 +456,7 @@ export default function GameRoomPage() {
             </CardHeader>
             {!isPrizeInfoMinimized && (
             <CardContent>
-              <p className="text-sm text-muted-foreground">Potential prize money based on current game settings and total tickets.</p>
+              <p className="text-sm text-muted-foreground">Potential prize money based on total tickets.</p>
               <ul className="space-y-1 mt-2 text-sm">
                 {prizesForFormat.map(prize => {
                   const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
@@ -491,8 +500,12 @@ export default function GameRoomPage() {
               {roomData.currentNumber && ` (Last: ${roomData.currentNumber})`}
             </Button>
           )}
+           <Button onClick={handleLeaveRoom} variant="destructive" className="w-full mt-2" size="sm">
+                <LogOut className="mr-2 h-4 w-4" /> Leave Game
+           </Button>
         </div>
       </div>
     </div>
   );
 }
+
