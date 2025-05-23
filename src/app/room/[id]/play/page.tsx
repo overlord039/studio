@@ -56,7 +56,7 @@ export default function GameRoomPage() {
 
     if (isInitialLoad) {
       setIsLoading(true);
-      setError(null); // Clear previous error on new initial load
+      setError(null); 
     }
 
     try {
@@ -69,7 +69,8 @@ export default function GameRoomPage() {
           setError(errorData.message || `Failed to fetch room details: ${response.statusText}`);
         }
         setRoomData(null);
-        return; // Return early after setting error
+        if (isInitialLoad) setIsLoading(false);
+        return; 
       }
       const data: Room = await response.json();
       setRoomData(data);
@@ -81,7 +82,6 @@ export default function GameRoomPage() {
         const ticketsParam = searchParams.get('playerTickets');
         const numTickets = ticketsParam ? parseInt(ticketsParam, 10) : 0;
         if (numTickets === 0 && !data.isGameOver && data.isGameStarted) {
-            // Only set spectating message if not already showing a game over message
             if (!gameMessage?.toLocaleLowerCase().includes("game over")) {
                  setGameMessage("You are spectating. You don't have tickets in this game.");
             }
@@ -118,7 +118,7 @@ export default function GameRoomPage() {
         setIsLoading(false);
       }
     }
-  }, [roomId, currentUser, searchParams, toast]); // Removed gameMessage and roomData from dependencies
+  }, [roomId, currentUser, searchParams, toast]); 
 
   useEffect(() => {
     if (currentUser && roomId && !authLoading) {
@@ -127,7 +127,7 @@ export default function GameRoomPage() {
       setIsLoading(false);
       setError("Please log in to play or spectate.");
     }
-  }, [currentUser, roomId, authLoading, fetchGameDetails]); // fetchGameDetails is stable due to useCallback
+  }, [currentUser, roomId, authLoading, fetchGameDetails]); 
 
   useEffect(() => {
     if (!roomId || !currentUser || roomData?.isGameOver || isLoading) return;
@@ -135,7 +135,7 @@ export default function GameRoomPage() {
       if (!document.hidden) {
         fetchGameDetails(false);
       }
-    }, 3000); // Polling interval
+    }, 3000); 
     return () => clearInterval(intervalId);
   }, [roomId, currentUser, roomData?.isGameOver, isLoading, fetchGameDetails]);
 
@@ -168,21 +168,19 @@ export default function GameRoomPage() {
       const response = await fetch(`/api/rooms/${roomId}/call-number`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Optional: Pass hostId if your backend requires it for auth/validation
         body: JSON.stringify({ hostId: currentUser.username }) 
       });
       
       const result = await response.json();
 
       if (!response.ok) {
-        // Don't setGameMessage if a game over message is already displayed
         if (!gameMessage?.toLocaleLowerCase().includes("game over")) {
             setGameMessage(result.message || "Failed to call number.");
         }
         toast({ title: "Error Calling Number", description: result.message, variant: "destructive"});
       } else {
-        setRoomData(result as Room); // Backend returns the full updated room state
-         if (result.message && !gameMessage?.toLocaleLowerCase().includes("game over")) { // e.g. "All numbers called"
+        setRoomData(result as Room); 
+         if (result.message && !gameMessage?.toLocaleLowerCase().includes("game over")) { 
             setGameMessage(result.message);
         }
       }
@@ -195,7 +193,7 @@ export default function GameRoomPage() {
     } finally {
       setIsCallingNumber(false);
     }
-  }, [roomId, currentUser, isCurrentUserHost, toast, isCallingNumber, gameMessage]); // Added gameMessage to deps
+  }, [roomId, currentUser?.username, isCurrentUserHost, toast, isCallingNumber, gameMessage]); 
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout | undefined;
@@ -203,7 +201,7 @@ export default function GameRoomPage() {
     if (isCurrentUserHost && roomData && roomData.isGameStarted && !roomData.isGameOver && !isCallingNumber) {
       intervalId = setInterval(() => {
         handleCallNextNumber();
-      }, 3000); // Auto-call interval
+      }, 5000); // Updated interval to 5 seconds
     }
 
     return () => {
@@ -217,7 +215,7 @@ export default function GameRoomPage() {
   const handleNumberClick = (ticketIndex: number, numberValue: number, rowIndex: number, colIndex: number) => {
     if (!roomData || roomData.isGameOver || myTickets.length === 0) return;
     const key = `${ticketIndex}-${rowIndex}-${colIndex}`;
-    if (markedNumbers.has(key)) return; // Already marked, do nothing
+    if (markedNumbers.has(key)) return; 
 
     if (!roomData.calledNumbers.includes(numberValue)) {
       toast({
@@ -240,7 +238,6 @@ export default function GameRoomPage() {
       return;
     }
     
-    // Don't clear gameMessage if it's a game over message
     if (!gameMessage?.toLocaleLowerCase().includes("game over")) {
         setGameMessage(null);
     }
@@ -261,38 +258,32 @@ export default function GameRoomPage() {
         toast({ title: `Claim ${prizeType} Invalid!`, description: result.message, variant: "destructive" });
       } else {
         const updatedRoom: Room = result;
-        setRoomData(updatedRoom); // Update with the new state from backend
+        setRoomData(updatedRoom); 
 
         const claimStatus = updatedRoom.prizeStatus[prizeType];
-        let successMsg = `🔔 ${currentUser.username} has claimed ${prizeType}!`; // Default for single claim by current user
+        let successMsg = `🔔 ${currentUser.username} has claimed ${prizeType}!`; 
 
         if (claimStatus?.claimedBy.includes(currentUser.username)) {
             const allClaimantsNames = claimStatus.claimedBy.map(id => updatedRoom.players.find(p=>p.id===id)?.name || id);
             if (allClaimantsNames.length > 1) {
                  successMsg = `🔔 ${prizeType} claimed by ${allClaimantsNames.join(' & ')}! (You are one of them!)`;
             } else if (allClaimantsNames.length === 1 && allClaimantsNames[0] !== currentUser.username) {
-                // This case means prize was claimed by someone else, but API returned OK for current user's attempt
-                // This should ideally be handled by backend by not returning OK if current user's claim was not the one that secured it (e.g. race condition)
-                // For now, let's assume backend gives updatedRoom where prize is already claimed by another.
                 successMsg = `🔔 ${prizeType} was already claimed by ${allClaimantsNames.join(' & ')}.`;
             }
 
 
             if (prizeType === PRIZE_TYPES.FULL_HOUSE) {
-                // Auto-awarding logic for lines should be reflected in `updatedRoom.prizeStatus` from backend
                 let autoAwardMsg = "";
                 const linePrizes: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
                 linePrizes.forEach(linePrize => {
                     const lineClaimStatus = updatedRoom.prizeStatus[linePrize];
-                    // Check if this player was awarded this line prize as part of FH auto-award
                     if (lineClaimStatus?.claimedBy.includes(currentUser.username) && 
-                        roomData?.prizeStatus[linePrize]?.claimedBy.includes(currentUser.username) === false) { // check if it was newly awarded
+                        roomData?.prizeStatus[linePrize]?.claimedBy.includes(currentUser.username) === false) { 
                         autoAwardMsg += `\nAlso awarded ${linePrize}.`;
                     }
                 });
                 if (autoAwardMsg) successMsg += autoAwardMsg;
 
-                // Set game over message from the final room state
                 const fhFinalClaim = updatedRoom.prizeStatus[PRIZE_TYPES.FULL_HOUSE];
                 let finalGameOverMsg = "🎉 Game Over!";
                  if (fhFinalClaim && fhFinalClaim.claimedBy.length > 0) {
@@ -303,21 +294,19 @@ export default function GameRoomPage() {
                         finalGameOverMsg += ` at ${claimTimestamp.toLocaleTimeString()}`;
                     }
                 }
-                setGameMessage(finalGameOverMsg); // This will be the main message
+                setGameMessage(finalGameOverMsg); 
 
             } else {
                  if (!gameMessage?.toLocaleLowerCase().includes("game over")) {
                     setGameMessage(successMsg);
                  }
             }
-        } else if (claimStatus?.claimedBy.length) { // Claimed by someone else
+        } else if (claimStatus?.claimedBy.length) { 
              successMsg = `🔔 ${prizeType} was claimed by ${claimStatus.claimedBy.map(id => updatedRoom.players.find(p=>p.id===id)?.name || id).join(' & ')}.`;
              if (!gameMessage?.toLocaleLowerCase().includes("game over")) {
                 setGameMessage(successMsg);
              }
         } else {
-            // Claim was successful, but current user is not in claimedBy list (should not happen with current backend logic if claim was for this user)
-            // Or prize is still available - show the basic success message for the current user
             if (!gameMessage?.toLocaleLowerCase().includes("game over")) {
                 setGameMessage(successMsg);
             }
@@ -335,8 +324,6 @@ export default function GameRoomPage() {
   };
 
   const handlePlayAgain = () => {
-    // Navigate back to lobby. Backend needs to handle reset if game is to be truly re-playable.
-    // For client-side, this just re-routes. Lobby will fetch fresh state.
     router.push(`/room/${roomId}/lobby`);
     toast({title: "New Game Setup", description: "Returning to lobby."});
   };
@@ -499,7 +486,7 @@ export default function GameRoomPage() {
                   const hasPlayerClaimedThis = claimInfo?.claimedBy.includes(currentUser.username);
                   const isPrizeClaimedByAnyone = claimInfo && claimInfo.claimedBy.length > 0;
 
-                  let buttonText = prizeType; // Default text is just the prize name
+                  let buttonText = prizeType; 
                   if (isPrizeClaimedByAnyone) {
                     if (hasPlayerClaimedThis) {
                         buttonText = `You Claimed ${prizeType}`;
@@ -509,10 +496,7 @@ export default function GameRoomPage() {
                     }
                   }
 
-                  // For Jaldi 5, player can claim on any of their tickets.
-                  // For Lines/Full House, player claims on a specific ticket (assuming they click a general button and backend checks all their tickets).
-                  // Let's simplify client to pass ticketIndex 0 for now, backend can iterate player's tickets if needed.
-                  const ticketIndexForClaim = 0; // Or derive this if player has UI to pick ticket for claim
+                  const ticketIndexForClaim = 0; 
 
                   return (
                     <Button
@@ -522,7 +506,7 @@ export default function GameRoomPage() {
                         roomData.isGameOver || 
                         hasPlayerClaimedThis || 
                         (isPrizeClaimedByAnyone && prizeType !== PRIZE_TYPES.FULL_HOUSE && !claimInfo?.claimedBy.includes(currentUser.username)) ||
-                        (isPrizeClaimedByAnyone && prizeType === PRIZE_TYPES.FULL_HOUSE) // Disable FH if anyone claimed
+                        (isPrizeClaimedByAnyone && prizeType === PRIZE_TYPES.FULL_HOUSE) 
                       }
                       variant={isPrizeClaimedByAnyone ? "secondary" : "default"}
                       className={cn("px-2 py-1 rounded-md text-xs sm:text-sm",
