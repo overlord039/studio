@@ -12,7 +12,11 @@ import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES } from "@/lib/constan
 import React, { useEffect, useState } from "react";
 
 // Mock data - replace with actual data fetching and state management
-const initialHostPlayer: Player = { id: "hostUser123", name: "You (Host)", isHost: true, ticketsToBuy: 1 };
+const mockPlayers: Player[] = [
+  { id: "hostUser123", name: "You (Host)", isHost: true, ticketsToBuy: 1 },
+  { id: "player2", name: "Alice", ticketsToBuy: 1 },
+  { id: "player3", name: "Bob", ticketsToBuy: 1 },
+];
 
 const MAX_TICKETS_PER_PLAYER = 6;
 
@@ -24,8 +28,8 @@ export default function LobbyPage() {
   const roomId = routeParams.id as string;
 
   const [gameSettings, setGameSettings] = useState<GameSettings | null>(null);
-  const [players, setPlayers] = useState<Player[]>([initialHostPlayer]); // Start with only the host
-  const [hostTicketSelection, setHostTicketSelection] = useState<number>(initialHostPlayer.ticketsToBuy || 1);
+  const [players, setPlayers] = useState<Player[]>(mockPlayers);
+  const [hostTicketSelection, setHostTicketSelection] = useState<number>(mockPlayers.find(p => p.isHost)?.ticketsToBuy || 1);
 
   useEffect(() => {
     const ticketPrice = parseInt(searchParams.get('ticketPrice') || '10', 10) as GameSettings['ticketPrice'];
@@ -36,7 +40,6 @@ export default function LobbyPage() {
       setGameSettings({ ticketPrice, lobbySize, prizeFormat });
     }
      // In a real app, you'd fetch player list for the room or manage this via websockets
-     // For this mock, we just initialize with the host.
   }, [searchParams]);
 
   const hostPlayer = players.find(p => p.isHost);
