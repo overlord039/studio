@@ -31,6 +31,14 @@ const AVAILABLE_PRIZES: PrizeType[] = [
   PRIZE_TYPES.FULL_HOUSE,
 ];
 
+const MOCK_OTHER_PLAYERS_INFO = [
+  { name: "Player2", ticketsBought: 3 },
+  { name: "Player3", ticketsBought: 1 },
+  { name: "Player4", ticketsBought: 2 },
+  { name: "Player5", ticketsBought: 1 },
+  { name: "Player6", ticketsBought: 4 },
+];
+
 
 export default function GameRoomPage() {
   const params = useParams();
@@ -187,9 +195,6 @@ export default function GameRoomPage() {
         let autoAwardedPrizeNames: string[] = [];
 
         for (const linePrize of linePrizesToAutoCheck) {
-          // Check if line prize is unclaimed by anyone OR if current player is not already in winners list for this line
-          // (This allows auto-awarding if the player forgot, even if others might have claimed it,
-          //  but the prompt says "not yet claimed by anyone else" for auto-award. So we stick to that.)
           if ((updatedClaimedPrizes[linePrize]?.length || 0) === 0) { 
             const lineNumbers = getNumbersForPrizePattern(fhWinningTicket, linePrize);
             
@@ -235,8 +240,6 @@ export default function GameRoomPage() {
     const getRowNumbers = (rowIndex: number) => ticket[rowIndex].filter(n => n !== null) as number[];
     switch(prize) {
       case PRIZE_TYPES.JALDI_5: 
-        // For Jaldi 5, we need all numbers on the ticket to check against marked numbers for the first 5.
-        // The actual check for "first 5 marked" is implicit in how checkWinningCondition handles it.
         return ticket.flat().filter(n => n !== null) as number[];
       case PRIZE_TYPES.TOP_LINE: return getRowNumbers(0);
       case PRIZE_TYPES.MIDDLE_LINE: return getRowNumbers(1);
@@ -244,7 +247,7 @@ export default function GameRoomPage() {
       case PRIZE_TYPES.FULL_HOUSE: 
         return ticket.flat().filter(n => n !== null) as number[];
       default: 
-        const exhaustiveCheck: never = prize; // Ensures all prize types are handled
+        const exhaustiveCheck: never = prize; 
         console.warn("Unknown prize type in getNumbersForPrizePattern:", exhaustiveCheck);
         return [];
     }
@@ -358,7 +361,7 @@ export default function GameRoomPage() {
         })}
       </div>
       
-      {gameMessage && !isGameOver && ( // Only show this game message if game is not over, FH has its own display
+      {gameMessage && !isGameOver && ( 
         <Alert variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") ? "destructive" : (gameMessage.includes("claimed") ? "default" : "default")} 
                className={cn(gameMessage.includes("claimed") && !gameMessage.includes("Bogey") && !gameMessage.includes("not valid") ? "bg-green-100 dark:bg-green-900 border-green-500" : "")}>
           {gameMessage.includes("Bogey") || gameMessage.includes("not valid") ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
@@ -418,10 +421,9 @@ export default function GameRoomPage() {
           <Card>
             <CardHeader><CardTitle className="text-lg">Prize Info</CardTitle></CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Potential prize money based on current game settings. Actual distribution depends on claims.</p>
+              <p className="text-sm text-muted-foreground">Potential prize money based on current game settings.</p>
               <ul className="space-y-1 mt-2 text-sm">
                 {AVAILABLE_PRIZES.map(prize => {
-                  // This is a mock calculation, actual prize money needs to be calculated based on total pool and percentages
                   const mockPrizeMoney = (MOCK_TOTAL_MONEY * ( (prize === PRIZE_TYPES.JALDI_5 && 0.1) || (prize.includes("Line") && 0.15) || (prize === PRIZE_TYPES.FULL_HOUSE && 0.45) || 0 ) );
                   return (
                     <li key={prize}>{prize}: ₹{mockPrizeMoney.toFixed(0)}</li>
@@ -433,11 +435,16 @@ export default function GameRoomPage() {
           <Card>
             <CardHeader><CardTitle className="text-lg flex items-center"><Users className="mr-2 h-5 w-5 text-primary"/>Other Players</CardTitle></CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Details about other players' progress or status would appear here.</p>
-              <ul className="space-y-1 mt-2 text-sm">
-                <li>Player2: 3 tickets</li>
-                <li>Player3: 1 ticket (Jaldi 5 claimed)</li>
-              </ul>
+              <ScrollArea className="h-40">
+                <ul className="space-y-1 mt-2 text-sm">
+                  {MOCK_OTHER_PLAYERS_INFO.map((player, index) => (
+                    <li key={index} className="flex justify-between items-center">
+                      <span>{player.name}</span>
+                      <span className="text-muted-foreground">{player.ticketsBought} ticket{player.ticketsBought === 1 ? '' : 's'}</span>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
             </CardContent>
           </Card>
         </div>
@@ -451,3 +458,4 @@ export default function GameRoomPage() {
     </div>
   );
 }
+
