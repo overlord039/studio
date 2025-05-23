@@ -193,7 +193,7 @@ export default function GameRoomPage() {
     } finally {
       setIsCallingNumber(false);
     }
-  }, [roomId, currentUser?.username, isCurrentUserHost, toast, isCallingNumber, gameMessage]); 
+  }, [roomId, currentUser?.username, isCurrentUserHost, toast, isCallingNumber]); 
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout | undefined;
@@ -209,7 +209,7 @@ export default function GameRoomPage() {
         clearInterval(intervalId);
       }
     };
-  }, [isCurrentUserHost, roomData?.isGameStarted, roomData?.isGameOver, isCallingNumber, handleCallNextNumber, roomData]);
+  }, [isCurrentUserHost, roomData, isCallingNumber, handleCallNextNumber]);
 
 
   const handleNumberClick = (ticketIndex: number, numberValue: number, rowIndex: number, colIndex: number) => {
@@ -391,10 +391,12 @@ export default function GameRoomPage() {
                   const claimInfo = roomData.prizeStatus[prize];
                   let prizeStatusText = "Not Claimed";
                   let winnerNames = "";
+                  let isSplit = false;
                   if (claimInfo && claimInfo.claimedBy.length > 0) {
                      winnerNames = claimInfo.claimedBy.map(id => roomData.players.find(p=>p.id === id)?.name || id).join(', ');
                      prizeStatusText = `Claimed by ${winnerNames}`;
                      if (claimInfo.claimedBy.length > 1) {
+                         isSplit = true;
                          prizeStatusText += ` (Split ${claimInfo.claimedBy.length} ways)`;
                      }
                   }
