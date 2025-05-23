@@ -81,7 +81,7 @@ export default function GameRoomPage() {
     if (isGameOver || calledNumbers.length >= 90) return;
     const interval = setInterval(() => {
       callNextNumber();
-    }, 5000); // Call a new number every 5 seconds
+    }, 3000); // Call a new number every 3 seconds
     return () => clearInterval(interval);
   }, [callNextNumber, calledNumbers.length, isGameOver]);
 
@@ -326,3 +326,4 @@ export default function GameRoomPage() {
     </div>
   );
 }
+
