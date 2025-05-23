@@ -17,7 +17,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
-// import { login } from '@/lib/actions'; // Placeholder for actual server action
+import { useAuth } from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -26,6 +28,10 @@ const formSchema = z.object({
 
 export default function LoginForm() {
   const { toast } = useToast();
+  const { login } = useAuth();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -35,15 +41,21 @@ export default function LoginForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    // const result = await login(values); // Replace with actual login call
-    // For now, simulate login
-    console.log("Login attempt:", values);
+    setIsLoading(true);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Mock login: In a real app, you'd verify credentials with a backend.
+    // For this mock, we'll use the email (or part of it) as the username.
+    const username = values.email.split('@')[0]; 
+    login({ username });
+
     toast({
-      title: "Login Submitted (Mock)",
-      description: "In a real app, this would attempt to log you in.",
+      title: "Login Successful (Mock)",
+      description: `Welcome back, ${username}!`,
     });
-    // Simulate successful login for navigation (remove in real app)
-    // window.location.href = '/profile'; 
+    router.push('/profile'); 
+    setIsLoading(false);
   }
 
   return (
@@ -62,7 +74,7 @@ export default function LoginForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="you@example.com" {...field} />
+                    <Input placeholder="you@example.com" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -75,14 +87,14 @@ export default function LoginForm() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" size="lg">
-              Login
+            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+              {isLoading ? "Logging in..." : "Login"}
             </Button>
           </form>
         </Form>

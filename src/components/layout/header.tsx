@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Home, User, LogIn, UserPlus, Moon, Sun } from 'lucide-react';
+import { Home, User, LogIn, UserPlus, Moon, Sun, LogOut as LogOutIcon } from 'lucide-react'; // Added LogOutIcon
 import { useTheme } from "next-themes";
 import {
   DropdownMenu,
@@ -11,20 +11,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-// Mock authentication state
-// In a real app, this would come from context or a session
-const useUser = () => {
-  // const [user, setUser] = React.useState(null); // Replace with actual auth state
-  // For now, let's assume a user is logged in for demonstration
-  // return { user: { username: "DemoUser" }, loading: false };
-  // Or no user logged in:
-  return { user: null, loading: false };
-};
-
+import { useAuth } from '@/contexts/auth-context';
+import React from 'react';
 
 export default function Header() {
-  const { user } = useUser(); // Replace with actual user state
+  const { currentUser, logout, loading } = useAuth();
   const { setTheme } = useTheme();
 
   return (
@@ -33,33 +24,35 @@ export default function Header() {
         <Link href="/" className="text-2xl font-bold tracking-tight">
           HousieHub
         </Link>
-        <nav className="flex items-center space-x-4">
+        <nav className="flex items-center space-x-2 md:space-x-4">
           <Link href="/" passHref>
             <Button variant="ghost" className="text-primary-foreground hover:bg-primary/80">
-              <Home className="mr-2 h-4 w-4" /> Home
+              <Home className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">Home</span>
             </Button>
           </Link>
-          {user ? (
+          {loading ? (
+            <div className="h-8 w-20 bg-primary/50 animate-pulse rounded-md"></div> // Skeleton loader
+          ) : currentUser ? (
             <>
               <Link href="/profile" passHref>
                 <Button variant="ghost" className="text-primary-foreground hover:bg-primary/80">
-                  <User className="mr-2 h-4 w-4" /> Profile
+                  <User className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">Profile</span>
                 </Button>
               </Link>
-              <Button variant="ghost" className="text-primary-foreground hover:bg-primary/80" onClick={() => alert('Logout clicked')}>
-                Logout
+              <Button variant="ghost" className="text-primary-foreground hover:bg-primary/80" onClick={logout}>
+                <LogOutIcon className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">Logout</span>
               </Button>
             </>
           ) : (
             <>
               <Link href="/auth/login" passHref>
                 <Button variant="ghost" className="text-primary-foreground hover:bg-primary/80">
-                  <LogIn className="mr-2 h-4 w-4" /> Login
+                  <LogIn className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">Login</span>
                 </Button>
               </Link>
               <Link href="/auth/register" passHref>
                 <Button variant="ghost" className="text-primary-foreground hover:bg-primary/80">
-                  <UserPlus className="mr-2 h-4 w-4" /> Register
+                  <UserPlus className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">Register</span>
                 </Button>
               </Link>
             </>
