@@ -18,7 +18,7 @@ export default function LobbyPage() {
   const { toast } = useToast();
   const router = useRouter();
   const routeParams = useParams();
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams(); // Keep at top level
   const roomId = routeParams.id as string;
   const { currentUser, loading: authLoading } = useAuth();
 
@@ -42,8 +42,8 @@ export default function LobbyPage() {
       if (!response.ok) {
         if (response.status === 404) {
           setError("Room not found. It might have expired or never existed.");
-          setRoomData(null); // Explicitly set roomData to null
-          setIsLoading(false); // Stop loading
+          setRoomData(null); 
+          setIsLoading(false); 
           return; 
         }
         let errorData;
@@ -70,8 +70,6 @@ export default function LobbyPage() {
       if (me && typeof me.ticketsToBuy === 'number') {
         setMyTicketSelection(me.ticketsToBuy);
       } else if (currentUser) {
-        // If user is present but not in displayPlayers (e.g. after a fresh fetch before auto-join)
-        // or if their ticketsToBuy is undefined, default to 1.
         setMyTicketSelection(1);
       }
 
@@ -82,7 +80,7 @@ export default function LobbyPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [roomId, currentUser, displayPlayers]); // Added currentUser and displayPlayers to dependencies
+  }, [roomId, currentUser, displayPlayers]); 
 
   useEffect(() => {
     fetchRoomDetails();
@@ -165,11 +163,9 @@ export default function LobbyPage() {
           });
           if (response.ok) {
             const updatedRoomData: Room = await response.json();
-            setRoomData(updatedRoomData); // This will re-trigger the effect if roomData is a dependency
+            setRoomData(updatedRoomData); 
             
-            // Update displayPlayers based on new roomData.players
             const newDisplayPlayers = updatedRoomData.players.map(backendPlayer => {
-                // Preserve existing ticketsToBuy if player was already in displayPlayers (e.g. host)
                 const existingFrontendPlayer = displayPlayers.find(dp => dp.id === backendPlayer.id);
                 return { 
                     ...backendPlayer, 
@@ -179,7 +175,7 @@ export default function LobbyPage() {
             setDisplayPlayers(newDisplayPlayers);
 
             const me = newDisplayPlayers.find(p => p.id === currentUser.username);
-            if (me) { // Set myTicketSelection based on the (potentially new) displayPlayers list
+            if (me) { 
                 setMyTicketSelection(me.ticketsToBuy || 1);
             }
 
@@ -187,28 +183,23 @@ export default function LobbyPage() {
           } else {
             const errorData = await response.json();
             const errorMessage = errorData.message || "Failed to automatically join the room.";
-            // Only show toast for critical join errors, not for expected ones like "Room full" or "Game started"
             if (response.status !== 400 || (errorMessage !== "Room is full." && errorMessage !== "Game has already started." && errorMessage !== "Player already in room.")) {
                  toast({ title: "Could Not Join", description: errorMessage, variant: "destructive"});
             }
              if (errorMessage === "Room is full." || errorMessage === "Game has already started.") {
-                // Set UI error for these cases as they are terminal for joining
                 setError(`Cannot join: ${errorMessage}`);
             }
           }
         } catch (err) {
           console.error("Error auto-joining room:", err);
-          // Avoid setting general error state if it was a specific non-join like "Room full"
         }
       }
     };
-    // Only attempt to join if not loading, no current error, roomData exists, and currentUser is identified
     if(!isLoading && !error && roomData && currentUser) { 
         joinRoomIfNeeded();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps 
-  }, [roomData, currentUser, authLoading, roomId, toast, isLoading, error]); // Removed displayPlayers from here to avoid potential loops on its update. 
-                                                                           // Auto-join should primarily depend on roomData from server and currentUser.
+  }, [roomData, currentUser, authLoading, roomId, toast, isLoading, error]); 
 
 
   if (isLoading || authLoading) {
@@ -242,15 +233,15 @@ export default function LobbyPage() {
     );
   }
   
-  // Extract search param values once
+  // Derive gameSettings only after roomData is confirmed to be available
   const ticketPriceParam = searchParams.get('ticketPrice');
   const lobbySizeParam = searchParams.get('lobbySize');
   const prizeFormatParam = searchParams.get('prizeFormat');
 
   const gameSettings: GameSettings = {
-    ticketPrice: roomData.settings.ticketPrice || parseInt(ticketPriceParam || String(DEFAULT_TICKET_PRICE), 10) as GameSettings['ticketPrice'],
-    lobbySize: roomData.settings.lobbySize || parseInt(lobbySizeParam || String(DEFAULT_LOBBY_SIZE), 10),
-    prizeFormat: roomData.settings.prizeFormat || (prizeFormatParam || DEFAULT_PRIZE_FORMAT) as GameSettings['prizeFormat'],
+    ticketPrice: roomData.settings?.ticketPrice || parseInt(ticketPriceParam || String(DEFAULT_TICKET_PRICE), 10) as GameSettings['ticketPrice'],
+    lobbySize: roomData.settings?.lobbySize || parseInt(lobbySizeParam || String(DEFAULT_LOBBY_SIZE), 10),
+    prizeFormat: (roomData.settings?.prizeFormat || prizeFormatParam || DEFAULT_PRIZE_FORMAT) as GameSettings['prizeFormat'],
   };
 
   const currentPrizeFormat = gameSettings.prizeFormat;
@@ -397,10 +388,10 @@ export default function LobbyPage() {
               <Play className="mr-2 h-5 w-5" /> Go to Game
             </Button>
           )}
-           {roomData.isGameStarted && !currentPlayerInRoom && ( // Spectator case
+           {roomData.isGameStarted && !currentPlayerInRoom && ( 
              <Button 
                 onClick={() => {
-                    router.push(`/room/${roomId}/play?playerTickets=0`); // Spectators get 0 tickets
+                    router.push(`/room/${roomId}/play?playerTickets=0`); 
                 }} 
                 size="lg" 
                 className="w-full mt-4"
@@ -413,6 +404,8 @@ export default function LobbyPage() {
     </div>
   );
 }
+    
+
     
 
     
