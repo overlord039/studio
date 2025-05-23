@@ -8,7 +8,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import HousieTicket from '@/components/game/housie-ticket';
 import LiveNumberBoard from '@/components/game/live-number-board';
 import CalledNumberDisplay from '@/components/game/called-number-display';
-import type { HousieTicketGrid, PrizeType, Room } from '@/types';
+import type { HousieTicketGrid, PrizeType, Room, BackendPlayerInRoom } from '@/types';
 import { PRIZE_TYPES, type GameSettings } from '@/types';
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -18,6 +18,33 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, NUMBERS_RANGE_MAX } from '@/lib/constants';
+
+// Memoized component for rendering the prize status list
+const PrizeStatusList = React.memo(({ prizeStatus, prizesForFormat, players }: {
+  prizeStatus: Room['prizeStatus'];
+  prizesForFormat: PrizeType[];
+  players: BackendPlayerInRoom[];
+}) => {
+  return (
+    <ul className="space-y-1 text-sm">
+      {prizesForFormat.map(prize => {
+        const claimInfo = prizeStatus[prize];
+        let statusText = "Available";
+        if (claimInfo && claimInfo.claimedBy.length > 0) {
+          const winnerNames = claimInfo.claimedBy.map(id => players.find(p => p.id === id)?.name || id).join(', ');
+          statusText = `Claimed by ${winnerNames}`;
+        }
+        return (
+          <li key={prize} className={cn("flex justify-between", claimInfo && claimInfo.claimedBy.length > 0 ? "text-green-600 dark:text-green-400 font-semibold" : "text-muted-foreground")}>
+            <span>{prize}:</span>
+            <span>{statusText}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+});
+PrizeStatusList.displayName = 'PrizeStatusList';
 
 
 export default function GameRoomPage() {
@@ -42,7 +69,7 @@ export default function GameRoomPage() {
   const [isCallingNumber, setIsCallingNumber] = useState(false);
 
   const previousCurrentNumberRef = useRef<number | null>(null);
-  const roomDataRef = useRef(roomData); // Ref to keep roomData up-to-date for interval callbacks
+  const roomDataRef = useRef(roomData); 
 
   useEffect(() => {
     roomDataRef.current = roomData;
@@ -112,12 +139,9 @@ export default function GameRoomPage() {
 
     } catch (err) {
       console.error("Error fetching game details:", err);
-      if (isInitialLoad || !roomData) { 
+      if (isInitialLoad || !roomDataRef.current) { 
         setError(`Failed to fetch game details: ${(err as Error).message}`);
         setRoomData(null); 
-      } else {
-        // For polling errors, maybe just log or show a transient toast, don't wipe roomData
-        // toast({ title: "Game Update Failed", description: "Could not refresh game data.", variant: "destructive", duration: 3000});
       }
     } finally {
       if (isInitialLoad) {
@@ -145,7 +169,6 @@ export default function GameRoomPage() {
     return () => clearInterval(intervalId);
   }, [roomId, currentUser, roomData?.isGameOver, isLoading, fetchGameDetails]);
 
-  // Centralized Speech Synthesis for new numbers
   useEffect(() => {
     if (roomData && roomData.currentNumber !== null && roomData.currentNumber !== previousCurrentNumberRef.current) {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -155,8 +178,6 @@ export default function GameRoomPage() {
         announceCalledNumber({ number: roomData.currentNumber })
           .then(() => console.log(`AI flow 'announceCalledNumber' invoked for: ${roomData.currentNumber}`))
           .catch(err => console.error("Error invoking announceCalledNumber AI flow:", err));
-      } else if (typeof window !== 'undefined' && !window.speechSynthesis) {
-        // console.log("Client-side TTS (SpeechSynthesis) not available in this browser.");
       }
       previousCurrentNumberRef.current = roomData.currentNumber;
     }
@@ -199,9 +220,8 @@ export default function GameRoomPage() {
     } finally {
       setIsCallingNumber(false);
     }
-  }, [roomId, currentUser?.username, isCurrentUserHost, toast, isCallingNumber, gameMessage]); 
+  }, [roomId, currentUser?.username, isCurrentUserHost, toast, isCallingNumber]); 
 
-  // Automated Number Calling by Host
   useEffect(() => {
     let intervalId: NodeJS.Timeout | undefined;
     const canAutoCall = isCurrentUserHost && roomDataRef.current?.isGameStarted && !roomDataRef.current?.isGameOver && !isCallingNumber;
@@ -293,7 +313,7 @@ export default function GameRoomPage() {
                 const linePrizes: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
                 linePrizes.forEach(linePrize => {
                     const lineClaimStatus = updatedRoom.prizeStatus[linePrize];
-                    const oldLineClaimStatus = roomData?.prizeStatus[linePrize];
+                    const oldLineClaimStatus = roomData?.prizeStatus[linePrize]; // Compare with previous state if needed
                     if (lineClaimStatus?.claimedBy.includes(currentUser.username) && 
                         (!oldLineClaimStatus || !oldLineClaimStatus.claimedBy.includes(currentUser.username))) { 
                         autoAwardMsg += `\nAlso awarded ${linePrize}.`;
@@ -465,22 +485,11 @@ export default function GameRoomPage() {
                 <p className="text-sm text-muted-foreground">Loading prize status...</p>
               ) : (
                 <ScrollArea className="h-40">
-                  <ul className="space-y-1 text-sm">
-                  {prizesForFormat.map(prize => {
-                    const claimInfo = roomData.prizeStatus[prize];
-                    let statusText = "Available";
-                    if (claimInfo && claimInfo.claimedBy.length > 0) {
-                      const winnerNames = claimInfo.claimedBy.map(id => roomData.players.find(p=>p.id === id)?.name || id).join(', ');
-                      statusText = `Claimed by ${winnerNames}`;
-                    }
-                    return (
-                    <li key={prize} className={cn("flex justify-between", claimInfo && claimInfo.claimedBy.length > 0 ? "text-green-600 dark:text-green-400 font-semibold" : "text-muted-foreground")}>
-                      <span>{prize}:</span>
-                      <span>{statusText}</span>
-                    </li>
-                    );
-                  })}
-                  </ul>
+                  <PrizeStatusList
+                    prizeStatus={roomData.prizeStatus}
+                    prizesForFormat={prizesForFormat}
+                    players={roomData.players}
+                  />
                 </ScrollArea>
               )}
             </CardContent>
@@ -630,5 +639,3 @@ export default function GameRoomPage() {
   );
 }
 
-
-    
