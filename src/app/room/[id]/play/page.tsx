@@ -10,7 +10,7 @@ import HousieTicket from '@/components/game/housie-ticket';
 import LiveNumberBoard from '@/components/game/live-number-board';
 import CalledNumberDisplay from '@/components/game/called-number-display';
 import type { HousieTicketGrid, PrizeType } from '@/types';
-import { PRIZE_TYPES } from '@/types'; // Import the PRIZE_TYPES object
+import { PRIZE_TYPES } from '@/types'; 
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +23,6 @@ const MOCK_USERNAME = "Player123"; // Represents the current user
 const MOCK_TOTAL_MONEY = 2000; // Example total prize pool
 const MOCK_PLAYER_COUNT = 6; // Example player count
 
-// Use the PRIZE_TYPES object to define available prizes
 const AVAILABLE_PRIZES: PrizeType[] = [
   PRIZE_TYPES.JALDI_5,
   PRIZE_TYPES.TOP_LINE,
@@ -43,16 +42,16 @@ export default function GameRoomPage() {
   const [calledNumbers, setCalledNumbers] = useState<number[]>([]);
   const [currentNumber, setCurrentNumber] = useState<number | null>(null);
   const [markedNumbers, setMarkedNumbers] = useState<Set<string>>(new Set());
-  const [claimedPrizes, setClaimedPrizes] = useState<Record<PrizeType, string[] | null>>({});
+  const [claimedPrizes, setClaimedPrizes] = useState<Record<PrizeType, string[]>>({});
   const [isGameOver, setIsGameOver] = useState(false);
   const [gameMessage, setGameMessage] = useState<string | null>(null);
   const [fullHouseWinTime, setFullHouseWinTime] = useState<Date | null>(null);
 
   const initializeGame = useCallback(() => {
-    setTickets([generateImprovedHousieTicket(), generateImprovedHousieTicket()]); // User gets 2 tickets
-    const initialClaims: Record<PrizeType, string[] | null> = {} as Record<PrizeType, string[] | null>;
+    setTickets([generateImprovedHousieTicket(), generateImprovedHousieTicket()]); 
+    const initialClaims: Record<PrizeType, string[]> = {} as Record<PrizeType, string[]>;
     AVAILABLE_PRIZES.forEach(prize => {
-      initialClaims[prize] = null; // Initialize with null, meaning no one has claimed yet
+      initialClaims[prize] = []; 
     });
     setClaimedPrizes(initialClaims);
     setCalledNumbers([]);
@@ -93,7 +92,7 @@ export default function GameRoomPage() {
     if (isGameOver || calledNumbers.length >= 90) return;
     const interval = setInterval(() => {
       callNextNumber();
-    }, 3000); // 3-second interval
+    }, 3000); 
     return () => clearInterval(interval);
   }, [callNextNumber, calledNumbers.length, isGameOver]);
 
@@ -101,7 +100,7 @@ export default function GameRoomPage() {
   const handleNumberClick = (ticketIndex: number, numberValue: number, rowIndex: number, colIndex: number) => {
     if (isGameOver) return;
     const key = `${ticketIndex}-${rowIndex}-${colIndex}`;
-    if (markedNumbers.has(key)) return; // If already marked, do nothing
+    if (markedNumbers.has(key)) return; 
 
     if (!calledNumbers.includes(numberValue)) {
       toast({
@@ -113,7 +112,7 @@ export default function GameRoomPage() {
     }
     setMarkedNumbers(prev => {
       const newMarked = new Set(prev);
-      newMarked.add(key); // Add if not already marked (already checked, but good practice)
+      newMarked.add(key); 
       return newMarked;
     });
   };
@@ -130,27 +129,31 @@ export default function GameRoomPage() {
       return;
     }
     
-    // For Full House, if anyone has claimed it, the game is over.
-    // This check needs to be before attempting to validate the current player's claim for Full House
-    // if the prizeType IS Full House.
     if ((claimedPrizes[PRIZE_TYPES.FULL_HOUSE]?.length || 0) > 0) {
-        if (prizeType === PRIZE_TYPES.FULL_HOUSE) {
-             toast({ title: "Claim Failed", description: `Full House already claimed. Game is over.`, variant: "destructive" });
-        } else {
+        if (prizeType === PRIZE_TYPES.FULL_HOUSE && !currentWinnersForPrize.includes(MOCK_USERNAME)) {
+             // Allow claiming FH if it's already claimed by others but not this player (for simultaneous claims)
+        } else if (prizeType !== PRIZE_TYPES.FULL_HOUSE) {
              toast({ title: "Claim Failed", description: `Game is over (Full House claimed). No more claims for ${prizeType}.`, variant: "destructive" });
+             return;
+        } else if (prizeType === PRIZE_TYPES.FULL_HOUSE && currentWinnersForPrize.includes(MOCK_USERNAME)) {
+            // This case is already handled by the "Already Claimed" check above for the current player
+             toast({ title: "Claim Failed", description: `Full House already claimed. Game is over.`, variant: "destructive" });
+             return;
         }
-        return;
     }
 
+    let winningTicketIndex = -1; 
+    let winningTicketForFHIndex = -1; 
 
-    let winningTicketIndex = -1;
     for (let i = 0; i < tickets.length; i++) {
-      const numbersRequiredForPrizeOnThisTicket = getNumbersForPrizePattern(tickets[i], prizeType);
+      const currentTicket = tickets[i];
+      const numbersRequiredForPrizeOnThisTicket = getNumbersForPrizePattern(currentTicket, prizeType);
+      
       const allRequiredNumbersMarkedByPlayer = numbersRequiredForPrizeOnThisTicket.every(num => {
         let rFound = -1, cFound = -1;
-        outer: for(let r=0; r<tickets[i].length; r++) {
-          for(let c=0; c<tickets[i][r].length; c++) {
-            if(tickets[i][r][c] === num) {
+        outer: for(let r=0; r<currentTicket.length; r++) {
+          for(let c=0; c<currentTicket[r].length; c++) {
+            if(currentTicket[r][c] === num) {
               rFound=r; cFound=c;
               break outer;
             }
@@ -158,27 +161,69 @@ export default function GameRoomPage() {
         }
         return rFound !== -1 && markedNumbers.has(`${i}-${rFound}-${cFound}`);
       });
-      const allRequiredNumbersCalled = numbersRequiredForPrizeOnThisTicket.every(num => calledNumbers.includes(num));
 
-      if (allRequiredNumbersMarkedByPlayer && allRequiredNumbersCalled && checkWinningCondition(tickets[i], calledNumbers, prizeType)) {
+      if (allRequiredNumbersMarkedByPlayer && checkWinningCondition(currentTicket, calledNumbers, prizeType)) {
         winningTicketIndex = i;
-        break;
+        if (prizeType === PRIZE_TYPES.FULL_HOUSE) {
+          winningTicketForFHIndex = i;
+        }
+        break; 
       }
     }
     
-    if (winningTicketIndex !== -1) { // Player MOCK_USERNAME has a valid claim
-      const newWinnerList = [...currentWinnersForPrize, MOCK_USERNAME];
-      setClaimedPrizes(prev => ({ ...prev, [prizeType]: newWinnerList }));
+    if (winningTicketIndex !== -1) { 
+      const updatedClaimedPrizes = { ...claimedPrizes };
+      updatedClaimedPrizes[prizeType] = [...(updatedClaimedPrizes[prizeType] || []), MOCK_USERNAME];
       
-      const successMessage = `🔔 ${MOCK_USERNAME} has claimed ${prizeType}!`;
-      setGameMessage(successMessage);
+      let primaryClaimMessage = `🔔 ${MOCK_USERNAME} has claimed ${prizeType}!`;
       toast({ title: "Claim Successful!", description: `${prizeType} claimed by ${MOCK_USERNAME}.`, className: "bg-green-500 text-white" });
 
       if (prizeType === PRIZE_TYPES.FULL_HOUSE) {
         setIsGameOver(true);
-        setFullHouseWinTime(new Date());
-        setGameMessage(`🎉 ${newWinnerList.join(' & ')} won Full House! Game Over!`);
+        if (!fullHouseWinTime) setFullHouseWinTime(new Date()); // Set FH win time only once
+
+        const fhWinningTicket = tickets[winningTicketForFHIndex];
+        const linePrizesToAutoCheck: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
+        let autoAwardedPrizeNames: string[] = [];
+
+        for (const linePrize of linePrizesToAutoCheck) {
+          // Check if line prize is unclaimed by anyone OR if current player is not already in winners list for this line
+          // (This allows auto-awarding if the player forgot, even if others might have claimed it,
+          //  but the prompt says "not yet claimed by anyone else" for auto-award. So we stick to that.)
+          if ((updatedClaimedPrizes[linePrize]?.length || 0) === 0) { 
+            const lineNumbers = getNumbersForPrizePattern(fhWinningTicket, linePrize);
+            
+            const allLineNumbersMarkedByPlayerOnFHTicket = lineNumbers.every(num => {
+              let rFound = -1, cFound = -1;
+              outerFind: for(let r=0; r<fhWinningTicket.length; r++) {
+                for(let c=0; c<fhWinningTicket[r].length; c++) {
+                  if(fhWinningTicket[r][c] === num) {
+                    rFound=r; cFound=c;
+                    break outerFind;
+                  }
+                }
+              }
+              return rFound !== -1 && markedNumbers.has(`${winningTicketForFHIndex}-${rFound}-${cFound}`);
+            });
+
+            if (allLineNumbersMarkedByPlayerOnFHTicket && checkWinningCondition(fhWinningTicket, calledNumbers, linePrize)) {
+              updatedClaimedPrizes[linePrize] = [...(updatedClaimedPrizes[linePrize] || []), MOCK_USERNAME];
+              autoAwardedPrizeNames.push(linePrize);
+              toast({ title: "Auto-Award!", description: `${linePrize} auto-awarded to ${MOCK_USERNAME}.`, className: "bg-blue-500 text-white" });
+            }
+          }
+        }
+        
+        let finalFHMessage = `🎉 ${updatedClaimedPrizes[PRIZE_TYPES.FULL_HOUSE].join(' & ')} won Full House! Game Over!`;
+        if (autoAwardedPrizeNames.length > 0) {
+            finalFHMessage += ` ${MOCK_USERNAME} also auto-awarded: ${autoAwardedPrizeNames.join(', ')}.`;
+        }
+        setGameMessage(finalFHMessage);
+      } else {
+        setGameMessage(primaryClaimMessage);
       }
+      setClaimedPrizes(updatedClaimedPrizes);
+
     } else {
       const failMessage = `Claim for ${prizeType} by ${MOCK_USERNAME} is not valid. Bogey!`;
       setGameMessage(failMessage);
@@ -190,14 +235,16 @@ export default function GameRoomPage() {
     const getRowNumbers = (rowIndex: number) => ticket[rowIndex].filter(n => n !== null) as number[];
     switch(prize) {
       case PRIZE_TYPES.JALDI_5: 
+        // For Jaldi 5, we need all numbers on the ticket to check against marked numbers for the first 5.
+        // The actual check for "first 5 marked" is implicit in how checkWinningCondition handles it.
         return ticket.flat().filter(n => n !== null) as number[];
       case PRIZE_TYPES.TOP_LINE: return getRowNumbers(0);
       case PRIZE_TYPES.MIDDLE_LINE: return getRowNumbers(1);
       case PRIZE_TYPES.BOTTOM_LINE: return getRowNumbers(2);
       case PRIZE_TYPES.FULL_HOUSE: 
         return ticket.flat().filter(n => n !== null) as number[];
-      default: // Should not happen with PrizeType
-        const exhaustiveCheck: never = prize;
+      default: 
+        const exhaustiveCheck: never = prize; // Ensures all prize types are handled
         console.warn("Unknown prize type in getNumbersForPrizePattern:", exhaustiveCheck);
         return [];
     }
@@ -220,17 +267,13 @@ export default function GameRoomPage() {
             <CardTitle className="text-4xl font-bold flex items-center justify-center">
               <PartyPopper className="mr-3 h-10 w-10 text-primary" /> Game Over!
             </CardTitle>
-            {fullHouseWinners.length > 0 && (
-              <p className="text-xl mt-2">
-                Congratulations <span className="font-semibold text-accent">{fullHouseWinners.join(' & ')}</span> for winning Full House!
-                {fullHouseWinTime && (
+             <p className="text-lg mt-2 whitespace-pre-line">{gameMessage}</p>
+            {fullHouseWinTime && fullHouseWinners.length > 0 && (
                   <span className="block text-sm text-muted-foreground">
-                    Won at: {fullHouseWinTime.toLocaleTimeString()}
+                    Full House won at: {fullHouseWinTime.toLocaleTimeString()}
                   </span>
-                )}
-              </p>
             )}
-             {fullHouseWinners.length === 0 && calledNumbers.length === 90 && (
+             {fullHouseWinners.length === 0 && calledNumbers.length === 90 && !gameMessage?.includes("Full House") && (
                 <p className="text-xl mt-2 text-muted-foreground">All numbers called. No Full House winner.</p>
             )}
           </CardHeader>
@@ -284,28 +327,26 @@ export default function GameRoomPage() {
           if (winnersOfThisPrize.length > 0) {
             if (hasPlayerClaimedThis) {
                 buttonText = `You Claimed ${prize}`;
-            } else if (winnersOfThisPrize.length === 1) {
-                buttonText = `${prize} (Claimed by ${winnersOfThisPrize[0]})`;
-            } else {
-                buttonText = `${prize} (Claimed by ${winnersOfThisPrize.length} players)`;
+            } else  {
+                 buttonText = `${prize} (Claimed by ${winnersOfThisPrize.join(', ')})`;
             }
           }
           
-          const isFullHouseClaimedByAnyone = (claimedPrizes[PRIZE_TYPES.FULL_HOUSE]?.length || 0) > 0;
+          const isAnyFullHouseClaimed = (claimedPrizes[PRIZE_TYPES.FULL_HOUSE]?.length || 0) > 0;
 
 
           return (
             <Button
               key={prize}
               onClick={() => handleClaimPrize(prize)}
-              disabled={isGameOver || hasPlayerClaimedThis || (isFullHouseClaimedByAnyone && prize !== PRIZE_TYPES.FULL_HOUSE) }
+              disabled={isGameOver || hasPlayerClaimedThis || (isAnyFullHouseClaimed && prize !== PRIZE_TYPES.FULL_HOUSE && !winnersOfThisPrize.includes(MOCK_USERNAME)) }
               variant={winnersOfThisPrize.length > 0 ? "secondary" : "default"}
               className={cn("px-2 py-1 rounded-md text-xs sm:text-sm", 
                 !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Jaldi") ? "bg-green-500 hover:bg-green-600" :
                 !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Line") ? "bg-yellow-400 hover:bg-yellow-500 text-black" :
                 !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Full House") ? "bg-red-500 hover:bg-red-600" : "",
-                (hasPlayerClaimedThis || (winnersOfThisPrize.length > 0 && !hasPlayerClaimedThis)) ? "opacity-70" : "", // Dim if claimed by someone else, or by current player
-                (isGameOver || (isFullHouseClaimedByAnyone && prize !== PRIZE_TYPES.FULL_HOUSE)) ? "cursor-not-allowed opacity-50" : "" // Disable non-FH claims if FH is claimed
+                (hasPlayerClaimedThis || (winnersOfThisPrize.length > 0 && !hasPlayerClaimedThis)) ? "opacity-70" : "",
+                (isGameOver || (isAnyFullHouseClaimed && prize !== PRIZE_TYPES.FULL_HOUSE && !winnersOfThisPrize.includes(MOCK_USERNAME))) ? "cursor-not-allowed opacity-50" : ""
               )}
             >
               {buttonText}
@@ -314,7 +355,7 @@ export default function GameRoomPage() {
         })}
       </div>
       
-      {gameMessage && (
+      {gameMessage && !isGameOver && ( // Only show this game message if game is not over, FH has its own display
         <Alert variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") ? "destructive" : (gameMessage.includes("claimed") ? "default" : "default")} 
                className={cn(gameMessage.includes("claimed") && !gameMessage.includes("Bogey") && !gameMessage.includes("not valid") ? "bg-green-100 dark:bg-green-900 border-green-500" : "")}>
           {gameMessage.includes("Bogey") || gameMessage.includes("not valid") ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
@@ -376,10 +417,15 @@ export default function GameRoomPage() {
             <CardContent>
               <p className="text-sm text-muted-foreground">Prize money details will be shown here based on game settings and player count. (Splitting logic to be displayed here)</p>
               <ul className="space-y-1 mt-2 text-sm">
-                {/* Example: This would be dynamic based on game setup & claimedPrizes */}
-                <li>Jaldi 5: ₹100 (Split among {claimedPrizes[PRIZE_TYPES.JALDI_5]?.length || 0} winners)</li>
-                <li>Top Line: ₹150 (Split among {claimedPrizes[PRIZE_TYPES.TOP_LINE]?.length || 0} winners)</li>
-                <li>Full House: ₹500 (Split among {claimedPrizes[PRIZE_TYPES.FULL_HOUSE]?.length || 0} winners)</li>
+                {AVAILABLE_PRIZES.map(prize => {
+                  const winnersCount = (claimedPrizes[prize] || []).length;
+                  // This is a mock calculation, actual prize money needs to be calculated based on total pool and percentages
+                  const mockPrizeMoney = (MOCK_TOTAL_MONEY * ( (prize === PRIZE_TYPES.JALDI_5 && 0.1) || (prize.includes("Line") && 0.15) || (prize === PRIZE_TYPES.FULL_HOUSE && 0.45) || 0 ) );
+                  const perWinnerShare = winnersCount > 0 ? (mockPrizeMoney / winnersCount).toFixed(2) : mockPrizeMoney.toFixed(2);
+                  return (
+                    <li key={prize}>{prize}: ₹{mockPrizeMoney.toFixed(0)} (Split among {winnersCount} winner(s) - approx ₹{perWinnerShare} each)</li>
+                  );
+                })}
               </ul>
             </CardContent>
           </Card>
@@ -388,7 +434,6 @@ export default function GameRoomPage() {
             <CardContent>
               <p className="text-sm text-muted-foreground">Details about other players' progress or status would appear here.</p>
               <ul className="space-y-1 mt-2 text-sm">
-                {/* This is mock data and would need real-time updates in a full app */}
                 <li>Player2: 3 tickets</li>
                 <li>Player3: 1 ticket (Jaldi 5 claimed)</li>
               </ul>
@@ -405,3 +450,4 @@ export default function GameRoomPage() {
     </div>
   );
 }
+
