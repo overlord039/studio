@@ -283,7 +283,10 @@ export default function GameRoomPage() {
               <ul className="space-y-2">
                 {AVAILABLE_PRIZES.map(prize => {
                   const winners = claimedPrizes[prize] || [];
-                  const prizeStatus = winners.length > 0 ? `Claimed by ${winners.join(', ')}` : "Not Claimed";
+                  let prizeStatus = winners.length > 0 ? `Claimed by ${winners.join(', ')}` : "Not Claimed";
+                  if (winners.length > 1) {
+                    prizeStatus += ` (Split ${winners.length} ways)`;
+                  }
                   return (
                     <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
                       <span className="font-medium">{prize}:</span>
@@ -415,15 +418,13 @@ export default function GameRoomPage() {
           <Card>
             <CardHeader><CardTitle className="text-lg">Prize Info</CardTitle></CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Prize money details will be shown here based on game settings and player count. (Splitting logic to be displayed here)</p>
+              <p className="text-sm text-muted-foreground">Potential prize money based on current game settings. Actual distribution depends on claims.</p>
               <ul className="space-y-1 mt-2 text-sm">
                 {AVAILABLE_PRIZES.map(prize => {
-                  const winnersCount = (claimedPrizes[prize] || []).length;
                   // This is a mock calculation, actual prize money needs to be calculated based on total pool and percentages
                   const mockPrizeMoney = (MOCK_TOTAL_MONEY * ( (prize === PRIZE_TYPES.JALDI_5 && 0.1) || (prize.includes("Line") && 0.15) || (prize === PRIZE_TYPES.FULL_HOUSE && 0.45) || 0 ) );
-                  const perWinnerShare = winnersCount > 0 ? (mockPrizeMoney / winnersCount).toFixed(2) : mockPrizeMoney.toFixed(2);
                   return (
-                    <li key={prize}>{prize}: ₹{mockPrizeMoney.toFixed(0)} (Split among {winnersCount} winner(s) - approx ₹{perWinnerShare} each)</li>
+                    <li key={prize}>{prize}: ₹{mockPrizeMoney.toFixed(0)}</li>
                   );
                 })}
               </ul>
@@ -450,4 +451,3 @@ export default function GameRoomPage() {
     </div>
   );
 }
-
