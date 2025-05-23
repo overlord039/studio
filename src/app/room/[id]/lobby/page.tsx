@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangle } from "lucide-react";
 import type { Room, GameSettings, PrizeType, BackendPlayerInRoom } from "@/types";
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE } from "@/lib/constants";
@@ -20,6 +20,7 @@ export default function LobbyPage() {
   const routeParams = useParams();
   const roomId = routeParams.id as string;
   const { currentUser, loading: authLoading } = useAuth();
+  const searchParams = useSearchParams();
 
   const [roomData, setRoomData] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,27 +36,32 @@ export default function LobbyPage() {
   const fetchRoomDetails = useCallback(async (isInitialLoad = false) => {
     if (!roomId) return;
     if(isInitialLoad) setIsLoading(true);
-    // setError(null); // Keep error if already set on refresh
+    
     try {
       const response = await fetch(`/api/rooms/${roomId}`);
       if (!response.ok) {
         const errorData = await response.json();
         if (response.status === 404) {
           setError("Room not found. It might have expired or never existed.");
+          setRoomData(null); 
+          if(isInitialLoad) setIsLoading(false);
+          return; 
         } else {
             setError(errorData.message || `Failed to fetch room details: ${response.statusText}`);
+            setRoomData(null); 
+            if(isInitialLoad) setIsLoading(false);
+            return;
         }
-        setRoomData(null); 
-        if(isInitialLoad) setIsLoading(false);
-        return; 
       }
       const data: Room = await response.json();
       setRoomData(data);
-      // Initialize selectedTicketsToBuy based on room settings or existing tickets for current user
-      const userInRoom = data.players.find(p => p.id === currentUser?.username);
-      if (userInRoom && userInRoom.tickets.length > 0) {
-        setSelectedTicketsToBuy(userInRoom.tickets.length);
-      } else {
+      
+      const userInRoomData = data.players.find(p => p.id === currentUser?.username);
+      if (userInRoomData && userInRoomData.tickets.length > 0) {
+        setSelectedTicketsToBuy(userInRoomData.tickets.length);
+      } else if (userInRoomData && userInRoomData.tickets.length === 0) {
+        setSelectedTicketsToBuy(data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
+      } else if (!userInRoomData) {
         setSelectedTicketsToBuy(data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
       }
 
@@ -68,7 +74,7 @@ export default function LobbyPage() {
     } finally {
       if(isInitialLoad) setIsLoading(false);
     }
-  }, [roomId, currentUser?.username, roomData]); // Added roomData to dependencies
+  }, [roomId, currentUser?.username, roomData]);
 
   useEffect(() => {
     if (currentUser && roomId) {
@@ -80,16 +86,16 @@ export default function LobbyPage() {
   }, [currentUser, roomId, authLoading, fetchRoomDetails]);
 
   useEffect(() => {
-    if (!roomId || !currentUser || roomData?.isGameStarted || roomData?.isGameOver) return;
+    if (!roomId || !currentUser || roomData?.isGameStarted || roomData?.isGameOver || isLoading) return;
     const intervalId = setInterval(() => {
       if (!document.hidden) fetchRoomDetails(false);
     }, 5000);
     return () => clearInterval(intervalId);
-  }, [roomId, currentUser, roomData?.isGameStarted, roomData?.isGameOver, fetchRoomDetails]);
+  }, [roomId, currentUser, roomData?.isGameStarted, roomData?.isGameOver, fetchRoomDetails, isLoading]);
 
   const handleConfirmOrJoinTickets = async () => {
     if (!currentUser || !roomData || roomData.isGameStarted) {
-        toast({title: "Cannot proceed", description: "Game already started or user not logged in.", variant: "destructive"});
+        toast({title: "Cannot proceed", description: "Game already started, user not logged in, or no room data.", variant: "destructive"});
         return;
     }
     setIsJoiningOrUpdating(true);
@@ -108,7 +114,7 @@ export default function LobbyPage() {
         throw new Error(errorData.message || "Failed to confirm tickets or join room.");
       }
       const updatedRoom: Room = await response.json();
-      setRoomData(updatedRoom); // This will re-render and update doesCurrentUserHaveTickets
+      setRoomData(updatedRoom); 
       toast({ title: "Tickets Confirmed!", description: `You now have ${selectedTicketsToBuy} ticket(s).` });
     } catch (err) {
       console.error("Error confirming/joining tickets:", err);
@@ -119,13 +125,15 @@ export default function LobbyPage() {
   };
 
   const handleCopyInviteLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast({ title: "Invite Link Copied!", description: "Share it with your friends." });
+    if (typeof window !== "undefined") {
+        navigator.clipboard.writeText(window.location.href);
+        toast({ title: "Invite Link Copied!", description: "Share it with your friends." });
+    }
   };
 
   const handleStartGame = async () => {
     if (!roomData || !currentUser || !isCurrentUserHost) {
-      toast({ title: "Error", description: "Only the host can start the game.", variant: "destructive" });
+      toast({ title: "Error", description: "Only the host can start the game, or room data is missing.", variant: "destructive" });
       return;
     }
     if (!doesCurrentUserHaveTickets && isCurrentUserHost) {
@@ -133,18 +141,15 @@ export default function LobbyPage() {
         return;
     }
      const minPlayersRequired = process.env.NODE_ENV === 'development' ? 1 : MIN_LOBBY_SIZE;
-     if (roomData.players.length < minPlayersRequired) {
-        toast({ title: "Cannot Start", description: `Need at least ${minPlayersRequired} player(s) (with tickets) to start.`, variant: "destructive" });
-        return;
-     }
-     if (roomData.players.filter(p => p.tickets.length > 0).length < minPlayersRequired) {
-        toast({ title: "Cannot Start", description: `At least ${minPlayersRequired} player(s) must have tickets.`, variant: "destructive" });
-        return;
-     }
+     const playersWithTickets = roomData.players.filter(p => p.tickets.length > 0).length;
 
+     if (playersWithTickets < minPlayersRequired) {
+        toast({ title: "Cannot Start", description: `Need at least ${minPlayersRequired} player(s) with tickets to start. Currently: ${playersWithTickets}`, variant: "destructive" });
+        return;
+     }
 
     try {
-      setIsJoiningOrUpdating(true); // Use same state for starting game to disable UI
+      setIsJoiningOrUpdating(true);
       const response = await fetch(`/api/rooms/${roomId}/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -175,12 +180,26 @@ export default function LobbyPage() {
   const handleGoToGame = () => {
     if (!roomData || !currentUser) return;
     const ticketsToTake = roomData.players.find(p => p.id === currentUser.username)?.tickets.length || 0;
-    if (ticketsToTake > 0) {
-      router.push(`/room/${roomId}/play?playerTickets=${ticketsToTake}`);
-    } else {
-      router.push(`/room/${roomId}/play?playerTickets=0`); // Spectate
-    }
+    router.push(`/room/${roomId}/play?playerTickets=${ticketsToTake}`);
   };
+
+  let gameSettings: GameSettings | null = null;
+
+  if (roomData) {
+    gameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
+  } else if (!isLoading) {
+    const ticketPriceParam = parseInt(searchParams.get('ticketPrice') || '', 10);
+    const lobbySizeParam = parseInt(searchParams.get('lobbySize') || '', 10);
+    const prizeFormatParam = searchParams.get('prizeFormat');
+    const numTicketsPerPlayerParam = parseInt(searchParams.get('numberOfTicketsPerPlayer') || '', 10);
+
+    gameSettings = {
+        ticketPrice: (ticketPriceParam && !isNaN(ticketPriceParam) ? ticketPriceParam : DEFAULT_GAME_SETTINGS.ticketPrice) as GameSettings['ticketPrice'],
+        lobbySize: (lobbySizeParam && !isNaN(lobbySizeParam) ? lobbySizeParam : DEFAULT_GAME_SETTINGS.lobbySize),
+        prizeFormat: (prizeFormatParam || DEFAULT_GAME_SETTINGS.prizeFormat) as GameSettings['prizeFormat'],
+        numberOfTicketsPerPlayer: (numTicketsPerPlayerParam && !isNaN(numTicketsPerPlayerParam) ? numTicketsPerPlayerParam : DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer),
+    };
+  }
 
 
   if (isLoading || authLoading) {
@@ -214,30 +233,39 @@ export default function LobbyPage() {
     );
   }
 
-  if (!roomData) { 
+  if (!roomData || !gameSettings) {
     return (
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
             <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
-            <h2 className="text-2xl font-semibold mb-2">Room Not Found</h2>
-            <p className="text-muted-foreground mb-6">The room you are looking for does not exist or has expired.</p>
+            <h2 className="text-2xl font-semibold mb-2">Room Not Found or Settings Unavailable</h2>
+            <p className="text-muted-foreground mb-6">The room you are looking for does not exist, has expired, or settings could not be loaded.</p>
             <Button onClick={() => router.push('/')} size="lg">Go to Homepage</Button>
         </div>
     );
   }
   
-  const gameSettings: GameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
   const currentPrizeFormat = gameSettings.prizeFormat;
-  const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat];
-  const prizeDistribution = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat];
+  const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
+  const prizeDistribution = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat] || {};
   
   const totalTicketsBoughtByPlayers = roomData.players.reduce((sum, player) => sum + (player.tickets?.length || 0), 0);
   const currentTotalPrizePool = gameSettings.ticketPrice * totalTicketsBoughtByPlayers;
   const minPlayersToStart = process.env.NODE_ENV === 'development' ? 1 : MIN_LOBBY_SIZE;
 
-  // Show ticket selection if: game not started AND (user not in room OR user is in room but has 0 tickets)
-  const showTicketSelectionUI = currentUser && !roomData.isGameStarted && (!currentUserInRoom || (currentUserInRoom && !doesCurrentUserHaveTickets));
-  const buttonTextForConfirm = isCurrentUserHost && !doesCurrentUserHaveTickets ? "Confirm Host Tickets" : `Confirm and Join with ${selectedTicketsToBuy} ticket(s)`;
-  const cardTitleForTickets = isCurrentUserHost && !doesCurrentUserHaveTickets ? "Buy Your Host Tickets" : (!currentUserInRoom ? "Join Game & Buy Tickets" : "Confirm Your Tickets");
+  const showTicketSelectionUI = currentUser && !roomData.isGameStarted && 
+    (!currentUserInRoom || (currentUserInRoom && !doesCurrentUserHaveTickets));
+  
+  let buttonTextForConfirm = `Confirm and Join with ${selectedTicketsToBuy} ticket(s)`;
+  let cardTitleForTickets = "Join Game & Buy Tickets";
+
+  if (isCurrentUserHost && !doesCurrentUserHaveTickets) {
+      buttonTextForConfirm = `Confirm Host Tickets (${selectedTicketsToBuy})`;
+      cardTitleForTickets = "Buy Your Host Tickets";
+  } else if (currentUserInRoom && !doesCurrentUserHaveTickets) {
+      buttonTextForConfirm = `Confirm My Tickets (${selectedTicketsToBuy})`;
+      cardTitleForTickets = "Confirm Your Tickets";
+  }
+
 
   return (
     <div className="space-y-8">
@@ -368,21 +396,19 @@ export default function LobbyPage() {
                 size="lg" 
                 className="w-full mt-4" 
                 disabled={ 
-                    isJoiningOrUpdating || // disable if any network op is in progress
-                    roomData.players.length < minPlayersToStart || 
-                    roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart || // Ensure min players have tickets
-                    (isCurrentUserHost && !doesCurrentUserHaveTickets) // Host must have tickets
+                    isJoiningOrUpdating || 
+                    roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart || 
+                    (isCurrentUserHost && !doesCurrentUserHaveTickets) 
                 }
             >
               <Play className="mr-2 h-5 w-5" /> Start Game
             </Button>
           )}
           {isCurrentUserHost && !roomData.isGameStarted && 
-            (roomData.players.length < minPlayersToStart || roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart || (isCurrentUserHost && !doesCurrentUserHaveTickets)) && (
+            (roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart || (isCurrentUserHost && !doesCurrentUserHaveTickets)) && (
             <p className="text-center text-sm text-destructive mt-2">
               {isCurrentUserHost && !doesCurrentUserHaveTickets ? "Host must confirm their tickets first. " : ""}
               {roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart && !(isCurrentUserHost && !doesCurrentUserHaveTickets) ? `At least ${minPlayersToStart} player(s) must have tickets. ` : ""}
-              {roomData.players.length < minPlayersToStart ? `Need at least ${minPlayersToStart} player(s) in the room to start.` : ""}
             </p>
           )}
 
@@ -397,7 +423,7 @@ export default function LobbyPage() {
           )}
            {roomData.isGameOver && (
              <Button 
-                onClick={() => router.push(`/room/${roomId}/play`)} // Go to results on play page
+                onClick={() => router.push(`/room/${roomId}/play`)} 
                 size="lg" 
                 className="w-full mt-4"
               >
@@ -409,5 +435,3 @@ export default function LobbyPage() {
     </div>
   );
 }
-
-    
