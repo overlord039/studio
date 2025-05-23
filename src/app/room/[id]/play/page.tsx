@@ -142,18 +142,13 @@ export default function GameRoomPage() {
       return;
     }
     
-    if ((claimedPrizes[PRIZE_TYPES.FULL_HOUSE]?.length || 0) > 0) {
-        if (prizeType === PRIZE_TYPES.FULL_HOUSE && !currentWinnersForPrize.includes(MOCK_USERNAME)) {
-             // Allow claiming FH if it's already claimed by others but not this player (for simultaneous claims)
-        } else if (prizeType !== PRIZE_TYPES.FULL_HOUSE) {
-             toast({ title: "Claim Failed", description: `Game is over (Full House claimed). No more claims for ${prizeType}.`, variant: "destructive" });
-             return;
-        } else if (prizeType === PRIZE_TYPES.FULL_HOUSE && currentWinnersForPrize.includes(MOCK_USERNAME)) {
-            // This case is already handled by the "Already Claimed" check above for the current player
-             toast({ title: "Claim Failed", description: `Full House already claimed. Game is over.`, variant: "destructive" });
-             return;
-        }
+    // If Full House is already claimed by ANYONE, other prizes cannot be claimed,
+    // unless this claim is for Full House itself (to allow simultaneous FH claims if logic supported it, though current setup is one-by-one)
+    if ((claimedPrizes[PRIZE_TYPES.FULL_HOUSE]?.length || 0) > 0 && prizeType !== PRIZE_TYPES.FULL_HOUSE) {
+         toast({ title: "Claim Failed", description: `Game is over (Full House claimed). No more claims for ${prizeType}.`, variant: "destructive" });
+         return;
     }
+
 
     let winningTicketIndex = -1; 
     let winningTicketForFHIndex = -1; 
@@ -186,6 +181,7 @@ export default function GameRoomPage() {
     
     if (winningTicketIndex !== -1) { 
       const updatedClaimedPrizes = { ...claimedPrizes };
+      // Add current player to winners list for this prize
       updatedClaimedPrizes[prizeType] = [...(updatedClaimedPrizes[prizeType] || []), MOCK_USERNAME];
       
       let primaryClaimMessage = `🔔 ${MOCK_USERNAME} has claimed ${prizeType}!`;
@@ -193,13 +189,14 @@ export default function GameRoomPage() {
 
       if (prizeType === PRIZE_TYPES.FULL_HOUSE) {
         setIsGameOver(true);
-        if (!fullHouseWinTime) setFullHouseWinTime(new Date()); // Set FH win time only once
+        if (!fullHouseWinTime) setFullHouseWinTime(new Date()); 
 
         const fhWinningTicket = tickets[winningTicketForFHIndex];
-        const linePrizesToAutoCheck: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
         let autoAwardedPrizeNames: string[] = [];
 
+        const linePrizesToAutoCheck: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
         for (const linePrize of linePrizesToAutoCheck) {
+          // Check if line prize is already claimed by ANYONE
           if ((updatedClaimedPrizes[linePrize]?.length || 0) === 0) { 
             const lineNumbers = getNumbersForPrizePattern(fhWinningTicket, linePrize);
             
@@ -213,6 +210,7 @@ export default function GameRoomPage() {
                   }
                 }
               }
+              // Use winningTicketForFHIndex for checking marked numbers on the FH winning ticket
               return rFound !== -1 && markedNumbers.has(`${winningTicketForFHIndex}-${rFound}-${cFound}`);
             });
 
@@ -224,7 +222,8 @@ export default function GameRoomPage() {
           }
         }
         
-        let finalFHMessage = `🎉 ${updatedClaimedPrizes[PRIZE_TYPES.FULL_HOUSE].join(' & ')} won Full House! Game Over!`;
+        const allFullHouseWinners = updatedClaimedPrizes[PRIZE_TYPES.FULL_HOUSE] || [MOCK_USERNAME];
+        let finalFHMessage = `🎉 ${allFullHouseWinners.join(' & ')} won Full House! Game Over!`;
         if (autoAwardedPrizeNames.length > 0) {
             finalFHMessage += ` ${MOCK_USERNAME} also auto-awarded: ${autoAwardedPrizeNames.join(', ')}.`;
         }
@@ -252,8 +251,6 @@ export default function GameRoomPage() {
       case PRIZE_TYPES.FULL_HOUSE: 
         return ticket.flat().filter(n => n !== null) as number[];
       default: 
-        // This should ideally not happen with TypeScript ensuring prize is PrizeType
-        // const exhaustiveCheck: never = prize; 
         console.warn("Unknown prize type in getNumbersForPrizePattern:", prize);
         return [];
     }
@@ -330,52 +327,6 @@ export default function GameRoomPage() {
         </CardContent>
       </Card>
 
-      <div className="flex flex-wrap gap-2 mb-2 justify-center">
-        {AVAILABLE_PRIZES.map(prize => {
-          const winnersOfThisPrize = claimedPrizes[prize] || [];
-          const hasPlayerClaimedThis = winnersOfThisPrize.includes(MOCK_USERNAME);
-          let buttonText = `Claim ${prize}`;
-
-          if (winnersOfThisPrize.length > 0) {
-            if (hasPlayerClaimedThis) {
-                buttonText = `You Claimed ${prize}`;
-            } else  {
-                 buttonText = `${prize} (Claimed by ${winnersOfThisPrize.join(', ')})`;
-            }
-          }
-          
-          const isAnyFullHouseClaimed = (claimedPrizes[PRIZE_TYPES.FULL_HOUSE]?.length || 0) > 0;
-
-
-          return (
-            <Button
-              key={prize}
-              onClick={() => handleClaimPrize(prize)}
-              disabled={isGameOver || hasPlayerClaimedThis || (isAnyFullHouseClaimed && prize !== PRIZE_TYPES.FULL_HOUSE && !winnersOfThisPrize.includes(MOCK_USERNAME)) }
-              variant={winnersOfThisPrize.length > 0 ? "secondary" : "default"}
-              className={cn("px-2 py-1 rounded-md text-xs sm:text-sm", 
-                !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Jaldi") ? "bg-green-500 hover:bg-green-600" :
-                !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Line") ? "bg-yellow-400 hover:bg-yellow-500 text-black" :
-                !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Full House") ? "bg-red-500 hover:bg-red-600" : "",
-                (hasPlayerClaimedThis || (winnersOfThisPrize.length > 0 && !hasPlayerClaimedThis)) ? "opacity-70" : "",
-                (isGameOver || (isAnyFullHouseClaimed && prize !== PRIZE_TYPES.FULL_HOUSE && !winnersOfThisPrize.includes(MOCK_USERNAME))) ? "cursor-not-allowed opacity-50" : ""
-              )}
-            >
-              {buttonText}
-            </Button>
-          );
-        })}
-      </div>
-      
-      {gameMessage && !isGameOver && ( 
-        <Alert variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") ? "destructive" : (gameMessage.includes("claimed") ? "default" : "default")} 
-               className={cn(gameMessage.includes("claimed") && !gameMessage.includes("Bogey") && !gameMessage.includes("not valid") ? "bg-green-100 dark:bg-green-900 border-green-500" : "")}>
-          {gameMessage.includes("Bogey") || gameMessage.includes("not valid") ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-          <AlertTitle>{gameMessage.includes("Bogey") || gameMessage.includes("not valid") ? "Claim Update" : (gameMessage.includes("claimed") ? "Prize Claimed!" : "Game Message")}</AlertTitle>
-          <AlertDescription>{gameMessage}</AlertDescription>
-        </Alert>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <div className="space-y-4 lg:col-span-1">
           <CalledNumberDisplay currentNumber={currentNumber} />
@@ -411,23 +362,70 @@ export default function GameRoomPage() {
           </Card>
         </div>
 
-        <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-xl font-semibold text-center">Your Tickets</h2>
-          <ScrollArea className="max-h-[60vh] lg:max-h-none">
-            <div className="space-y-6">
-            {tickets.map((ticket, index) => (
-              <HousieTicket
-                key={index}
-                ticketIndex={index}
-                ticket={ticket}
-                calledNumbers={calledNumbers}
-                markedNumbers={markedNumbers}
-                onNumberClick={isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
-                className="min-w-[280px] sm:min-w-[320px] md:min-w-[360px] mx-auto"
-              />
-            ))}
+        <div className="lg:col-span-2">
+          <div className="max-w-xl mx-auto space-y-4">
+            {gameMessage && !isGameOver && ( 
+              <Alert variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") ? "destructive" : (gameMessage.includes("claimed") ? "default" : "default")} 
+                    className={cn(gameMessage.includes("claimed") && !gameMessage.includes("Bogey") && !gameMessage.includes("not valid") ? "bg-green-100 dark:bg-green-900 border-green-500" : "")}>
+                {gameMessage.includes("Bogey") || gameMessage.includes("not valid") ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                <AlertTitle>{gameMessage.includes("Bogey") || gameMessage.includes("not valid") ? "Claim Update" : (gameMessage.includes("claimed") ? "Prize Claimed!" : "Game Message")}</AlertTitle>
+                <AlertDescription>{gameMessage}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex flex-wrap gap-2 justify-center">
+              {AVAILABLE_PRIZES.map(prize => {
+                const winnersOfThisPrize = claimedPrizes[prize] || [];
+                const hasPlayerClaimedThis = winnersOfThisPrize.includes(MOCK_USERNAME);
+                let buttonText = `Claim ${prize}`;
+
+                if (winnersOfThisPrize.length > 0) {
+                  if (hasPlayerClaimedThis) {
+                      buttonText = `You Claimed ${prize}`;
+                  } else  {
+                      buttonText = `${prize} (Claimed by ${winnersOfThisPrize.join(', ')})`;
+                  }
+                }
+                
+                const isAnyFullHouseClaimedByAnyone = (claimedPrizes[PRIZE_TYPES.FULL_HOUSE]?.length || 0) > 0;
+
+                return (
+                  <Button
+                    key={prize}
+                    onClick={() => handleClaimPrize(prize)}
+                    disabled={isGameOver || hasPlayerClaimedThis || (isAnyFullHouseClaimedByAnyone && prize !== PRIZE_TYPES.FULL_HOUSE) }
+                    variant={winnersOfThisPrize.length > 0 ? "secondary" : "default"}
+                    className={cn("px-2 py-1 rounded-md text-xs sm:text-sm", 
+                      !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Jaldi") ? "bg-green-500 hover:bg-green-600" :
+                      !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Line") ? "bg-yellow-400 hover:bg-yellow-500 text-black" :
+                      !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Full House") ? "bg-red-500 hover:bg-red-600" : "",
+                      (hasPlayerClaimedThis || (winnersOfThisPrize.length > 0 && !hasPlayerClaimedThis)) ? "opacity-70" : "",
+                      (isGameOver || (isAnyFullHouseClaimedByAnyone && prize !== PRIZE_TYPES.FULL_HOUSE) ) ? "cursor-not-allowed opacity-50" : ""
+                    )}
+                  >
+                    {buttonText}
+                  </Button>
+                );
+              })}
             </div>
-          </ScrollArea>
+            
+            <h2 className="text-xl font-semibold text-center">Your Tickets</h2>
+            <ScrollArea className="max-h-[60vh] lg:max-h-none">
+              <div className="space-y-6">
+              {tickets.map((ticket, index) => (
+                <HousieTicket
+                  key={index}
+                  ticketIndex={index}
+                  ticket={ticket}
+                  calledNumbers={calledNumbers}
+                  markedNumbers={markedNumbers}
+                  onNumberClick={isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
+                  className="min-w-[280px] sm:min-w-[320px] md:min-w-[360px] mx-auto"
+                />
+              ))}
+              </div>
+            </ScrollArea>
+          </div>
         </div>
 
         <div className="space-y-4 lg:col-span-1">
@@ -485,4 +483,3 @@ export default function GameRoomPage() {
     </div>
   );
 }
-
