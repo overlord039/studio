@@ -3,19 +3,23 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input"; // Keep if other inputs are needed, or remove if not
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { ClipboardCopy, Users, Play, LogOut, रुपये, Gift } from "lucide-react"; // रुपये is not in lucide, using generic Gift
+import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket } from "lucide-react";
 import type { Player, GameSettings, PrizeType } from "@/types";
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES } from "@/lib/constants";
 import React, { useEffect, useState } from "react";
 
 // Mock data - replace with actual data fetching and state management
-const mockPlayers: Player[] = [
-  { id: "1", name: "Alice (Host)", isHost: true },
-  { id: "2", name: "Bob" },
-  { id: "3", name: "Charlie" },
+const mockPlayersInitial: Player[] = [
+  { id: "1", name: "Alice (Host)", isHost: true, ticketsToBuy: 1 },
+  { id: "2", name: "Bob", ticketsToBuy: 1 },
+  { id: "3", name: "Charlie", ticketsToBuy: 1 },
 ];
+
+const MAX_TICKETS_PER_PLAYER = 6;
 
 export default function LobbyPage() {
   const { toast } = useToast();
@@ -25,7 +29,8 @@ export default function LobbyPage() {
   const roomId = params.id as string;
 
   const [gameSettings, setGameSettings] = useState<GameSettings | null>(null);
-  const [players, setPlayers] = useState<Player[]>(mockPlayers); // Initialize with mock players
+  const [players, setPlayers] = useState<Player[]>(mockPlayersInitial);
+  const [hostTicketSelection, setHostTicketSelection] = useState<number>(players.find(p => p.isHost)?.ticketsToBuy || 1);
 
   useEffect(() => {
     const ticketPrice = parseInt(searchParams.get('ticketPrice') || '10', 10) as GameSettings['ticketPrice'];
@@ -35,8 +40,25 @@ export default function LobbyPage() {
     if (ticketPrice && lobbySize && prizeFormat) {
       setGameSettings({ ticketPrice, lobbySize, prizeFormat });
     }
+     // Simulate fetching players or joining - here we just use mock data
+    // In a real app, you'd fetch player list for the room
   }, [searchParams]);
 
+  const hostPlayer = players.find(p => p.isHost);
+
+  const handleConfirmHostTickets = () => {
+    if (hostPlayer) {
+      setPlayers(prevPlayers =>
+        prevPlayers.map(p =>
+          p.id === hostPlayer.id ? { ...p, ticketsToBuy: hostTicketSelection } : p
+        )
+      );
+      toast({
+        title: "Tickets Confirmed",
+        description: `You (host) will play with ${hostTicketSelection} ticket(s).`,
+      });
+    }
+  };
 
   const handleCopyInviteLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -44,7 +66,7 @@ export default function LobbyPage() {
   };
 
   const handleStartGame = () => {
-    // For now, just navigate to a mock game page
+    // TODO: Pass player ticket info to game page
     toast({ title: "Game Starting (Mock)!", description: `Navigating to game room ${roomId}.` });
     router.push(`/room/${roomId}/play`);
   };
@@ -61,14 +83,16 @@ export default function LobbyPage() {
   const currentPrizeFormat = gameSettings.prizeFormat || "Format 1";
   const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat];
   const prizeDistribution = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat];
-  const totalPrizePool = gameSettings.ticketPrice * players.length; // Assuming all players bought 1 ticket for simplicity
+  
+  const totalTicketsBought = players.reduce((sum, player) => sum + (player.ticketsToBuy || 0), 0);
+  const currentTotalPrizePool = gameSettings.ticketPrice * totalTicketsBought;
 
   return (
     <div className="space-y-8">
       <Card className="shadow-xl">
         <CardHeader>
           <CardTitle className="text-3xl font-bold">Lobby: #{roomId}</CardTitle>
-          <CardDescription>Waiting for players to join. Game will start when the host decides or lobby is full.</CardDescription>
+          <CardDescription>Waiting for players. Set your tickets and the host can start the game.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -87,6 +111,35 @@ export default function LobbyPage() {
             </div>
           </div>
 
+          {/* Ticket Selection for Host */}
+          {hostPlayer && (
+            <Card className="bg-secondary/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center"><Ticket className="mr-2 h-5 w-5 text-primary"/>Your Tickets (Host)</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col sm:flex-row items-center gap-4">
+                <Select
+                  value={String(hostTicketSelection)}
+                  onValueChange={(value) => setHostTicketSelection(Number(value))}
+                >
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Select tickets" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: MAX_TICKETS_PER_PLAYER }, (_, i) => i + 1).map(num => (
+                      <SelectItem key={num} value={String(num)}>
+                        {num} ticket(s)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleConfirmHostTickets} className="w-full sm:w-auto">
+                  Confirm My Tickets
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Player List */}
           <div>
             <h3 className="text-xl font-semibold mb-2 flex items-center">
@@ -95,24 +148,28 @@ export default function LobbyPage() {
             <ul className="space-y-2 rounded-md border p-4 max-h-60 overflow-y-auto">
               {players.map(player => (
                 <li key={player.id} className="flex justify-between items-center p-2 bg-secondary/30 rounded">
-                  <span>{player.name}</span>
+                  <span>{player.name} ({player.ticketsToBuy || 0} ticket{ (player.ticketsToBuy || 0) === 1 ? '' : 's'})</span>
                   {player.isHost && <span className="text-xs font-semibold text-primary">(Host)</span>}
                 </li>
               ))}
+              {players.length === 0 && <li className="text-muted-foreground">No players yet.</li>}
             </ul>
           </div>
           
           {/* Prize Distribution */}
            <div>
             <h3 className="text-xl font-semibold mb-2 flex items-center">
-                <Gift className="mr-2 h-5 w-5 text-primary" /> Prize Distribution (Estimated)
+                <Gift className="mr-2 h-5 w-5 text-primary" /> Prize Distribution
             </h3>
             <Card className="bg-secondary/30">
               <CardContent className="p-4 space-y-2">
-                 <p className="text-sm text-muted-foreground">Total Pool (if lobby full): ₹{gameSettings.ticketPrice * gameSettings.lobbySize}</p>
+                 <p className="text-sm font-semibold">Current Total Prize Pool: ₹{currentTotalPrizePool.toFixed(2)}</p>
+                 <p className="text-xs text-muted-foreground">
+                   (Max possible pool if lobby full & each player buys {MAX_TICKETS_PER_PLAYER} tickets: ₹{(gameSettings.ticketPrice * gameSettings.lobbySize * MAX_TICKETS_PER_PLAYER).toFixed(2)})
+                 </p>
                 {prizesForFormat.map((prizeName) => {
                   const percentage = prizeDistribution[prizeName as PrizeType] || 0;
-                  const prizeAmount = (totalPrizePool * percentage) / 100;
+                  const prizeAmount = (currentTotalPrizePool * percentage) / 100;
                   return (
                     <div key={prizeName} className="flex justify-between items-center text-sm">
                       <span>{prizeName}:</span>
@@ -124,12 +181,16 @@ export default function LobbyPage() {
             </Card>
           </div>
 
-
-          {/* Only host can start game, assuming first player is host for mock */}
-          {players.find(p => p.isHost) && (
-            <Button onClick={handleStartGame} size="lg" className="w-full mt-4">
+          {hostPlayer && (
+            <Button onClick={handleStartGame} size="lg" className="w-full mt-4" disabled={players.length < 2 || totalTicketsBought === 0}>
               <Play className="mr-2 h-5 w-5" /> Start Game
             </Button>
+          )}
+           {/* Display message if game cannot be started */}
+          {hostPlayer && (players.length < 2 || totalTicketsBought === 0) && (
+            <p className="text-center text-sm text-destructive mt-2">
+              {totalTicketsBought === 0 ? "At least one player needs to have tickets to start." : "Need at least 2 players to start the game."}
+            </p>
           )}
         </CardContent>
       </Card>

@@ -3,6 +3,7 @@ export interface Player {
   id: string;
   name: string;
   isHost?: boolean;
+  ticketsToBuy?: number; // Added for players to specify ticket quantity
 }
 
 export type TicketPrice = 5 | 10 | 20 | 25 | 50 | 100;
