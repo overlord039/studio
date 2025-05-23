@@ -9,11 +9,11 @@ import HousieTicket from '@/components/game/housie-ticket';
 import LiveNumberBoard from '@/components/game/live-number-board';
 import CalledNumberDisplay from '@/components/game/called-number-display';
 import type { HousieTicketGrid, PrizeType, Room } from '@/types';
-import { PRIZE_TYPES, type GameSettings } from '@/types'; 
+import { PRIZE_TYPES, type GameSettings } from '@/types';
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, ListOrdered, Loader2, Speaker } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, ListOrdered, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
@@ -31,11 +31,11 @@ export default function GameRoomPage() {
   const [roomData, setRoomData] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [myTickets, setMyTickets] = useState<HousieTicketGrid[]>([]);
-  const [markedNumbers, setMarkedNumbers] = useState<Set<string>>(new Set()); 
+  const [markedNumbers, setMarkedNumbers] = useState<Set<string>>(new Set());
   const [gameMessage, setGameMessage] = useState<string | null>(null);
-  
+
   const [isPrizesStatusMinimized, setIsPrizesStatusMinimized] = useState(true);
   const [isPrizeInfoMinimized, setIsPrizeInfoMinimized] = useState(true);
   const [isOtherPlayersMinimized, setIsOtherPlayersMinimized] = useState(true);
@@ -63,20 +63,20 @@ export default function GameRoomPage() {
         return;
       }
       const data: Room = await response.json();
-      setRoomData(data); 
+      setRoomData(data);
 
       const me = data.players.find(p => p.id === currentUser.username);
       if (me && me.tickets) {
         setMyTickets(me.tickets);
-      } else if (isInitialLoad && (!me || !me.tickets)) {
+      } else if (isInitialLoad && (!me || !me.tickets || me.tickets.length === 0)) {
         const ticketsParam = searchParams.get('playerTickets');
         const numTickets = ticketsParam ? parseInt(ticketsParam, 10) : 0;
-        if (numTickets === 0 && !data.isGameOver) { 
+        if (numTickets === 0 && !data.isGameOver && data.isGameStarted) {
              setGameMessage("You are spectating. You don't have tickets in this game.");
         }
-        setMyTickets([]); 
+        setMyTickets([]);
       }
-      
+
       if (data.isGameOver && !gameMessage?.includes("Game Over")) {
         const fhClaim = data.prizeStatus[PRIZE_TYPES.FULL_HOUSE];
         let gameOverMsg = "🎉 Game Over!";
@@ -84,9 +84,10 @@ export default function GameRoomPage() {
           const winnerNames = fhClaim.claimedBy.map(winnerId => data.players.find(p=>p.id === winnerId)?.name || winnerId).join(' & ');
           gameOverMsg = `🎉 ${winnerNames} won Full House! Game Over!`;
            if (fhClaim.timestamp) {
-             gameOverMsg += ` at ${new Date(fhClaim.timestamp).toLocaleTimeString()}`;
+             const claimTimestamp = typeof fhClaim.timestamp === 'string' ? new Date(fhClaim.timestamp) : fhClaim.timestamp;
+             gameOverMsg += ` at ${claimTimestamp.toLocaleTimeString()}`;
            }
-        } else if (data.calledNumbers.length === (DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer > 0 ? 90 : 0) ) { 
+        } else if (data.calledNumbers.length === (DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer > 0 ? 90 : 0) ) {
             gameOverMsg = "All numbers called. No Full House winner.";
         }
         setGameMessage(gameOverMsg);
@@ -94,13 +95,13 @@ export default function GameRoomPage() {
 
     } catch (err) {
       console.error("Error fetching game details:", err);
-      if (isInitialLoad || !roomData) { 
+      if (isInitialLoad || !roomData) {
         setError((err as Error).message);
       }
     } finally {
       if (isInitialLoad) setIsLoading(false);
     }
-  }, [roomId, currentUser, gameMessage, searchParams, roomData]); 
+  }, [roomId, currentUser, gameMessage, searchParams, roomData]);
 
   useEffect(() => {
     if (currentUser && roomId) {
@@ -114,10 +115,10 @@ export default function GameRoomPage() {
   useEffect(() => {
     if (!roomId || !currentUser || roomData?.isGameOver || isLoading) return;
     const intervalId = setInterval(() => {
-      if (!document.hidden) { 
+      if (!document.hidden) {
         fetchGameDetails(false);
       }
-    }, 3000); 
+    }, 3000);
     return () => clearInterval(intervalId);
   }, [roomId, currentUser, roomData?.isGameOver, isLoading, fetchGameDetails]);
 
@@ -126,7 +127,7 @@ export default function GameRoomPage() {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         const utterance = new SpeechSynthesisUtterance(String(roomData.currentNumber));
         window.speechSynthesis.speak(utterance);
-        console.log(`Client-side TTS announced: ${roomData.currentNumber}`);
+        // console.log(`Client-side TTS announced: ${roomData.currentNumber}`);
         announceCalledNumber({ number: roomData.currentNumber })
           .then(() => console.log(`AI flow 'announceCalledNumber' invoked for: ${roomData.currentNumber}`))
           .catch(err => console.error("Error invoking announceCalledNumber AI flow:", err));
@@ -139,21 +140,20 @@ export default function GameRoomPage() {
 
 
   const handleCallNextNumber = useCallback(async () => {
-    if (isCallingNumber) return; // Prevent re-entry
+    if (isCallingNumber) return; 
 
-    // Additional guards, though primarily controlled by the useEffect starting the interval
-    if (!roomData || roomData.isGameOver || !isCurrentUserHost || !currentUser?.username) {
-        console.log("Conditions not met for calling number, or call already in progress.");
+    if (!currentUser?.username || !isCurrentUserHost) {
+        console.log("User not host or not logged in, cannot call number for this client instance.");
         return;
     }
     
     setIsCallingNumber(true);
-    setGameMessage(null);
+    // setGameMessage(null); // Let API response dictate messages
     try {
       const response = await fetch(`/api/rooms/${roomId}/call-number`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostId: currentUser.username }) 
+        body: JSON.stringify({ hostId: currentUser.username })
       });
       
       const result = await response.json();
@@ -161,9 +161,8 @@ export default function GameRoomPage() {
       if (!response.ok) {
         setGameMessage(result.message || "Failed to call number.");
         toast({ title: "Error Calling Number", description: result.message, variant: "destructive"});
-        // If it's "All numbers called", the game might end. fetchGameDetails polling will catch this.
       } else {
-        setRoomData(result as Room); 
+        setRoomData(result as Room);
       }
     } catch (err) {
       console.error("Error calling next number:", err);
@@ -172,16 +171,15 @@ export default function GameRoomPage() {
     } finally {
       setIsCallingNumber(false);
     }
-  }, [roomId, currentUser?.username, isCurrentUserHost, roomData, isCallingNumber, setIsCallingNumber, setGameMessage, setRoomData, toast]);
+  }, [roomId, currentUser, isCurrentUserHost, toast, setRoomData, setGameMessage, setIsCallingNumber, isCallingNumber]);
 
-  // useEffect for automated number calling by the host's client
   useEffect(() => {
     let intervalId: NodeJS.Timeout | undefined;
 
-    if (isCurrentUserHost && roomData?.isGameStarted && !roomData.isGameOver && !isCallingNumber) {
+    if (isCurrentUserHost && roomData && roomData.isGameStarted && !roomData.isGameOver && !isCallingNumber) {
       intervalId = setInterval(() => {
         handleCallNextNumber();
-      }, 3000); // 3-second interval
+      }, 3000);
     }
 
     return () => {
@@ -189,13 +187,13 @@ export default function GameRoomPage() {
         clearInterval(intervalId);
       }
     };
-  }, [isCurrentUserHost, roomData?.isGameStarted, roomData?.isGameOver, isCallingNumber, handleCallNextNumber]);
+  }, [isCurrentUserHost, roomData, roomData?.isGameStarted, roomData?.isGameOver, isCallingNumber, handleCallNextNumber]);
 
 
   const handleNumberClick = (ticketIndex: number, numberValue: number, rowIndex: number, colIndex: number) => {
     if (!roomData || roomData.isGameOver || myTickets.length === 0) return;
     const key = `${ticketIndex}-${rowIndex}-${colIndex}`;
-    if (markedNumbers.has(key)) return; 
+    if (markedNumbers.has(key)) return;
 
     if (!roomData.calledNumbers.includes(numberValue)) {
       toast({
@@ -207,13 +205,13 @@ export default function GameRoomPage() {
     }
     setMarkedNumbers(prev => {
       const newMarked = new Set(prev);
-      newMarked.add(key); 
+      newMarked.add(key);
       return newMarked;
     });
   };
 
-  const handleClaimPrize = async (prizeType: PrizeType, ticketIndexToClaimOn: number) => { // Renamed ticketIndex
-    if (!roomData || !currentUser || myTickets.length === 0) { 
+  const handleClaimPrize = async (prizeType: PrizeType, ticketIndexToClaimOn: number) => {
+    if (!roomData || !currentUser || myTickets.length === 0) {
       toast({ title: "Cannot Claim", description: "Room data missing, not logged in, or you have no tickets.", variant: "destructive" });
       return;
     }
@@ -225,7 +223,7 @@ export default function GameRoomPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ playerId: currentUser.username, prizeType, ticketIndex: ticketIndexToClaimOn }),
       });
-      
+
       const result = await response.json();
 
       if (!response.ok) {
@@ -233,37 +231,39 @@ export default function GameRoomPage() {
         toast({ title: `Claim ${prizeType} Invalid!`, description: result.message, variant: "destructive" });
       } else {
         const updatedRoom: Room = result;
-        setRoomData(updatedRoom); 
+        setRoomData(updatedRoom);
 
         const claimStatus = updatedRoom.prizeStatus[prizeType];
         let successMsg = `🔔 ${currentUser.username} has claimed ${prizeType}!`;
-        
+
         if (claimStatus?.claimedBy.includes(currentUser.username)) {
             const allClaimantsNames = claimStatus.claimedBy.map(id => updatedRoom.players.find(p=>p.id===id)?.name || id);
             if (allClaimantsNames.length > 1) {
                  successMsg = `🔔 ${prizeType} claimed by ${allClaimantsNames.join(' & ')}! (You are one of them!)`;
             }
-            // If Full House, check for auto-awarded line prizes
+
             if (prizeType === PRIZE_TYPES.FULL_HOUSE) {
                 let autoAwardMsg = "";
                 [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE].forEach(linePrize => {
                     const lineClaimStatus = updatedRoom.prizeStatus[linePrize];
-                    if(lineClaimStatus?.claimedBy.includes(currentUser.username) && 
-                       claimStatus.claimedBy.includes(currentUser.username)) { // Check if auto-awarded to FH winner
-                        // Check if this line prize was awarded as part of this FH claim (timestamp check might be needed if more complex)
-                        // For simplicity, if FH winner also has this line prize, assume it was auto-awarded or claimed around same time
-                        const linePrizeClaimants = lineClaimStatus.claimedBy.map(id => updatedRoom.players.find(p=>p.id === id)?.name || id).join(' & ');
-                        if (!successMsg.includes(linePrize)) { // Avoid duplicate messaging
-                           autoAwardMsg += `\nAlso awarded ${linePrize} (claimed by ${linePrizeClaimants}).`;
-                        }
+                    const playerTicketForFH = myTickets[ticketIndexToClaimOn];
+                    if(playerTicketForFH && (!lineClaimStatus || !lineClaimStatus.claimedBy.length)) { // Line is unclaimed
+                         const housieLib = require('@/lib/housie'); // Local require for safety
+                         if (housieLib.checkWinningCondition(playerTicketForFH, updatedRoom.calledNumbers, linePrize)) {
+                            // This is a simplified client-side reflection of backend auto-award
+                            // The true source of truth is `updatedRoom.prizeStatus[linePrize]` after FH claim
+                            if (updatedRoom.prizeStatus[linePrize]?.claimedBy.includes(currentUser.username)) {
+                                autoAwardMsg += `\nAlso awarded ${linePrize}.`;
+                            }
+                         }
                     }
                 });
                 if (autoAwardMsg) successMsg += autoAwardMsg;
             }
-        } else if (claimStatus?.claimedBy.length) { 
+        } else if (claimStatus?.claimedBy.length) {
              successMsg = `🔔 ${prizeType} was claimed by ${claimStatus.claimedBy.map(id => updatedRoom.players.find(p=>p.id===id)?.name || id).join(' & ')}.`;
         }
-        
+
         setGameMessage(successMsg);
         toast({ title: "Claim Submitted!", description: successMsg, className: "bg-green-500 text-white" });
       }
@@ -273,9 +273,9 @@ export default function GameRoomPage() {
       toast({ title: "Network Error", description: `Could not claim ${prizeType}.`, variant: "destructive" });
     }
   };
-  
+
   const handlePlayAgain = () => {
-    router.push(`/room/${roomId}/lobby`); 
+    router.push(`/room/${roomId}/lobby`);
     toast({title: "New Game", description: "Returning to lobby."});
   };
 
@@ -285,7 +285,7 @@ export default function GameRoomPage() {
 
   if (isLoading || authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
         <p className="ml-4 text-xl">Loading Game...</p>
       </div>
@@ -302,11 +302,18 @@ export default function GameRoomPage() {
       </div>
     );
   }
-  
+
   if (!roomData || !currentUser) {
-    return <div className="text-center p-8">Preparing your game... If this persists, please try refreshing or ensure you are logged in.</div>;
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
+            <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
+            <h2 className="text-2xl font-semibold mb-2">Room Data Unavailable</h2>
+            <p className="text-muted-foreground mb-6">Could not load room details. Please try again or ensure you are logged in.</p>
+            <Button onClick={() => router.push('/')} size="lg">Go to Homepage</Button>
+        </div>
+    );
   }
-  
+
   const gameSettings: GameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
   const currentPrizeFormat = gameSettings.prizeFormat;
   const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
@@ -334,8 +341,9 @@ export default function GameRoomPage() {
                 {prizesForFormat.map(prize => {
                   const claimInfo = roomData.prizeStatus[prize];
                   let prizeStatusText = "Not Claimed";
+                  let winnerNames = "";
                   if (claimInfo && claimInfo.claimedBy.length > 0) {
-                     const winnerNames = claimInfo.claimedBy.map(id => roomData.players.find(p=>p.id === id)?.name || id).join(', ');
+                     winnerNames = claimInfo.claimedBy.map(id => roomData.players.find(p=>p.id === id)?.name || id).join(', ');
                      prizeStatusText = `Claimed by ${winnerNames}`;
                      if (claimInfo.claimedBy.length > 1) {
                          prizeStatusText += ` (Split ${claimInfo.claimedBy.length} ways)`;
@@ -413,23 +421,23 @@ export default function GameRoomPage() {
 
         <div className="lg:col-span-2">
            <div className="max-w-xl mx-auto space-y-4">
-            {gameMessage && ( 
-              <Alert variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") || gameMessage.includes("Error") ? "destructive" : (gameMessage.includes("claimed") || gameMessage.includes("won") || gameMessage.includes("Game Over") ? "default" : "default")} 
+            {gameMessage && (
+              <Alert variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") || gameMessage.includes("Error") ? "destructive" : (gameMessage.includes("claimed") || gameMessage.includes("won") || gameMessage.includes("Game Over") ? "default" : "default")}
                     className={cn((gameMessage.includes("claimed") || gameMessage.includes("won") || gameMessage.includes("Game Over")) && !gameMessage.includes("Bogey") && !gameMessage.includes("not valid") ? "bg-green-100 dark:bg-green-900 border-green-500" : "")}>
                 {gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed")  || gameMessage.includes("Error") ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
                 <AlertTitle>{gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed")  || gameMessage.includes("Error") ? "Update" : (gameMessage.includes("claimed") || gameMessage.includes("won") || gameMessage.includes("Game Over") ? "Game Update!" : "Game Message")}</AlertTitle>
                 <AlertDescription>{gameMessage}</AlertDescription>
               </Alert>
             )}
-            
+
             {myTickets.length > 0 && (
               <div className="flex flex-wrap gap-2 justify-center">
-                {prizesForFormat.map((prizeType, prizeIdx) => { // Added prizeIdx for unique key
+                {prizesForFormat.map((prizeType, prizeIdx) => {
                   const claimInfo = roomData.prizeStatus[prizeType];
                   const hasPlayerClaimedThis = claimInfo?.claimedBy.includes(currentUser.username);
                   const isPrizeClaimedByAnyone = claimInfo && claimInfo.claimedBy.length > 0;
-                  
-                  let buttonText = prizeType; 
+
+                  let buttonText = prizeType;
                   if (isPrizeClaimedByAnyone) {
                     if (hasPlayerClaimedThis) {
                         buttonText = `You Claimed ${prizeType}`;
@@ -438,18 +446,16 @@ export default function GameRoomPage() {
                         buttonText = `${prizeType} (Claimed by ${claimants})`;
                     }
                   }
-                  
-                  // For simplicity, we'll assume the claim is on the first ticket if multiple.
-                  // A more complex UI might let the player choose which ticket they are claiming on.
-                  const ticketIndexForClaim = 0; 
+
+                  const ticketIndexForClaim = 0;
 
                   return (
                     <Button
-                      key={`${prizeType}-${prizeIdx}`} // More unique key
+                      key={`${prizeType}-${prizeIdx}`}
                       onClick={() => handleClaimPrize(prizeType, ticketIndexForClaim)}
-                      disabled={roomData.isGameOver || hasPlayerClaimedThis || (isPrizeClaimedByAnyone && prizeType !== PRIZE_TYPES.FULL_HOUSE && !claimInfo?.claimedBy.includes(currentUser.username))} 
+                      disabled={roomData.isGameOver || hasPlayerClaimedThis || (isPrizeClaimedByAnyone && prizeType !== PRIZE_TYPES.FULL_HOUSE && !claimInfo?.claimedBy.includes(currentUser.username))}
                       variant={isPrizeClaimedByAnyone ? "secondary" : "default"}
-                      className={cn("px-2 py-1 rounded-md text-xs sm:text-sm", 
+                      className={cn("px-2 py-1 rounded-md text-xs sm:text-sm",
                         !isPrizeClaimedByAnyone && prizeType.includes("Jaldi") ? "bg-green-500 hover:bg-green-600" :
                         !isPrizeClaimedByAnyone && prizeType.includes("Line") ? "bg-yellow-400 hover:bg-yellow-500 text-black" :
                         !isPrizeClaimedByAnyone && prizeType.includes("Full House") ? "bg-red-500 hover:bg-red-600" : "",
@@ -463,9 +469,9 @@ export default function GameRoomPage() {
                 })}
               </div>
             )}
-            
+
             <h2 className="text-xl font-semibold text-center">Your Tickets ({myTickets.length})</h2>
-             {myTickets.length === 0 && !roomData.isGameOver && <p className="text-center text-muted-foreground">You are spectating or have no tickets in this game.</p>}
+             {myTickets.length === 0 && !roomData.isGameOver && roomData.isGameStarted && <p className="text-center text-muted-foreground">You are spectating or have no tickets in this game.</p>}
             <ScrollArea className="max-h-[60vh] lg:max-h-none">
               <div className="flex flex-wrap justify-center gap-4">
               {myTickets.map((ticket, index) => (
