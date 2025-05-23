@@ -142,8 +142,6 @@ export default function GameRoomPage() {
       return;
     }
     
-    // If Full House is already claimed by ANYONE, other prizes cannot be claimed,
-    // unless this claim is for Full House itself (to allow simultaneous FH claims if logic supported it, though current setup is one-by-one)
     if ((claimedPrizes[PRIZE_TYPES.FULL_HOUSE]?.length || 0) > 0 && prizeType !== PRIZE_TYPES.FULL_HOUSE) {
          toast({ title: "Claim Failed", description: `Game is over (Full House claimed). No more claims for ${prizeType}.`, variant: "destructive" });
          return;
@@ -181,7 +179,6 @@ export default function GameRoomPage() {
     
     if (winningTicketIndex !== -1) { 
       const updatedClaimedPrizes = { ...claimedPrizes };
-      // Add current player to winners list for this prize
       updatedClaimedPrizes[prizeType] = [...(updatedClaimedPrizes[prizeType] || []), MOCK_USERNAME];
       
       let primaryClaimMessage = `🔔 ${MOCK_USERNAME} has claimed ${prizeType}!`;
@@ -196,7 +193,6 @@ export default function GameRoomPage() {
 
         const linePrizesToAutoCheck: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
         for (const linePrize of linePrizesToAutoCheck) {
-          // Check if line prize is already claimed by ANYONE
           if ((updatedClaimedPrizes[linePrize]?.length || 0) === 0) { 
             const lineNumbers = getNumbersForPrizePattern(fhWinningTicket, linePrize);
             
@@ -210,7 +206,6 @@ export default function GameRoomPage() {
                   }
                 }
               }
-              // Use winningTicketForFHIndex for checking marked numbers on the FH winning ticket
               return rFound !== -1 && markedNumbers.has(`${winningTicketForFHIndex}-${rFound}-${cFound}`);
             });
 
@@ -377,7 +372,7 @@ export default function GameRoomPage() {
               {AVAILABLE_PRIZES.map(prize => {
                 const winnersOfThisPrize = claimedPrizes[prize] || [];
                 const hasPlayerClaimedThis = winnersOfThisPrize.includes(MOCK_USERNAME);
-                let buttonText = `Claim ${prize}`;
+                let buttonText = prize; // Default to just the prize name
 
                 if (winnersOfThisPrize.length > 0) {
                   if (hasPlayerClaimedThis) {
@@ -392,7 +387,7 @@ export default function GameRoomPage() {
                 return (
                   <Button
                     key={prize}
-                    onClick={() => handleClaimPrize(prizeType)}
+                    onClick={() => handleClaimPrize(prize)}
                     disabled={isGameOver || hasPlayerClaimedThis || (isAnyFullHouseClaimedByAnyone && prize !== PRIZE_TYPES.FULL_HOUSE) }
                     variant={winnersOfThisPrize.length > 0 ? "secondary" : "default"}
                     className={cn("px-2 py-1 rounded-md text-xs sm:text-sm", 
