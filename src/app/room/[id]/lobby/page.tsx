@@ -3,7 +3,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input"; // Keep if other inputs are needed, or remove if not
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
@@ -13,11 +12,7 @@ import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES } from "@/lib/constan
 import React, { useEffect, useState } from "react";
 
 // Mock data - replace with actual data fetching and state management
-const mockPlayersInitial: Player[] = [
-  { id: "1", name: "Alice (Host)", isHost: true, ticketsToBuy: 1 },
-  { id: "2", name: "Bob", ticketsToBuy: 1 },
-  { id: "3", name: "Charlie", ticketsToBuy: 1 },
-];
+const initialHostPlayer: Player = { id: "hostUser123", name: "You (Host)", isHost: true, ticketsToBuy: 1 };
 
 const MAX_TICKETS_PER_PLAYER = 6;
 
@@ -29,8 +24,8 @@ export default function LobbyPage() {
   const roomId = routeParams.id as string;
 
   const [gameSettings, setGameSettings] = useState<GameSettings | null>(null);
-  const [players, setPlayers] = useState<Player[]>(mockPlayersInitial);
-  const [hostTicketSelection, setHostTicketSelection] = useState<number>(players.find(p => p.isHost)?.ticketsToBuy || 1);
+  const [players, setPlayers] = useState<Player[]>([initialHostPlayer]); // Start with only the host
+  const [hostTicketSelection, setHostTicketSelection] = useState<number>(initialHostPlayer.ticketsToBuy || 1);
 
   useEffect(() => {
     const ticketPrice = parseInt(searchParams.get('ticketPrice') || '10', 10) as GameSettings['ticketPrice'];
@@ -40,8 +35,8 @@ export default function LobbyPage() {
     if (ticketPrice && lobbySize && prizeFormat) {
       setGameSettings({ ticketPrice, lobbySize, prizeFormat });
     }
-     // Simulate fetching players or joining - here we just use mock data
-    // In a real app, you'd fetch player list for the room
+     // In a real app, you'd fetch player list for the room or manage this via websockets
+     // For this mock, we just initialize with the host.
   }, [searchParams]);
 
   const hostPlayer = players.find(p => p.isHost);
@@ -67,7 +62,6 @@ export default function LobbyPage() {
 
   const handleStartGame = () => {
     toast({ title: "Game Starting (Mock)!", description: `Navigating to game room ${roomId}.` });
-    // Pass the host's ticket selection to the play page
     router.push(`/room/${roomId}/play?playerTickets=${hostTicketSelection}`);
   };
 
@@ -111,7 +105,6 @@ export default function LobbyPage() {
             </div>
           </div>
 
-          {/* Ticket Selection for Host */}
           {hostPlayer && (
             <Card className="bg-secondary/20">
               <CardHeader className="pb-2">
@@ -140,7 +133,6 @@ export default function LobbyPage() {
             </Card>
           )}
 
-          {/* Player List */}
           <div>
             <h3 className="text-xl font-semibold mb-2 flex items-center">
               <Users className="mr-2 h-5 w-5 text-primary" /> Players ({players.length}/{gameSettings.lobbySize})
@@ -153,10 +145,10 @@ export default function LobbyPage() {
                 </li>
               ))}
               {players.length === 0 && <li className="text-muted-foreground">No players yet.</li>}
+               {/* In a real app, this list would update as players join */}
             </ul>
           </div>
           
-          {/* Prize Distribution */}
            <div>
             <h3 className="text-xl font-semibold mb-2 flex items-center">
                 <Gift className="mr-2 h-5 w-5 text-primary" /> Prize Distribution
@@ -186,7 +178,6 @@ export default function LobbyPage() {
               <Play className="mr-2 h-5 w-5" /> Start Game
             </Button>
           )}
-           {/* Display message if game cannot be started */}
           {hostPlayer && (players.length < 2 || totalTicketsBought === 0) && (
             <p className="text-center text-sm text-destructive mt-2">
               {totalTicketsBought === 0 ? "At least one player needs to have tickets to start." : "Need at least 2 players to start the game."}
