@@ -111,12 +111,10 @@ export default function GameRoomPage() {
     const key = `${ticketIndex}-${rowIndex}-${colIndex}`;
     setMarkedNumbers(prev => {
       const newMarked = new Set(prev);
-      if (newMarked.has(key)) {
-        newMarked.delete(key);
-      } else {
+      if (!newMarked.has(key)) { // Only add if not already marked
         newMarked.add(key);
       }
-      return newMarked;
+      return newMarked; // Return the set, potentially unchanged if already marked
     });
   };
 
@@ -188,6 +186,9 @@ export default function GameRoomPage() {
       case PRIZE_TYPES.JALDI_5: 
       case PRIZE_TYPES.FIRST_JALDI_5:
       case PRIZE_TYPES.SECOND_JALDI_5:
+        // For Jaldi 5, the condition is _any_ 5 numbers on the ticket.
+        // The `checkWinningCondition` function handles the "at least 5" logic.
+        // Here, we return all numbers, and `checkWinningCondition` will verify against marked and called.
         return ticket.flat().filter(n => n !== null) as number[];
       case PRIZE_TYPES.TOP_LINE: return getRowNumbers(0);
       case PRIZE_TYPES.MIDDLE_LINE: return getRowNumbers(1);
@@ -288,20 +289,21 @@ export default function GameRoomPage() {
             }
           }
           
-          const isFullHouseClaimedByAnyone = prize === PRIZE_TYPES.FULL_HOUSE && winnersOfThisPrize.length > 0;
+          const isFullHouseClaimedByAnyone = prizeType => prizeType === PRIZE_TYPES.FULL_HOUSE && (claimedPrizes[PRIZE_TYPES.FULL_HOUSE]?.length || 0) > 0;
+
 
           return (
             <Button
               key={prize}
               onClick={() => handleClaimPrize(prize)}
-              disabled={isGameOver || hasPlayerClaimedThis || isFullHouseClaimedByAnyone}
+              disabled={isGameOver || hasPlayerClaimedThis || isFullHouseClaimedByAnyone(prize)}
               variant={winnersOfThisPrize.length > 0 ? "secondary" : "default"}
               className={cn("px-2 py-1 rounded-md text-xs sm:text-sm", 
                 !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Jaldi") ? "bg-green-500 hover:bg-green-600" :
                 !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Line") ? "bg-yellow-400 hover:bg-yellow-500 text-black" :
                 !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Full House") ? "bg-red-500 hover:bg-red-600" : "",
                 (hasPlayerClaimedThis || (winnersOfThisPrize.length > 0 && prize !== PRIZE_TYPES.FULL_HOUSE && !hasPlayerClaimedThis)) ? "opacity-70" : "",
-                (isGameOver || isFullHouseClaimedByAnyone) ? "cursor-not-allowed opacity-50" : ""
+                (isGameOver || isFullHouseClaimedByAnyone(prize)) ? "cursor-not-allowed opacity-50" : ""
               )}
             >
               {buttonText}
