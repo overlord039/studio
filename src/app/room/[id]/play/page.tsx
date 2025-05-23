@@ -392,7 +392,7 @@ export default function GameRoomPage() {
                 return (
                   <Button
                     key={prize}
-                    onClick={() => handleClaimPrize(prize)}
+                    onClick={() => handleClaimPrize(prizeType)}
                     disabled={isGameOver || hasPlayerClaimedThis || (isAnyFullHouseClaimedByAnyone && prize !== PRIZE_TYPES.FULL_HOUSE) }
                     variant={winnersOfThisPrize.length > 0 ? "secondary" : "default"}
                     className={cn("px-2 py-1 rounded-md text-xs sm:text-sm", 
@@ -483,3 +483,5 @@ export default function GameRoomPage() {
     </div>
   );
 }
+
+    
