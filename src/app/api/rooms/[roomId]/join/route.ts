@@ -7,8 +7,9 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { roomId: string } }
 ) {
+  const { roomId } = params; // Destructure roomId immediately
+
   try {
-    const roomId = params.roomId;
     const player = (await request.json()) as Player;
 
     if (!roomId) {
@@ -31,7 +32,8 @@ export async function POST(
     };
     return NextResponse.json(roomForClient, { status: 200 });
   } catch (error) {
-    console.error(`Error joining room ${params.roomId}:`, error);
+    console.error(`Error joining room ${roomId}:`, error); // Use destructured roomId
     return NextResponse.json({ message: 'Error joining room', error: (error as Error).message }, { status: 500 });
   }
 }
+

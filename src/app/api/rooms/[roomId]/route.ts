@@ -6,8 +6,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { roomId: string } }
 ) {
+  const { roomId } = params; // Destructure roomId immediately
+
   try {
-    const roomId = params.roomId;
     if (!roomId) {
       return NextResponse.json({ message: 'Room ID is required' }, { status: 400 });
     }
@@ -25,7 +26,8 @@ export async function GET(
     };
     return NextResponse.json(roomForClient, { status: 200 });
   } catch (error) {
-    console.error(`Error fetching room ${params.roomId}:`, error);
+    console.error(`Error fetching room ${roomId}:`, error); // Use destructured roomId
     return NextResponse.json({ message: 'Error fetching room details', error: (error as Error).message }, { status: 500 });
   }
 }
+
