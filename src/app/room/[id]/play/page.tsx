@@ -41,9 +41,11 @@ const MOCK_OTHER_PLAYERS_INFO = [
 
 
 export default function GameRoomPage() {
-  const params = useParams();
+  // The `routeParams` object from `useParams` in a Client Component is a plain object, not a Promise.
+  // The Next.js warning about `React.use(params)` is typically for `params` props in Server Components.
+  const routeParams = useParams();
   const router = useRouter();
-  const roomId = params.id as string;
+  const roomId = routeParams.id as string;
   const { toast } = useToast();
 
   const [tickets, setTickets] = useState<HousieTicketGrid[]>([]);
@@ -149,7 +151,7 @@ export default function GameRoomPage() {
 
 
     let winningTicketIndex = -1; 
-    let winningTicketForFHIndex = -1; 
+    let winningTicketForFHIndex = -1; // Specifically to track the ticket that won Full House
 
     for (let i = 0; i < tickets.length; i++) {
       const currentTicket = tickets[i];
@@ -157,6 +159,7 @@ export default function GameRoomPage() {
 
       if (prizeType === PRIZE_TYPES.JALDI_5) {
         let playerMarkedAndCalledCount = 0;
+        // Iterate over the current ticket to count marked and called numbers
         for (let r = 0; r < currentTicket.length; r++) {
           for (let c = 0; c < currentTicket[r].length; c++) {
             const numberValue = currentTicket[r][c];
@@ -187,6 +190,7 @@ export default function GameRoomPage() {
           return rFound !== -1 && markedNumbers.has(`${i}-${rFound}-${cFound}`);
         });
 
+        // For line and full house, also use checkWinningCondition to ensure all numbers in pattern are in `calledNumbers`
         if (allPatternNumbersMarkedByPlayer && checkWinningCondition(currentTicket, calledNumbers, prizeType)) {
            isValidClaimForThisTicket = true;
         }
@@ -195,13 +199,14 @@ export default function GameRoomPage() {
       if (isValidClaimForThisTicket) {
         winningTicketIndex = i;
         if (prizeType === PRIZE_TYPES.FULL_HOUSE) {
-          winningTicketForFHIndex = i;
+          winningTicketForFHIndex = i; // Store the index of the FH winning ticket
         }
-        break; 
+        break; // Found a winning ticket for this claim
       }
     }
     
     if (winningTicketIndex !== -1) { 
+      // Valid claim for the prizeType on winningTicketIndex
       const updatedClaimedPrizes = { ...claimedPrizes };
       updatedClaimedPrizes[prizeType] = [...(updatedClaimedPrizes[prizeType] || []), MOCK_USERNAME];
       
@@ -212,16 +217,20 @@ export default function GameRoomPage() {
         setIsGameOver(true);
         if (!fullHouseWinTime) setFullHouseWinTime(new Date()); 
 
-        const fhWinningTicket = tickets[winningTicketForFHIndex];
+        // Auto-award unclaimed lines on the Full House winning ticket
+        const fhWinningTicket = tickets[winningTicketForFHIndex]; // Use the correct FH winning ticket
         let autoAwardedPrizeNames: string[] = [];
 
         const linePrizesToAutoCheck: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
         for (const linePrize of linePrizesToAutoCheck) {
-          if ((updatedClaimedPrizes[linePrize]?.length || 0) === 0) { 
+          if ((updatedClaimedPrizes[linePrize]?.length || 0) === 0) { // Check if line prize is still unclaimed
+            // Check if this line is complete on the FH winning ticket
             const lineNumbers = getNumbersForPrizePattern(fhWinningTicket, linePrize);
             
+            // Ensure all numbers for this line on the FH ticket are marked by the player
             const allLineNumbersMarkedByPlayerOnFHTicket = lineNumbers.every(num => {
               let rFound = -1, cFound = -1;
+              // Find the number on the FH winning ticket
               outerFind: for(let r=0; r<fhWinningTicket.length; r++) {
                 for(let c=0; c<fhWinningTicket[r].length; c++) {
                   if(fhWinningTicket[r][c] === num) {
@@ -241,7 +250,7 @@ export default function GameRoomPage() {
           }
         }
         
-        const allFullHouseWinners = updatedClaimedPrizes[PRIZE_TYPES.FULL_HOUSE] || [MOCK_USERNAME];
+        const allFullHouseWinners = updatedClaimedPrizes[PRIZE_TYPES.FULL_HOUSE] || [MOCK_USERNAME]; // Should mainly be MOCK_USERNAME
         let finalFHMessage = `🎉 ${allFullHouseWinners.join(' & ')} won Full House! Game Over!`;
         if (autoAwardedPrizeNames.length > 0) {
             finalFHMessage += ` ${MOCK_USERNAME} also auto-awarded: ${autoAwardedPrizeNames.join(', ')}.`;
@@ -253,6 +262,7 @@ export default function GameRoomPage() {
       setClaimedPrizes(updatedClaimedPrizes);
 
     } else {
+      // Claim is not valid on any ticket
       const failMessage = `Claim for ${prizeType} by ${MOCK_USERNAME} is not valid. Bogey!`;
       setGameMessage(failMessage);
       toast({ title: "Claim Invalid!", description: `Your claim for ${prizeType} was not valid.`, variant: "destructive" });
@@ -311,7 +321,7 @@ export default function GameRoomPage() {
                 {AVAILABLE_PRIZES.map(prize => {
                   const winners = claimedPrizes[prize] || [];
                   let prizeStatus = winners.length > 0 ? `Claimed by ${winners.join(', ')}` : "Not Claimed";
-                  if (winners.length > 1) {
+                  if (winners.length > 1) { // Show split info only if more than one winner for that prize
                     prizeStatus += ` (Split ${winners.length} ways)`;
                   }
                   return (
@@ -414,7 +424,7 @@ export default function GameRoomPage() {
                   <Button
                     key={prize}
                     onClick={() => handleClaimPrize(prize)}
-                    disabled={isGameOver || hasPlayerClaimedThis || (isAnyFullHouseClaimedByAnyone && prize !== PRIZE_TYPES.FULL_HOUSE) }
+                    disabled={isGameOver || hasPlayerClaimedThis || (isAnyFullHouseClaimedByAnyone && prizeType !== PRIZE_TYPES.FULL_HOUSE) }
                     variant={winnersOfThisPrize.length > 0 ? "secondary" : "default"}
                     className={cn("px-2 py-1 rounded-md text-xs sm:text-sm", 
                       !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Jaldi") ? "bg-green-500 hover:bg-green-600" :

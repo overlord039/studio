@@ -24,9 +24,11 @@ const MAX_TICKETS_PER_PLAYER = 6;
 export default function LobbyPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const params = useParams();
+  // The `routeParams` object from `useParams` in a Client Component is a plain object, not a Promise.
+  // The Next.js warning about `React.use(params)` is typically for `params` props in Server Components.
+  const routeParams = useParams();
   const searchParams = useSearchParams();
-  const roomId = params.id as string;
+  const roomId = routeParams.id as string;
 
   const [gameSettings, setGameSettings] = useState<GameSettings | null>(null);
   const [players, setPlayers] = useState<Player[]>(mockPlayersInitial);
