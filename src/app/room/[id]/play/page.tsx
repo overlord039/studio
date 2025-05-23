@@ -4,24 +4,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useParams, useRouter } from 'next/navigation'; // Added useRouter
+import { useParams, useRouter } from 'next/navigation';
 import { generateImprovedHousieTicket, checkWinningCondition } from '@/lib/housie';
 import HousieTicket from '@/components/game/housie-ticket';
 import LiveNumberBoard from '@/components/game/live-number-board';
 import CalledNumberDisplay from '@/components/game/called-number-display';
 import type { HousieTicketGrid, PrizeType } from '@/types';
-import { PRIZE_TYPES } from '@/types'; 
+import { PRIZE_TYPES } from '@/types';
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut } from 'lucide-react'; // Added PartyPopper, RotateCcw, LogOut
+import { AlertCircle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 
 
-const MOCK_USERNAME = "Player123";
-const MOCK_TOTAL_MONEY = 2000;
-const MOCK_PLAYER_COUNT = 6;
+const MOCK_USERNAME = "Player123"; // Represents the current user
+const MOCK_TOTAL_MONEY = 2000; // Example total prize pool
+const MOCK_PLAYER_COUNT = 6; // Example player count
 
 const AVAILABLE_PRIZES: PrizeType[] = [
   PRIZE_TYPES.JALDI_5,
@@ -34,7 +34,7 @@ const AVAILABLE_PRIZES: PrizeType[] = [
 
 export default function GameRoomPage() {
   const params = useParams();
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
   const roomId = params.id as string;
   const { toast } = useToast();
 
@@ -42,16 +42,16 @@ export default function GameRoomPage() {
   const [calledNumbers, setCalledNumbers] = useState<number[]>([]);
   const [currentNumber, setCurrentNumber] = useState<number | null>(null);
   const [markedNumbers, setMarkedNumbers] = useState<Set<string>>(new Set());
-  const [claimedPrizes, setClaimedPrizes] = useState<Record<PrizeType, string | null>>({});
+  const [claimedPrizes, setClaimedPrizes] = useState<Record<PrizeType, string[] | null>>({});
   const [isGameOver, setIsGameOver] = useState(false);
   const [gameMessage, setGameMessage] = useState<string | null>(null);
   const [fullHouseWinTime, setFullHouseWinTime] = useState<Date | null>(null);
 
   const initializeGame = useCallback(() => {
-    setTickets([generateImprovedHousieTicket(), generateImprovedHousieTicket()]);
-    const initialClaims: Record<PrizeType, string | null> = {};
+    setTickets([generateImprovedHousieTicket(), generateImprovedHousieTicket()]); // User gets 2 tickets
+    const initialClaims: Record<PrizeType, string[] | null> = {};
     AVAILABLE_PRIZES.forEach(prize => {
-      initialClaims[prize] = null;
+      initialClaims[prize] = null; // Initialize with null, meaning no one has claimed yet
     });
     setClaimedPrizes(initialClaims);
     setCalledNumbers([]);
@@ -92,13 +92,13 @@ export default function GameRoomPage() {
     if (isGameOver || calledNumbers.length >= 90) return;
     const interval = setInterval(() => {
       callNextNumber();
-    }, 3000);
+    }, 3000); // 3-second interval
     return () => clearInterval(interval);
   }, [callNextNumber, calledNumbers.length, isGameOver]);
 
 
   const handleNumberClick = (ticketIndex: number, numberValue: number, rowIndex: number, colIndex: number) => {
-    if (isGameOver) return; // Prevent marking if game is over
+    if (isGameOver) return;
 
     if (!calledNumbers.includes(numberValue)) {
       toast({
@@ -121,10 +121,23 @@ export default function GameRoomPage() {
   };
 
   const handleClaimPrize = (prizeType: PrizeType) => {
-    if (isGameOver || claimedPrizes[prizeType]) {
-      toast({ title: "Claim Failed", description: `Prize ${prizeType} already claimed or game over.`, variant: "destructive" });
+    if (isGameOver) {
+      toast({ title: "Game Over", description: `Game is over. No more claims allowed.`, variant: "destructive" });
       return;
     }
+
+    const currentWinnersForPrize = claimedPrizes[prizeType] || [];
+    if (currentWinnersForPrize.includes(MOCK_USERNAME)) {
+      toast({ title: "Already Claimed", description: `You have already claimed ${prizeType}.` });
+      return;
+    }
+    
+    // For Full House, if anyone has claimed it, the game is over.
+    if (prizeType === PRIZE_TYPES.FULL_HOUSE && (claimedPrizes[PRIZE_TYPES.FULL_HOUSE]?.length || 0) > 0) {
+        toast({ title: "Claim Failed", description: `Full House already claimed. Game is over.`, variant: "destructive" });
+        return;
+    }
+
 
     let winningTicketIndex = -1;
     for (let i = 0; i < tickets.length; i++) {
@@ -149,18 +162,18 @@ export default function GameRoomPage() {
       }
     }
     
-    if (winningTicketIndex !== -1) {
-      const winnerName = MOCK_USERNAME; // In a real app, get actual player name
-      setClaimedPrizes(prev => ({ ...prev, [prizeType]: winnerName }));
-      const successMessage = `🔔 ${winnerName} has claimed ${prizeType}! This prize is now closed.`;
+    if (winningTicketIndex !== -1) { // Player MOCK_USERNAME has a valid claim
+      const newWinnerList = [...currentWinnersForPrize, MOCK_USERNAME];
+      setClaimedPrizes(prev => ({ ...prev, [prizeType]: newWinnerList }));
+      
+      const successMessage = `🔔 ${MOCK_USERNAME} has claimed ${prizeType}!`;
       setGameMessage(successMessage);
-      toast({ title: "Claim Successful!", description: `${prizeType} claimed by ${winnerName}.`, className: "bg-green-500 text-white" });
+      toast({ title: "Claim Successful!", description: `${prizeType} claimed by ${MOCK_USERNAME}.`, className: "bg-green-500 text-white" });
 
       if (prizeType === PRIZE_TYPES.FULL_HOUSE) {
         setIsGameOver(true);
         setFullHouseWinTime(new Date());
-        setGameMessage(`🎉 ${winnerName} won Full House! Game Over!`);
-        // Toast for Full House is handled by the game over screen more prominently
+        setGameMessage(`🎉 ${newWinnerList.join(' & ')} won Full House! Game Over!`);
       }
     } else {
       const failMessage = `Claim for ${prizeType} by ${MOCK_USERNAME} is not valid. Bogey!`;
@@ -175,8 +188,6 @@ export default function GameRoomPage() {
       case PRIZE_TYPES.JALDI_5: 
       case PRIZE_TYPES.FIRST_JALDI_5:
       case PRIZE_TYPES.SECOND_JALDI_5:
-        // For Jaldi 5, any 5 marked and called numbers on the ticket.
-        // This helper should return all numbers on the ticket to be checked against marked+called.
         return ticket.flat().filter(n => n !== null) as number[];
       case PRIZE_TYPES.TOP_LINE: return getRowNumbers(0);
       case PRIZE_TYPES.MIDDLE_LINE: return getRowNumbers(1);
@@ -198,7 +209,7 @@ export default function GameRoomPage() {
   };
 
   if (isGameOver) {
-    const fullHouseWinner = claimedPrizes[PRIZE_TYPES.FULL_HOUSE];
+    const fullHouseWinners = claimedPrizes[PRIZE_TYPES.FULL_HOUSE] || [];
     return (
       <div className="p-2 md:p-4 space-y-6 flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
         <Card className="w-full max-w-2xl shadow-xl">
@@ -206,9 +217,9 @@ export default function GameRoomPage() {
             <CardTitle className="text-4xl font-bold flex items-center justify-center">
               <PartyPopper className="mr-3 h-10 w-10 text-primary" /> Game Over!
             </CardTitle>
-            {fullHouseWinner && (
+            {fullHouseWinners.length > 0 && (
               <p className="text-xl mt-2">
-                Congratulations <span className="font-semibold text-accent">{fullHouseWinner}</span> for winning Full House!
+                Congratulations <span className="font-semibold text-accent">{fullHouseWinners.join(' & ')}</span> for winning Full House!
                 {fullHouseWinTime && (
                   <span className="block text-sm text-muted-foreground">
                     Won at: {fullHouseWinTime.toLocaleTimeString()}
@@ -216,7 +227,7 @@ export default function GameRoomPage() {
                 )}
               </p>
             )}
-             {!fullHouseWinner && calledNumbers.length === 90 && (
+             {fullHouseWinners.length === 0 && calledNumbers.length === 90 && (
                 <p className="text-xl mt-2 text-muted-foreground">All numbers called. No Full House winner.</p>
             )}
           </CardHeader>
@@ -224,14 +235,18 @@ export default function GameRoomPage() {
             <h3 className="text-xl font-semibold text-center mb-2">Final Prize Summary</h3>
             <ScrollArea className="h-48 border rounded-md p-3">
               <ul className="space-y-2">
-                {AVAILABLE_PRIZES.map(prize => (
-                  <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
-                    <span className="font-medium">{prize}:</span>
-                    <span className={cn("font-semibold", claimedPrizes[prize] ? "text-green-600" : "text-muted-foreground")}>
-                      {claimedPrizes[prize] || "Not Claimed"}
-                    </span>
-                  </li>
-                ))}
+                {AVAILABLE_PRIZES.map(prize => {
+                  const winners = claimedPrizes[prize] || [];
+                  const prizeStatus = winners.length > 0 ? `Claimed by ${winners.join(', ')}` : "Not Claimed";
+                  return (
+                    <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
+                      <span className="font-medium">{prize}:</span>
+                      <span className={cn("font-semibold", winners.length > 0 ? "text-green-600" : "text-muted-foreground")}>
+                        {prizeStatus}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             </ScrollArea>
             <div className="flex flex-col sm:flex-row gap-4 mt-6">
@@ -258,26 +273,46 @@ export default function GameRoomPage() {
       </Card>
 
       <div className="flex flex-wrap gap-2 mb-2 justify-center">
-        {AVAILABLE_PRIZES.map(prize => (
-          <Button
-            key={prize}
-            onClick={() => handleClaimPrize(prize)}
-            disabled={!!claimedPrizes[prize] || isGameOver}
-            variant={claimedPrizes[prize] ? "secondary" : "default"}
-            className={cn("px-2 py-1 rounded-md text-xs sm:text-sm", 
-              !claimedPrizes[prize] && prize.includes("Jaldi") ? "bg-green-500 hover:bg-green-600" :
-              !claimedPrizes[prize] && prize.includes("Line") ? "bg-yellow-400 hover:bg-yellow-500 text-black" :
-              !claimedPrizes[prize] && prize.includes("Full House") ? "bg-red-500 hover:bg-red-600" : "",
-              !!claimedPrizes[prize] ? "cursor-not-allowed opacity-70" : ""
-            )}
-          >
-            {claimedPrizes[prize] ? `${prize} (Claimed by ${claimedPrizes[prize]})` : `Claim ${prize}`}
-          </Button>
-        ))}
+        {AVAILABLE_PRIZES.map(prize => {
+          const winnersOfThisPrize = claimedPrizes[prize] || [];
+          const hasPlayerClaimedThis = winnersOfThisPrize.includes(MOCK_USERNAME);
+          let buttonText = `Claim ${prize}`;
+
+          if (winnersOfThisPrize.length > 0) {
+            if (hasPlayerClaimedThis) {
+                buttonText = `You Claimed ${prize}`;
+            } else if (winnersOfThisPrize.length === 1) {
+                buttonText = `${prize} (Claimed by ${winnersOfThisPrize[0]})`;
+            } else {
+                buttonText = `${prize} (Claimed by ${winnersOfThisPrize.length} players)`;
+            }
+          }
+          
+          const isFullHouseClaimedByAnyone = prize === PRIZE_TYPES.FULL_HOUSE && winnersOfThisPrize.length > 0;
+
+          return (
+            <Button
+              key={prize}
+              onClick={() => handleClaimPrize(prize)}
+              disabled={isGameOver || hasPlayerClaimedThis || isFullHouseClaimedByAnyone}
+              variant={winnersOfThisPrize.length > 0 ? "secondary" : "default"}
+              className={cn("px-2 py-1 rounded-md text-xs sm:text-sm", 
+                !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Jaldi") ? "bg-green-500 hover:bg-green-600" :
+                !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Line") ? "bg-yellow-400 hover:bg-yellow-500 text-black" :
+                !hasPlayerClaimedThis && winnersOfThisPrize.length === 0 && prize.includes("Full House") ? "bg-red-500 hover:bg-red-600" : "",
+                (hasPlayerClaimedThis || (winnersOfThisPrize.length > 0 && prize !== PRIZE_TYPES.FULL_HOUSE && !hasPlayerClaimedThis)) ? "opacity-70" : "",
+                (isGameOver || isFullHouseClaimedByAnyone) ? "cursor-not-allowed opacity-50" : ""
+              )}
+            >
+              {buttonText}
+            </Button>
+          );
+        })}
       </div>
       
       {gameMessage && (
-        <Alert variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") ? "destructive" : (gameMessage.includes("claimed") ? "default" : "default")} className={cn(gameMessage.includes("claimed") && !gameMessage.includes("Bogey") ? "bg-green-100 dark:bg-green-900 border-green-500" : "")}>
+        <Alert variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") ? "destructive" : (gameMessage.includes("claimed") ? "default" : "default")} 
+               className={cn(gameMessage.includes("claimed") && !gameMessage.includes("Bogey") && !gameMessage.includes("not valid") ? "bg-green-100 dark:bg-green-900 border-green-500" : "")}>
           {gameMessage.includes("Bogey") || gameMessage.includes("not valid") ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
           <AlertTitle>{gameMessage.includes("Bogey") || gameMessage.includes("not valid") ? "Claim Update" : (gameMessage.includes("claimed") ? "Prize Claimed!" : "Game Message")}</AlertTitle>
           <AlertDescription>{gameMessage}</AlertDescription>
@@ -293,12 +328,19 @@ export default function GameRoomPage() {
             <CardContent>
               <ScrollArea className="h-40">
                 <ul className="space-y-1 text-sm">
-                {AVAILABLE_PRIZES.map(prize => (
-                  <li key={prize} className={cn("flex justify-between", claimedPrizes[prize] ? "text-green-600 dark:text-green-400 font-semibold" : "text-muted-foreground")}>
+                {AVAILABLE_PRIZES.map(prize => {
+                  const winners = claimedPrizes[prize] || [];
+                  let statusText = "Available";
+                  if (winners.length > 0) {
+                    statusText = `Claimed by ${winners.join(', ')}`;
+                  }
+                  return (
+                  <li key={prize} className={cn("flex justify-between", winners.length > 0 ? "text-green-600 dark:text-green-400 font-semibold" : "text-muted-foreground")}>
                     <span>{prize}:</span>
-                    <span>{claimedPrizes[prize] ? `Claimed by ${claimedPrizes[prize]}` : "Available"}</span>
+                    <span>{statusText}</span>
                   </li>
-                ))}
+                  );
+                })}
                 </ul>
               </ScrollArea>
             </CardContent>
@@ -316,7 +358,7 @@ export default function GameRoomPage() {
                 ticket={ticket}
                 calledNumbers={calledNumbers}
                 markedNumbers={markedNumbers}
-                onNumberClick={isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)} // Disable click if game over
+                onNumberClick={isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
                 className="min-w-[280px] sm:min-w-[320px] md:min-w-[360px] mx-auto"
               />
             ))}
@@ -328,11 +370,12 @@ export default function GameRoomPage() {
           <Card>
             <CardHeader><CardTitle className="text-lg">Prize Info</CardTitle></CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Prize money details will be shown here based on game settings and player count.</p>
+              <p className="text-sm text-muted-foreground">Prize money details will be shown here based on game settings and player count. (Splitting logic to be displayed here)</p>
               <ul className="space-y-1 mt-2 text-sm">
-                <li>Jaldi 5: ₹100</li>
-                <li>Top Line: ₹150</li>
-                <li>Full House: ₹500</li>
+                {/* Example: This would be dynamic based on game setup & claimedPrizes */}
+                <li>Jaldi 5: ₹100 (Split among {claimedPrizes[PRIZE_TYPES.JALDI_5]?.length || 0} winners)</li>
+                <li>Top Line: ₹150 (Split among {claimedPrizes[PRIZE_TYPES.TOP_LINE]?.length || 0} winners)</li>
+                <li>Full House: ₹500 (Split among {claimedPrizes[PRIZE_TYPES.FULL_HOUSE]?.length || 0} winners)</li>
               </ul>
             </CardContent>
           </Card>
@@ -341,6 +384,7 @@ export default function GameRoomPage() {
             <CardContent>
               <p className="text-sm text-muted-foreground">Details about other players' progress or status would appear here.</p>
               <ul className="space-y-1 mt-2 text-sm">
+                {/* This is mock data and would need real-time updates in a full app */}
                 <li>Player2: 3 tickets</li>
                 <li>Player3: 1 ticket (Jaldi 5 claimed)</li>
               </ul>
@@ -357,3 +401,4 @@ export default function GameRoomPage() {
     </div>
   );
 }
+
