@@ -113,7 +113,7 @@ export default function GameRoomPage() {
   const handleNumberClick = (ticketIndex: number, numberValue: number, rowIndex: number, colIndex: number) => {
     if (isGameOver) return;
     const key = `${ticketIndex}-${rowIndex}-${colIndex}`;
-    if (markedNumbers.has(key)) return; 
+    if (markedNumbers.has(key)) return; // Already marked, do nothing
 
     if (!calledNumbers.includes(numberValue)) {
       toast({
@@ -153,22 +153,46 @@ export default function GameRoomPage() {
 
     for (let i = 0; i < tickets.length; i++) {
       const currentTicket = tickets[i];
-      const numbersRequiredForPrizeOnThisTicket = getNumbersForPrizePattern(currentTicket, prizeType);
-      
-      const allRequiredNumbersMarkedByPlayer = numbersRequiredForPrizeOnThisTicket.every(num => {
-        let rFound = -1, cFound = -1;
-        outer: for(let r=0; r<currentTicket.length; r++) {
-          for(let c=0; c<currentTicket[r].length; c++) {
-            if(currentTicket[r][c] === num) {
-              rFound=r; cFound=c;
-              break outer;
+      let isValidClaimForThisTicket = false;
+
+      if (prizeType === PRIZE_TYPES.JALDI_5) {
+        let playerMarkedAndCalledCount = 0;
+        for (let r = 0; r < currentTicket.length; r++) {
+          for (let c = 0; c < currentTicket[r].length; c++) {
+            const numberValue = currentTicket[r][c];
+            if (numberValue !== null) {
+              const isPlayerMarked = markedNumbers.has(`${i}-${r}-${c}`);
+              const isCalledBySystem = calledNumbers.includes(numberValue);
+              if (isPlayerMarked && isCalledBySystem) {
+                playerMarkedAndCalledCount++;
+              }
             }
           }
         }
-        return rFound !== -1 && markedNumbers.has(`${i}-${rFound}-${cFound}`);
-      });
+        if (playerMarkedAndCalledCount >= 5) {
+          isValidClaimForThisTicket = true;
+        }
+      } else { // Logic for Lines and Full House
+        const numbersInPatternOnThisTicket = getNumbersForPrizePattern(currentTicket, prizeType);
+        const allPatternNumbersMarkedByPlayer = numbersInPatternOnThisTicket.every(numInPattern => {
+          let rFound = -1, cFound = -1;
+          outerLoop: for (let r = 0; r < currentTicket.length; r++) {
+            for (let c = 0; c < currentTicket[r].length; c++) {
+              if (currentTicket[r][c] === numInPattern) {
+                rFound = r; cFound = c;
+                break outerLoop;
+              }
+            }
+          }
+          return rFound !== -1 && markedNumbers.has(`${i}-${rFound}-${cFound}`);
+        });
 
-      if (allRequiredNumbersMarkedByPlayer && checkWinningCondition(currentTicket, calledNumbers, prizeType)) {
+        if (allPatternNumbersMarkedByPlayer && checkWinningCondition(currentTicket, calledNumbers, prizeType)) {
+           isValidClaimForThisTicket = true;
+        }
+      }
+
+      if (isValidClaimForThisTicket) {
         winningTicketIndex = i;
         if (prizeType === PRIZE_TYPES.FULL_HOUSE) {
           winningTicketForFHIndex = i;
@@ -239,6 +263,8 @@ export default function GameRoomPage() {
     const getRowNumbers = (rowIndex: number) => ticket[rowIndex].filter(n => n !== null) as number[];
     switch(prize) {
       case PRIZE_TYPES.JALDI_5: 
+        // For Jaldi 5, this function isn't strictly needed in the new handleClaimPrize logic,
+        // but if used elsewhere, it should represent all numbers on the ticket.
         return ticket.flat().filter(n => n !== null) as number[];
       case PRIZE_TYPES.TOP_LINE: return getRowNumbers(0);
       case PRIZE_TYPES.MIDDLE_LINE: return getRowNumbers(1);
@@ -358,7 +384,7 @@ export default function GameRoomPage() {
         </div>
 
         <div className="lg:col-span-2">
-          <div className="max-w-xl mx-auto space-y-4">
+           <div className="max-w-xl mx-auto space-y-4">
             {gameMessage && !isGameOver && ( 
               <Alert variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") ? "destructive" : (gameMessage.includes("claimed") ? "default" : "default")} 
                     className={cn(gameMessage.includes("claimed") && !gameMessage.includes("Bogey") && !gameMessage.includes("not valid") ? "bg-green-100 dark:bg-green-900 border-green-500" : "")}>
@@ -372,7 +398,7 @@ export default function GameRoomPage() {
               {AVAILABLE_PRIZES.map(prize => {
                 const winnersOfThisPrize = claimedPrizes[prize] || [];
                 const hasPlayerClaimedThis = winnersOfThisPrize.includes(MOCK_USERNAME);
-                let buttonText = prize; // Default to just the prize name
+                let buttonText = prize; 
 
                 if (winnersOfThisPrize.length > 0) {
                   if (hasPlayerClaimedThis) {
@@ -420,7 +446,7 @@ export default function GameRoomPage() {
               ))}
               </div>
             </ScrollArea>
-          </div>
+           </div>
         </div>
 
         <div className="space-y-4 lg:col-span-1">
@@ -478,5 +504,6 @@ export default function GameRoomPage() {
     </div>
   );
 }
+    
 
     
