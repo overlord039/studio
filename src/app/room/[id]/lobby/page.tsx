@@ -26,12 +26,11 @@ export default function LobbyPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const [hostTicketSelection, setHostTicketSelection] = useState<number>(1); 
-  
-  const currentPlayerInRoom = roomData?.players.find(p => p.id === currentUser?.username);
-  const isHost = currentPlayerInRoom?.isHost || false;
-
+  const [myTicketSelection, setMyTicketSelection] = useState<number>(1); 
   const [displayPlayers, setDisplayPlayers] = useState<Player[]>([]);
+
+  const isCurrentUserHost = roomData?.host.id === currentUser?.username;
+  const currentPlayerInRoom = displayPlayers.find(p => p.id === currentUser?.username);
 
 
   const fetchRoomDetails = useCallback(async () => {
@@ -42,61 +41,62 @@ export default function LobbyPage() {
       const response = await fetch(`/api/rooms/${roomId}`);
       if (!response.ok) {
         if (response.status === 404) {
-          // Directly set error for UI and avoid throwing for this specific 404 case
           setError("Room not found. It might have expired or never existed.");
           setRoomData(null);
-          return; // Exit try block, finally will still run
+          return; 
         }
-        // For other errors, attempt to parse error message from response, then throw
         let errorData;
         try {
           errorData = await response.json();
         } catch (parseError) {
-          // If parsing JSON fails, use status text
           errorData = { message: `Failed to fetch room details: ${response.statusText}` };
         }
         throw new Error(errorData.message || `Failed to fetch room details: ${response.statusText}`);
       }
       const data: Room = await response.json();
       setRoomData(data);
-      // Initialize displayPlayers from fetched room data, adding default ticketsToBuy
-      setDisplayPlayers(data.players.map(p => ({ ...p, ticketsToBuy: p.id === data.host.id ? hostTicketSelection : 1 })));
+
+      const newDisplayPlayers = data.players.map(backendPlayer => {
+        const existingFrontendPlayer = displayPlayers.find(dp => dp.id === backendPlayer.id);
+        return {
+          ...backendPlayer,
+          ticketsToBuy: existingFrontendPlayer?.ticketsToBuy || 1 
+        };
+      });
+      setDisplayPlayers(newDisplayPlayers);
+
+      const me = newDisplayPlayers.find(p => p.id === currentUser?.username);
+      if (me && typeof me.ticketsToBuy === 'number') {
+        setMyTicketSelection(me.ticketsToBuy);
+      } else if (currentUser) {
+        setMyTicketSelection(1);
+      }
 
     } catch (err) {
-      // This catch block handles network errors or non-404 server errors that were thrown
       console.error(`Error fetching room ${roomId} details:`, err);
       setError((err as Error).message || "An unexpected error occurred while fetching room details.");
       setRoomData(null);
     } finally {
       setIsLoading(false);
     }
-  }, [roomId, hostTicketSelection]);
+  }, [roomId, currentUser, displayPlayers]); // Added currentUser and displayPlayers to dependencies for re-initializing myTicketSelection if they change.
 
   useEffect(() => {
     fetchRoomDetails();
   }, [fetchRoomDetails]);
 
-  useEffect(() => {
-    if (roomData && currentUser && roomData.host.id === currentUser.username) {
-       const hostPlayerDetails = displayPlayers.find(p => p.id === currentUser.username);
-       if(hostPlayerDetails && hostPlayerDetails.ticketsToBuy){
-            setHostTicketSelection(hostPlayerDetails.ticketsToBuy);
-       }
-    }
-  }, [roomData, currentUser, displayPlayers]);
 
-
-  const handleConfirmHostTickets = () => {
-     if (!currentUser || !roomData || roomData.host.id !== currentUser.username) return;
+  const handleConfirmMyTickets = () => {
+     if (!currentUser || !roomData || !currentPlayerInRoom) return;
     
     setDisplayPlayers(prevPlayers =>
         prevPlayers.map(p =>
-          p.id === currentUser.username ? { ...p, ticketsToBuy: hostTicketSelection } : p
+          p.id === currentUser.username ? { ...p, ticketsToBuy: myTicketSelection } : p
         )
       );
     toast({
       title: "Tickets Updated",
-      description: `You will play with ${hostTicketSelection} ticket(s).`,
+      description: `You will play with ${myTicketSelection} ticket(s).`,
     });
   };
 
@@ -106,11 +106,11 @@ export default function LobbyPage() {
   };
 
   const handleStartGame = async () => {
-    if (!roomData || !currentUser || roomData.host.id !== currentUser.username) {
+    if (!roomData || !currentUser || !isCurrentUserHost) {
       toast({ title: "Error", description: "Only the host can start the game.", variant: "destructive" });
       return;
     }
-    // Allow solo start only in development, otherwise require at least 2 players
+    
     const minPlayersRequired = process.env.NODE_ENV === 'development' ? 1 : 2;
     if (displayPlayers.length < minPlayersRequired) {
        toast({ title: "Cannot Start", description: `Need at least ${minPlayersRequired} player(s) to start the game.`, variant: "destructive" });
@@ -126,7 +126,7 @@ export default function LobbyPage() {
       const response = await fetch(`/api/rooms/${roomId}/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostId: currentUser.username }), // Ensure hostId is string (username)
+        body: JSON.stringify({ hostId: currentUser.username }),
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -135,8 +135,9 @@ export default function LobbyPage() {
       const updatedRoom: Room = await response.json();
       setRoomData(updatedRoom); 
       toast({ title: "Game Starting!", description: `Navigating to game room ${roomId}.` });
-      const currentPlayerTickets = displayPlayers.find(p => p.id === currentUser.username)?.ticketsToBuy || 1;
-      router.push(`/room/${roomId}/play?playerTickets=${currentPlayerTickets}`);
+      
+      const myTickets = displayPlayers.find(p => p.id === currentUser.username)?.ticketsToBuy || 1;
+      router.push(`/room/${roomId}/play?playerTickets=${myTickets}`);
     } catch (err) {
       console.error("Error starting game:", err);
       toast({ title: "Error Starting Game", description: (err as Error).message, variant: "destructive" });
@@ -162,11 +163,21 @@ export default function LobbyPage() {
           if (response.ok) {
             const updatedRoomData: Room = await response.json();
             setRoomData(updatedRoomData);
-            // Update displayPlayers, preserving existing ticket counts if possible
-            setDisplayPlayers(updatedRoomData.players.map(p => {
-                const existingPlayer = displayPlayers.find(dp => dp.id === p.id);
-                return { ...p, ticketsToBuy: existingPlayer?.ticketsToBuy || (p.id === currentUser.username ? 1 : 1) };
-            }));
+            
+            const newDisplayPlayers = updatedRoomData.players.map(backendPlayer => {
+                const existingFrontendPlayer = displayPlayers.find(dp => dp.id === backendPlayer.id);
+                return { 
+                    ...backendPlayer, 
+                    ticketsToBuy: existingFrontendPlayer?.ticketsToBuy || 1 
+                };
+            });
+            setDisplayPlayers(newDisplayPlayers);
+
+            const me = newDisplayPlayers.find(p => p.id === currentUser.username);
+            if (me) {
+                setMyTicketSelection(me.ticketsToBuy || 1);
+            }
+
             toast({ title: "Joined Room!", description: `Welcome to room ${roomId}, ${currentUser.name || currentUser.username}!`});
           } else {
             const errorData = await response.json();
@@ -183,7 +194,7 @@ export default function LobbyPage() {
         }
       }
     };
-    if(!isLoading && !error && roomData) { 
+    if(!isLoading && !error && roomData && currentUser) { 
         joinRoomIfNeeded();
     }
   }, [roomData, currentUser, authLoading, roomId, toast, isLoading, error, displayPlayers]);
@@ -210,7 +221,15 @@ export default function LobbyPage() {
   }
   
   if (!roomData) {
-    return <div className="text-center py-10">Room data could not be loaded. Please try again.</div>;
+    // This case should ideally be covered by the error state if roomData fails to load
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
+            <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
+            <h2 className="text-2xl font-semibold mb-2">Room Not Found</h2>
+            <p className="text-muted-foreground mb-6">The room you are looking for does not exist or has expired.</p>
+            <Button onClick={() => router.push('/')} size="lg">Go to Homepage</Button>
+        </div>
+    );
   }
   
   const gameSettings: GameSettings = {
@@ -218,7 +237,6 @@ export default function LobbyPage() {
     lobbySize: roomData.settings.lobbySize || parseInt(searchParams.get('lobbySize') || String(DEFAULT_LOBBY_SIZE), 10),
     prizeFormat: roomData.settings.prizeFormat || (searchParams.get('prizeFormat') || DEFAULT_PRIZE_FORMAT) as GameSettings['prizeFormat'],
   };
-
 
   const currentPrizeFormat = gameSettings.prizeFormat;
   const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat];
@@ -235,7 +253,7 @@ export default function LobbyPage() {
         <CardHeader>
           <CardTitle className="text-3xl font-bold">Lobby: #{roomData.id}</CardTitle>
           <CardDescription>
-            {roomData.isGameStarted ? "Game has started. Spectating..." : "Waiting for players. Set your tickets and the host can start the game."}
+            {roomData.isGameStarted ? "Game has started." : "Waiting for players. Set your tickets and the host can start the game."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -273,15 +291,15 @@ export default function LobbyPage() {
             </div>
           </div>
 
-          {isHost && !roomData.isGameStarted && (
+          {currentPlayerInRoom && !roomData.isGameStarted && (
             <Card className="bg-secondary/20">
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center"><Ticket className="mr-2 h-5 w-5 text-primary"/>Your Tickets (Host)</CardTitle>
+                <CardTitle className="text-lg flex items-center"><Ticket className="mr-2 h-5 w-5 text-primary"/>Your Tickets</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col sm:flex-row items-center gap-4">
                 <Select
-                  value={String(hostTicketSelection)}
-                  onValueChange={(value) => setHostTicketSelection(Number(value))}
+                  value={String(myTicketSelection)}
+                  onValueChange={(value) => setMyTicketSelection(Number(value))}
                   disabled={roomData.isGameStarted}
                 >
                   <SelectTrigger className="w-full sm:w-[180px]">
@@ -295,7 +313,7 @@ export default function LobbyPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button onClick={handleConfirmHostTickets} className="w-full sm:w-auto" disabled={roomData.isGameStarted}>
+                <Button onClick={handleConfirmMyTickets} className="w-full sm:w-auto" disabled={roomData.isGameStarted}>
                   Confirm My Tickets
                 </Button>
               </CardContent>
@@ -313,7 +331,7 @@ export default function LobbyPage() {
                   {player.isHost && <span className="text-xs font-semibold text-primary">(Host)</span>}
                 </li>
               ))}
-              {displayPlayers.length === 0 && <li className="text-muted-foreground">No players yet.</li>}
+              {displayPlayers.length === 0 && <li className="text-muted-foreground">No players yet. Join in!</li>}
             </ul>
           </div>
           
@@ -325,7 +343,7 @@ export default function LobbyPage() {
               <CardContent className="p-4 space-y-2">
                  <p className="text-sm font-semibold">Current Total Prize Pool: ₹{currentTotalPrizePool.toFixed(2)}</p>
                  <p className="text-xs text-muted-foreground">
-                   (Max possible pool if lobby full & each player buys avg. 1 ticket: ₹{(gameSettings.ticketPrice * gameSettings.lobbySize).toFixed(2)})
+                   (Based on {totalTicketsBought} ticket(s) confirmed by players in this lobby)
                  </p>
                 {prizesForFormat.map((prizeName) => {
                   const percentage = prizeDistribution[prizeName as PrizeType] || 0;
@@ -341,27 +359,38 @@ export default function LobbyPage() {
             </Card>
           </div>
 
-          {isHost && !roomData.isGameStarted && (
+          {isCurrentUserHost && !roomData.isGameStarted && (
             <Button onClick={handleStartGame} size="lg" className="w-full mt-4" disabled={ displayPlayers.length < minPlayersToStart || totalTicketsBought === 0}>
               <Play className="mr-2 h-5 w-5" /> Start Game
             </Button>
           )}
-          {isHost && !roomData.isGameStarted && (displayPlayers.length < minPlayersToStart || totalTicketsBought === 0) && (
+          {isCurrentUserHost && !roomData.isGameStarted && (displayPlayers.length < minPlayersToStart || totalTicketsBought === 0) && (
             <p className="text-center text-sm text-destructive mt-2">
               {totalTicketsBought === 0 ? "At least one player needs to have tickets to start." : `Need at least ${minPlayersToStart} player(s) to start the game.`}
             </p>
           )}
-          {roomData.isGameStarted && (
+
+          {roomData.isGameStarted && currentPlayerInRoom && (
              <Button 
                 onClick={() => {
-                    const currentPlayer = displayPlayers.find(p => p.id === currentUser?.username);
-                    const ticketsToPass = currentPlayer?.ticketsToBuy || 1;
-                    router.push(`/room/${roomId}/play?playerTickets=${ticketsToPass}`);
+                    const myTickets = currentPlayerInRoom?.ticketsToBuy || 1;
+                    router.push(`/room/${roomId}/play?playerTickets=${myTickets}`);
                 }} 
                 size="lg" 
                 className="w-full mt-4"
               >
-              <Play className="mr-2 h-5 w-5" /> Go to Game / Spectate
+              <Play className="mr-2 h-5 w-5" /> Go to Game
+            </Button>
+          )}
+           {roomData.isGameStarted && !currentPlayerInRoom && ( // Spectator case
+             <Button 
+                onClick={() => {
+                    router.push(`/room/${roomId}/play?playerTickets=0`); // Spectators get 0 tickets
+                }} 
+                size="lg" 
+                className="w-full mt-4"
+              >
+              <Play className="mr-2 h-5 w-5" /> Spectate Game
             </Button>
           )}
         </CardContent>
@@ -369,6 +398,6 @@ export default function LobbyPage() {
     </div>
   );
 }
-
+    
 
     
