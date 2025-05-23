@@ -1,39 +1,43 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { addPlayerToRoomStore } from '@/lib/server/game-store';
+import { addPlayerToRoomStore, getRoomStateForClient } from '@/lib/server/game-store';
 import type { Player } from '@/types';
+import { DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER } from '@/lib/constants';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { roomId: string } }
 ) {
-  const { roomId } = params; // Destructure roomId immediately
+  const { roomId } = params; 
 
   try {
-    const player = (await request.json()) as Player;
+    // Client should send player ID (e.g. username from auth) and name
+    const { playerId, playerName, ticketsToBuy } = (await request.json()) as { playerId: string; playerName: string; ticketsToBuy?: number };
 
     if (!roomId) {
       return NextResponse.json({ message: 'Room ID is required' }, { status: 400 });
     }
-    if (!player || !player.id || !player.name) {
-      return NextResponse.json({ message: 'Player details are required' }, { status: 400 });
+    if (!playerId || !playerName) {
+      return NextResponse.json({ message: 'Player ID and name are required' }, { status: 400 });
     }
 
-    const result = addPlayerToRoomStore(roomId, player);
+    const numTickets = typeof ticketsToBuy === 'number' && ticketsToBuy > 0 ? ticketsToBuy : DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER;
 
-    if ('error' in result) {
+    const result = addPlayerToRoomStore(roomId, { id: playerId, name: playerName }, numTickets);
+
+    if (result && 'error' in result) {
         if (result.error === "Room not found.") return NextResponse.json({ message: result.error }, { status: 404 });
-        return NextResponse.json({ message: result.error }, { status: 400 }); // e.g. Room full, game started
+        return NextResponse.json({ message: result.error }, { status: 400 }); 
     }
     
-    const roomForClient = {
-      ...result,
-      createdAt: result.createdAt.toISOString(),
-    };
+    const roomForClient = getRoomStateForClient(roomId);
+     if (!roomForClient) {
+        return NextResponse.json({ message: 'Failed to retrieve room after player join' }, { status: 500 });
+    }
+
     return NextResponse.json(roomForClient, { status: 200 });
   } catch (error) {
-    console.error(`Error joining room ${roomId}:`, error); // Use destructured roomId
+    console.error(`Error joining room ${roomId}:`, error); 
     return NextResponse.json({ message: 'Error joining room', error: (error as Error).message }, { status: 500 });
   }
 }
-

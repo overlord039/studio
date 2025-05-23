@@ -3,44 +3,22 @@ export interface Player {
   id: string; // Will typically be derived from username or a unique auth ID
   name: string;
   isHost?: boolean;
-  ticketsToBuy?: number; // Lobby UI state, may not be persisted on server player object initially
+  // ticketsToBuy is a client-side concept for the lobby, actual tickets are on BackendPlayerInRoom
+}
+
+export interface BackendPlayerInRoom extends Player {
+  tickets: HousieTicketGrid[];
+  // Add any other backend-specific player state here if needed
 }
 
 export type TicketPrice = 5 | 10 | 20 | 25 | 50 | 100;
-
-export type PrizeFormat = "Format 1"; // Simplified to one standard format
+export type PrizeFormat = "Format 1";
 
 export interface GameSettings {
   ticketPrice: TicketPrice;
   lobbySize: number;
   prizeFormat: PrizeFormat;
-}
-
-export interface Room {
-  id: string;
-  host: Player;
-  players: Player[];
-  settings: GameSettings;
-  createdAt: Date | string; // Allow string for serialization
-  isGameStarted?: boolean;
-}
-
-// A Housie ticket is a 3x9 grid. Each cell can be a number or null (empty).
-export type HousieTicketNumber = number | null;
-export type HousieTicketRow = HousieTicketNumber[];
-export type HousieTicketGrid = HousieTicketRow[];
-
-export interface Claim {
-  prizeName: string;
-  playerId: string;
-  timestamp: Date;
-}
-
-export interface Prize {
-  name: string;
-  amount: number; // Or percentage of prize pool
-  claimedBy?: string[]; // Player IDs, changed to array for multiple winners
-  isClaimable: boolean;
+  numberOfTicketsPerPlayer: number; // How many tickets each player gets by default
 }
 
 export const PRIZE_TYPES = {
@@ -53,17 +31,44 @@ export const PRIZE_TYPES = {
 
 export type PrizeType = typeof PRIZE_TYPES[keyof typeof PRIZE_TYPES];
 
-export interface GameState {
-  roomId: string;
-  players: Player[];
+export interface PrizeClaim {
+  claimedBy: string[]; // Array of player IDs who claimed this
+  timestamp?: Date | string;
+}
+
+export interface Room {
+  id: string;
+  host: Player; // Just basic Player info for the host
+  players: BackendPlayerInRoom[]; // Detailed player info including tickets
   settings: GameSettings;
-  tickets: Record<string, HousieTicketGrid[]>; // playerId to array of tickets
-  calledNumbers: number[];
-  currentNumber: number | null;
-  claims: Claim[];
-  prizePool: number;
-  prizeDistribution: Prize[];
+  createdAt: Date | string;
   isGameStarted: boolean;
   isGameOver: boolean;
-  gameHostId: string;
+  
+  // Game-specific state
+  currentNumber: number | null;
+  calledNumbers: number[];
+  numberPool: number[]; // Numbers 1-90, shuffled, numbers are removed as they are called
+  prizeStatus: Record<PrizeType, PrizeClaim | null >; // Tracks who claimed what
 }
+
+// A Housie ticket is a 3x9 grid. Each cell can be a number or null (empty).
+export type HousieTicketNumber = number | null;
+export type HousieTicketRow = HousieTicketNumber[];
+export type HousieTicketGrid = HousieTicketRow[];
+
+// This type was for client-side game state, much of this will now live in the `Room` type on the backend.
+// export interface GameState {
+//   roomId: string;
+//   players: Player[]; // Simple player list for UI
+//   settings: GameSettings;
+//   tickets: Record<string, HousieTicketGrid[]>; // playerId to array of tickets
+//   calledNumbers: number[];
+//   currentNumber: number | null;
+//   claims: Claim[]; // Old claim structure
+//   prizePool: number;
+//   prizeDistribution: Prize[]; // Old prize structure
+//   isGameStarted: boolean;
+//   isGameOver: boolean;
+//   gameHostId: string;
+// }

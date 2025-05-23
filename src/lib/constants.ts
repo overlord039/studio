@@ -1,16 +1,22 @@
 
-import type { TicketPrice, PrizeFormat, PrizeType } from '@/types';
+import type { TicketPrice, PrizeFormat, PrizeType, GameSettings } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 
 export const TICKET_PRICES: TicketPrice[] = [5, 10, 20, 25, 50, 100];
 export const PRIZE_FORMATS: PrizeFormat[] = ["Format 1"]; // Only one standard format
 
-export const MIN_LOBBY_SIZE = 5;
+export const MIN_LOBBY_SIZE = 2; // Adjusted for typical games
 export const MAX_LOBBY_SIZE = 50;
 
-export const DEFAULT_TICKET_PRICE: TicketPrice = 10;
-export const DEFAULT_LOBBY_SIZE = 10;
-export const DEFAULT_PRIZE_FORMAT: PrizeFormat = "Format 1";
+export const DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER = 1;
+
+export const DEFAULT_GAME_SETTINGS: GameSettings = {
+  ticketPrice: 10,
+  lobbySize: 10,
+  prizeFormat: "Format 1",
+  numberOfTicketsPerPlayer: DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER,
+};
+
 
 export const PRIZE_DEFINITIONS: Record<PrizeFormat, PrizeType[]> = {
   "Format 1": [
@@ -23,6 +29,7 @@ export const PRIZE_DEFINITIONS: Record<PrizeFormat, PrizeType[]> = {
 };
 
 // Prize money distribution percentages, must sum to 100 for "Format 1"
+// This is more for client-side display; backend might handle actual currency if it were real money.
 export const PRIZE_DISTRIBUTION_PERCENTAGES: Record<PrizeFormat, Record<PrizeType, number>> = {
   "Format 1": {
     [PRIZE_TYPES.JALDI_5]: 10,

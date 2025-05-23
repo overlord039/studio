@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { TICKET_PRICES, PRIZE_FORMATS, MIN_LOBBY_SIZE, MAX_LOBBY_SIZE, DEFAULT_TICKET_PRICE, DEFAULT_LOBBY_SIZE, DEFAULT_PRIZE_FORMAT } from "@/lib/constants";
+import { TICKET_PRICES, PRIZE_FORMATS, MIN_LOBBY_SIZE, MAX_LOBBY_SIZE, DEFAULT_GAME_SETTINGS } from "@/lib/constants";
 import type { TicketPrice, PrizeFormat, Player, Room, GameSettings } from "@/types";
 import { Settings } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
@@ -29,9 +29,10 @@ const createRoomFormSchema = z.object({
     message: "Invalid ticket price.",
   }),
   lobbySize: z.coerce.number().min(MIN_LOBBY_SIZE, `Minimum lobby size is ${MIN_LOBBY_SIZE}.`).max(MAX_LOBBY_SIZE, `Maximum lobby size is ${MAX_LOBBY_SIZE}.`),
-  prizeFormat: z.string().refine(format => PRIZE_FORMATS.includes(format as PrizeFormat), {
+  prizeFormat: z.string().refine(format => PRIZE_FORMATS.includes(format as PrizeFormat), { // Kept for consistency, though only one format now
     message: "Invalid prize format.",
   }),
+  numberOfTicketsPerPlayer: z.coerce.number().min(1, 'Each player must have at least 1 ticket.').max(6, 'Maximum 6 tickets per player.'),
 });
 
 type CreateRoomFormValues = z.infer<typeof createRoomFormSchema>;
@@ -45,9 +46,10 @@ export default function CreateRoomPage() {
   const form = useForm<CreateRoomFormValues>({
     resolver: zodResolver(createRoomFormSchema),
     defaultValues: {
-      ticketPrice: DEFAULT_TICKET_PRICE,
-      lobbySize: DEFAULT_LOBBY_SIZE,
-      prizeFormat: DEFAULT_PRIZE_FORMAT,
+      ticketPrice: DEFAULT_GAME_SETTINGS.ticketPrice,
+      lobbySize: DEFAULT_GAME_SETTINGS.lobbySize,
+      prizeFormat: DEFAULT_GAME_SETTINGS.prizeFormat,
+      numberOfTicketsPerPlayer: DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer,
     },
   });
 
@@ -64,15 +66,16 @@ export default function CreateRoomPage() {
     setIsSubmitting(true);
 
     const hostPlayer: Player = {
-      id: currentUser.username, // Using username as ID for mock
+      id: currentUser.username, 
       name: currentUser.username,
-      isHost: true,
+      isHost: true, // This is implied by creating, but explicit is fine
     };
 
     const roomSettings: GameSettings = {
       ticketPrice: values.ticketPrice,
       lobbySize: values.lobbySize,
       prizeFormat: values.prizeFormat,
+      numberOfTicketsPerPlayer: values.numberOfTicketsPerPlayer,
     };
 
     try {
@@ -87,14 +90,14 @@ export default function CreateRoomPage() {
         throw new Error(errorData.message || `Failed to create room: ${response.statusText}`);
       }
 
-      const newRoom: Room = await response.json();
+      const newRoom: Room = await response.json(); // Expecting full Room object
       
       toast({
         title: "Room Created!",
-        description: `Room ID: ${newRoom.id}. Settings: Price ₹${newRoom.settings.ticketPrice}, Size ${newRoom.settings.lobbySize}, Format ${newRoom.settings.prizeFormat}`,
+        description: `Room ID: ${newRoom.id}. Share this ID with friends!`,
       });
-      // Pass settings via query params to the lobby page
-      router.push(`/room/${newRoom.id}/lobby?ticketPrice=${newRoom.settings.ticketPrice}&lobbySize=${newRoom.settings.lobbySize}&prizeFormat=${encodeURIComponent(newRoom.settings.prizeFormat)}`);
+      // Navigate to lobby, room details will be fetched there
+      router.push(`/room/${newRoom.id}/lobby`);
 
     } catch (error) {
       console.error("Error creating room:", error);
@@ -156,7 +159,7 @@ export default function CreateRoomPage() {
                     <FormControl>
                       <Input 
                         type="number" 
-                        placeholder={`e.g., ${DEFAULT_LOBBY_SIZE}`} 
+                        placeholder={`e.g., ${DEFAULT_GAME_SETTINGS.lobbySize}`} 
                         {...field} 
                         onChange={e => field.onChange(parseInt(e.target.value,10) || 0)}
                         disabled={isSubmitting || authLoading}
@@ -167,6 +170,32 @@ export default function CreateRoomPage() {
                 )}
               />
               <FormField
+                control={form.control}
+                name="numberOfTicketsPerPlayer"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tickets Per Player (Default)</FormLabel>
+                    <Select
+                        onValueChange={(value) => field.onChange(Number(value))}
+                        defaultValue={String(field.value)}
+                        disabled={isSubmitting || authLoading}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select default tickets per player" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5, 6].map(num => (
+                          <SelectItem key={num} value={String(num)}>{num} ticket(s)</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
                 control={form.control}
                 name="prizeFormat"
                 render={({ field }) => (
