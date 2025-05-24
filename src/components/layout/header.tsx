@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Home, User, LogIn, UserPlus, Moon, Sun, LogOut as LogOutIcon } from 'lucide-react'; // Added LogOutIcon
+import { User, LogIn, UserPlus, Moon, Sun, LogOut as LogOutIcon } from 'lucide-react'; // Added LogOutIcon
 import { useTheme } from "next-themes";
 import {
   DropdownMenu,
@@ -25,11 +25,6 @@ export default function Header() {
           HousieHub
         </Link>
         <nav className="flex items-center space-x-2 md:space-x-4">
-          <Link href="/" passHref>
-            <Button variant="ghost" className="text-primary-foreground hover:bg-primary/80">
-              <Home className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">Home</span>
-            </Button>
-          </Link>
           {loading ? (
             <div className="h-8 w-20 bg-primary/50 animate-pulse rounded-md"></div> // Skeleton loader
           ) : currentUser ? (
