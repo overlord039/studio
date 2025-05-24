@@ -20,7 +20,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, NUMBERS_RANGE_MAX } from '@/lib/constants';
 
 // Memoized component for rendering the prize status list
-const PrizeStatusList = React.memo(({ prizeStatus, prizesForFormat, players, isLoading }: {
+const MemoizedPrizeStatusList = React.memo(({ prizeStatus, prizesForFormat, players, isLoading }: {
   prizeStatus: Room['prizeStatus'];
   prizesForFormat: PrizeType[];
   players: BackendPlayerInRoom[];
@@ -51,7 +51,11 @@ const PrizeStatusList = React.memo(({ prizeStatus, prizesForFormat, players, isL
     </ul>
   );
 });
-PrizeStatusList.displayName = 'PrizeStatusList';
+MemoizedPrizeStatusList.displayName = 'MemoizedPrizeStatusList';
+
+const MemoizedHousieTicket = React.memo(HousieTicket);
+const MemoizedLiveNumberBoard = React.memo(LiveNumberBoard);
+const MemoizedCalledNumberDisplay = React.memo(CalledNumberDisplay);
 
 
 export default function GameRoomPage() {
@@ -73,8 +77,7 @@ export default function GameRoomPage() {
   const [isPrizesStatusMinimized, setIsPrizesStatusMinimized] = useState(true);
   const [isPrizeInfoMinimized, setIsPrizeInfoMinimized] = useState(true);
   const [isOtherPlayersMinimized, setIsOtherPlayersMinimized] = useState(true);
-  // isCallingNumber is no longer needed as server controls calling
-
+  
   const previousCurrentNumberRef = useRef<number | null>(null);
   const roomDataRef = useRef(roomData);
 
@@ -122,7 +125,7 @@ export default function GameRoomPage() {
         const ticketsParam = searchParams.get('playerTickets');
         const numTickets = ticketsParam ? parseInt(ticketsParam, 10) : 0;
         if (numTickets === 0 && data.isGameStarted && !data.isGameOver) {
-          if (!roomDataRef.current || !roomDataRef.current.isGameOver) { // Check ref for previous state
+          if (!roomDataRef.current || !roomDataRef.current.isGameOver) { 
             setGameMessage(prev => prev && prev.includes("Game Over!") ? prev : "You are spectating. You don't have tickets in this game.");
           }
         }
@@ -176,12 +179,12 @@ export default function GameRoomPage() {
 
   // Polling for game updates
   useEffect(() => {
-    if (!roomId || !currentUser || roomData?.isGameOver || isLoading) return; // Stop polling if game over or initial load
+    if (!roomId || !currentUser || roomData?.isGameOver || isLoading) return;
     const intervalId = setInterval(() => {
-      if (!document.hidden) { // Only poll if tab is active
+      if (!document.hidden) { 
         fetchGameDetails(false);
       }
-    }, 3000); // Poll every 3 seconds
+    }, 3000); 
     return () => clearInterval(intervalId);
   }, [roomId, currentUser, roomData?.isGameOver, isLoading, fetchGameDetails]);
 
@@ -231,7 +234,7 @@ export default function GameRoomPage() {
       return;
     }
 
-    // Client-side pre-validation for Jaldi 5 (checking marked numbers by player)
+    // Client-side pre-validation for Jaldi 5
     if (prizeType === PRIZE_TYPES.JALDI_5) {
       let jaldi5ValidOnAnyTicket = false;
       let qualifyingTicketIndex = -1;
@@ -248,15 +251,15 @@ export default function GameRoomPage() {
         }
         if (markedAndCalledCountOnThisTicket >= 5) {
           jaldi5ValidOnAnyTicket = true;
-          qualifyingTicketIndex = i;
-          break;
+          qualifyingTicketIndex = i; // Use the specific ticket where Jaldi 5 is valid
+          break; 
         }
       }
       if (!jaldi5ValidOnAnyTicket) {
         toast({ title: `${prizeType} Claim Invalid!`, description: "You haven't marked 5 called numbers on any single ticket yet.", variant: "destructive" });
         return;
       }
-      ticketIndexToClaimOn = qualifyingTicketIndex; // Use the specific ticket index for the API call
+      ticketIndexToClaimOn = qualifyingTicketIndex; 
     }
 
 
@@ -270,14 +273,19 @@ export default function GameRoomPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        setGameMessage(prev => roomDataRef.current && !roomDataRef.current.isGameOver && result.message && (!prev || !prev.includes("Game Over!")) ? result.message : prev);
+         setGameMessage(prev => {
+            if (roomDataRef.current && !roomDataRef.current.isGameOver && result.message) {
+                return (!prev || !prev.includes("Game Over!")) ? result.message : prev;
+            }
+            return prev;
+        });
         toast({ title: `${prizeType} Claim Invalid!`, description: result.message, variant: "destructive" });
       } else {
         const updatedRoom: Room = result;
-        setRoomData(updatedRoom);
+        setRoomData(updatedRoom); // This will trigger re-render with new prize status
 
-        let toastMessageAlert = result.message;
-        let localGameMessageAlert = result.message;
+        let toastMessageAlert = `Claim for ${prizeType} processed.`;
+        let localGameMessageAlert = `Claim for ${prizeType} processed.`;
 
         const claimStatus = updatedRoom.prizeStatus[prizeType];
 
@@ -291,23 +299,28 @@ export default function GameRoomPage() {
           if (prizeType === PRIZE_TYPES.FULL_HOUSE && updatedRoom.isGameOver) {
             let autoAwardMsg = "";
             const linePrizes: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
-            const winningTicketForFH = myTickets[ticketIndexToClaimOn];
+            
+            // Ensure ticketIndexToClaimOn is valid for myTickets
+             if (ticketIndexToClaimOn >= 0 && ticketIndexToClaimOn < myTickets.length) {
+                const winningTicketForFH = myTickets[ticketIndexToClaimOn];
+                linePrizes.forEach(linePrize => {
+                const lineClaimStatus = updatedRoom.prizeStatus[linePrize];
+                if (!lineClaimStatus || !lineClaimStatus.claimedBy.length || !lineClaimStatus.claimedBy.includes(currentUser.username)) { // check if not claimed or not by current user
+                    const getRowNumbers = (rowIndex: number, ticket: HousieTicketGrid): number[] => ticket[rowIndex].filter(num => num !== null) as number[];
+                    let lineNumbers: number[] = [];
+                    if (linePrize === PRIZE_TYPES.TOP_LINE) lineNumbers = getRowNumbers(0, winningTicketForFH);
+                    else if (linePrize === PRIZE_TYPES.MIDDLE_LINE) lineNumbers = getRowNumbers(1, winningTicketForFH);
+                    else if (linePrize === PRIZE_TYPES.BOTTOM_LINE) lineNumbers = getRowNumbers(2, winningTicketForFH);
 
-            linePrizes.forEach(linePrize => {
-              const lineClaimStatus = updatedRoom.prizeStatus[linePrize];
-              if (!lineClaimStatus || !lineClaimStatus.claimedBy.length) {
-                const getRowNumbers = (rowIndex: number, ticket: HousieTicketGrid): number[] => ticket[rowIndex].filter(num => num !== null) as number[];
-                let lineNumbers: number[] = [];
-                if (linePrize === PRIZE_TYPES.TOP_LINE) lineNumbers = getRowNumbers(0, winningTicketForFH);
-                else if (linePrize === PRIZE_TYPES.MIDDLE_LINE) lineNumbers = getRowNumbers(1, winningTicketForFH);
-                else if (linePrize === PRIZE_TYPES.BOTTOM_LINE) lineNumbers = getRowNumbers(2, winningTicketForFH);
-
-                const isLineCompleteOnThisTicket = lineNumbers.length === 5 && lineNumbers.every(num => updatedRoom.calledNumbers.includes(num));
-                if (isLineCompleteOnThisTicket) {
-                  autoAwardMsg += `\nAlso awarded ${linePrize}.`;
+                    const isLineCompleteOnThisTicket = lineNumbers.length === 5 && lineNumbers.every(num => updatedRoom.calledNumbers.includes(num));
+                    if (isLineCompleteOnThisTicket) {
+                      autoAwardMsg += `\nAlso awarded ${linePrize}.`;
+                    }
                 }
-              }
-            });
+                });
+            } else {
+                console.warn("ticketIndexToClaimOn was out of bounds for auto-awarding lines with Full House.");
+            }
             if (autoAwardMsg) localGameMessageAlert += autoAwardMsg;
 
             const fhFinalClaim = updatedRoom.prizeStatus[PRIZE_TYPES.FULL_HOUSE];
@@ -320,21 +333,21 @@ export default function GameRoomPage() {
                 finalGameOverMsg += ` at ${claimTimestamp.toLocaleTimeString()}`;
               }
             }
-            setGameMessage(finalGameOverMsg);
+            setGameMessage(finalGameOverMsg); // Set final game over message
             toastMessageAlert = finalGameOverMsg;
           } else if (!updatedRoom.isGameOver) {
             setGameMessage(localGameMessageAlert);
           }
-        } else if (claimStatus?.claimedBy.length) {
+        } else if (claimStatus?.claimedBy.length) { // Claimed by someone else
           localGameMessageAlert = `🔔 ${prizeType} was claimed by ${claimStatus.claimedBy.map(id => updatedRoom.players.find(p => p.id === id)?.name || id).join(' & ')}.`;
           toastMessageAlert = localGameMessageAlert;
-          if (!updatedRoom.isGameOver) {
+           if (!updatedRoom.isGameOver) {
             setGameMessage(localGameMessageAlert);
           }
-        } else {
+        } else { // Should not happen if API call was successful and claimStatus was updated
           localGameMessageAlert = result.message || `Claim status for ${prizeType} is unclear.`;
           toastMessageAlert = localGameMessageAlert;
-          if (!updatedRoom.isGameOver) {
+           if (!updatedRoom.isGameOver) {
             setGameMessage(localGameMessageAlert);
           }
         }
@@ -342,7 +355,12 @@ export default function GameRoomPage() {
       }
     } catch (err) {
       console.error(`Error claiming ${prizeType}:`, err);
-      setGameMessage(prev => roomDataRef.current && !roomDataRef.current.isGameOver && (!prev || !prev.includes("Game Over!")) ? `Network error claiming ${prizeType}.` : prev);
+      setGameMessage(prev => {
+        if (roomDataRef.current && !roomDataRef.current.isGameOver) {
+            return (!prev || !prev.includes("Game Over!")) ? `Network error claiming ${prizeType}.` : prev;
+        }
+        return prev;
+      });
       toast({ title: "Network Error", description: `Could not claim ${prizeType}.`, variant: "destructive" });
     }
   };
@@ -457,8 +475,8 @@ export default function GameRoomPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <div className="space-y-4 lg:col-span-1">
-          <CalledNumberDisplay currentNumber={roomData.currentNumber} />
-          <LiveNumberBoard calledNumbers={roomData.calledNumbers} currentNumber={roomData.currentNumber} />
+          <MemoizedCalledNumberDisplay currentNumber={roomData.currentNumber} />
+          <MemoizedLiveNumberBoard calledNumbers={roomData.calledNumbers} currentNumber={roomData.currentNumber} />
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg flex items-center"><Award className="mr-2 h-5 w-5 text-primary" />Prizes Status</CardTitle>
@@ -468,14 +486,12 @@ export default function GameRoomPage() {
             </CardHeader>
             {!isPrizesStatusMinimized && (
               <CardContent>
-                {isLoading ? <p className="text-sm text-muted-foreground">Loading prize status...</p> :
-                  <PrizeStatusList
+                <MemoizedPrizeStatusList
                     prizeStatus={roomData.prizeStatus}
                     prizesForFormat={prizesForFormat}
                     players={roomData.players}
-                    isLoading={false} // Pass false as data is available if not main loading
+                    isLoading={isLoading} 
                   />
-                }
               </CardContent>
             )}
           </Card>
@@ -508,7 +524,11 @@ export default function GameRoomPage() {
                       buttonText = `${prizeType} (Claimed by ${claimants})`;
                     }
                   }
-                  const ticketIndexForClaim = prizeType === PRIZE_TYPES.JALDI_5 ? 0 : 0; 
+                  // For Jaldi 5, any ticket is fine, for lines/FH, the claim is typically on one specific ticket.
+                  // The backend handles which ticket is being claimed against for lines/FH via `ticketIndexToClaimOn`.
+                  // For Jaldi 5, the client-side pre-check determines if any ticket qualifies, and then `handleClaimPrize`
+                  // passes an appropriate ticket index (usually the first one that qualifies, or just 0 if any ticket is fine).
+                  const ticketIndexForClaim = 0; // Default for UI, actual index decided in handleClaimPrize or sent by API
 
                   return (
                     <Button
@@ -517,8 +537,8 @@ export default function GameRoomPage() {
                       disabled={
                         roomData.isGameOver ||
                         hasPlayerClaimedThis ||
-                        (isPrizeClaimedByAnyone && prizeType !== PRIZE_TYPES.FULL_HOUSE && !claimInfo?.claimedBy.includes(currentUser.username)) ||
-                        (isPrizeClaimedByAnyone && prizeType === PRIZE_TYPES.FULL_HOUSE)
+                        (isPrizeClaimedByAnyone && prizeType !== PRIZE_TYPES.FULL_HOUSE && !claimInfo?.claimedBy.includes(currentUser.username)) || // If claimed by others (and not you), and it's not FH, disable
+                        (isPrizeClaimedByAnyone && prizeType === PRIZE_TYPES.FULL_HOUSE) // If FH claimed by anyone, disable
                       }
                       variant={isPrizeClaimedByAnyone ? "secondary" : "default"}
                       className={cn("px-2 py-1 rounded-md text-xs sm:text-sm",
@@ -541,7 +561,7 @@ export default function GameRoomPage() {
             <ScrollArea className="max-h-[60vh] lg:max-h-none">
               <div className="flex flex-wrap justify-center gap-4">
                 {myTickets.map((ticket, index) => (
-                  <HousieTicket
+                  <MemoizedHousieTicket
                     key={index}
                     ticketIndex={index}
                     ticket={ticket}

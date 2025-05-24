@@ -50,25 +50,10 @@ export interface Room {
   calledNumbers: number[];
   numberPool: number[]; // Numbers 1-90, shuffled, numbers are removed as they are called
   prizeStatus: Record<PrizeType, PrizeClaim | null >; // Tracks who claimed what
+  lastNumberCalledTimestamp?: Date | string; // Timestamp of the last number call
 }
 
 // A Housie ticket is a 3x9 grid. Each cell can be a number or null (empty).
 export type HousieTicketNumber = number | null;
 export type HousieTicketRow = HousieTicketNumber[];
 export type HousieTicketGrid = HousieTicketRow[];
-
-// This type was for client-side game state, much of this will now live in the `Room` type on the backend.
-// export interface GameState {
-//   roomId: string;
-//   players: Player[]; // Simple player list for UI
-//   settings: GameSettings;
-//   tickets: Record<string, HousieTicketGrid[]>; // playerId to array of tickets
-//   calledNumbers: number[];
-//   currentNumber: number | null;
-//   claims: Claim[]; // Old claim structure
-//   prizePool: number;
-//   prizeDistribution: Prize[]; // Old prize structure
-//   isGameStarted: boolean;
-//   isGameOver: boolean;
-//   gameHostId: string;
-// }
