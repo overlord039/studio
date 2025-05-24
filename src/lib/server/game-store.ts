@@ -2,14 +2,17 @@
 import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { generateImprovedHousieTicket } from '@/lib/housie';
-import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE, PRIZE_DEFINITIONS } from '@/lib/constants';
+import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE, PRIZE_DEFINITIONS, DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER } from '@/lib/constants';
 
 declare global {
   // eslint-disable-next-line no-var
   var housieRooms: Map<string, Room>;
+  // eslint-disable-next-line no-var
+  var roomTimers: Map<string, NodeJS.Timeout>;
 }
 
 const rooms = global.housieRooms || (global.housieRooms = new Map<string, Room>());
+const roomTimers = global.roomTimers || (global.roomTimers = new Map<string, NodeJS.Timeout>());
 
 function generateRoomId(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase(); // 6-char alphanumeric
@@ -17,7 +20,6 @@ function generateRoomId(): string {
 
 function initializeNumberPool(): number[] {
   const pool = Array.from({ length: NUMBERS_RANGE_MAX - NUMBERS_RANGE_MIN + 1 }, (_, i) => NUMBERS_RANGE_MIN + i);
-  // Shuffle the pool
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -31,9 +33,18 @@ function initializePrizeStatus(roomSettings: GameSettings): Record<PrizeType, Pr
   const prizesForFormat = PRIZE_DEFINITIONS[prizeFormat] || Object.values(PRIZE_TYPES);
 
   (prizesForFormat as PrizeType[]).forEach(prize => {
-    status[prize] = null; 
+    status[prize] = null;
   });
   return status;
+}
+
+function stopRoomTimer(roomId: string, reason: string) {
+  const timerId = roomTimers.get(roomId);
+  if (timerId) {
+    clearInterval(timerId);
+    roomTimers.delete(roomId);
+    console.log(`Room ${roomId}: Server-side auto-calling stopped. Reason: ${reason}`);
+  }
 }
 
 export function createRoomStore(host: Player, clientSettings?: Partial<GameSettings>): Room {
@@ -43,13 +54,13 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
   const hostPlayerInRoom: BackendPlayerInRoom = {
     ...host,
     isHost: true,
-    tickets: [], // Host gets tickets upon "joining" from lobby
+    tickets: [], 
   };
 
   const newRoom: Room = {
     id: roomId,
     host: { id: host.id, name: host.name, isHost: true },
-    players: [hostPlayerInRoom], // Host is added but needs to "buy" tickets
+    players: [hostPlayerInRoom],
     settings: gameSettings,
     createdAt: new Date(),
     isGameStarted: false,
@@ -57,16 +68,17 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
     currentNumber: null,
     calledNumbers: [],
     numberPool: initializeNumberPool(),
-    prizeStatus: initializePrizeStatus(gameSettings), 
+    prizeStatus: initializePrizeStatus(gameSettings),
   };
   rooms.set(roomId, newRoom);
-  console.log(`Room created: ${roomId} by host ${host.id}. Host needs to confirm their tickets.`);
+  console.log(`Room created: ${roomId} by host ${host.id}.`);
   return newRoom;
 }
 
 export function getRoomStore(roomId: string): Room | undefined {
   const room = rooms.get(roomId);
   if (room && !room.isGameStarted && (new Date().getTime() - new Date(room.createdAt).getTime()) > 24 * 60 * 60 * 1000) { // 24 hours
+    stopRoomTimer(roomId, "Room expired");
     rooms.delete(roomId);
     console.log(`Room ${roomId} expired and deleted.`);
     return undefined;
@@ -74,36 +86,32 @@ export function getRoomStore(roomId: string): Room | undefined {
   return room;
 }
 
-export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; name: string }, numberOfTickets: number): Room | { error: string } {
+export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; name: string }, numberOfTickets?: number): Room | { error: string } {
   const room = rooms.get(roomId);
   if (!room) {
     return { error: "Room not found." };
   }
-  
+
+  const numTicketsToGenerate = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
+
   const existingPlayerIndex = room.players.findIndex(p => p.id === playerInfo.id);
-  const ticketsToGenerate = Math.max(1, numberOfTickets); // Ensure at least 1 ticket
 
   if (existingPlayerIndex !== -1) {
-    // Player exists, update their tickets IF they don't have any yet AND game hasn't started
-    if (room.players[existingPlayerIndex].tickets.length === 0 && ticketsToGenerate > 0 && !room.isGameStarted) {
-        room.players[existingPlayerIndex].tickets = Array.from({ length: ticketsToGenerate }, () => generateImprovedHousieTicket());
-        console.log(`Player ${playerInfo.id} (existing) confirmed ${ticketsToGenerate} tickets in room ${roomId}.`);
-    } else if (room.players[existingPlayerIndex].tickets.length > 0 && !room.isGameStarted) {
-        // Allow updating tickets if game not started - for simplicity, re-generate.
-        // In a real system, you might want to charge/refund, or prevent changes after initial buy.
-        // room.players[existingPlayerIndex].tickets = Array.from({ length: ticketsToGenerate }, () => generateImprovedHousieTicket());
-        // console.log(`Player ${playerInfo.id} (existing) updated to ${ticketsToGenerate} tickets in room ${roomId}.`);
-        // For now, let's assume they can only set tickets once if they had 0.
-         console.log(`Player ${playerInfo.id} already has tickets. No change. (To change, implement ticket update logic)`);
-    } else if (room.isGameStarted) {
-        return { error: "Game has already started. Cannot add/modify tickets."}
+    const existingPlayer = room.players[existingPlayerIndex];
+    existingPlayer.name = playerInfo.name; // Update name if needed
+    existingPlayer.isHost = playerInfo.id === room.host.id; // Ensure host status is correct
+
+    if (existingPlayer.tickets.length === 0 && numTicketsToGenerate > 0 && !room.isGameStarted) {
+      existingPlayer.tickets = Array.from({ length: numTicketsToGenerate }, () => generateImprovedHousieTicket());
+      console.log(`Player ${playerInfo.id} (existing) confirmed ${numTicketsToGenerate} tickets in room ${roomId}.`);
+    } else if (room.isGameStarted && existingPlayer.tickets.length === 0) {
+      return { error: "Game has already started. Cannot add tickets now." };
+    } else {
+       console.log(`Player ${playerInfo.id} is already in the room. Ticket status unchanged or game started.`);
     }
-    room.players[existingPlayerIndex].name = playerInfo.name; 
-    room.players[existingPlayerIndex].isHost = playerInfo.id === room.host.id; 
   } else {
-    // New player joining
     if (room.isGameStarted) {
-         return { error: "Game has already started. Cannot join as a new player." };
+      return { error: "Game has already started. Cannot join as a new player with tickets." };
     }
     if (room.players.length >= room.settings.lobbySize) {
       return { error: "Room is full." };
@@ -111,51 +119,75 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; n
     const newPlayer: BackendPlayerInRoom = {
       id: playerInfo.id,
       name: playerInfo.name,
-      isHost: playerInfo.id === room.host.id, // Should be false unless it's the host re-joining somehow
-      tickets: Array.from({ length: ticketsToGenerate }, () => generateImprovedHousieTicket()),
+      isHost: playerInfo.id === room.host.id,
+      tickets: Array.from({ length: numTicketsToGenerate }, () => generateImprovedHousieTicket()),
     };
     room.players.push(newPlayer);
-    console.log(`New player ${playerInfo.name} (${playerInfo.id}) joined room ${roomId} with ${ticketsToGenerate} tickets.`);
+    console.log(`New player ${playerInfo.name} (${playerInfo.id}) joined room ${roomId} with ${numTicketsToGenerate} tickets.`);
   }
-  
+
   rooms.set(roomId, room);
   return room;
 }
 
 export function startGameInRoomStore(roomId: string, hostId: string): Room | { error: string } {
   const room = rooms.get(roomId);
-  if (!room) {
-    return { error: "Room not found." };
-  }
-  if (room.host.id !== hostId) {
-    return { error: "Only the host can start the game." };
-  }
-  if (room.isGameStarted) {
-    return { error: "Game has already started." };
-  }
-  
+  if (!room) return { error: "Room not found." };
+  if (room.host.id !== hostId) return { error: "Only the host can start the game." };
+  if (room.isGameStarted) return { error: "Game has already started." };
+
   const hostPlayer = room.players.find(p => p.id === hostId && p.isHost);
   if (!hostPlayer || hostPlayer.tickets.length === 0) {
-    return { error: `Host must confirm their tickets before starting.`};
+    return { error: `Host must have tickets before starting.` };
   }
 
-  const minPlayersRequired = process.env.NODE_ENV === 'development' ? 1 : MIN_LOBBY_SIZE; 
+  const minPlayersRequired = process.env.NODE_ENV === 'development' ? 1 : MIN_LOBBY_SIZE;
   const playersWithTickets = room.players.filter(p => p.tickets.length > 0).length;
 
   if (playersWithTickets < minPlayersRequired) {
     return { error: `Need at least ${minPlayersRequired} player(s) with tickets to start. Currently: ${playersWithTickets}` };
   }
-  
 
   room.isGameStarted = true;
   room.isGameOver = false;
-  room.numberPool = initializeNumberPool(); 
+  room.numberPool = initializeNumberPool();
   room.calledNumbers = [];
   room.currentNumber = null;
-  room.prizeStatus = initializePrizeStatus(room.settings); 
+  room.prizeStatus = initializePrizeStatus(room.settings);
+  
+  // Start server-side timer for number calling
+  if (!roomTimers.has(roomId)) {
+    console.log(`Room ${roomId}: Attempting to start server-side auto-calling.`);
+    const intervalId = setInterval(() => {
+      const currentRoomState = getRoomStore(roomId); // Get fresh state
+      if (!currentRoomState || !currentRoomState.isGameStarted || currentRoomState.isGameOver) {
+        stopRoomTimer(roomId, !currentRoomState ? "Room no longer exists" : "Game not started or already over");
+        return;
+      }
+      
+      const result = callNextNumberStore(roomId); // This internally updates the room in the `rooms` Map
+      
+      if (result && 'error' in result) {
+        if (result.error === "All numbers called.") {
+            stopRoomTimer(roomId, "All numbers called");
+            // The game over state is set within callNextNumberStore in this case
+        } else {
+            console.error(`Error auto-calling number for room ${roomId}: ${result.error}`);
+            // Optionally stop timer on other errors too, or let it retry
+            // stopRoomTimer(roomId, `Error during call: ${result.error}`);
+        }
+      } else if (result && !('error' in result)) {
+         console.log(`Room ${roomId}: Server auto-called number. New current is ${result.currentNumber}`);
+      }
+
+    }, 3000); // Call number every 3 seconds
+    roomTimers.set(roomId, intervalId);
+    console.log(`Room ${roomId}: Server-side auto-calling started with interval ID ${intervalId}.`);
+  }
+
 
   rooms.set(roomId, room);
-  console.log(`Game started in room: ${roomId}`);
+  console.log(`Game started in room: ${roomId}. Server timer initiated.`);
   return room;
 }
 
@@ -164,26 +196,29 @@ export function callNextNumberStore(roomId: string): Room | { error: string; num
   if (!room) return { error: "Room not found." };
   if (!room.isGameStarted) return { error: "Game not started." };
   if (room.isGameOver) return { error: "Game is over." };
+
   if (room.numberPool.length === 0) {
-    room.isGameOver = true; 
-    // check if full house was missed
+    room.isGameOver = true;
     if (!room.prizeStatus[PRIZE_TYPES.FULL_HOUSE] || room.prizeStatus[PRIZE_TYPES.FULL_HOUSE]!.claimedBy.length === 0) {
-        console.log(`Room ${roomId}: All numbers called. No Full House winner.`);
+      console.log(`Room ${roomId}: All numbers called. No Full House winner.`);
     }
-    rooms.set(roomId, room);
+    rooms.set(roomId, room); // Save game over state
+    stopRoomTimer(roomId, "All numbers called internally by callNextNumberStore");
     return { error: "All numbers called.", number: room.currentNumber ?? undefined };
   }
 
-  const nextNumber = room.numberPool.pop(); 
-  if (nextNumber === undefined) { 
-     room.isGameOver = true;
-     rooms.set(roomId, room);
-     return { error: "Error getting next number from pool (pool might be unexpectedly empty).", number: room.currentNumber ?? undefined };
+  const nextNumber = room.numberPool.pop();
+  if (nextNumber === undefined) {
+    room.isGameOver = true;
+    rooms.set(roomId, room);
+    stopRoomTimer(roomId, "Number pool unexpectedly empty");
+    return { error: "Error getting next number from pool (pool might be unexpectedly empty).", number: room.currentNumber ?? undefined };
   }
-  
+
   room.currentNumber = nextNumber;
   room.calledNumbers.push(nextNumber);
   rooms.set(roomId, room);
+  // Do not log here as the interval in startGameInRoomStore will log.
   return room;
 }
 
@@ -191,35 +226,35 @@ export function claimPrizeStore(
   roomId: string,
   playerId: string,
   prizeType: PrizeType,
-  ticketIndex: number 
+  ticketIndex: number
 ): Room | { error: string } {
   const room = rooms.get(roomId);
   if (!room) return { error: "Room not found." };
   if (!room.isGameStarted) return { error: "Game not started." };
-  
+
   const player = room.players.find(p => p.id === playerId);
   if (!player) return { error: "Player not found in this room." };
   if (ticketIndex < 0 || ticketIndex >= player.tickets.length) return { error: "Invalid ticket index." };
-  
+
   const ticket = player.tickets[ticketIndex];
 
-  if (room.isGameOver && prizeType !== PRIZE_TYPES.FULL_HOUSE) { 
-     return { error: "Game is over. No more claims." };
+  if (room.isGameOver && prizeType !== PRIZE_TYPES.FULL_HOUSE) {
+    return { error: "Game is over. No more claims except potentially Full House if it's the last one." };
   }
   
   if (room.prizeStatus[prizeType]?.claimedBy.includes(playerId)) {
     return { error: `You have already claimed ${prizeType}.` };
   }
-  
+
   const isFullHouseAlreadyClaimedByAnyone = room.prizeStatus[PRIZE_TYPES.FULL_HOUSE] && room.prizeStatus[PRIZE_TYPES.FULL_HOUSE]!.claimedBy.length > 0;
   if (isFullHouseAlreadyClaimedByAnyone && prizeType !== PRIZE_TYPES.FULL_HOUSE) {
-     return { error: "Full House already claimed, no more claims for other prizes." };
+    return { error: "Full House already claimed, no more claims for other prizes." };
   }
 
-  const housieLib = require('@/lib/housie'); 
+  const housieLib = require('@/lib/housie');
   if (typeof housieLib.checkWinningCondition !== 'function') {
-      console.error("housie.checkWinningCondition is not a function. Check lib/housie.ts exports.");
-      return { error: "Internal server error: Prize validation unavailable." };
+    console.error("housie.checkWinningCondition is not a function. Check lib/housie.ts exports.");
+    return { error: "Internal server error: Prize validation unavailable." };
   }
   const isValidClaim = housieLib.checkWinningCondition(ticket, room.calledNumbers, prizeType);
 
@@ -227,26 +262,25 @@ export function claimPrizeStore(
 
   if (!room.prizeStatus[prizeType] || !Array.isArray(room.prizeStatus[prizeType]?.claimedBy)) {
     room.prizeStatus[prizeType] = { claimedBy: [], timestamp: new Date() };
-  } else if (!room.prizeStatus[prizeType]!.timestamp) { // Ensure timestamp is set if claim object exists
+  } else if (!room.prizeStatus[prizeType]!.timestamp) {
     room.prizeStatus[prizeType]!.timestamp = new Date();
   }
   room.prizeStatus[prizeType]!.claimedBy.push(playerId);
-  
+
   if (prizeType === PRIZE_TYPES.FULL_HOUSE) {
     room.isGameOver = true;
     console.log(`Room ${roomId}: Full House claimed by ${playerId}. Game Over.`);
-    // Auto-award unclaimed line prizes for the Full House winner on the same ticket
+    stopRoomTimer(roomId, "Full House claimed");
+
     const linePrizesToAutoCheck: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
     for (const linePrize of linePrizesToAutoCheck) {
       const linePrizeClaim = room.prizeStatus[linePrize];
-      // Check if line is unclaimed by anyone OR specifically not claimed by this player yet (though first condition is stronger)
-      if (!linePrizeClaim || !linePrizeClaim.claimedBy.includes(playerId)) { 
+      if (!linePrizeClaim || !linePrizeClaim.claimedBy.includes(playerId)) {
         if (housieLib.checkWinningCondition(ticket, room.calledNumbers, linePrize)) {
           if (!room.prizeStatus[linePrize] || !Array.isArray(room.prizeStatus[linePrize]?.claimedBy)) {
             room.prizeStatus[linePrize] = { claimedBy: [], timestamp: new Date() };
           }
-          // Check again to be absolutely sure before pushing, though outer condition should cover this
-          if (!room.prizeStatus[linePrize]!.claimedBy.includes(playerId)) { 
+          if (!room.prizeStatus[linePrize]!.claimedBy.includes(playerId)) {
             room.prizeStatus[linePrize]!.claimedBy.push(playerId);
             console.log(`Auto-awarded ${linePrize} to ${playerId} during Full House claim in room ${roomId}`);
           }
@@ -256,57 +290,58 @@ export function claimPrizeStore(
   }
 
   rooms.set(roomId, room);
-  return room; 
+  return room;
 }
 
 export function getRoomStateForClient(roomId: string): Omit<Room, 'numberPool'> | undefined {
-    const room = getRoomStore(roomId);
-    if (!room) {
-        console.warn(`getRoomStateForClient: Room ${roomId} not found in store.`);
-        return undefined;
-    }
+  const room = getRoomStore(roomId);
+  if (!room) {
+    console.warn(`getRoomStateForClient: Room ${roomId} not found in store.`);
+    return undefined;
+  }
 
-    try {
-        const playersForClient = room.players.map(p => ({
-            id: p.id,
-            name: p.name,
-            isHost: p.isHost,
-            tickets: Array.isArray(p.tickets) ? p.tickets : [], 
-        }));
+  try {
+    const playersForClient = room.players.map(p => ({
+      id: p.id,
+      name: p.name,
+      isHost: p.isHost,
+      tickets: Array.isArray(p.tickets) ? p.tickets : [],
+    }));
 
-        const prizeStatusForClient: Record<PrizeType, PrizeClaim | null> = {} as any;
-        const currentPrizeFormat = room.settings?.prizeFormat || DEFAULT_GAME_SETTINGS.prizeFormat;
-        const prizesToConsider = PRIZE_DEFINITIONS[currentPrizeFormat] || Object.values(PRIZE_TYPES);
+    const prizeStatusForClient: Record<PrizeType, PrizeClaim | null> = {} as any;
+    const currentPrizeFormat = room.settings?.prizeFormat || DEFAULT_GAME_SETTINGS.prizeFormat;
+    const prizesToConsider = PRIZE_DEFINITIONS[currentPrizeFormat] || Object.values(PRIZE_TYPES);
 
-        prizesToConsider.forEach(prizeKey => {
-            const prize = prizeKey as PrizeType;
-            const claim = room.prizeStatus[prize];
-            if (claim) {
-                prizeStatusForClient[prize] = {
-                    claimedBy: claim.claimedBy,
-                    timestamp: claim.timestamp ? new Date(claim.timestamp).toISOString() : undefined,
-                };
-            } else {
-                prizeStatusForClient[prize] = null;
-            }
-        });
-        
-        const clientRoomData = {
-            id: room.id,
-            host: room.host,
-            players: playersForClient,
-            settings: room.settings,
-            createdAt: new Date(room.createdAt).toISOString(),
-            isGameStarted: room.isGameStarted,
-            isGameOver: room.isGameOver,
-            currentNumber: room.currentNumber,
-            calledNumbers: room.calledNumbers,
-            prizeStatus: prizeStatusForClient,
+    prizesToConsider.forEach(prizeKey => {
+      const prize = prizeKey as PrizeType;
+      const claim = room.prizeStatus[prize];
+      if (claim) {
+        prizeStatusForClient[prize] = {
+          claimedBy: claim.claimedBy,
+          timestamp: claim.timestamp ? new Date(claim.timestamp).toISOString() : undefined,
         };
-        return clientRoomData;
+      } else {
+        prizeStatusForClient[prize] = null;
+      }
+    });
 
-    } catch (e) {
-        console.error(`Error preparing room data for client for room ${roomId}:`, e);
-        return undefined; 
-    }
+    const clientRoomData = {
+      id: room.id,
+      host: room.host,
+      players: playersForClient,
+      settings: room.settings,
+      createdAt: typeof room.createdAt === 'string' ? room.createdAt : new Date(room.createdAt).toISOString(),
+      isGameStarted: room.isGameStarted,
+      isGameOver: room.isGameOver,
+      currentNumber: room.currentNumber,
+      calledNumbers: room.calledNumbers,
+      prizeStatus: prizeStatusForClient,
+    };
+    return clientRoomData;
+
+  } catch (e) {
+    console.error(`Error preparing room data for client for room ${roomId}:`, e);
+    // In case of an error during data preparation, try to return a minimal valid structure or undefined
+    return undefined;
+  }
 }

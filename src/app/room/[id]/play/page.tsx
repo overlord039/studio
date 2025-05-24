@@ -73,10 +73,10 @@ export default function GameRoomPage() {
   const [isPrizesStatusMinimized, setIsPrizesStatusMinimized] = useState(true);
   const [isPrizeInfoMinimized, setIsPrizeInfoMinimized] = useState(true);
   const [isOtherPlayersMinimized, setIsOtherPlayersMinimized] = useState(true);
-  const [isCallingNumber, setIsCallingNumber] = useState(false);
+  // isCallingNumber is no longer needed as server controls calling
 
   const previousCurrentNumberRef = useRef<number | null>(null);
-  const roomDataRef = useRef(roomData); 
+  const roomDataRef = useRef(roomData);
 
   useEffect(() => {
     roomDataRef.current = roomData;
@@ -95,7 +95,7 @@ export default function GameRoomPage() {
 
     if (isInitialLoad) {
       setIsLoading(true);
-      setError(null); 
+      setError(null);
     }
 
     try {
@@ -104,12 +104,13 @@ export default function GameRoomPage() {
         const errorData = await response.json().catch(() => ({ message: `Failed to parse error response. Status: ${response.status}` }));
         if (response.status === 404) {
           setError("Room not found. It might have expired or never existed.");
+          if (isInitialLoad) setRoomData(null);
         } else {
           setError(errorData.message || `Failed to fetch room details: ${response.statusText}`);
+          if (isInitialLoad) setRoomData(null);
         }
-        if (isInitialLoad) setRoomData(null); 
         if (isInitialLoad) setIsLoading(false);
-        return; 
+        return;
       }
       const data: Room = await response.json();
       setRoomData(data);
@@ -121,9 +122,9 @@ export default function GameRoomPage() {
         const ticketsParam = searchParams.get('playerTickets');
         const numTickets = ticketsParam ? parseInt(ticketsParam, 10) : 0;
         if (numTickets === 0 && data.isGameStarted && !data.isGameOver) {
-             if (roomDataRef.current && !roomDataRef.current.isGameOver) {
-                 setGameMessage("You are spectating. You don't have tickets in this game.");
-             }
+          if (!roomDataRef.current || !roomDataRef.current.isGameOver) { // Check ref for previous state
+            setGameMessage(prev => prev && prev.includes("Game Over!") ? prev : "You are spectating. You don't have tickets in this game.");
+          }
         }
         setMyTickets([]);
       }
@@ -132,31 +133,29 @@ export default function GameRoomPage() {
         const fhClaim = data.prizeStatus[PRIZE_TYPES.FULL_HOUSE];
         let gameOverMsg = "🎉 Game Over!";
         if (fhClaim && fhClaim.claimedBy.length > 0) {
-          const winnerNames = fhClaim.claimedBy.map(winnerId => data.players.find(p=>p.id === winnerId)?.name || winnerId).join(' & ');
+          const winnerNames = fhClaim.claimedBy.map(winnerId => data.players.find(p => p.id === winnerId)?.name || winnerId).join(' & ');
           gameOverMsg = `🎉 ${winnerNames} won Full House! Game Over!`;
-           if (fhClaim.timestamp) {
-             const claimTimestamp = typeof fhClaim.timestamp === 'string' ? new Date(fhClaim.timestamp) : fhClaim.timestamp;
-             gameOverMsg += ` at ${claimTimestamp.toLocaleTimeString()}`;
-           }
-        } else if (data.calledNumbers.length === NUMBERS_RANGE_MAX ) {
-            gameOverMsg = "All numbers called. No Full House winner.";
+          if (fhClaim.timestamp) {
+            const claimTimestamp = typeof fhClaim.timestamp === 'string' ? new Date(fhClaim.timestamp) : fhClaim.timestamp;
+            gameOverMsg += ` at ${claimTimestamp.toLocaleTimeString()}`;
+          }
+        } else if (data.calledNumbers.length === NUMBERS_RANGE_MAX) {
+          gameOverMsg = "All numbers called. No Full House winner.";
         }
-         if (!gameMessage || !gameMessage.includes("Game Over!")) { 
-            setGameMessage(gameOverMsg);
-        }
+        setGameMessage(prev => (!prev || !prev.includes("Game Over!")) ? gameOverMsg : prev);
       }
 
     } catch (err) {
       console.error("Error fetching game details:", err);
-      if (isInitialLoad || !roomDataRef.current) { 
+      if (isInitialLoad || !roomDataRef.current) {
         setError(`Failed to fetch game details: ${(err as Error).message}`);
-        if (isInitialLoad) setRoomData(null); 
-      } else if (roomDataRef.current && !roomDataRef.current.isGameOver){
-         toast({
-            title: "Game Update Failed",
-            description: "Could not fetch latest game details. Retrying...",
-            variant: "destructive",
-            duration: 2000,
+        if (isInitialLoad) setRoomData(null);
+      } else if (roomDataRef.current && !roomDataRef.current.isGameOver) {
+        toast({
+          title: "Game Update Failed",
+          description: "Could not fetch latest game details. Retrying...",
+          variant: "destructive",
+          duration: 2000,
         });
       }
     } finally {
@@ -164,7 +163,7 @@ export default function GameRoomPage() {
         setIsLoading(false);
       }
     }
-  }, [roomId, currentUser, searchParams, toast, gameMessage]); // Added gameMessage to dependencies
+  }, [roomId, currentUser, searchParams, toast]);
 
   useEffect(() => {
     if (currentUser && roomId && !authLoading) {
@@ -173,18 +172,21 @@ export default function GameRoomPage() {
       setIsLoading(false);
       setError("Please log in to play or spectate.");
     }
-  }, [currentUser, roomId, authLoading, fetchGameDetails]); 
+  }, [currentUser, roomId, authLoading, fetchGameDetails]);
 
+  // Polling for game updates
   useEffect(() => {
-    if (!roomId || !currentUser || roomData?.isGameOver || isLoading) return;
+    if (!roomId || !currentUser || roomData?.isGameOver || isLoading) return; // Stop polling if game over or initial load
     const intervalId = setInterval(() => {
-      if (!document.hidden) {
+      if (!document.hidden) { // Only poll if tab is active
         fetchGameDetails(false);
       }
-    }, 3000); 
+    }, 3000); // Poll every 3 seconds
     return () => clearInterval(intervalId);
   }, [roomId, currentUser, roomData?.isGameOver, isLoading, fetchGameDetails]);
 
+
+  // Announce new numbers
   useEffect(() => {
     if (roomData && roomData.currentNumber !== null && roomData.currentNumber !== previousCurrentNumberRef.current) {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -200,102 +202,12 @@ export default function GameRoomPage() {
   }, [roomData?.currentNumber]);
 
 
-  const handleCallNextNumber = useCallback(async () => {
-    if (isCallingNumber) return;
-    if (!currentUser?.username || !isCurrentUserHost) {
-      return;
-    }
-
-    setIsCallingNumber(true);
-    try {
-      const response = await fetch(`/api/rooms/${roomId}/call-number`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostId: currentUser.username })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        setGameMessage(prevGameMessage => {
-          if (roomDataRef.current && !roomDataRef.current.isGameOver) {
-            if (result.message && (!prevGameMessage || !prevGameMessage.includes("Game Over!"))) {
-              return result.message;
-            }
-          }
-          return prevGameMessage;
-        });
-        toast({ title: "Error Calling Number", description: result.message, variant: "destructive" });
-      } else {
-        setRoomData(result as Room);
-        setGameMessage(prevGameMessage => {
-          if (result.message && roomDataRef.current && !roomDataRef.current.isGameOver) {
-            if (!prevGameMessage || !prevGameMessage.includes("Game Over!")) {
-              return result.message;
-            }
-          }
-          return prevGameMessage;
-        });
-      }
-    } catch (err) {
-      console.error("Error calling next number:", err);
-      setGameMessage(prevGameMessage => {
-        if (roomDataRef.current && !roomDataRef.current.isGameOver) {
-          if (!prevGameMessage || !prevGameMessage.includes("Game Over!")) {
-            return "Network error calling number.";
-          }
-        }
-        return prevGameMessage;
-      });
-      toast({ title: "Network Error", description: "Could not call next number.", variant: "destructive" });
-    } finally {
-      setIsCallingNumber(false);
-    }
-  }, [roomId, currentUser?.username, isCurrentUserHost, toast, isCallingNumber]);
-
-
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout | undefined;
-
-    const canAutoCall = isCurrentUserHost && roomData?.isGameStarted && !roomData?.isGameOver;
-
-    const performCall = () => {
-      if (roomDataRef.current?.isGameStarted && !roomDataRef.current?.isGameOver && !isCallingNumber) {
-        handleCallNextNumber();
-      }
-    };
-
-    if (canAutoCall) {
-      if (roomData.calledNumbers.length === 0 && !isCallingNumber) {
-        performCall(); 
-      }
-      
-      if (!isCallingNumber && roomData.isGameStarted && !roomData.isGameOver) { 
-        intervalId = setInterval(performCall, 3000); 
-      }
-    }
-    
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [
-    isCurrentUserHost, 
-    roomData?.isGameStarted, 
-    roomData?.isGameOver, 
-    roomData?.calledNumbers,
-    isCallingNumber, 
-    handleCallNextNumber
-  ]);
-
-
   const handleNumberClick = (ticketIndex: number, numberValue: number, rowIndex: number, colIndex: number) => {
     if (!roomData || roomData.isGameOver || myTickets.length === 0) return;
     const key = `${ticketIndex}-${rowIndex}-${colIndex}`;
-    
-    if (markedNumbers.has(key)) { 
-        return; 
+
+    if (markedNumbers.has(key)) {
+      return; // Cannot unmark
     }
 
     if (!roomData.calledNumbers.includes(numberValue)) {
@@ -318,35 +230,33 @@ export default function GameRoomPage() {
       toast({ title: "Cannot Claim", description: "Room data missing, not logged in, or you have no tickets.", variant: "destructive" });
       return;
     }
-    
-    // For Jaldi 5, check across all tickets
-    if (prizeType === PRIZE_TYPES.JALDI_5) {
-        let jaldi5ValidOnAnyTicket = false;
-        let jaldi5TicketIndex = -1;
-        for (let i = 0; i < myTickets.length; i++) {
-            const ticketToCheck = myTickets[i];
-            const numbersOnThisTicket = ticketToCheck.flat().filter(n => n !== null) as number[];
-            const markedAndCalledCount = numbersOnThisTicket.filter(num => 
-                roomData.calledNumbers.includes(num) && 
-                // Check if marked: This requires iterating through markedNumbers structure
-                Array.from(markedNumbers).some(key => {
-                    const [mTicketIdx, mRow, mCol] = key.split('-').map(Number);
-                    return mTicketIdx === i && ticketToCheck[mRow][mCol] === num;
-                })
-            ).length;
 
-            if (markedAndCalledCount >= 5) {
-                jaldi5ValidOnAnyTicket = true;
-                jaldi5TicketIndex = i; // Use the first ticket that qualifies for the API call
-                break;
+    // Client-side pre-validation for Jaldi 5 (checking marked numbers by player)
+    if (prizeType === PRIZE_TYPES.JALDI_5) {
+      let jaldi5ValidOnAnyTicket = false;
+      let qualifyingTicketIndex = -1;
+      for (let i = 0; i < myTickets.length; i++) {
+        const ticketToCheck = myTickets[i];
+        let markedAndCalledCountOnThisTicket = 0;
+        for (let r = 0; r < ticketToCheck.length; r++) {
+          for (let c = 0; c < ticketToCheck[r].length; c++) {
+            const num = ticketToCheck[r][c];
+            if (num !== null && roomData.calledNumbers.includes(num) && markedNumbers.has(`${i}-${r}-${c}`)) {
+              markedAndCalledCountOnThisTicket++;
             }
+          }
         }
-        if (!jaldi5ValidOnAnyTicket) {
-             toast({ title: `${prizeType} Claim Invalid!`, description: "You haven't marked 5 called numbers on any single ticket yet.", variant: "destructive" });
-             return;
+        if (markedAndCalledCountOnThisTicket >= 5) {
+          jaldi5ValidOnAnyTicket = true;
+          qualifyingTicketIndex = i;
+          break;
         }
-        // If valid, proceed to API call with jaldi5TicketIndex (or default to 0 if somehow still -1, though logic should prevent)
-        ticketIndexToClaimOn = jaldi5TicketIndex !== -1 ? jaldi5TicketIndex : 0;
+      }
+      if (!jaldi5ValidOnAnyTicket) {
+        toast({ title: `${prizeType} Claim Invalid!`, description: "You haven't marked 5 called numbers on any single ticket yet.", variant: "destructive" });
+        return;
+      }
+      ticketIndexToClaimOn = qualifyingTicketIndex; // Use the specific ticket index for the API call
     }
 
 
@@ -360,108 +270,86 @@ export default function GameRoomPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        setGameMessage(prevGameMessage => {
-          if (roomDataRef.current && !roomDataRef.current.isGameOver) {
-             if (result.message && (!prevGameMessage || !prevGameMessage.includes("Game Over!"))) {
-               return result.message;
-             }
-          }
-          return prevGameMessage;
-        });
+        setGameMessage(prev => roomDataRef.current && !roomDataRef.current.isGameOver && result.message && (!prev || !prev.includes("Game Over!")) ? result.message : prev);
         toast({ title: `${prizeType} Claim Invalid!`, description: result.message, variant: "destructive" });
       } else {
         const updatedRoom: Room = result;
-        setRoomData(updatedRoom); 
+        setRoomData(updatedRoom);
 
-        let toastMessageAlert = result.message; 
-        let localGameMessageAlert = result.message; 
+        let toastMessageAlert = result.message;
+        let localGameMessageAlert = result.message;
 
         const claimStatus = updatedRoom.prizeStatus[prizeType];
 
         if (claimStatus?.claimedBy.includes(currentUser.username)) {
-            const allClaimantsNames = claimStatus.claimedBy.map(id => updatedRoom.players.find(p=>p.id===id)?.name || id);
-            if (allClaimantsNames.length > 1) {
-                 localGameMessageAlert = `🔔 ${prizeType} claimed by ${allClaimantsNames.join(' & ')}! (You are one of them!)`;
-            } else {
-                 localGameMessageAlert = `🔔 ${currentUser.username} has claimed ${prizeType}!`;
-            }
-            toastMessageAlert = localGameMessageAlert;
-            
-            if (prizeType === PRIZE_TYPES.FULL_HOUSE && updatedRoom.isGameOver) {
-                let autoAwardMsg = "";
-                const linePrizes: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
-                
-                const winningTicketForFH = myTickets[ticketIndexToClaimOn]; // Use the specified ticketIndex for FH
+          const allClaimantsNames = claimStatus.claimedBy.map(id => updatedRoom.players.find(p => p.id === id)?.name || id);
+          localGameMessageAlert = allClaimantsNames.length > 1
+            ? `🔔 ${prizeType} claimed by ${allClaimantsNames.join(' & ')}! (You are one of them!)`
+            : `🔔 ${currentUser.username} has claimed ${prizeType}!`;
+          toastMessageAlert = localGameMessageAlert;
 
-                linePrizes.forEach(linePrize => {
-                    const lineClaimStatus = updatedRoom.prizeStatus[linePrize];
-                    if (!lineClaimStatus || !lineClaimStatus.claimedBy.length ) { // Only if line is unclaimed by anyone
-                        // Check if this player should be auto-awarded this line on *this specific FH ticket*
-                        const getRowNumbers = (rowIndex: number, ticket: HousieTicketGrid): number[] => ticket[rowIndex].filter(num => num !== null) as number[];
-                        let lineNumbers: number[] = [];
-                        if (linePrize === PRIZE_TYPES.TOP_LINE) lineNumbers = getRowNumbers(0, winningTicketForFH);
-                        else if (linePrize === PRIZE_TYPES.MIDDLE_LINE) lineNumbers = getRowNumbers(1, winningTicketForFH);
-                        else if (linePrize === PRIZE_TYPES.BOTTOM_LINE) lineNumbers = getRowNumbers(2, winningTicketForFH);
+          if (prizeType === PRIZE_TYPES.FULL_HOUSE && updatedRoom.isGameOver) {
+            let autoAwardMsg = "";
+            const linePrizes: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
+            const winningTicketForFH = myTickets[ticketIndexToClaimOn];
 
-                        const isLineCompleteOnThisTicket = lineNumbers.length === 5 && lineNumbers.every(num => updatedRoom.calledNumbers.includes(num));
+            linePrizes.forEach(linePrize => {
+              const lineClaimStatus = updatedRoom.prizeStatus[linePrize];
+              if (!lineClaimStatus || !lineClaimStatus.claimedBy.length) {
+                const getRowNumbers = (rowIndex: number, ticket: HousieTicketGrid): number[] => ticket[rowIndex].filter(num => num !== null) as number[];
+                let lineNumbers: number[] = [];
+                if (linePrize === PRIZE_TYPES.TOP_LINE) lineNumbers = getRowNumbers(0, winningTicketForFH);
+                else if (linePrize === PRIZE_TYPES.MIDDLE_LINE) lineNumbers = getRowNumbers(1, winningTicketForFH);
+                else if (linePrize === PRIZE_TYPES.BOTTOM_LINE) lineNumbers = getRowNumbers(2, winningTicketForFH);
 
-                        if (isLineCompleteOnThisTicket) {
-                             autoAwardMsg += `\nAlso awarded ${linePrize}.`;
-                             // Note: The backend actually handles the auto-awarding logic.
-                             // This client-side message is just for immediate feedback based on returned state.
-                        }
-                    }
-                });
-                if (autoAwardMsg) localGameMessageAlert += autoAwardMsg;
-
-                const fhFinalClaim = updatedRoom.prizeStatus[PRIZE_TYPES.FULL_HOUSE];
-                let finalGameOverMsg = "🎉 Game Over!";
-                 if (fhFinalClaim && fhFinalClaim.claimedBy.length > 0) {
-                    const winnerNames = fhFinalClaim.claimedBy.map(winnerId => updatedRoom.players.find(p=>p.id === winnerId)?.name || winnerId).join(' & ');
-                    finalGameOverMsg = `🎉 ${winnerNames} won Full House! Game Over!`;
-                    if (fhFinalClaim.timestamp) {
-                        const claimTimestamp = typeof fhFinalClaim.timestamp === 'string' ? new Date(fhFinalClaim.timestamp) : fhFinalClaim.timestamp;
-                        finalGameOverMsg += ` at ${claimTimestamp.toLocaleTimeString()}`;
-                    }
+                const isLineCompleteOnThisTicket = lineNumbers.length === 5 && lineNumbers.every(num => updatedRoom.calledNumbers.includes(num));
+                if (isLineCompleteOnThisTicket) {
+                  autoAwardMsg += `\nAlso awarded ${linePrize}.`;
                 }
-                setGameMessage(finalGameOverMsg); 
-                toastMessageAlert = finalGameOverMsg; 
-            } else if (!updatedRoom.isGameOver) {
-                setGameMessage(localGameMessageAlert);
+              }
+            });
+            if (autoAwardMsg) localGameMessageAlert += autoAwardMsg;
+
+            const fhFinalClaim = updatedRoom.prizeStatus[PRIZE_TYPES.FULL_HOUSE];
+            let finalGameOverMsg = "🎉 Game Over!";
+            if (fhFinalClaim && fhFinalClaim.claimedBy.length > 0) {
+              const winnerNames = fhFinalClaim.claimedBy.map(winnerId => updatedRoom.players.find(p => p.id === winnerId)?.name || winnerId).join(' & ');
+              finalGameOverMsg = `🎉 ${winnerNames} won Full House! Game Over!`;
+              if (fhFinalClaim.timestamp) {
+                const claimTimestamp = typeof fhFinalClaim.timestamp === 'string' ? new Date(fhFinalClaim.timestamp) : fhFinalClaim.timestamp;
+                finalGameOverMsg += ` at ${claimTimestamp.toLocaleTimeString()}`;
+              }
             }
-        } else if (claimStatus?.claimedBy.length) { 
-             localGameMessageAlert = `🔔 ${prizeType} was claimed by ${claimStatus.claimedBy.map(id => updatedRoom.players.find(p=>p.id===id)?.name || id).join(' & ')}.`;
-             toastMessageAlert = localGameMessageAlert;
-             if (!updatedRoom.isGameOver) {
-                setGameMessage(localGameMessageAlert);
-             }
-        } else { 
-            localGameMessageAlert = result.message || `Claim status for ${prizeType} is unclear.`;
-            toastMessageAlert = localGameMessageAlert;
-            if (!updatedRoom.isGameOver) {
-                setGameMessage(localGameMessageAlert);
-            }
+            setGameMessage(finalGameOverMsg);
+            toastMessageAlert = finalGameOverMsg;
+          } else if (!updatedRoom.isGameOver) {
+            setGameMessage(localGameMessageAlert);
+          }
+        } else if (claimStatus?.claimedBy.length) {
+          localGameMessageAlert = `🔔 ${prizeType} was claimed by ${claimStatus.claimedBy.map(id => updatedRoom.players.find(p => p.id === id)?.name || id).join(' & ')}.`;
+          toastMessageAlert = localGameMessageAlert;
+          if (!updatedRoom.isGameOver) {
+            setGameMessage(localGameMessageAlert);
+          }
+        } else {
+          localGameMessageAlert = result.message || `Claim status for ${prizeType} is unclear.`;
+          toastMessageAlert = localGameMessageAlert;
+          if (!updatedRoom.isGameOver) {
+            setGameMessage(localGameMessageAlert);
+          }
         }
-        
         toast({ title: "Claim Processed!", description: toastMessageAlert, className: (toastMessageAlert.includes("Bogey") || toastMessageAlert.includes("Invalid") || toastMessageAlert.includes("Failed to claim")) ? "bg-destructive" : "bg-green-500 text-white" });
       }
     } catch (err) {
       console.error(`Error claiming ${prizeType}:`, err);
-      setGameMessage(prevGameMessage => {
-        if (roomDataRef.current && !roomDataRef.current.isGameOver) {
-            if (!prevGameMessage || !prevGameMessage.includes("Game Over!")) {
-                return `Network error claiming ${prizeType}.`;
-            }
-        }
-        return prevGameMessage;
-      });
+      setGameMessage(prev => roomDataRef.current && !roomDataRef.current.isGameOver && (!prev || !prev.includes("Game Over!")) ? `Network error claiming ${prizeType}.` : prev);
       toast({ title: "Network Error", description: `Could not claim ${prizeType}.`, variant: "destructive" });
     }
   };
 
   const handlePlayAgain = () => {
     router.push(`/room/${roomId}/lobby`);
-    toast({title: "New Game Setup", description: "Returning to lobby."});
+    toast({ title: "New Game Setup", description: "Returning to lobby." });
   };
 
   const handleLeaveRoom = () => {
@@ -478,7 +366,7 @@ export default function GameRoomPage() {
   }
 
   if (error) {
-     return (
+    return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
         <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
         <h2 className="text-2xl font-semibold mb-2">Error Loading Game</h2>
@@ -490,12 +378,12 @@ export default function GameRoomPage() {
 
   if (!roomData || !currentUser) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
-            <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
-            <h2 className="text-2xl font-semibold mb-2">Room Data Unavailable</h2>
-            <p className="text-muted-foreground mb-6">Could not load room details. Please try again or ensure you are logged in.</p>
-            <Button onClick={() => router.push('/')} size="lg">Go to Homepage</Button>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
+        <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
+        <h2 className="text-2xl font-semibold mb-2">Room Data Unavailable</h2>
+        <p className="text-muted-foreground mb-6">Could not load room details. Please try again or ensure you are logged in.</p>
+        <Button onClick={() => router.push('/')} size="lg">Go to Homepage</Button>
+      </div>
     );
   }
 
@@ -517,7 +405,7 @@ export default function GameRoomPage() {
             <CardTitle className="text-4xl font-bold flex items-center justify-center">
               <PartyPopper className="mr-3 h-10 w-10 text-primary" /> Game Over!
             </CardTitle>
-             <p className="text-lg mt-2 whitespace-pre-line">{gameMessage}</p>
+            <p className="text-lg mt-2 whitespace-pre-line">{gameMessage}</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <h3 className="text-xl font-semibold text-center mb-2">Final Prize Summary</h3>
@@ -527,11 +415,11 @@ export default function GameRoomPage() {
                   const claimInfo = roomData.prizeStatus[prize];
                   let prizeStatusText = "Not Claimed";
                   if (claimInfo && claimInfo.claimedBy.length > 0) {
-                     const winnerNames = claimInfo.claimedBy.map(id => roomData.players.find(p=>p.id === id)?.name || id).join(', ');
-                     prizeStatusText = `Claimed by ${winnerNames}`;
-                     if (claimInfo.claimedBy.length > 1) {
-                         prizeStatusText += ` (Split ${claimInfo.claimedBy.length} ways)`;
-                     }
+                    const winnerNames = claimInfo.claimedBy.map(id => roomData.players.find(p => p.id === id)?.name || id).join(', ');
+                    prizeStatusText = `Claimed by ${winnerNames}`;
+                    if (claimInfo.claimedBy.length > 1) {
+                      prizeStatusText += ` (Split ${claimInfo.claimedBy.length} ways)`;
+                    }
                   }
                   return (
                     <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
@@ -573,31 +461,33 @@ export default function GameRoomPage() {
           <LiveNumberBoard calledNumbers={roomData.calledNumbers} currentNumber={roomData.currentNumber} />
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg flex items-center"><Award className="mr-2 h-5 w-5 text-primary" />Prizes Status</CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => setIsPrizesStatusMinimized(!isPrizesStatusMinimized)} aria-label={isPrizesStatusMinimized ? "Expand Prizes Status" : "Minimize Prizes Status"}>
+              <CardTitle className="text-lg flex items-center"><Award className="mr-2 h-5 w-5 text-primary" />Prizes Status</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setIsPrizesStatusMinimized(!isPrizesStatusMinimized)} aria-label={isPrizesStatusMinimized ? "Expand Prizes Status" : "Minimize Prizes Status"}>
                 {isPrizesStatusMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
-                </Button>
+              </Button>
             </CardHeader>
             {!isPrizesStatusMinimized && (
-            <CardContent>
-               <PrizeStatusList
-                prizeStatus={roomData.prizeStatus}
-                prizesForFormat={prizesForFormat}
-                players={roomData.players}
-                isLoading={isLoading}
-              />
-            </CardContent>
+              <CardContent>
+                {isLoading ? <p className="text-sm text-muted-foreground">Loading prize status...</p> :
+                  <PrizeStatusList
+                    prizeStatus={roomData.prizeStatus}
+                    prizesForFormat={prizesForFormat}
+                    players={roomData.players}
+                    isLoading={false} // Pass false as data is available if not main loading
+                  />
+                }
+              </CardContent>
             )}
           </Card>
         </div>
 
         <div className="lg:col-span-2">
-           <div className="max-w-xl mx-auto space-y-4">
+          <div className="max-w-xl mx-auto space-y-4">
             {gameMessage && (
               <Alert variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") || gameMessage.includes("Error") ? "destructive" : (gameMessage.includes("claimed") || gameMessage.includes("won") || gameMessage.toLocaleLowerCase().includes("game over") ? "default" : "default")}
-                    className={cn(((gameMessage.includes("claimed") || gameMessage.includes("won") || gameMessage.toLocaleLowerCase().includes("game over"))) && !gameMessage.includes("Bogey") && !gameMessage.includes("not valid") ? "bg-green-100 dark:bg-green-900 border-green-500" : "")}>
-                {gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed")  || gameMessage.includes("Error") ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                <AlertTitle>{gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed")  || gameMessage.includes("Error") ? "Update" : (gameMessage.includes("claimed") || gameMessage.includes("won") || gameMessage.toLocaleLowerCase().includes("game over") ? "Game Update!" : "Game Message")}</AlertTitle>
+                className={cn(((gameMessage.includes("claimed") || gameMessage.includes("won") || gameMessage.toLocaleLowerCase().includes("game over"))) && !gameMessage.includes("Bogey") && !gameMessage.includes("not valid") ? "bg-green-100 dark:bg-green-900 border-green-500" : "")}>
+                {gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") || gameMessage.includes("Error") ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                <AlertTitle>{gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") || gameMessage.includes("Error") ? "Update" : (gameMessage.includes("claimed") || gameMessage.includes("won") || gameMessage.toLocaleLowerCase().includes("game over") ? "Game Update!" : "Game Message")}</AlertTitle>
                 <AlertDescription>{gameMessage}</AlertDescription>
               </Alert>
             )}
@@ -609,37 +499,32 @@ export default function GameRoomPage() {
                   const hasPlayerClaimedThis = claimInfo?.claimedBy.includes(currentUser.username);
                   const isPrizeClaimedByAnyone = claimInfo && claimInfo.claimedBy.length > 0;
 
-                  let buttonText = prizeType; 
+                  let buttonText = prizeType;
                   if (isPrizeClaimedByAnyone) {
                     if (hasPlayerClaimedThis) {
-                        buttonText = `You Claimed ${prizeType}`;
-                    } else  {
-                        const claimants = claimInfo.claimedBy.map(id => roomData.players.find(p => p.id === id)?.name || id).join(", ");
-                        buttonText = `${prizeType} (Claimed by ${claimants})`;
+                      buttonText = `You Claimed ${prizeType}`;
+                    } else {
+                      const claimants = claimInfo.claimedBy.map(id => roomData.players.find(p => p.id === id)?.name || id).join(", ");
+                      buttonText = `${prizeType} (Claimed by ${claimants})`;
                     }
                   }
-                  // For Jaldi 5, players claim on any ticket. We'll pass ticketIndex 0 as a placeholder.
-                  // The backend should ideally verify Jaldi 5 across all player's tickets.
-                  // Or, the client could determine which ticket qualifies for Jaldi 5 and pass that index.
-                  // For simplicity in this iteration, if it's Jaldi 5, we allow claiming without a specific ticket index context here,
-                  // but the backend needs to handle it. Assume backend defaults to checking all player tickets for Jaldi 5.
-                  const ticketIndexForClaim = prizeType === PRIZE_TYPES.JALDI_5 ? 0 : 0; // Default to first ticket for claims of line/FH
+                  const ticketIndexForClaim = prizeType === PRIZE_TYPES.JALDI_5 ? 0 : 0; 
 
                   return (
                     <Button
                       key={`${prizeType}-${prizeIdx}`}
                       onClick={() => handleClaimPrize(prizeType, ticketIndexForClaim)}
                       disabled={
-                        roomData.isGameOver || 
-                        hasPlayerClaimedThis || 
-                        (isPrizeClaimedByAnyone && prizeType !== PRIZE_TYPES.FULL_HOUSE && !claimInfo?.claimedBy.includes(currentUser.username)) || 
-                        (isPrizeClaimedByAnyone && prizeType === PRIZE_TYPES.FULL_HOUSE) 
+                        roomData.isGameOver ||
+                        hasPlayerClaimedThis ||
+                        (isPrizeClaimedByAnyone && prizeType !== PRIZE_TYPES.FULL_HOUSE && !claimInfo?.claimedBy.includes(currentUser.username)) ||
+                        (isPrizeClaimedByAnyone && prizeType === PRIZE_TYPES.FULL_HOUSE)
                       }
                       variant={isPrizeClaimedByAnyone ? "secondary" : "default"}
                       className={cn("px-2 py-1 rounded-md text-xs sm:text-sm",
                         !isPrizeClaimedByAnyone && prizeType.includes("Jaldi") ? "bg-green-500 hover:bg-green-600" :
-                        !isPrizeClaimedByAnyone && prizeType.includes("Line") ? "bg-yellow-400 hover:bg-yellow-500 text-black" :
-                        !isPrizeClaimedByAnyone && prizeType.includes("Full House") ? "bg-red-500 hover:bg-red-600" : "",
+                          !isPrizeClaimedByAnyone && prizeType.includes("Line") ? "bg-yellow-400 hover:bg-yellow-500 text-black" :
+                            !isPrizeClaimedByAnyone && prizeType.includes("Full House") ? "bg-red-500 hover:bg-red-600" : "",
                         (hasPlayerClaimedThis || (isPrizeClaimedByAnyone && !hasPlayerClaimedThis)) ? "opacity-70" : "",
                         (roomData.isGameOver || (roomData.prizeStatus[PRIZE_TYPES.FULL_HOUSE]?.claimedBy?.length ?? 0 > 0) && prizeType !== PRIZE_TYPES.FULL_HOUSE) ? "cursor-not-allowed opacity-50" : ""
                       )}
@@ -652,88 +537,87 @@ export default function GameRoomPage() {
             )}
 
             <h2 className="text-xl font-semibold text-center">Your Tickets ({myTickets.length})</h2>
-             {myTickets.length === 0 && !roomData.isGameOver && roomData.isGameStarted && <p className="text-center text-muted-foreground">You are spectating or have no tickets in this game.</p>}
+            {myTickets.length === 0 && !roomData.isGameOver && roomData.isGameStarted && <p className="text-center text-muted-foreground">You are spectating or have no tickets in this game.</p>}
             <ScrollArea className="max-h-[60vh] lg:max-h-none">
               <div className="flex flex-wrap justify-center gap-4">
-              {myTickets.map((ticket, index) => (
-                <HousieTicket
-                  key={index}
-                  ticketIndex={index}
-                  ticket={ticket}
-                  calledNumbers={roomData.calledNumbers}
-                  markedNumbers={markedNumbers}
-                  onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
-                  className="min-w-[280px] sm:min-w-[300px] md:min-w-[320px]"
-                />
-              ))}
+                {myTickets.map((ticket, index) => (
+                  <HousieTicket
+                    key={index}
+                    ticketIndex={index}
+                    ticket={ticket}
+                    calledNumbers={roomData.calledNumbers}
+                    markedNumbers={markedNumbers}
+                    onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
+                    className="min-w-[280px] sm:min-w-[300px] md:min-w-[320px]"
+                  />
+                ))}
               </div>
             </ScrollArea>
-           </div>
+          </div>
         </div>
 
         <div className="space-y-4 lg:col-span-1">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg">Prize Info</CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => setIsPrizeInfoMinimized(!isPrizeInfoMinimized)} aria-label={isPrizeInfoMinimized ? "Expand Prize Info" : "Minimize Prize Info"}>
-                    {isPrizeInfoMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
-                </Button>
+              <CardTitle className="text-lg">Prize Info</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setIsPrizeInfoMinimized(!isPrizeInfoMinimized)} aria-label={isPrizeInfoMinimized ? "Expand Prize Info" : "Minimize Prize Info"}>
+                {isPrizeInfoMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
+              </Button>
             </CardHeader>
             {!isPrizeInfoMinimized && (
-            <CardContent>
-              {isLoading ? (
-                <p className="text-sm text-muted-foreground">Loading prize info...</p>
-              ) : (
-                <>
-                  <p className="text-sm text-muted-foreground">Potential prize money based on total tickets.</p>
-                  <ul className="space-y-1 mt-2 text-sm">
-                    {prizesForFormat.map(prize => {
-                      const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
-                      const prizeAmount = (totalPrizePool * percentage) / 100;
-                      return (
-                        <li key={prize}>{prize}: ₹{prizeAmount.toFixed(2)} ({percentage}%)</li>
-                      );
-                    })}
-                  </ul>
-                </>
-              )}
-            </CardContent>
+              <CardContent>
+                {isLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading prize info...</p>
+                ) : (
+                  <>
+                    <p className="text-sm text-muted-foreground">Potential prize money based on total tickets.</p>
+                    <ul className="space-y-1 mt-2 text-sm">
+                      {prizesForFormat.map(prize => {
+                        const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
+                        const prizeAmount = (totalPrizePool * percentage) / 100;
+                        return (
+                          <li key={prize}>{prize}: ₹{prizeAmount.toFixed(2)} ({percentage}%)</li>
+                        );
+                      })}
+                    </ul>
+                  </>
+                )}
+              </CardContent>
             )}
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg flex items-center"><Users className="mr-2 h-5 w-5 text-primary"/>Other Players ({otherPlayers.length})</CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => setIsOtherPlayersMinimized(!isOtherPlayersMinimized)} aria-label={isOtherPlayersMinimized ? "Expand Other Players" : "Minimize Other Players"}>
-                    {isOtherPlayersMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
-                </Button>
+              <CardTitle className="text-lg flex items-center"><Users className="mr-2 h-5 w-5 text-primary" />Other Players ({otherPlayers.length})</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setIsOtherPlayersMinimized(!isOtherPlayersMinimized)} aria-label={isOtherPlayersMinimized ? "Expand Other Players" : "Minimize Other Players"}>
+                {isOtherPlayersMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
+              </Button>
             </CardHeader>
             {!isOtherPlayersMinimized && (
-            <CardContent>
-              {isLoading ? (
-                <p className="text-sm text-muted-foreground">Loading player list...</p>
-              ) : (
-                <ScrollArea className="h-40">
-                  <ul className="space-y-1 mt-2 text-sm">
-                    {otherPlayers.map((player, index) => (
-                      <li key={player.id || index} className="flex justify-between items-center">
-                        <span>{player.name}</span>
-                        <span className="text-muted-foreground">{player.tickets?.length || 0} ticket{ (player.tickets?.length || 0) === 1 ? '' : 's'}</span>
-                      </li>
-                    ))}
-                     {otherPlayers.length === 0 && <li className="text-muted-foreground">No other players in the room.</li>}
-                  </ul>
-                </ScrollArea>
-              )}
-            </CardContent>
+              <CardContent>
+                {isLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading player list...</p>
+                ) : (
+                  <ScrollArea className="h-40">
+                    <ul className="space-y-1 mt-2 text-sm">
+                      {otherPlayers.map((player, index) => (
+                        <li key={player.id || index} className="flex justify-between items-center">
+                          <span>{player.name}</span>
+                          <span className="text-muted-foreground">{player.tickets?.length || 0} ticket{ (player.tickets?.length || 0) === 1 ? '' : 's'}</span>
+                        </li>
+                      ))}
+                      {otherPlayers.length === 0 && <li className="text-muted-foreground">No other players in the room.</li>}
+                    </ul>
+                  </ScrollArea>
+                )}
+              </CardContent>
             )}
           </Card>
 
-           <Button onClick={handleLeaveRoom} variant="destructive" className="w-full mt-2" size="sm">
-                <LogOut className="mr-2 h-4 w-4" /> Leave Game
-           </Button>
+          <Button onClick={handleLeaveRoom} variant="destructive" className="w-full mt-2" size="sm">
+            <LogOut className="mr-2 h-4 w-4" /> Leave Game
+          </Button>
         </div>
       </div>
     </div>
   );
 }
-
