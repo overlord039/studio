@@ -76,7 +76,6 @@ export default function LobbyPage() {
         setSelectedTicketsToBuy(data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
       }
 
-      // Check if game has started and redirect non-host players
       if (data.isGameStarted && previousIsGameStartedRef.current === false && !isCurrentUserHost) {
         const currentPlayerServerData = data.players.find(p => p.id === currentUser.username);
         const ticketsToTake = currentPlayerServerData?.tickets.length || 0; 
@@ -121,7 +120,7 @@ export default function LobbyPage() {
     if (!roomId || !currentUser || roomData?.isGameStarted || roomData?.isGameOver || isLoading) return;
     const intervalId = setInterval(() => {
       if (!document.hidden) fetchRoomDetails(false);
-    }, 3000); // Reduced polling interval to 3 seconds
+    }, 3000); 
     return () => clearInterval(intervalId);
   }, [roomId, currentUser, roomData?.isGameStarted, roomData?.isGameOver, fetchRoomDetails, isLoading]);
 
@@ -170,20 +169,23 @@ export default function LobbyPage() {
       toast({ title: "Error", description: "Only the host can start the game, or room data is missing.", variant: "destructive" });
       return;
     }
-    if (!doesCurrentUserHaveTickets && isCurrentUserHost) {
+
+    const hostPlayerWithTickets = roomData.players.find(p => p.id === currentUser.username && p.isHost && p.tickets.length > 0);
+    if (!hostPlayerWithTickets) {
         toast({ title: "Cannot Start", description: "Host must confirm their tickets before starting.", variant: "destructive"});
         return;
     }
-     const minPlayersRequired = process.env.NODE_ENV === 'development' ? 1 : MIN_LOBBY_SIZE;
-     const playersWithTickets = roomData.players.filter(p => p.tickets.length > 0).length;
 
-     if (playersWithTickets < minPlayersRequired) {
-        toast({ title: "Cannot Start", description: `Need at least ${minPlayersRequired} player(s) with tickets to start. Currently: ${playersWithTickets}`, variant: "destructive" });
+     const minPlayersRequired = process.env.NODE_ENV === 'development' ? 1 : MIN_LOBBY_SIZE;
+     const playersWithTicketsCount = roomData.players.filter(p => p.tickets.length > 0).length;
+
+     if (playersWithTicketsCount < minPlayersRequired) {
+        toast({ title: "Cannot Start", description: `Need at least ${minPlayersRequired} player(s) with tickets to start. Currently: ${playersWithTicketsCount}`, variant: "destructive" });
         return;
      }
 
     try {
-      setIsJoiningOrUpdating(true); // Re-use for start game button
+      setIsJoiningOrUpdating(true); 
       const response = await fetch(`/api/rooms/${roomId}/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -194,8 +196,6 @@ export default function LobbyPage() {
         throw new Error(errorData.message || "Failed to start game.");
       }
       const updatedRoom: Room = await response.json();
-      // Host navigates immediately. `previousIsGameStartedRef` will be updated by the next poll if it still runs,
-      // or the component unmounts.
       const ticketsToTake = updatedRoom.players.find(p => p.id === currentUser.username)?.tickets.length || 0;
       toast({ title: "Game Starting!", description: `Navigating to game room ${roomId}.` });
       router.push(`/room/${roomId}/play?playerTickets=${ticketsToTake}`);
@@ -431,17 +431,17 @@ export default function LobbyPage() {
                 disabled={ 
                     isJoiningOrUpdating || 
                     roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart || 
-                    (isCurrentUserHost && !doesCurrentUserHaveTickets) 
+                    !doesCurrentUserHaveTickets // Host must have tickets
                 }
             >
               <Play className="mr-2 h-5 w-5" /> Start Game
             </Button>
           )}
           {isCurrentUserHost && !roomData.isGameStarted && 
-            (roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart || (isCurrentUserHost && !doesCurrentUserHaveTickets)) && (
+            (roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart || !doesCurrentUserHaveTickets) && (
             <p className="text-center text-sm text-destructive mt-2">
-              {isCurrentUserHost && !doesCurrentUserHaveTickets ? "Host must confirm their tickets first. " : ""}
-              {roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart && !(isCurrentUserHost && !doesCurrentUserHaveTickets) && `At least ${minPlayersToStart} player(s) must have tickets. `}
+              {!doesCurrentUserHaveTickets ? "Host must confirm their tickets first. " : ""}
+              {roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart && doesCurrentUserHaveTickets && `At least ${minPlayersToStart} player(s) must have tickets. `}
             </p>
           )}
 
@@ -456,11 +456,11 @@ export default function LobbyPage() {
           )}
            {roomData.isGameOver && (
              <Button 
-                onClick={() => router.push(`/room/${roomId}/play`)} 
+                onClick={() => router.push(`/room/${roomId}/lobby?rejoin=true`)} // Add a param for potential lobby logic
                 size="lg" 
                 className="w-full mt-4"
               >
-              View Results
+              View Results / Play Again in Lobby
             </Button>
           )}
         </CardContent>
@@ -468,7 +468,3 @@ export default function LobbyPage() {
     </div>
   );
 }
-
-    
-
-    
