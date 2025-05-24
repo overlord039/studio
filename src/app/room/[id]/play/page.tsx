@@ -103,7 +103,7 @@ export default function GameRoomPage() {
         } else {
           setError(errorData.message || `Failed to fetch room details: ${response.statusText}`);
         }
-        setRoomData(null);
+        if (isInitialLoad) setRoomData(null); // Clear room data on error if initial load
         if (isInitialLoad) setIsLoading(false);
         return; 
       }
@@ -117,9 +117,9 @@ export default function GameRoomPage() {
         const ticketsParam = searchParams.get('playerTickets');
         const numTickets = ticketsParam ? parseInt(ticketsParam, 10) : 0;
         if (numTickets === 0 && data.isGameStarted && !data.isGameOver) {
-            if (roomDataRef.current && !roomDataRef.current.isGameOver) { // Check ref to avoid state lag
+             if (roomDataRef.current && !roomDataRef.current.isGameOver) {
                  setGameMessage("You are spectating. You don't have tickets in this game.");
-            }
+             }
         }
         setMyTickets([]);
       }
@@ -137,14 +137,23 @@ export default function GameRoomPage() {
         } else if (data.calledNumbers.length === NUMBERS_RANGE_MAX ) {
             gameOverMsg = "All numbers called. No Full House winner.";
         }
-        setGameMessage(gameOverMsg);
+         if (!gameMessage || !gameMessage.includes("Game Over!")) { // Avoid overwriting specific FH messages
+            setGameMessage(gameOverMsg);
+        }
       }
 
     } catch (err) {
       console.error("Error fetching game details:", err);
-      if (isInitialLoad || !roomDataRef.current) { 
+      if (isInitialLoad || !roomDataRef.current) { // Only set critical error if it's initial load or no data at all
         setError(`Failed to fetch game details: ${(err as Error).message}`);
-        setRoomData(null); 
+        if (isInitialLoad) setRoomData(null); 
+      } else if (roomDataRef.current && !roomDataRef.current.isGameOver){
+         toast({
+            title: "Game Update Failed",
+            description: "Could not fetch latest game details. Retrying...",
+            variant: "destructive",
+            duration: 2000,
+        });
       }
     } finally {
       if (isInitialLoad) {
@@ -205,19 +214,25 @@ export default function GameRoomPage() {
 
       if (!response.ok) {
         if (roomDataRef.current && !roomDataRef.current.isGameOver) {
-            setGameMessage(result.message || "Failed to call number.");
+             if (result.message && (!gameMessage || !gameMessage.includes("Game Over!"))) {
+                setGameMessage(result.message);
+             }
         }
         toast({ title: "Error Calling Number", description: result.message, variant: "destructive"});
       } else {
         setRoomData(result as Room); 
          if (result.message && roomDataRef.current && !roomDataRef.current.isGameOver) { 
-            setGameMessage(result.message);
+            if (!gameMessage || !gameMessage.includes("Game Over!")) {
+                setGameMessage(result.message);
+            }
         }
       }
     } catch (err) {
       console.error("Error calling next number:", err);
       if (roomDataRef.current && !roomDataRef.current.isGameOver) {
-        setGameMessage("Network error calling number.");
+         if (!gameMessage || !gameMessage.includes("Game Over!")) {
+            setGameMessage("Network error calling number.");
+         }
       }
       toast({ title: "Network Error", description: "Could not call next number.", variant: "destructive" });
     } finally {
@@ -227,36 +242,46 @@ export default function GameRoomPage() {
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout | undefined;
-    
-    const currentRoomData = roomDataRef.current; // Use ref for current data in interval setup
-    const canAutoCall = isCurrentUserHost && currentRoomData?.isGameStarted && !currentRoomData?.isGameOver && !isCallingNumber;
+
+    const canAutoCall = isCurrentUserHost && roomData?.isGameStarted && !roomData?.isGameOver;
 
     if (canAutoCall) {
-      if (currentRoomData.calledNumbers.length === 0) {
-        // Call immediately if it's the first number
-        handleCallNextNumber(); 
-      }
-      // Set up interval for subsequent calls
-      intervalId = setInterval(() => {
-        // Re-check conditions inside interval using the ref to ensure they are current
-        if (isCurrentUserHost && roomDataRef.current?.isGameStarted && !roomDataRef.current?.isGameOver && !isCallingNumber) {
-           handleCallNextNumber();
-        } else {
-          if (intervalId) clearInterval(intervalId); // Clear if conditions no longer met
+      const performCall = () => {
+        // Double check right before calling, using roomDataRef for the most current state
+        if (roomDataRef.current?.isGameStarted && !roomDataRef.current?.isGameOver && !isCallingNumber) {
+          handleCallNextNumber();
         }
-      }, 4000); // 4-second interval
+      };
+
+      if (roomData.calledNumbers.length === 0 && !isCallingNumber) {
+        performCall(); // Call immediately if it's the first number and no call is in progress
+      }
+      
+      // Setup interval for subsequent calls
+      // Ensure interval is only set if not already calling, to avoid race condition if first call is slow
+      // Also check if game has started and not over using the latest roomData from state
+      if (!isCallingNumber && roomData.isGameStarted && !roomData.isGameOver) { 
+        intervalId = setInterval(performCall, 4000); // 4-second interval
+      }
+
+    } else {
+      if (intervalId) { // This condition might be redundant due to the return cleanup
+        clearInterval(intervalId);
+      }
     }
     
     return () => {
-      if (intervalId) clearInterval(intervalId);
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
     };
-  }, [ // Dependencies that define when to re-evaluate setting up/clearing the interval
-    isCurrentUserHost,
-    roomData?.isGameStarted, // Use state here to trigger re-evaluation
-    roomData?.isGameOver,   // Use state here
-    isCallingNumber,        // Use state here
-    roomData?.calledNumbers.length, // Trigger on first call
-    handleCallNextNumber  // Ensure stable reference or include its true dependencies
+  }, [
+    isCurrentUserHost, 
+    roomData?.isGameStarted, 
+    roomData?.isGameOver, 
+    roomData?.calledNumbers, // Depend on the array itself for more robust change detection
+    isCallingNumber, 
+    handleCallNextNumber
   ]);
 
 
@@ -299,14 +324,15 @@ export default function GameRoomPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        // Use roomDataRef to check current game over status to avoid race conditions with state
         if (roomDataRef.current && !roomDataRef.current.isGameOver) {
-            setGameMessage(result.message || `Failed to claim ${prizeType}.`);
+           if (result.message && (!gameMessage || !gameMessage.includes("Game Over!"))) {
+             setGameMessage(result.message);
+           }
         }
         toast({ title: `${prizeType} Claim Invalid!`, description: result.message, variant: "destructive" });
       } else {
         const updatedRoom: Room = result;
-        setRoomData(updatedRoom); // UI updates instantly for the current player
+        setRoomData(updatedRoom); 
 
         let toastMessageAlert = result.message; 
         let localGameMessageAlert = result.message; 
@@ -327,8 +353,6 @@ export default function GameRoomPage() {
                 const linePrizes: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
                 linePrizes.forEach(linePrize => {
                     const lineClaimStatus = updatedRoom.prizeStatus[linePrize];
-                    // Check if line was auto-awarded by the backend (i.e., present in updatedRoom.prizeStatus but potentially not in roomDataRef.current.prizeStatus for this player)
-                    // Or more simply, just report what the backend says is now claimed for this player.
                     if (lineClaimStatus?.claimedBy.includes(currentUser.username)) {
                         const previousClaim = roomDataRef.current?.prizeStatus[linePrize];
                         if (!previousClaim || !previousClaim.claimedBy.includes(currentUser.username)) {
@@ -348,18 +372,18 @@ export default function GameRoomPage() {
                         finalGameOverMsg += ` at ${claimTimestamp.toLocaleTimeString()}`;
                     }
                 }
-                setGameMessage(finalGameOverMsg); // Set game over message
-                toastMessageAlert = finalGameOverMsg; // Toast should also reflect game over
-            } else if (!updatedRoom.isGameOver) { // Only set non-FH game messages if game is not over
+                setGameMessage(finalGameOverMsg); 
+                toastMessageAlert = finalGameOverMsg; 
+            } else if (!updatedRoom.isGameOver) {
                 setGameMessage(localGameMessageAlert);
             }
-        } else if (claimStatus?.claimedBy.length) { // Claimed by someone else
+        } else if (claimStatus?.claimedBy.length) { 
              localGameMessageAlert = `🔔 ${prizeType} was claimed by ${claimStatus.claimedBy.map(id => updatedRoom.players.find(p=>p.id===id)?.name || id).join(' & ')}.`;
              toastMessageAlert = localGameMessageAlert;
              if (!updatedRoom.isGameOver) {
                 setGameMessage(localGameMessageAlert);
              }
-        } else { // Unclear status from backend (but response was ok)
+        } else { 
             localGameMessageAlert = result.message || `Claim status for ${prizeType} is unclear.`;
             toastMessageAlert = localGameMessageAlert;
             if (!updatedRoom.isGameOver) {
@@ -367,12 +391,14 @@ export default function GameRoomPage() {
             }
         }
         
-        toast({ title: "Claim Processed!", description: toastMessageAlert, className: (toastMessageAlert.includes("Bogey") || toastMessageAlert.includes("Invalid")) ? "bg-destructive" : "bg-green-500 text-white" });
+        toast({ title: "Claim Processed!", description: toastMessageAlert, className: (toastMessageAlert.includes("Bogey") || toastMessageAlert.includes("Invalid") || toastMessageAlert.includes("Failed to claim")) ? "bg-destructive" : "bg-green-500 text-white" });
       }
     } catch (err) {
       console.error(`Error claiming ${prizeType}:`, err);
       if (roomDataRef.current && !roomDataRef.current.isGameOver) {
-        setGameMessage(`Network error claiming ${prizeType}.`);
+        if (!gameMessage || !gameMessage.includes("Game Over!")) {
+            setGameMessage(`Network error claiming ${prizeType}.`);
+        }
       }
       toast({ title: "Network Error", description: `Could not claim ${prizeType}.`, variant: "destructive" });
     }
@@ -445,9 +471,8 @@ export default function GameRoomPage() {
                 {prizesForFormat.map(prize => {
                   const claimInfo = roomData.prizeStatus[prize];
                   let prizeStatusText = "Not Claimed";
-                  let winnerNames = "";
                   if (claimInfo && claimInfo.claimedBy.length > 0) {
-                     winnerNames = claimInfo.claimedBy.map(id => roomData.players.find(p=>p.id === id)?.name || id).join(', ');
+                     const winnerNames = claimInfo.claimedBy.map(id => roomData.players.find(p=>p.id === id)?.name || id).join(', ');
                      prizeStatusText = `Claimed by ${winnerNames}`;
                      if (claimInfo.claimedBy.length > 1) {
                          prizeStatusText += ` (Split ${claimInfo.claimedBy.length} ways)`;
