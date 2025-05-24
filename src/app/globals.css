@@ -9,33 +9,33 @@ body {
 
 @layer base {
   :root {
-    --background: 240 100% 97%; /* Light Lavender */
-    --foreground: 270 50% 25%; /* Dark Indigo */
+    --background: 220 17% 97%; /* Warm Gray #F9FAFB */
+    --foreground: 215 39% 17%; /* Charcoal Black #111827 */
 
-    --card: 240 100% 99%;
-    --card-foreground: 270 50% 25%;
+    --card: 0 0% 100%; /* White #FFFFFF */
+    --card-foreground: 215 39% 17%; /* Charcoal Black #111827 */
 
-    --popover: 240 100% 99%;
-    --popover-foreground: 270 50% 25%;
+    --popover: 0 0% 100%; /* White #FFFFFF */
+    --popover-foreground: 215 39% 17%; /* Charcoal Black #111827 */
 
-    --primary: 270 50% 40%; /* Deep Indigo */
-    --primary-foreground: 240 100% 98%; /* Brighter for better contrast on primary */
+    --primary: 239 85% 67%; /* Indigo #6366F1 */
+    --primary-foreground: 0 0% 100%; /* White #FFFFFF */
 
-    --secondary: 270 40% 85%; /* Lighter Indigo/Purple */
-    --secondary-foreground: 270 50% 25%;
+    --secondary: 247 88% 95%; /* Lavender #EDE9FE */
+    --secondary-foreground: 244 57% 50%; /* Darker Indigo #4338CA */
 
-    --muted: 240 25% 90%; /* Muted Lavender */
-    --muted-foreground: 240 25% 55%; /* Darker Muted Lavender */
+    --muted: 216 33% 96%; /* Slate #F1F5F9 */
+    --muted-foreground: 215 16% 47%; /* Mid Slate Gray #64748B */
 
-    --accent: 283 40% 48%; /* Electric Purple */
-    --accent-foreground: 283 40% 95%;
+    --accent: 38 90% 51%; /* Gold/Amber #F59E0B */
+    --accent-foreground: 0 0% 100%; /* White #FFFFFF */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 350 89% 60%; /* Rose Red #F43F5E */
+    --destructive-foreground: 0 0% 100%; /* White #FFFFFF */
 
-    --border: 270 20% 80%;
-    --input: 270 20% 90%;
-    --ring: 283 40% 48%; /* Electric Purple for ring */
+    --border: 215 28% 90%; /* Light Slate Gray #E2E8F0 */
+    --input: 215 28% 90%; /* Light Slate Gray #E2E8F0 */
+    --ring: 239 85% 67%; /* Indigo #6366F1 */
     
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
@@ -44,45 +44,45 @@ body {
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
 
-    /* Sidebar variables - kept for shadcn ui components compatibility, but might not be heavily used in this app's direct layout */
-    --sidebar-background: 240 5.9% 10%; /* Default dark sidebar */
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar variables - Light Mode (derived from main theme) */
+    --sidebar-background: 220 17% 97%; /* Same as main background */
+    --sidebar-foreground: 215 39% 17%; /* Same as main foreground */
+    --sidebar-primary: 239 85% 67%; /* Same as main primary */
+    --sidebar-primary-foreground: 0 0% 100%; /* Same as main primary-foreground */
+    --sidebar-accent: 247 88% 95%; /* Similar to secondary for subtle accents */
+    --sidebar-accent-foreground: 244 57% 50%; /* Darker Indigo for text on sidebar accent */
+    --sidebar-border: 215 28% 90%; /* Same as main border */
+    --sidebar-ring: 239 85% 67%; /* Same as main ring */
   }
 
   .dark {
-    --background: 270 30% 12%; /* Darker Indigo background */
-    --foreground: 240 100% 90%; /* Light Lavender text */
+    --background: 217 49% 11%; /* Dark Navy #0F172A */
+    --foreground: 215 28% 90%; /* Light Slate Gray #E2E8F0 */
 
-    --card: 270 30% 18%; /* Slightly lighter card for depth */
-    --card-foreground: 240 100% 90%;
+    --card: 215 30% 18%; /* Gunmetal Gray #1E293B */
+    --card-foreground: 215 28% 90%; /* Light Slate Gray #E2E8F0 */
 
-    --popover: 270 30% 15%;
-    --popover-foreground: 240 100% 90%;
+    --popover: 215 30% 18%; /* Gunmetal Gray #1E293B */
+    --popover-foreground: 215 28% 90%; /* Light Slate Gray #E2E8F0 */
 
-    --primary: 283 50% 60%; /* Brighter Electric Purple for dark mode */
-    --primary-foreground: 283 30% 10%;
+    --primary: 236 90% 77%; /* Lighter Indigo #818CF8 */
+    --primary-foreground: 217 49% 11%; /* Dark Navy #0F172A for text on lighter primary */
 
-    --secondary: 270 30% 35%; /* Darker secondary */
-    --secondary-foreground: 240 100% 90%;
+    --secondary: 215 28% 27%; /* Dark Slate #334155 */
+    --secondary-foreground: 215 28% 83%; /* Lighter Slate Gray #CBD5E1 */
 
-    --muted: 270 20% 25%;
-    --muted-foreground: 270 20% 65%;
+    --muted: 215 30% 18%; /* Gunmetal #1E293B (same as card) */
+    --muted-foreground: 215 20% 65%; /* Medium Slate Gray #94A3B8 */
 
-    --accent: 270 60% 70%; /* Lighter Deep Indigo for accent in dark */
-    --accent-foreground: 270 30% 10%;
+    --accent: 43 96% 56%; /* Lighter Gold/Amber #FBBF24 */
+    --accent-foreground: 215 30% 18%; /* Gunmetal #1E293B for text on amber */
     
-    --destructive: 0 70% 45%; /* Slightly desaturated destructive for dark */
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 350 89% 60%; /* Rose Red #F43F5E */
+    --destructive-foreground: 0 0% 100%; /* White #FFFFFF */
 
-    --border: 270 20% 35%;
-    --input: 270 20% 30%;
-    --ring: 283 50% 60%; /* Brighter Electric Purple for ring */
+    --border: 215 28% 27%; /* Dark Slate #334155 */
+    --input: 215 28% 27%; /* Dark Slate #334155 */
+    --ring: 236 90% 77%; /* Lighter Indigo #818CF8 */
     
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -91,14 +91,14 @@ body {
     --chart-5: 340 75% 55%;
 
     /* Sidebar variables for dark mode */
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 217 49% 11%; /* Dark Navy */
+    --sidebar-foreground: 215 28% 90%; /* Light Slate Gray */
+    --sidebar-primary: 236 90% 77%; /* Lighter Indigo */
+    --sidebar-primary-foreground: 217 49% 11%; /* Dark Navy for text on sidebar primary */
+    --sidebar-accent: 215 30% 18%; /* Gunmetal Gray for accents */
+    --sidebar-accent-foreground: 215 28% 90%; /* Light Slate Gray for text on sidebar accent */
+    --sidebar-border: 215 28% 27%; /* Dark Slate */
+    --sidebar-ring: 236 90% 77%; /* Lighter Indigo */
   }
 }
 
