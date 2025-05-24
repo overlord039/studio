@@ -3,7 +3,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Mic, Volume2, VolumeX } from 'lucide-react'; // Changed Speaker to Mic
+import { Volume2, VolumeX } from 'lucide-react'; // Changed Mic to Volume2
 
 interface CalledNumberDisplayProps {
   currentNumber: number | null;
@@ -18,7 +18,7 @@ export default function CalledNumberDisplay({ currentNumber, isMuted, onToggleMu
         <p className="text-sm uppercase tracking-wider mb-2">Called Number</p>
         {currentNumber !== null ? (
           <div className="flex items-center justify-center">
-            <Mic className="h-8 w-8 mr-3 opacity-80" /> {/* Changed Speaker to Mic, adjusted size and margin */}
+            <Volume2 className="h-5 w-5 mr-2 opacity-80" /> {/* Changed Mic to Volume2, adjusted size and margin */}
             <p className="text-7xl font-bold">{currentNumber}</p>
           </div>
         ) : (
