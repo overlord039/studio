@@ -29,6 +29,11 @@ export default function LobbyPage() {
   const [selectedTicketsToBuy, setSelectedTicketsToBuy] = useState<number>(DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
   const [isJoiningOrUpdating, setIsJoiningOrUpdating] = useState(false);
   const previousIsGameStartedRef = useRef<boolean | undefined>(undefined);
+  const roomDataRef = useRef(roomData);
+
+  useEffect(() => {
+    roomDataRef.current = roomData;
+  }, [roomData]);
 
   const currentUserInRoom = roomData?.players.find(p => p.id === currentUser?.username);
   const isCurrentUserHost = roomData?.host.id === currentUser?.username;
@@ -56,7 +61,7 @@ export default function LobbyPage() {
           setRoomData(null); 
         } else {
             setError(errorData.message || `Failed to fetch room details: ${response.statusText}`);
-            if (isInitialLoad) setRoomData(null); // Only clear roomData on initial load for non-404s
+            if (isInitialLoad) setRoomData(null);
         }
         if(isInitialLoad) setIsLoading(false);
         return; 
@@ -67,25 +72,31 @@ export default function LobbyPage() {
       const userInRoomData = data.players.find(p => p.id === currentUser.username);
       if (userInRoomData) {
         setSelectedTicketsToBuy(userInRoomData.tickets.length > 0 ? userInRoomData.tickets.length : data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
-      } else { // User not in room yet
+      } else { 
         setSelectedTicketsToBuy(data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
       }
 
       // Check if game has started and redirect non-host players
       if (data.isGameStarted && previousIsGameStartedRef.current === false && !isCurrentUserHost) {
-        const ticketsToTake = userInRoomData?.tickets.length || selectedTicketsToBuy; 
+        const currentPlayerServerData = data.players.find(p => p.id === currentUser.username);
+        const ticketsToTake = currentPlayerServerData?.tickets.length || 0; 
         toast({ title: "Game Started!", description: "Joining the game..." });
         router.push(`/room/${roomId}/play?playerTickets=${ticketsToTake}`);
       }
       previousIsGameStartedRef.current = data.isGameStarted;
 
-
     } catch (err) {
       console.error(`Error fetching room ${roomId} details:`, err);
-      if (isInitialLoad || !roomData) { 
+      if (isInitialLoad || !roomDataRef.current) { 
          setError((err as Error).message || "An unexpected error occurred while fetching room details.");
          if (isInitialLoad) setRoomData(null);
       } else {
+        toast({
+            title: "Lobby Update Failed",
+            description: "Could not fetch latest lobby details. Retrying...",
+            variant: "destructive",
+            duration: 2000,
+        });
         console.warn("Polling error fetching room details:", err);
       }
     } finally {
@@ -96,22 +107,21 @@ export default function LobbyPage() {
   useEffect(() => {
     if (currentUser && roomId && !authLoading) { 
         fetchRoomDetails(true).then(() => {
-            // After initial fetch, set the previousIsGameStartedRef if roomData is available
-            if (roomData) {
-                previousIsGameStartedRef.current = roomData.isGameStarted;
+            if (roomDataRef.current) {
+                previousIsGameStartedRef.current = roomDataRef.current.isGameStarted;
             }
         });
     } else if (!authLoading && !currentUser) {
         setIsLoading(false);
         setError("Please log in to access the lobby.");
     }
-  }, [currentUser, roomId, authLoading, fetchRoomDetails]); // roomData removed from here as fetchRoomDetails updates it
+  }, [currentUser, roomId, authLoading, fetchRoomDetails]);
 
   useEffect(() => {
     if (!roomId || !currentUser || roomData?.isGameStarted || roomData?.isGameOver || isLoading) return;
     const intervalId = setInterval(() => {
       if (!document.hidden) fetchRoomDetails(false);
-    }, 5000);
+    }, 3000); // Reduced polling interval to 3 seconds
     return () => clearInterval(intervalId);
   }, [roomId, currentUser, roomData?.isGameStarted, roomData?.isGameOver, fetchRoomDetails, isLoading]);
 
@@ -137,8 +147,9 @@ export default function LobbyPage() {
       }
       const updatedRoom: Room = await response.json();
       setRoomData(updatedRoom); 
-      setSelectedTicketsToBuy(updatedRoom.players.find(p => p.id === currentUser.username)?.tickets.length || selectedTicketsToBuy);
-      toast({ title: "Tickets Confirmed!", description: `You now have ${selectedTicketsToBuy} ticket(s).` });
+      const userInUpdatedRoom = updatedRoom.players.find(p => p.id === currentUser.username);
+      setSelectedTicketsToBuy(userInUpdatedRoom?.tickets.length || selectedTicketsToBuy);
+      toast({ title: "Tickets Confirmed!", description: `You now have ${userInUpdatedRoom?.tickets.length || selectedTicketsToBuy} ticket(s).` });
     } catch (err) {
       console.error("Error confirming/joining tickets:", err);
       toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
@@ -172,7 +183,7 @@ export default function LobbyPage() {
      }
 
     try {
-      setIsJoiningOrUpdating(true);
+      setIsJoiningOrUpdating(true); // Re-use for start game button
       const response = await fetch(`/api/rooms/${roomId}/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -183,9 +194,8 @@ export default function LobbyPage() {
         throw new Error(errorData.message || "Failed to start game.");
       }
       const updatedRoom: Room = await response.json();
-      // No need to setRoomData(updatedRoom) here if navigation happens immediately for host
-      // The game page will fetch the latest state.
-      
+      // Host navigates immediately. `previousIsGameStartedRef` will be updated by the next poll if it still runs,
+      // or the component unmounts.
       const ticketsToTake = updatedRoom.players.find(p => p.id === currentUser.username)?.tickets.length || 0;
       toast({ title: "Game Starting!", description: `Navigating to game room ${roomId}.` });
       router.push(`/room/${roomId}/play?playerTickets=${ticketsToTake}`);
@@ -203,25 +213,24 @@ export default function LobbyPage() {
   
   const handleGoToGame = () => {
     if (!roomData || !currentUser) return;
-    const ticketsCount = currentUserInRoom?.tickets.length || 0;
+    const ticketsCount = roomData.players.find(p => p.id === currentUser.username)?.tickets.length || 0;
     router.push(`/room/${roomId}/play?playerTickets=${ticketsCount}`);
   };
 
   let gameSettings: GameSettings | null = null;
+  const ticketPriceParam = searchParams.get('ticketPrice');
+  const lobbySizeParam = searchParams.get('lobbySize');
+  const prizeFormatParam = searchParams.get('prizeFormat');
+  const numTicketsPerPlayerParam = searchParams.get('numberOfTicketsPerPlayer');
 
   if (roomData?.settings) {
     gameSettings = roomData.settings;
   } else if (!isLoading && !roomData && !error) { 
-    const ticketPriceParamString = searchParams.get('ticketPrice');
-    const lobbySizeParamString = searchParams.get('lobbySize');
-    const prizeFormatParam = searchParams.get('prizeFormat');
-    const numTicketsPerPlayerParamString = searchParams.get('numberOfTicketsPerPlayer');
-
     gameSettings = {
-        ticketPrice: (ticketPriceParamString && !isNaN(parseInt(ticketPriceParamString)) ? parseInt(ticketPriceParamString) : DEFAULT_GAME_SETTINGS.ticketPrice) as GameSettings['ticketPrice'],
-        lobbySize: (lobbySizeParamString && !isNaN(parseInt(lobbySizeParamString)) ? parseInt(lobbySizeParamString) : DEFAULT_GAME_SETTINGS.lobbySize),
+        ticketPrice: (ticketPriceParam && !isNaN(parseInt(ticketPriceParam)) ? parseInt(ticketPriceParam) : DEFAULT_GAME_SETTINGS.ticketPrice) as GameSettings['ticketPrice'],
+        lobbySize: (lobbySizeParam && !isNaN(parseInt(lobbySizeParam)) ? parseInt(lobbySizeParam) : DEFAULT_GAME_SETTINGS.lobbySize),
         prizeFormat: (prizeFormatParam || DEFAULT_GAME_SETTINGS.prizeFormat) as GameSettings['prizeFormat'],
-        numberOfTicketsPerPlayer: (numTicketsPerPlayerParamString && !isNaN(parseInt(numTicketsPerPlayerParamString)) ? parseInt(numTicketsPerPlayerParamString) : DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer),
+        numberOfTicketsPerPlayer: (numTicketsPerPlayerParam && !isNaN(parseInt(numTicketsPerPlayerParam)) ? parseInt(numTicketsPerPlayerParam) : DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer),
     };
   }
 
@@ -459,5 +468,7 @@ export default function LobbyPage() {
     </div>
   );
 }
+
+    
 
     
