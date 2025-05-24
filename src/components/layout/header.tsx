@@ -29,11 +29,7 @@ export default function Header() {
           HousieHub
         </Link>
         <nav className="flex items-center space-x-2 md:space-x-3">
-          <Link href="/how-to-play" passHref>
-            <Button variant="ghost" className="text-primary-foreground hover:bg-primary/80 px-2 md:px-3">
-              <HelpCircle className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">How to Play</span>
-            </Button>
-          </Link>
+          {/* "How to Play" button removed */}
           {loading ? (
             <div className="h-8 w-20 bg-primary/50 animate-pulse rounded-md"></div> 
           ) : currentUser ? (
