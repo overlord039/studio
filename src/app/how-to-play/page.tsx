@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { HelpCircle, Info } from "lucide-react";
+import { HelpCircle, Info, Users, Ticket, CheckSquare, Volume2, Gift } from "lucide-react";
 
 export default function HowToPlayPage() {
   return (
@@ -12,79 +12,58 @@ export default function HowToPlayPage() {
             <HelpCircle className="mr-3 h-8 w-8 text-primary" /> How to Play HousieHub
           </CardTitle>
           <CardDescription>
-            A quick guide to playing Housie (Tambola/Bingo) on our platform.
+            Your simple guide to enjoying multiplayer Housie on our platform.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Accordion type="single" collapsible defaultValue="item-1" className="w-full space-y-4">
             <AccordionItem value="item-1">
               <AccordionTrigger className="text-xl font-semibold hover:no-underline">
-                <Info className="mr-2 h-5 w-5 text-accent" />
-                The Basics
+                <Ticket className="mr-2 h-5 w-5 text-accent" />
+                Get Your Tickets
               </AccordionTrigger>
               <AccordionContent className="text-base leading-relaxed pl-2 border-l-2 border-accent ml-2">
-                Housie (also known as Tambola or Bingo) is a game of probability. An organizer or caller calls out numbers one at a time. Players strike those numbers on their tickets if present. The goal is to be the first to claim a winning pattern.
+                Once you join a game room in HousieHub, you&apos;ll automatically receive your virtual Housie tickets to play. The number of tickets per player is set by the room host, usually ranging from one to six. You can clearly see all your tickets displayed on the game screen, each with its unique set of numbers, ready for the game to begin!
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-2">
               <AccordionTrigger className="text-xl font-semibold hover:no-underline">
-                <Info className="mr-2 h-5 w-5 text-accent" />
-                Getting Started
+                <Volume2 className="mr-2 h-5 w-5 text-accent" />
+                Numbers Called
               </AccordionTrigger>
               <AccordionContent className="text-base leading-relaxed pl-2 border-l-2 border-accent ml-2">
-                <ol className="list-decimal list-inside space-y-2">
-                  <li><strong>Register/Login:</strong> Create an account or log in to HousieHub.</li>
-                  <li><strong>Create or Join a Room:</strong> You can host your own game by creating a room and setting parameters like ticket price and lobby size, or join an existing room using a Room ID.</li>
-                  <li><strong>Get Your Tickets:</strong> Once in a room, you'll receive your Housie tickets. You might be able to buy multiple tickets.</li>
-                </ol>
+                In HousieHub, numbers from 1 to 90 are called out automatically by the system one by one. The most recently called number is prominently displayed, and you can also see a board showing all numbers that have been called so far. For extra convenience, there&apos;s often a voice announcement for each number, and they are called at a steady pace so everyone can keep up.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-3">
               <AccordionTrigger className="text-xl font-semibold hover:no-underline">
-                <Info className="mr-2 h-5 w-5 text-accent" />
-                Gameplay
+                <CheckSquare className="mr-2 h-5 w-5 text-accent" />
+                Mark Your Numbers
               </AccordionTrigger>
               <AccordionContent className="text-base leading-relaxed pl-2 border-l-2 border-accent ml-2">
-                <ul className="list-disc list-inside space-y-2">
-                  <li><strong>Number Calling:</strong> The system will automatically call out numbers one by one. These numbers will be displayed clearly and also marked on a live number board (1-90).</li>
-                  <li><strong>Marking Tickets:</strong> Listen for the called numbers. If a called number is on your ticket, click/tap on it to mark it. Numbers can only be marked if they have been called.</li>
-                  <li><strong>Winning Patterns:</strong> Common patterns include:
-                    <ul className="list-disc list-inside pl-6 mt-1">
-                      <li>Jaldi 5 / Early 5: First five numbers marked on your ticket.</li>
-                      <li>Lines (Top, Middle, Bottom): All numbers in a specific row.</li>
-                      <li>Full House: All 15 numbers on your ticket.</li>
-                      <li>Other patterns may be available depending on the game settings (e.g., Corners, 1st Jaldi 5, 2nd Jaldi 5, etc.).</li>
-                    </ul>
-                  </li>
-                </ul>
+                As numbers are called, simply tap or click on the matching number on your digital ticket to mark it. HousieHub provides visual assistance, highlighting called numbers, but you&apos;ll need to do the marking yourself – there&apos;s no auto-marking. Marking your numbers correctly and promptly is key to spotting winning patterns and claiming prizes!
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="item-4">
               <AccordionTrigger className="text-xl font-semibold hover:no-underline">
-                <Info className="mr-2 h-5 w-5 text-accent" />
-                Claiming Prizes
+                <Gift className="mr-2 h-5 w-5 text-accent" />
+                Claim Prizes
               </AccordionTrigger>
               <AccordionContent className="text-base leading-relaxed pl-2 border-l-2 border-accent ml-2">
-                When you complete a winning pattern on your ticket:
-                <ul className="list-disc list-inside space-y-2 mt-2">
-                  <li><strong>Manually Claim:</strong> You must press the "Claim" button corresponding to the prize (e.g., "Claim Top Line").</li>
-                  <li><strong>Validation:</strong> The system will automatically validate your claim. If it's valid and you're the first, you win that prize!</li>
-                  <li><strong>No Auto-Claiming:</strong> The system will not automatically claim prizes for you.</li>
-                  <li><strong>One Winner Per Prize:</strong> Generally, only the first valid claim for a specific prize is accepted (unless specified otherwise for certain formats like shared prizes).</li>
-                </ul>
+                When you complete a winning pattern on any of your tickets, like Jaldi 5 (first five numbers), a Line (Top, Middle, or Bottom), or the grand Full House (all numbers), you must click the &quot;Claim&quot; button for that specific prize. The system will then instantly validate your claim. Be quick, as usually only the first valid claim for each prize wins!
               </AccordionContent>
             </AccordionItem>
             
             <AccordionItem value="item-5">
               <AccordionTrigger className="text-xl font-semibold hover:no-underline">
-                <Info className="mr-2 h-5 w-5 text-accent" />
-                Game End
+                <Users className="mr-2 h-5 w-5 text-accent" />
+                Play With Friends
               </AccordionTrigger>
               <AccordionContent className="text-base leading-relaxed pl-2 border-l-2 border-accent ml-2">
-                The game usually ends when the Full House (or the final specified prize) is claimed. A summary of winners for different prizes will be shown.
+                Playing HousieHub with friends is easy! Simply create a private game room and share the unique Room ID or invite link with them. Your friends can then use this ID/link to join your room directly. Once everyone&apos;s in and has their tickets, the host can start the game for a fun, shared experience.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
