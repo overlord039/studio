@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { User, LogIn, UserPlus, Moon, Sun, LogOut as LogOutIcon, HelpCircle } from 'lucide-react';
+import { User, LogIn, UserPlus, Moon, Sun, LogOut as LogOutIcon, HelpCircle, Speaker } from 'lucide-react'; // Added Speaker
 import { useTheme } from "next-themes";
 import { useAuth } from '@/contexts/auth-context';
 import React from 'react';
@@ -29,7 +29,16 @@ export default function Header() {
           HousieHub
         </Link>
         <nav className="flex items-center space-x-2 md:space-x-3">
-          {/* "How to Play" button removed */}
+          <Link href="/how-to-play" passHref>
+              <Button variant="ghost" className="text-primary-foreground hover:bg-primary/80 px-2 md:px-3">
+                  <HelpCircle className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">How to Play</span>
+              </Button>
+          </Link>
+          <Link href="/number-caller" passHref>
+              <Button variant="ghost" className="text-primary-foreground hover:bg-primary/80 px-2 md:px-3">
+                  <Speaker className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">Caller</span>
+              </Button>
+          </Link>
           {loading ? (
             <div className="h-8 w-20 bg-primary/50 animate-pulse rounded-md"></div> 
           ) : currentUser ? (
@@ -67,3 +76,4 @@ export default function Header() {
     </header>
   );
 }
+

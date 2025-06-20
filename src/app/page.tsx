@@ -10,11 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { 
   LogIn as LogInIcon, 
   UserPlus, 
-  Gamepad2, 
+  Speaker, // Changed from Gamepad2
   UsersRound, 
   KeyRound, 
   Ticket,
-  List, // Changed from ListNumbers
+  List,
   CheckSquare,
   Award,
   Users,
@@ -75,7 +75,7 @@ export default function HomePage() {
 
   const howToPlaySteps = [
     { icon: Ticket, title: "Get Your Tickets", description: "Players receive virtual tickets with a unique set of random numbers." },
-    { icon: List, title: "Numbers Called", description: "Listen up! Numbers are called out one-by-one in real-time." }, // Changed from ListNumbers
+    { icon: List, title: "Numbers Called", description: "Listen up! Numbers are called out one-by-one in real-time." },
     { icon: CheckSquare, title: "Mark Your Numbers", description: "If a called number matches one on your ticket, mark it off." },
     { icon: Award, title: "Claim Prizes", description: "Be the first to complete patterns like Jaldi 5, Lines, or a Full House to win!" },
     { icon: Users, title: "Play With Friends", description: "Create private rooms to play with friends or join public games for more fun." },
@@ -126,16 +126,18 @@ export default function HomePage() {
       <section className="grid md:grid-cols-3 gap-6 md:gap-8">
         <Card className="shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 bg-card/80 backdrop-blur-sm border border-border/30 rounded-lg overflow-hidden">
           <CardHeader className="text-center items-center">
-            <div className="p-3 bg-accent/20 rounded-full mb-4 inline-block">
-              <Gamepad2 className="h-10 w-10 text-accent" />
+            <div className="p-3 bg-blue-500/20 rounded-full mb-4 inline-block">
+              <Speaker className="h-10 w-10 text-blue-600" />
             </div>
-            <CardTitle className="text-2xl font-bold">Start Practice Game</CardTitle>
-            <Badge variant="outline" className="mt-1 bg-yellow-400/20 text-yellow-700 border-yellow-500">🚧 Under Construction</Badge>
+            <CardTitle className="text-2xl font-bold">Number Caller</CardTitle>
+            <CardDescription>Practice calling or host a manual game.</CardDescription>
           </CardHeader>
           <CardContent className="text-center">
-            <Button className="w-full" size="lg" disabled>
-              Play Solo
-            </Button>
+            <Link href="/number-caller" passHref>
+              <Button className="w-full" size="lg">
+                Open Caller
+              </Button>
+            </Link>
           </CardContent>
         </Card>
         
@@ -245,3 +247,4 @@ export default function HomePage() {
     </div>
   );
 }
+
