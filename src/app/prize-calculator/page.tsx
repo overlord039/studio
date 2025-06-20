@@ -58,8 +58,8 @@ export default function PrizeCalculatorPage() {
   const form = useForm<PrizeCalculatorFormValues>({
     resolver: zodResolver(prizeCalculatorFormSchema),
     defaultValues: {
-      ticketPrice: 10,
-      ticketsSold: 100,
+      ticketPrice: undefined, // Changed from 10
+      ticketsSold: undefined, // Changed from 100
       percentages: {
         [PRIZE_TYPES.JALDI_5]: defaultPercentages[PRIZE_TYPES.JALDI_5],
         [PRIZE_TYPES.TOP_LINE]: defaultPercentages[PRIZE_TYPES.TOP_LINE],
@@ -76,18 +76,22 @@ export default function PrizeCalculatorPage() {
     const subscription = form.watch((values, { name, type }) => {
       if (type === 'change') {
         const { ticketPrice, ticketsSold, percentages } = values as PrizeCalculatorFormValues;
-        if (ticketPrice && ticketPrice > 0 && ticketsSold && ticketsSold > 0 && percentages) {
+        
+        const currentTicketPrice = typeof ticketPrice === 'number' ? ticketPrice : parseFloat(String(ticketPrice));
+        const currentTicketsSold = typeof ticketsSold === 'number' ? ticketsSold : parseInt(String(ticketsSold), 10);
+
+        if (currentTicketPrice > 0 && currentTicketsSold > 0 && percentages) {
            const percentageSum = prizeCategories.reduce((acc, prize) => acc + (percentages[prize] || 0), 0);
            if (Math.abs(percentageSum - 100) < 0.01) {
-            const totalPool = ticketPrice * ticketsSold;
+            const totalPool = currentTicketPrice * currentTicketsSold;
             const newPrizes: CalculatedPrizes = { totalCollection: totalPool } as CalculatedPrizes;
             prizeCategories.forEach(prize => {
               newPrizes[prize] = ( (percentages[prize] || 0) / 100) * totalPool;
             });
             setCalculatedPrizes(newPrizes);
-            form.clearErrors("percentages"); // Clear global percentage error if valid
+            form.clearErrors("percentages"); 
           } else {
-            setCalculatedPrizes(null); // Clear prizes if percentages don't sum up
+            setCalculatedPrizes(null); 
              form.setError("percentages", { type: "manual", message: "Total percentage must be 100%." });
           }
         } else {
@@ -95,12 +99,15 @@ export default function PrizeCalculatorPage() {
         }
       }
     });
-    // Trigger initial calculation
+    
      const initialValues = form.getValues();
-     if (initialValues.ticketPrice && initialValues.ticketsSold && initialValues.percentages) {
+     const initialTicketPrice = typeof initialValues.ticketPrice === 'number' ? initialValues.ticketPrice : parseFloat(String(initialValues.ticketPrice));
+     const initialTicketsSold = typeof initialValues.ticketsSold === 'number' ? initialValues.ticketsSold : parseInt(String(initialValues.ticketsSold), 10);
+
+     if (initialTicketPrice > 0 && initialTicketsSold > 0 && initialValues.percentages) {
        const percentageSum = prizeCategories.reduce((acc, prize) => acc + (initialValues.percentages[prize] || 0), 0);
        if (Math.abs(percentageSum - 100) < 0.01) {
-           const totalPool = initialValues.ticketPrice * initialValues.ticketsSold;
+           const totalPool = initialTicketPrice * initialTicketsSold;
             const newPrizes: CalculatedPrizes = { totalCollection: totalPool } as CalculatedPrizes;
             prizeCategories.forEach(prize => {
               newPrizes[prize] = ( (initialValues.percentages[prize] || 0) / 100) * totalPool;
@@ -114,6 +121,8 @@ export default function PrizeCalculatorPage() {
   }, [form]);
 
   function onSubmit(values: PrizeCalculatorFormValues) {
+    // This function is not strictly needed as calculations are real-time,
+    // but kept for potential future use (e.g., if there was a "Calculate" button).
     const { ticketPrice, ticketsSold, percentages } = values;
      const percentageSum = prizeCategories.reduce((acc, prize) => acc + (percentages[prize] || 0), 0);
      if (ticketPrice > 0 && ticketsSold > 0 && Math.abs(percentageSum - 100) < 0.01) {
