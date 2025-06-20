@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   LogIn as LogInIcon, 
   UserPlus, 
-  Speaker, // Changed from Gamepad2
+  Speaker,
   UsersRound, 
   KeyRound, 
   Ticket,
@@ -25,7 +25,8 @@ import {
   Laptop,
   SunMoon,
   GraduationCap,
-  ChevronRight
+  ChevronRight,
+  Calculator // Added Calculator icon
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -123,7 +124,7 @@ export default function HomePage() {
       </section>
 
       {/* Main Options */}
-      <section className="grid md:grid-cols-3 gap-6 md:gap-8">
+      <section className="grid md:grid-cols-2 lg:grid-cols-2 gap-6 md:gap-8"> {/* Changed to lg:grid-cols-2 for 2x2 layout */}
         <Card className="shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 bg-card/80 backdrop-blur-sm border border-border/30 rounded-lg overflow-hidden">
           <CardHeader className="text-center items-center">
             <div className="p-3 bg-blue-500/20 rounded-full mb-4 inline-block">
@@ -177,6 +178,23 @@ export default function HomePage() {
             <Button variant="outline" className="w-full" size="lg" onClick={handleJoinRoom} disabled={loading}>
               Join Game
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 bg-card/80 backdrop-blur-sm border border-border/30 rounded-lg overflow-hidden">
+          <CardHeader className="text-center items-center">
+            <div className="p-3 bg-yellow-500/20 rounded-full mb-4 inline-block">
+              <Calculator className="h-10 w-10 text-yellow-600" />
+            </div>
+            <CardTitle className="text-2xl font-bold">Prize Calculator</CardTitle>
+            <CardDescription>Calculate prize money distribution.</CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <Link href="/prize-calculator" passHref>
+              <Button className="w-full" size="lg" variant="secondary">
+                Open Calculator
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </section>
@@ -247,4 +265,3 @@ export default function HomePage() {
     </div>
   );
 }
-
