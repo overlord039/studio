@@ -28,7 +28,7 @@ export default function NumberCallerPage() {
   const [isAutoCalling, setIsAutoCalling] = useState(false);
   const [autoCallSpeed, setAutoCallSpeed] = useState(5); // Default speed in seconds
   const [isMuted, setIsMuted] = useState(false);
-  const [isBoardMinimized, setIsBoardMinimized] = useState(true);
+  const [isBoardMinimized, setIsBoardMinimized] = useState(true); // Board is minimized by default
   const autoCallIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
@@ -41,18 +41,18 @@ export default function NumberCallerPage() {
 
   const callNextNumber = useCallback(() => {
     if (availableNumbers.length === 0) {
-      setIsAutoCalling(false);
-      setCurrentNumber(null);
+      setIsAutoCalling(false); // Stop auto-calling if all numbers are out
+      setCurrentNumber(null); // No current number to show
       toast({ title: "All numbers called!", description: "The game is over. Reset to start a new game." });
-      return null;
+      return null; // Indicate no number was called
     }
 
-    const nextNumber = availableNumbers[0];
-    setAvailableNumbers(prev => prev.slice(1));
+    const nextNumber = availableNumbers[0]; // Get the first number from the shuffled list
+    setAvailableNumbers(prev => prev.slice(1)); // Remove it from available
     setCurrentNumber(nextNumber);
-    setCalledNumbers(prev => [...prev, nextNumber].sort((a,b) => a-b));
+    setCalledNumbers(prev => [...prev, nextNumber].sort((a,b) => a-b)); // Add to called, keep sorted
     speakNumber(nextNumber);
-    return nextNumber;
+    return nextNumber; // Return the called number
   }, [availableNumbers, speakNumber, toast]);
 
   const resetGame = () => {
@@ -63,7 +63,7 @@ export default function NumberCallerPage() {
     setCurrentNumber(null);
     setCalledNumbers([]);
     setAvailableNumbers(shuffleArray(ALL_NUMBERS));
-    setIsBoardMinimized(true);
+    setIsBoardMinimized(true); // Ensure board is minimized on reset
     toast({ title: "Game Reset", description: "Ready to call numbers again!"});
   };
 
@@ -76,18 +76,19 @@ export default function NumberCallerPage() {
   useEffect(() => {
     if (isAutoCalling) {
       if (availableNumbers.length === 0) {
-          setIsAutoCalling(false); 
+          setIsAutoCalling(false); // Ensure it stops if somehow auto-call is toggled when no numbers left
           toast({ title: "All numbers called!", description: "Auto-calling stopped." });
           return;
       }
+      // If starting auto-call and no number is currently shown, call one immediately.
       if (currentNumber === null) { 
         callNextNumber();
       }
       autoCallIntervalRef.current = setInterval(() => {
         const num = callNextNumber();
-        if (num === null) { 
+        if (num === null) { // All numbers called during an interval
             if(autoCallIntervalRef.current) clearInterval(autoCallIntervalRef.current);
-            setIsAutoCalling(false); 
+            setIsAutoCalling(false); // Stop auto-calling
         }
       }, autoCallSpeed * 1000);
     } else {
@@ -95,6 +96,7 @@ export default function NumberCallerPage() {
         clearInterval(autoCallIntervalRef.current);
       }
     }
+    // Cleanup function to clear interval when component unmounts or dependencies change
     return () => {
       if (autoCallIntervalRef.current) {
         clearInterval(autoCallIntervalRef.current);
@@ -127,7 +129,7 @@ export default function NumberCallerPage() {
               onClick={callNextNumber} 
               disabled={isAutoCalling || availableNumbers.length === 0} 
               className="w-full"
-              size="default" 
+              size="default"
             >
               <Zap className="mr-2 h-4 w-4"/> Next Number
             </Button>
@@ -136,7 +138,7 @@ export default function NumberCallerPage() {
               disabled={availableNumbers.length === 0}
               variant={isAutoCalling ? "destructive" : "default"}
               className="w-full"
-              size="default" 
+              size="default"
             >
               {isAutoCalling ? <Pause className="mr-2 h-4 w-4"/> : <Play className="mr-2 h-4 w-4"/>}
               {isAutoCalling ? 'Stop Auto Call' : 'Start Auto Call'}
@@ -201,3 +203,5 @@ export default function NumberCallerPage() {
     </div>
   );
 }
+
+    
