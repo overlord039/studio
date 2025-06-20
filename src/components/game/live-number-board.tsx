@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react'; // Removed useState as it's now controlled by parent
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MinusSquare, PlusSquare, ListOrdered } from 'lucide-react';
@@ -11,10 +11,11 @@ import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX } from '@/lib/constants';
 interface LiveNumberBoardProps {
   calledNumbers: number[];
   currentNumber: number | null;
+  isMinimized: boolean;
+  onToggleMinimize: () => void;
 }
 
-export default function LiveNumberBoard({ calledNumbers, currentNumber }: LiveNumberBoardProps) {
-  const [isMinimized, setIsMinimized] = useState(true);
+export default function LiveNumberBoard({ calledNumbers, currentNumber, isMinimized, onToggleMinimize }: LiveNumberBoardProps) {
   const numbers = Array.from({ length: NUMBERS_RANGE_MAX - NUMBERS_RANGE_MIN + 1 }, (_, i) => NUMBERS_RANGE_MIN + i);
 
   return (
@@ -24,7 +25,7 @@ export default function LiveNumberBoard({ calledNumbers, currentNumber }: LiveNu
           <ListOrdered className="mr-2 h-5 w-5 text-primary" />
           Number Board
         </CardTitle>
-        <Button variant="ghost" size="sm" onClick={() => setIsMinimized(!isMinimized)} aria-label={isMinimized ? "Expand board" : "Minimize board"}>
+        <Button variant="ghost" size="sm" onClick={onToggleMinimize} aria-label={isMinimized ? "Expand board" : "Minimize board"}>
           {isMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
         </Button>
       </CardHeader>
@@ -53,3 +54,5 @@ export default function LiveNumberBoard({ calledNumbers, currentNumber }: LiveNu
     </Card>
   );
 }
+
+    

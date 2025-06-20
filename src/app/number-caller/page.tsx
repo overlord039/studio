@@ -29,7 +29,7 @@ export default function NumberCallerPage() {
   const [isAutoCalling, setIsAutoCalling] = useState(false);
   const [autoCallSpeed, setAutoCallSpeed] = useState(5); // Default speed in seconds
   const [isMuted, setIsMuted] = useState(false);
-  const [isBoardMinimized, setIsBoardMinimized] = useState(false);
+  const [isBoardMinimized, setIsBoardMinimized] = useState(true); // Default to minimized
   const autoCallIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
@@ -69,6 +69,7 @@ export default function NumberCallerPage() {
     setCurrentNumber(null);
     setCalledNumbers([]);
     setAvailableNumbers(shuffleArray(ALL_NUMBERS));
+    setIsBoardMinimized(true); // Also reset board to minimized
     toast({ title: "Game Reset", description: "Ready to call numbers again!"});
   };
 
@@ -187,18 +188,19 @@ export default function NumberCallerPage() {
                     {currentNumber !== null ? (
                     <div className="flex items-center justify-center">
                         <Volume2 className="h-6 w-6 mr-2 opacity-80" />
-                        <p className="text-8xl font-bold animate-fade-in">{currentNumber}</p>
+                        <p className="text-6xl md:text-8xl font-bold animate-fade-in">{currentNumber}</p>
                     </div>
                     ) : (
-                    <p className="text-6xl font-semibold text-primary-foreground/70">-</p>
+                    <p className="text-4xl md:text-6xl font-semibold text-primary-foreground/70">-</p>
                     )}
                 </CardContent>
             </Card>
             
-            {/* Reusing LiveNumberBoard */}
             <LiveNumberBoard 
                 calledNumbers={calledNumbers} 
                 currentNumber={currentNumber}
+                isMinimized={isBoardMinimized}
+                onToggleMinimize={() => setIsBoardMinimized(!isBoardMinimized)}
             />
             <p className="text-center text-sm text-muted-foreground">
                 {availableNumbers.length} numbers remaining. Total Called: {calledNumbers.length}.
@@ -209,3 +211,4 @@ export default function NumberCallerPage() {
   );
 }
 
+    
