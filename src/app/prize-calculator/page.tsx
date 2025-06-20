@@ -18,7 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PRIZE_DISTRIBUTION_PERCENTAGES, PRIZE_DEFINITIONS, DEFAULT_GAME_SETTINGS } from "@/lib/constants";
 import type { PrizeType } from "@/types";
 import { PRIZE_TYPES } from "@/types";
-import { Calculator, Ticket, Users, Percent, Gift, IndianRupee, AlertTriangle } from "lucide-react";
+import { Calculator, Ticket, Users, Percent, Gift, IndianRupee, AlertTriangle, Settings2, EyeOff } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -53,6 +53,7 @@ interface CalculatedPrizes {
 
 export default function PrizeCalculatorPage() {
   const [calculatedPrizes, setCalculatedPrizes] = useState<CalculatedPrizes | null>(null);
+  const [isPercentageCustomizationVisible, setIsPercentageCustomizationVisible] = useState(false);
 
   const form = useForm<PrizeCalculatorFormValues>({
     resolver: zodResolver(prizeCalculatorFormSchema),
@@ -113,9 +114,6 @@ export default function PrizeCalculatorPage() {
   }, [form]);
 
   function onSubmit(values: PrizeCalculatorFormValues) {
-    // Calculation is now done in useEffect, so onSubmit might not be strictly needed
-    // unless there's a specific action to take on explicit submit (e.g., save configuration)
-    // For now, it re-triggers validation and recalculation via watch.
     const { ticketPrice, ticketsSold, percentages } = values;
      const percentageSum = prizeCategories.reduce((acc, prize) => acc + (percentages[prize] || 0), 0);
      if (ticketPrice > 0 && ticketsSold > 0 && Math.abs(percentageSum - 100) < 0.01) {
@@ -131,7 +129,7 @@ export default function PrizeCalculatorPage() {
   }
   
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
   };
 
   const currentPercentageSum = watchedValues.percentages ? prizeCategories.reduce((acc, prize) => acc + (watchedValues.percentages?.[prize] || 0), 0) : 0;
@@ -180,45 +178,66 @@ export default function PrizeCalculatorPage() {
               </div>
 
               <Card className="p-4 bg-secondary/30">
-                <CardTitle className="text-xl mb-3 flex items-center">
-                  <Percent className="mr-2 h-5 w-5 text-primary"/>Prize Percentage Allocation
-                </CardTitle>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {prizeCategories.map(prize => (
-                    <FormField
-                      key={prize}
-                      control={form.control}
-                      name={`percentages.${prize}`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{prize} (%)</FormLabel>
-                          <FormControl>
-                            <Input type="number" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)}/>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  ))}
+                <div className="flex justify-between items-center mb-3">
+                    <CardTitle className="text-xl flex items-center">
+                    <Percent className="mr-2 h-5 w-5 text-primary"/>Prize Percentage Allocation
+                    </CardTitle>
+                    <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setIsPercentageCustomizationVisible(!isPercentageCustomizationVisible)}
+                        className="text-sm"
+                    >
+                        {isPercentageCustomizationVisible ? <EyeOff className="mr-2 h-4 w-4" /> : <Settings2 className="mr-2 h-4 w-4" />}
+                        {isPercentageCustomizationVisible ? "Hide Customization" : "Customize"}
+                    </Button>
                 </div>
-                <div className={cn(
-                    "mt-3 text-sm font-medium",
-                    Math.abs(currentPercentageSum - 100) >= 0.01 ? "text-destructive" : "text-green-600"
-                  )}>
-                  Total Percentage: {currentPercentageSum.toFixed(2)}%
-                  {Math.abs(currentPercentageSum - 100) >= 0.01 && " (Must be 100%)"}
-                </div>
-                 {form.formState.errors.percentages && (
-                    <p className="text-sm font-medium text-destructive mt-2 flex items-center">
-                        <AlertTriangle className="h-4 w-4 mr-1" />
-                        {form.formState.errors.percentages.message}
+
+                {isPercentageCustomizationVisible && (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {prizeCategories.map(prize => (
+                            <FormField
+                            key={prize}
+                            control={form.control}
+                            name={`percentages.${prize}`}
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>{prize} (%)</FormLabel>
+                                <FormControl>
+                                    <Input type="number" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)}/>
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                        ))}
+                        </div>
+                        <div className={cn(
+                            "mt-3 text-sm font-medium",
+                            Math.abs(currentPercentageSum - 100) >= 0.01 ? "text-destructive" : "text-green-600"
+                        )}>
+                        Total Percentage: {currentPercentageSum.toFixed(2)}%
+                        {Math.abs(currentPercentageSum - 100) >= 0.01 && " (Must be 100%)"}
+                        </div>
+                        {form.formState.errors.percentages && (
+                            <p className="text-sm font-medium text-destructive mt-2 flex items-center">
+                                <AlertTriangle className="h-4 w-4 mr-1" />
+                                {form.formState.errors.percentages.message}
+                            </p>
+                        )}
+                    </>
+                )}
+                {!isPercentageCustomizationVisible && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                        Using default percentages:{" "}
+                        {prizeCategories.map(prize => `${prize} (${defaultPercentages[prize]}%)`).join(", ")}.
+                        Click "Customize" to change.
                     </p>
-                 )}
+                )}
               </Card>
               
-              {/* This button is mostly for triggering validation explicitly if needed, calculations are live */}
-              {/* <Button type="submit" className="w-full" size="lg">Calculate Prizes</Button> */}
-
             </form>
           </Form>
 
@@ -249,3 +268,4 @@ export default function PrizeCalculatorPage() {
     </div>
   );
 }
+
