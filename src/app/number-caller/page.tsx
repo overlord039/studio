@@ -80,14 +80,14 @@ export default function NumberCallerPage() {
           toast({ title: "All numbers called!", description: "Auto-calling stopped." });
           return;
       }
-      if (currentNumber === null) {
+      if (currentNumber === null) { 
         callNextNumber();
       }
       autoCallIntervalRef.current = setInterval(() => {
         const num = callNextNumber();
         if (num === null) { 
             if(autoCallIntervalRef.current) clearInterval(autoCallIntervalRef.current);
-            setIsAutoCalling(false);
+            setIsAutoCalling(false); 
         }
       }, autoCallSpeed * 1000);
     } else {
@@ -102,54 +102,54 @@ export default function NumberCallerPage() {
     };
   }, [isAutoCalling, autoCallSpeed, callNextNumber, availableNumbers.length, currentNumber, toast]);
 
+
   return (
-    <div className="container mx-auto py-2 space-y-4 md:space-y-6"> {/* Reduced py and space-y */}
+    <div className="container mx-auto py-2 space-y-3 md:space-y-4">
       <Card className="shadow-xl bg-gradient-to-br from-primary via-purple-600 to-accent text-primary-foreground">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-1"> {/* Reduced mb */}
-            <Speaker className="h-10 w-10 md:h-12 md:w-12" /> {/* Slightly smaller base icon */}
+        <CardHeader className="text-center py-3 md:py-4">
+          <div className="flex justify-center mb-1">
+            <Speaker className="h-8 w-8 md:h-10 md:w-10" />
           </div>
-          <CardTitle className="text-3xl md:text-4xl font-extrabold tracking-tight">Housie Number Caller</CardTitle> {/* Responsive title */}
-          <CardDescription className="text-primary-foreground/80 text-base md:text-lg"> {/* Responsive description */}
+          <CardTitle className="text-2xl md:text-3xl font-extrabold tracking-tight">Housie Number Caller</CardTitle>
+          <CardDescription className="text-primary-foreground/80 text-sm md:text-base">
             Manually or automatically call numbers for your game.
           </CardDescription>
         </CardHeader>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6"> {/* Reduced gap */}
-        {/* Controls Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
         <Card className="md:col-span-1 shadow-lg">
-          <CardHeader className="pb-2"> {/* Reduced pb for tighter header */}
-            <CardTitle className="text-xl md:text-2xl flex items-center"><Settings2 className="mr-2 h-5 w-5 md:h-6 md:w-6 text-primary"/>Caller Controls</CardTitle> {/* Responsive title */}
+          <CardHeader className="pb-2 pt-3 md:pt-4">
+            <CardTitle className="text-lg md:text-xl flex items-center"><Settings2 className="mr-2 h-5 w-5 text-primary"/>Caller Controls</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 pt-4"> {/* Reduced space-y, added pt to compensate CardHeader pb removal */}
+          <CardContent className="space-y-2 pt-2 pb-3 md:pb-4">
             <Button 
               onClick={callNextNumber} 
               disabled={isAutoCalling || availableNumbers.length === 0} 
               className="w-full"
-              size="default" // Changed size to default
+              size="default" 
             >
-              <Zap className="mr-2 h-5 w-5"/> Next Number
+              <Zap className="mr-2 h-4 w-4"/> Next Number
             </Button>
             <Button 
               onClick={toggleAutoCall} 
               disabled={availableNumbers.length === 0}
               variant={isAutoCalling ? "destructive" : "default"}
               className="w-full"
-              size="default" // Changed size to default
+              size="default" 
             >
-              {isAutoCalling ? <Pause className="mr-2 h-5 w-5"/> : <Play className="mr-2 h-5 w-5"/>}
+              {isAutoCalling ? <Pause className="mr-2 h-4 w-4"/> : <Play className="mr-2 h-4 w-4"/>}
               {isAutoCalling ? 'Stop Auto Call' : 'Start Auto Call'}
             </Button>
             
-            <div className="space-y-1"> {/* Reduced space-y */}
-              <label htmlFor="speed-select" className="text-xs md:text-sm font-medium text-muted-foreground">Auto-Call Speed (seconds)</label> {/* Responsive label */}
+            <div className="space-y-1">
+              <label htmlFor="speed-select" className="text-xs font-medium text-muted-foreground">Auto-Call Speed (seconds)</label>
               <Select 
                 value={String(autoCallSpeed)} 
                 onValueChange={(value) => setAutoCallSpeed(Number(value))}
                 disabled={isAutoCalling}
               >
-                <SelectTrigger id="speed-select">
+                <SelectTrigger id="speed-select" className="h-9">
                   <SelectValue placeholder="Select speed" />
                 </SelectTrigger>
                 <SelectContent>
@@ -160,30 +160,29 @@ export default function NumberCallerPage() {
               </Select>
             </div>
 
-            <div className="flex space-x-2 md:space-x-3"> {/* Slightly reduced space-x */}
+            <div className="flex space-x-2">
                  <Button onClick={toggleMute} variant="outline" className="flex-1" size="default">
-                    {isMuted ? <VolumeX className="mr-2 h-5 w-5"/> : <Volume2 className="mr-2 h-5 w-5"/>}
+                    {isMuted ? <VolumeX className="mr-2 h-4 w-4"/> : <Volume2 className="mr-2 h-4 w-4"/>}
                     {isMuted ? 'Unmute' : 'Mute'}
                 </Button>
                 <Button onClick={resetGame} variant="outline" className="flex-1" size="default">
-                    <RotateCcw className="mr-2 h-5 w-5"/> Reset
+                    <RotateCcw className="mr-2 h-4 w-4"/> Reset
                 </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Display and Board Section */}
-        <div className="md:col-span-2 space-y-4"> {/* Reduced space-y */}
+        <div className="md:col-span-2 space-y-3">
             <Card className="shadow-lg bg-primary text-primary-foreground">
-                <CardContent className="p-4 text-center relative"> {/* Reduced p */}
-                    <p className="text-sm md:text-base uppercase tracking-wider mb-1">Last Called Number</p> {/* Responsive text, reduced mb */}
+                <CardContent className="p-3 text-center relative">
+                    <p className="text-xs md:text-sm uppercase tracking-wider mb-0.5">Last Called Number</p>
                     {currentNumber !== null ? (
                     <div className="flex items-center justify-center">
-                        <Volume2 className="h-5 w-5 md:h-6 md:w-6 mr-2 opacity-80" /> {/* Responsive icon */}
-                        <p className="text-6xl md:text-8xl font-bold animate-fade-in">{currentNumber}</p>
+                        <Volume2 className="h-4 w-4 md:h-5 md:w-5 mr-1 md:mr-2 opacity-80" />
+                        <p className="text-5xl md:text-7xl font-bold animate-fade-in">{currentNumber}</p>
                     </div>
                     ) : (
-                    <p className="text-4xl md:text-6xl font-semibold text-primary-foreground/70">-</p>
+                    <p className="text-3xl md:text-5xl font-semibold text-primary-foreground/70">-</p>
                     )}
                 </CardContent>
             </Card>
@@ -194,7 +193,7 @@ export default function NumberCallerPage() {
                 isMinimized={isBoardMinimized}
                 onToggleMinimize={() => setIsBoardMinimized(!isBoardMinimized)}
             />
-            <p className="text-center text-xs md:text-sm text-muted-foreground mt-2"> {/* Added mt, responsive text */}
+            <p className="text-center text-xs text-muted-foreground mt-1">
                 {availableNumbers.length} numbers remaining. Total Called: {calledNumbers.length}.
             </p>
         </div>
