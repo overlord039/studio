@@ -124,7 +124,7 @@ export default function HomePage() {
       </section>
 
       {/* Main Options */}
-      <section className="grid md:grid-cols-2 lg:grid-cols-2 gap-6 md:gap-8"> {/* Changed to lg:grid-cols-2 for 2x2 layout */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
         <Card className="shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 bg-card/80 backdrop-blur-sm border border-border/30 rounded-lg overflow-hidden">
           <CardHeader className="text-center items-center">
             <div className="p-3 bg-blue-500/20 rounded-full mb-4 inline-block">
