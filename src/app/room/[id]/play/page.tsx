@@ -8,8 +8,8 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import HousieTicket from '@/components/game/housie-ticket';
 import LiveNumberBoard from '@/components/game/live-number-board';
 import CalledNumberDisplay from '@/components/game/called-number-display';
-import type { HousieTicketGrid, PrizeType, Room, BackendPlayerInRoom } from '@/types';
-import { PRIZE_TYPES, type GameSettings } from '@/types';
+import type { HousieTicketGrid, PrizeType, Room, BackendPlayerInRoom, GameSettings } from '@/types';
+import { PRIZE_TYPES } from '@/types';
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -284,48 +284,25 @@ export default function GameRoomPage() {
         const updatedRoom: Room = result;
         setRoomData(updatedRoom); // This will trigger re-render with new prize status
 
-        let toastMessageAlert = `Claim for ${prizeType} processed.`;
-        let localGameMessageAlert = `Claim for ${prizeType} processed.`;
-
         const claimStatus = updatedRoom.prizeStatus[prizeType];
+        let toastMessageAlert = `Claim for ${prizeType} processed successfully.`;
 
-        if (claimStatus?.claimedBy.includes(currentUser.username)) {
-          const allClaimantsNames = claimStatus.claimedBy.map(id => updatedRoom.players.find(p => p.id === id)?.name || id);
-          localGameMessageAlert = allClaimantsNames.length > 1
-            ? `🔔 ${prizeType} claimed by ${allClaimantsNames.join(' & ')}! (You are one of them!)`
-            : `🔔 ${currentUser.username} has claimed ${prizeType}!`;
-          toastMessageAlert = localGameMessageAlert;
-
-          if (prizeType === PRIZE_TYPES.FULL_HOUSE && updatedRoom.isGameOver) {
-            const fhFinalClaim = updatedRoom.prizeStatus[PRIZE_TYPES.FULL_HOUSE];
-            let finalGameOverMsg = "🎉 Game Over!";
-            if (fhFinalClaim && fhFinalClaim.claimedBy.length > 0) {
-              const winnerNames = fhFinalClaim.claimedBy.map(winnerId => updatedRoom.players.find(p => p.id === winnerId)?.name || winnerId).join(' & ');
-              finalGameOverMsg = `🎉 ${winnerNames} won Full House! Game Over!`;
-              if (fhFinalClaim.timestamp) {
-                const claimTimestamp = typeof fhFinalClaim.timestamp === 'string' ? new Date(fhFinalClaim.timestamp) : fhFinalClaim.timestamp;
-                finalGameOverMsg += ` at ${claimTimestamp.toLocaleTimeString()}`;
-              }
-            }
-            setGameMessage(finalGameOverMsg); // Set final game over message
-            toastMessageAlert = finalGameOverMsg;
-          } else if (!updatedRoom.isGameOver) {
-            setGameMessage(localGameMessageAlert);
-          }
-        } else if (claimStatus?.claimedBy.length) { // Claimed by someone else
-          localGameMessageAlert = `🔔 ${prizeType} was claimed by ${claimStatus.claimedBy.map(id => updatedRoom.players.find(p => p.id === id)?.name || id).join(' & ')}.`;
-          toastMessageAlert = localGameMessageAlert;
-           if (!updatedRoom.isGameOver) {
-            setGameMessage(localGameMessageAlert);
-          }
-        } else { // Should not happen if API call was successful and claimStatus was updated
-          localGameMessageAlert = result.message || `Claim status for ${prizeType} is unclear.`;
-          toastMessageAlert = localGameMessageAlert;
-           if (!updatedRoom.isGameOver) {
-            setGameMessage(localGameMessageAlert);
-          }
+        if (updatedRoom.isGameOver) {
+            toastMessageAlert = "Full House claimed! The game is now over.";
+        } else if (claimStatus?.claimedBy.includes(currentUser.username)) {
+            toastMessageAlert = `You successfully claimed ${prizeType}!`;
+            setGameMessage(`🔔 You have claimed ${prizeType}!`);
+        } else if (claimStatus?.claimedBy.length) {
+            const claimants = claimStatus.claimedBy.map(id => updatedRoom.players.find(p => p.id === id)?.name || id);
+            toastMessageAlert = `${prizeType} was claimed by ${claimants.join(' & ')}.`;
+            setGameMessage(`🔔 ${toastMessageAlert}`);
         }
-        toast({ title: "Claim Processed!", description: toastMessageAlert, className: (toastMessageAlert.includes("Bogey") || toastMessageAlert.includes("Invalid") || toastMessageAlert.includes("Failed to claim")) ? "bg-destructive" : "bg-green-500 text-white" });
+        
+        toast({
+            title: "Claim Processed!",
+            description: toastMessageAlert,
+            className: (toastMessageAlert.includes("Bogey") || toastMessageAlert.includes("Invalid") || toastMessageAlert.includes("Failed")) ? "bg-destructive" : "bg-green-500 text-white"
+        });
       }
     } catch (err) {
       console.error(`Error claiming ${prizeType}:`, err);
@@ -390,6 +367,23 @@ export default function GameRoomPage() {
 
 
   if (roomData.isGameOver) {
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+    };
+
+    let currentUserWinnings = 0;
+    if (currentUser) {
+        prizesForFormat.forEach(prize => {
+            const claimInfo = roomData.prizeStatus[prize];
+            if (claimInfo && claimInfo.claimedBy.includes(currentUser.username)) {
+                const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
+                const prizeAmount = (totalPrizePool * percentage) / 100;
+                const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
+                currentUserWinnings += prizePerWinner;
+            }
+        });
+    }
+
     return (
       <div className="p-2 md:p-4 space-y-6 flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
         <Card className="w-full max-w-2xl shadow-xl">
@@ -400,25 +394,42 @@ export default function GameRoomPage() {
             <p className="text-lg mt-2 whitespace-pre-line">{gameMessage}</p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <h3 className="text-xl font-semibold text-center mb-2">Final Prize Summary</h3>
+             {currentUserWinnings > 0 && (
+                <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50">
+                    <p className="text-lg font-semibold">Congratulations, {currentUser.username}!</p>
+                    <p className="text-2xl font-bold text-green-700 dark:text-green-300">You won a total of {formatCurrency(currentUserWinnings)}!</p>
+                </div>
+            )}
+            <h3 className="text-xl font-semibold text-center mb-2 flex items-center justify-center">
+                <Award className="mr-2 h-5 w-5 text-accent"/>
+                Final Prize Summary
+            </h3>
             <div className="border rounded-md p-3">
+               <div className="flex justify-between items-center text-lg font-bold mb-2 pb-2 border-b">
+                <span>Total Prize Pool:</span>
+                <span>{formatCurrency(totalPrizePool)}</span>
+            </div>
               <ul className="space-y-2">
                 {prizesForFormat.map(prize => {
                   const claimInfo = roomData.prizeStatus[prize];
+                  const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
+                  const prizeAmount = (totalPrizePool * percentage) / 100;
+
                   let prizeStatusText = "Not Claimed";
                   if (claimInfo && claimInfo.claimedBy.length > 0) {
                     const winnerNames = claimInfo.claimedBy.map(id => roomData.players.find(p => p.id === id)?.name || id).join(', ');
                     prizeStatusText = `Claimed by ${winnerNames}`;
-                    if (claimInfo.claimedBy.length > 1) {
-                      prizeStatusText += ` (Split ${claimInfo.claimedBy.length} ways)`;
-                    }
                   }
+                  
                   return (
-                    <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
-                      <span className="font-medium">{prize}:</span>
-                      <span className={cn("font-semibold", claimInfo && claimInfo.claimedBy.length > 0 ? "text-green-600" : "text-muted-foreground")}>
-                        {prizeStatusText}
-                      </span>
+                     <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
+                        <div className="flex flex-col">
+                            <span className="font-medium">{prize}</span>
+                            <span className="text-xs text-muted-foreground">{formatCurrency(prizeAmount)} ({percentage}%)</span>
+                        </div>
+                        <span className={cn("font-semibold text-right", claimInfo && claimInfo.claimedBy.length > 0 ? "text-green-600" : "text-muted-foreground")}>
+                            {prizeStatusText}
+                        </span>
                     </li>
                   );
                 })}
