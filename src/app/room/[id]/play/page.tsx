@@ -427,7 +427,7 @@ export default function GameRoomPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <h3 className="text-xl font-semibold text-center mb-2">Final Prize Summary</h3>
-            <ScrollArea className="h-48 border rounded-md p-3">
+            <div className="border rounded-md p-3">
               <ul className="space-y-2">
                 {prizesForFormat.map(prize => {
                   const claimInfo = roomData.prizeStatus[prize];
@@ -449,7 +449,7 @@ export default function GameRoomPage() {
                   );
                 })}
               </ul>
-            </ScrollArea>
+            </div>
             <div className="flex flex-col sm:flex-row gap-4 mt-6">
               <Button onClick={handlePlayAgain} className="w-full" size="lg">
                 <RotateCcw className="mr-2 h-5 w-5" /> Back to Lobby
