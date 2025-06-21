@@ -87,6 +87,16 @@ export default function GameRoomPage() {
     roomDataRef.current = roomData;
   }, [roomData]);
 
+  useEffect(() => {
+    if (gameMessage) {
+      const timer = setTimeout(() => {
+        setGameMessage(null);
+      }, 4000); // Disappear after 4 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [gameMessage]);
+
   const isCurrentUserHost = roomData?.host.id === currentUser?.username;
 
   const fetchGameDetails = useCallback(async (isInitialLoad = false) => {
@@ -271,7 +281,7 @@ export default function GameRoomPage() {
       return;
     }
     
-    // The ticketIndex is now mostly irrelevant for validation, but the API expects it. We can send 0.
+    // Server now validates all tickets, so we can send 0.
     const ticketIndex = 0;
 
     try {
@@ -297,12 +307,15 @@ export default function GameRoomPage() {
         previousPrizeStatusRef.current = updatedRoom.prizeStatus;
 
         const claimStatus = updatedRoom.prizeStatus[prizeType];
+        
         let toastMessageAlert = `Your claim for ${prizeType} has been submitted for validation.`;
-
-        if (updatedRoom.isGameOver) {
-            toastMessageAlert = "Full House claimed! The game is now over.";
-        } else if (claimStatus?.claimedBy.includes(currentUser.username)) {
+        if (claimStatus?.claimedBy.includes(currentUser.username)) {
             toastMessageAlert = `You successfully claimed ${prizeType}!`;
+        }
+
+        // Let the polling handle the "Game Over" message
+        if (updatedRoom.isGameOver) {
+          toastMessageAlert = `You claimed Full House! Game Over.`
         }
         
         toast({
