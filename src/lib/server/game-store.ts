@@ -297,17 +297,24 @@ export function claimPrizeStore(
     // Auto-award unclaimed lines on the winning Full House ticket
     const linePrizesToAutoCheck: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
     for (const linePrize of linePrizesToAutoCheck) {
-      const linePrizeClaim = room.prizeStatus[linePrize];
-      // Check if line prize is unclaimed OR claimed by someone else (but not this player for this line yet)
-      if (!linePrizeClaim || !linePrizeClaim.claimedBy.length || !linePrizeClaim.claimedBy.includes(playerId)) {
+      const isLinePrizeClaimed = room.prizeStatus[linePrize]?.claimedBy?.length > 0;
+      
+      // If the line prize has not been claimed by anyone yet...
+      if (!isLinePrizeClaimed) {
+        // ...check if the current player's FH ticket also wins this line.
         if (housieLib.checkWinningCondition(ticket, room.calledNumbers, linePrize)) {
-          if (!room.prizeStatus[linePrize] || !Array.isArray(room.prizeStatus[linePrize]?.claimedBy)) {
+          // It's a valid win and unclaimed, so auto-award it.
+          if (!room.prizeStatus[linePrize]) { // Initialize if null
             room.prizeStatus[linePrize] = { claimedBy: [], timestamp: new Date() };
           }
-          if (!room.prizeStatus[linePrize]!.claimedBy.includes(playerId)) { // Double check not already auto-awarded
-            room.prizeStatus[linePrize]!.claimedBy.push(playerId);
-            console.log(`Auto-awarded ${linePrize} to ${playerId} during Full House claim in room ${roomId}`);
+          
+          room.prizeStatus[linePrize]!.claimedBy.push(playerId);
+          
+          // Use the Full House claim timestamp for consistency.
+          if (room.prizeStatus[prizeType]?.timestamp) {
+             room.prizeStatus[linePrize]!.timestamp = room.prizeStatus[prizeType]!.timestamp;
           }
+          console.log(`Auto-awarded ${linePrize} to ${playerId} during Full House claim in room ${roomId}`);
         }
       }
     }

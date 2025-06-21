@@ -297,32 +297,6 @@ export default function GameRoomPage() {
           toastMessageAlert = localGameMessageAlert;
 
           if (prizeType === PRIZE_TYPES.FULL_HOUSE && updatedRoom.isGameOver) {
-            let autoAwardMsg = "";
-            const linePrizes: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
-            
-            // Ensure ticketIndexToClaimOn is valid for myTickets
-             if (ticketIndexToClaimOn >= 0 && ticketIndexToClaimOn < myTickets.length) {
-                const winningTicketForFH = myTickets[ticketIndexToClaimOn];
-                linePrizes.forEach(linePrize => {
-                const lineClaimStatus = updatedRoom.prizeStatus[linePrize];
-                if (!lineClaimStatus || !lineClaimStatus.claimedBy.length || !lineClaimStatus.claimedBy.includes(currentUser.username)) { // check if not claimed or not by current user
-                    const getRowNumbers = (rowIndex: number, ticket: HousieTicketGrid): number[] => ticket[rowIndex].filter(num => num !== null) as number[];
-                    let lineNumbers: number[] = [];
-                    if (linePrize === PRIZE_TYPES.TOP_LINE) lineNumbers = getRowNumbers(0, winningTicketForFH);
-                    else if (linePrize === PRIZE_TYPES.MIDDLE_LINE) lineNumbers = getRowNumbers(1, winningTicketForFH);
-                    else if (linePrize === PRIZE_TYPES.BOTTOM_LINE) lineNumbers = getRowNumbers(2, winningTicketForFH);
-
-                    const isLineCompleteOnThisTicket = lineNumbers.length === 5 && lineNumbers.every(num => updatedRoom.calledNumbers.includes(num));
-                    if (isLineCompleteOnThisTicket) {
-                      autoAwardMsg += `\nAlso awarded ${linePrize}.`;
-                    }
-                }
-                });
-            } else {
-                console.warn("ticketIndexToClaimOn was out of bounds for auto-awarding lines with Full House.");
-            }
-            if (autoAwardMsg) localGameMessageAlert += autoAwardMsg;
-
             const fhFinalClaim = updatedRoom.prizeStatus[PRIZE_TYPES.FULL_HOUSE];
             let finalGameOverMsg = "🎉 Game Over!";
             if (fhFinalClaim && fhFinalClaim.claimedBy.length > 0) {
