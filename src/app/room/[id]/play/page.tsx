@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -82,6 +81,7 @@ export default function GameRoomPage() {
   
   const previousCurrentNumberRef = useRef<number | null>(null);
   const roomDataRef = useRef(roomData);
+  const previousPrizeStatusRef = useRef<Room['prizeStatus'] | null>(null);
 
   useEffect(() => {
     roomDataRef.current = roomData;
@@ -118,7 +118,42 @@ export default function GameRoomPage() {
         return;
       }
       const data: Room = await response.json();
+      
+      const oldPrizeStatus = previousPrizeStatusRef.current;
+      const newPrizeStatus = data.prizeStatus;
+
+      if (oldPrizeStatus && newPrizeStatus && !data.isGameOver) {
+          const prizes = Object.keys(newPrizeStatus) as PrizeType[];
+          for (const prize of prizes) {
+              const newClaim = newPrizeStatus[prize];
+              const oldClaim = oldPrizeStatus[prize];
+              
+              const newClaimants = newClaim?.claimedBy ?? [];
+              const oldClaimants = oldClaim?.claimedBy ?? [];
+
+              if (newClaimants.length > oldClaimants.length) {
+                  const newlyAddedClaimants = newClaimants.filter(id => !oldClaimants.includes(id));
+                  
+                  if (newlyAddedClaimants.length > 0) {
+                      const claimantNames = newlyAddedClaimants
+                          .map(id => {
+                              const player = data.players.find(p => p.id === id);
+                              if (player?.id === currentUser?.username) return "You";
+                              return player?.name || id;
+                           })
+                          .join(', ');
+                      
+                      const message = `🔔 ${claimantNames} claimed ${prize}!`;
+                      setGameMessage(message);
+                      
+                      break; 
+                  }
+              }
+          }
+      }
+      
       setRoomData(data);
+      previousPrizeStatusRef.current = data.prizeStatus;
 
       const me = data.players.find(p => p.id === currentUser.username);
       if (me && me.tickets) {
@@ -258,20 +293,16 @@ export default function GameRoomPage() {
         toast({ title: `${prizeType} Claim Invalid!`, description: result.message, variant: "destructive" });
       } else {
         const updatedRoom: Room = result;
-        setRoomData(updatedRoom); // This will trigger re-render with new prize status
+        setRoomData(updatedRoom); 
+        previousPrizeStatusRef.current = updatedRoom.prizeStatus;
 
         const claimStatus = updatedRoom.prizeStatus[prizeType];
-        let toastMessageAlert = `Claim for ${prizeType} processed successfully.`;
+        let toastMessageAlert = `Your claim for ${prizeType} has been submitted for validation.`;
 
         if (updatedRoom.isGameOver) {
             toastMessageAlert = "Full House claimed! The game is now over.";
         } else if (claimStatus?.claimedBy.includes(currentUser.username)) {
             toastMessageAlert = `You successfully claimed ${prizeType}!`;
-            setGameMessage(`🔔 You have claimed ${prizeType}!`);
-        } else if (claimStatus?.claimedBy.length) {
-            const claimants = claimStatus.claimedBy.map(id => updatedRoom.players.find(p => p.id === id)?.name || id);
-            toastMessageAlert = `${prizeType} was claimed by ${claimants.join(' & ')}.`;
-            setGameMessage(`🔔 ${toastMessageAlert}`);
         }
         
         toast({
