@@ -245,7 +245,7 @@ export function claimPrizeStore(
   roomId: string,
   playerId: string,
   prizeType: PrizeType,
-  ticketIndex: number
+  ticketIndex: number // This is now ignored for validation, but kept for API compatibility.
 ): Room | { error: string } {
   const room = rooms.get(roomId);
   if (!room) return { error: "Room not found." };
@@ -253,12 +253,8 @@ export function claimPrizeStore(
 
   const player = room.players.find(p => p.id === playerId);
   if (!player) return { error: "Player not found in this room." };
-  if (ticketIndex < 0 || ticketIndex >= player.tickets.length) return { error: "Invalid ticket index." };
-
-  const ticket = player.tickets[ticketIndex];
-
+  
   if (room.isGameOver && prizeType !== PRIZE_TYPES.FULL_HOUSE) {
-     // Allow Full House claim even if game over by other means (e.g. all numbers called)
     return { error: "Game is over. No more claims except potentially Full House if it's the last one." };
   }
   
@@ -271,15 +267,25 @@ export function claimPrizeStore(
     return { error: "Full House already claimed, no more claims for other prizes." };
   }
 
-  // Ensure housie library is correctly imported for Node.js environment
-  const housieLib = require('@/lib/housie'); // Using require for server-side .ts file
+  const housieLib = require('@/lib/housie');
   if (typeof housieLib.checkWinningCondition !== 'function') {
     console.error("housie.checkWinningCondition is not a function. Check lib/housie.ts exports.");
     return { error: "Internal server error: Prize validation unavailable." };
   }
-  const isValidClaim = housieLib.checkWinningCondition(ticket, room.calledNumbers, prizeType);
+  
+  let isValidClaim = false;
+  let winningTicket: HousieTicketGrid | null = null;
+  
+  // Server-authoritative check: iterate all player tickets.
+  for (const ticket of player.tickets) {
+    if (housieLib.checkWinningCondition(ticket, room.calledNumbers, prizeType)) {
+      isValidClaim = true;
+      winningTicket = ticket; // Store the winning ticket for Full House auto-claim logic
+      break; 
+    }
+  }
 
-  if (!isValidClaim) return { error: `Claim for ${prizeType} on ticket ${ticketIndex + 1} is not valid (Bogey!).` };
+  if (!isValidClaim) return { error: `Claim for ${prizeType} is not valid (Bogey!).` };
 
   // Initialize claim if it doesn't exist or claimedBy is not an array
   if (!room.prizeStatus[prizeType] || !Array.isArray(room.prizeStatus[prizeType]?.claimedBy)) {
@@ -289,7 +295,7 @@ export function claimPrizeStore(
   }
   room.prizeStatus[prizeType]!.claimedBy.push(playerId);
 
-  if (prizeType === PRIZE_TYPES.FULL_HOUSE) {
+  if (prizeType === PRIZE_TYPES.FULL_HOUSE && winningTicket) {
     room.isGameOver = true;
     console.log(`Room ${roomId}: Full House claimed by ${playerId}. Game Over.`);
     stopRoomTimer(roomId, "Full House claimed");
@@ -299,18 +305,14 @@ export function claimPrizeStore(
     for (const linePrize of linePrizesToAutoCheck) {
       const isLinePrizeClaimed = room.prizeStatus[linePrize]?.claimedBy?.length > 0;
       
-      // If the line prize has not been claimed by anyone yet...
       if (!isLinePrizeClaimed) {
-        // ...check if the current player's FH ticket also wins this line.
-        if (housieLib.checkWinningCondition(ticket, room.calledNumbers, linePrize)) {
-          // It's a valid win and unclaimed, so auto-award it.
-          if (!room.prizeStatus[linePrize]) { // Initialize if null
+        if (housieLib.checkWinningCondition(winningTicket, room.calledNumbers, linePrize)) {
+          if (!room.prizeStatus[linePrize]) { 
             room.prizeStatus[linePrize] = { claimedBy: [], timestamp: new Date() };
           }
           
           room.prizeStatus[linePrize]!.claimedBy.push(playerId);
           
-          // Use the Full House claim timestamp for consistency.
           if (room.prizeStatus[prizeType]?.timestamp) {
              room.prizeStatus[linePrize]!.timestamp = room.prizeStatus[prizeType]!.timestamp;
           }

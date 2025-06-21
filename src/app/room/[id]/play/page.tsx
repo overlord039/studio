@@ -228,46 +228,20 @@ export default function GameRoomPage() {
     });
   };
 
-  const handleClaimPrize = async (prizeType: PrizeType, ticketIndexToClaimOn: number) => {
-    if (!roomData || !currentUser || myTickets.length === 0) {
-      toast({ title: "Cannot Claim", description: "Room data missing, not logged in, or you have no tickets.", variant: "destructive" });
+  const handleClaimPrize = async (prizeType: PrizeType) => {
+    if (!roomData || !currentUser) {
+      toast({ title: "Cannot Claim", description: "Room data missing or not logged in.", variant: "destructive" });
       return;
     }
-
-    // Client-side pre-validation for Jaldi 5
-    if (prizeType === PRIZE_TYPES.JALDI_5) {
-      let jaldi5ValidOnAnyTicket = false;
-      let qualifyingTicketIndex = -1;
-      for (let i = 0; i < myTickets.length; i++) {
-        const ticketToCheck = myTickets[i];
-        let markedAndCalledCountOnThisTicket = 0;
-        for (let r = 0; r < ticketToCheck.length; r++) {
-          for (let c = 0; c < ticketToCheck[r].length; c++) {
-            const num = ticketToCheck[r][c];
-            if (num !== null && roomData.calledNumbers.includes(num) && markedNumbers.has(`${i}-${r}-${c}`)) {
-              markedAndCalledCountOnThisTicket++;
-            }
-          }
-        }
-        if (markedAndCalledCountOnThisTicket >= 5) {
-          jaldi5ValidOnAnyTicket = true;
-          qualifyingTicketIndex = i; // Use the specific ticket where Jaldi 5 is valid
-          break; 
-        }
-      }
-      if (!jaldi5ValidOnAnyTicket) {
-        toast({ title: `${prizeType} Claim Invalid!`, description: "You haven't marked 5 called numbers on any single ticket yet.", variant: "destructive" });
-        return;
-      }
-      ticketIndexToClaimOn = qualifyingTicketIndex; 
-    }
-
+    
+    // The ticketIndex is now mostly irrelevant for validation, but the API expects it. We can send 0.
+    const ticketIndex = 0;
 
     try {
       const response = await fetch(`/api/rooms/${roomId}/claim-prize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId: currentUser.username, prizeType, ticketIndex: ticketIndexToClaimOn }),
+        body: JSON.stringify({ playerId: currentUser.username, prizeType, ticketIndex }),
       });
 
       const result = await response.json();
@@ -523,16 +497,11 @@ export default function GameRoomPage() {
                       buttonText = `${prizeType} (Claimed by ${claimants})`;
                     }
                   }
-                  // For Jaldi 5, any ticket is fine, for lines/FH, the claim is typically on one specific ticket.
-                  // The backend handles which ticket is being claimed against for lines/FH via `ticketIndexToClaimOn`.
-                  // For Jaldi 5, the client-side pre-check determines if any ticket qualifies, and then `handleClaimPrize`
-                  // passes an appropriate ticket index (usually the first one that qualifies, or just 0 if any ticket is fine).
-                  const ticketIndexForClaim = 0; // Default for UI, actual index decided in handleClaimPrize or sent by API
-
+                  
                   return (
                     <Button
                       key={`${prizeType}-${prizeIdx}`}
-                      onClick={() => handleClaimPrize(prizeType, ticketIndexForClaim)}
+                      onClick={() => handleClaimPrize(prizeType)}
                       disabled={
                         roomData.isGameOver ||
                         hasPlayerClaimedThis ||
