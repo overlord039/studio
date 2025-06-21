@@ -102,20 +102,31 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; n
 
   if (existingPlayerIndex !== -1) {
     const existingPlayer = room.players[existingPlayerIndex];
-    existingPlayer.name = playerInfo.name; // Update name if needed
-    existingPlayer.isHost = playerInfo.id === room.host.id; // Ensure host status is correct
 
-    if (existingPlayer.tickets.length === 0 && numTicketsToGenerate > 0 && !room.isGameStarted) {
-      existingPlayer.tickets = Array.from({ length: numTicketsToGenerate }, () => generateImprovedHousieTicket());
-      console.log(`Player ${playerInfo.id} (existing) confirmed ${numTicketsToGenerate} tickets in room ${roomId}.`);
-    } else if (room.isGameStarted && existingPlayer.tickets.length === 0) {
-      return { error: "Game has already started. Cannot add tickets now." };
-    } else if (existingPlayer.tickets.length > 0 && !room.isGameStarted) {
-       console.log(`Player ${playerInfo.id} is already in room ${roomId} and has tickets. No new tickets assigned.`);
+    // If the game has started, do not allow any ticket changes.
+    if (room.isGameStarted) {
+        console.log(`Player ${playerInfo.id} reconnected to started game ${roomId}. No ticket changes allowed.`);
+        // Just ensure their name is up-to-date
+        existingPlayer.name = playerInfo.name;
+        rooms.set(roomId, room);
+        return room;
+    }
+
+    // If game has NOT started, allow ticket updates.
+    existingPlayer.name = playerInfo.name;
+    existingPlayer.isHost = playerInfo.id === room.host.id;
+
+    // Regenerate tickets only if the requested count is different from what they have.
+    if (existingPlayer.tickets.length !== numTicketsToGenerate) {
+        existingPlayer.tickets = Array.from({ length: numTicketsToGenerate }, () => generateImprovedHousieTicket());
+        console.log(`Player ${playerInfo.id} in room ${roomId} updated tickets to ${numTicketsToGenerate}.`);
+    } else {
+        console.log(`Player ${playerInfo.id} re-confirmed ${numTicketsToGenerate} tickets in room ${roomId}. No changes.`);
     }
   } else {
+    // New player joining
     if (room.isGameStarted) {
-      return { error: "Game has already started. Cannot join as a new player with tickets." };
+      return { error: "Game has already started. Cannot join as a new player." };
     }
     if (room.players.length >= room.settings.lobbySize) {
       return { error: "Room is full." };
