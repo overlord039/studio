@@ -73,6 +73,8 @@ export default function GameRoomPage() {
   const [myTickets, setMyTickets] = useState<HousieTicketGrid[]>([]);
   const [markedNumbers, setMarkedNumbers] = useState<Set<string>>(new Set());
   const [gameMessage, setGameMessage] = useState<string | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isBoardMinimized, setIsBoardMinimized] = useState(true);
 
   const [isPrizesStatusMinimized, setIsPrizesStatusMinimized] = useState(true);
   const [isPrizeInfoMinimized, setIsPrizeInfoMinimized] = useState(true);
@@ -192,7 +194,7 @@ export default function GameRoomPage() {
   // Announce new numbers
   useEffect(() => {
     if (roomData && roomData.currentNumber !== null && roomData.currentNumber !== previousCurrentNumberRef.current) {
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
+      if (!isMuted && typeof window !== 'undefined' && window.speechSynthesis) {
         const utterance = new SpeechSynthesisUtterance(String(roomData.currentNumber));
         window.speechSynthesis.speak(utterance);
         
@@ -202,7 +204,7 @@ export default function GameRoomPage() {
       }
       previousCurrentNumberRef.current = roomData.currentNumber;
     }
-  }, [roomData?.currentNumber]);
+  }, [roomData?.currentNumber, isMuted]);
 
 
   const handleNumberClick = (ticketIndex: number, numberValue: number, rowIndex: number, colIndex: number) => {
@@ -434,8 +436,17 @@ export default function GameRoomPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <div className="space-y-4 lg:col-span-1">
-          <MemoizedCalledNumberDisplay currentNumber={roomData.currentNumber} />
-          <MemoizedLiveNumberBoard calledNumbers={roomData.calledNumbers} currentNumber={roomData.currentNumber} />
+          <MemoizedCalledNumberDisplay 
+            currentNumber={roomData.currentNumber} 
+            isMuted={isMuted}
+            onToggleMute={() => setIsMuted(prev => !prev)}
+          />
+          <MemoizedLiveNumberBoard 
+            calledNumbers={roomData.calledNumbers} 
+            currentNumber={roomData.currentNumber}
+            isMinimized={isBoardMinimized}
+            onToggleMinimize={() => setIsBoardMinimized(prev => !prev)}
+          />
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg flex items-center"><Award className="mr-2 h-5 w-5 text-primary" />Prizes Status</CardTitle>
