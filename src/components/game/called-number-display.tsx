@@ -1,9 +1,8 @@
-
 "use client";
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Volume2, VolumeX } from 'lucide-react'; // Changed Mic to Volume2
+import { Volume2, VolumeX } from 'lucide-react';
 
 interface CalledNumberDisplayProps {
   currentNumber: number | null;
@@ -17,10 +16,7 @@ export default function CalledNumberDisplay({ currentNumber, isMuted, onToggleMu
       <CardContent className="p-4 text-center relative">
         <p className="text-sm uppercase tracking-wider mb-2">Called Number</p>
         {currentNumber !== null ? (
-          <div className="flex items-center justify-center">
-            <Volume2 className="h-5 w-5 mr-2 opacity-80" /> {/* Changed Mic to Volume2, adjusted size and margin */}
-            <p className="text-7xl font-bold">{currentNumber}</p>
-          </div>
+          <p className="text-7xl font-bold">{currentNumber}</p>
         ) : (
           <p className="text-4xl font-semibold text-primary-foreground/70">-</p>
         )}
