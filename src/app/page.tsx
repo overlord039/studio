@@ -191,7 +191,7 @@ export default function HomePage() {
           </CardHeader>
           <CardContent className="text-center">
             <Link href="/prize-calculator" passHref>
-              <Button className="w-full" size="lg" variant="secondary">
+              <Button className="w-full" size="lg">
                 Open Calculator
               </Button>
             </Link>
