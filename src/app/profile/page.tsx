@@ -18,8 +18,7 @@ const defaultUserStats = {
     topLine: 15,
     middleLine: 12,
     bottomLine: 10,
-    fullHouse1st: 8,
-    fullHouse2nd: 5, // Note: PRIZE_TYPES uses "Full House", not "fullHouse1st/2nd"
+    fullHouse: 13,
   },
   currentWinningStreak: 3,
   winRate: 45, // Percentage
@@ -150,7 +149,7 @@ function PrizeStatCard({ prizeName, count }: PrizeStatCardProps) {
 function formatPrizeName(prizeKey: string): string {
   // Adjusted to better match PRIZE_TYPES format (e.g. "Jaldi 5", "Full House")
   if (prizeKey === "jaldi5") return "Jaldi 5";
-  if (prizeKey === "fullHouse1st" || prizeKey === "fullHouse2nd") return "Full House"; // Consolidate FH display
+  if (prizeKey === "fullHouse") return "Full House";
 
   return prizeKey
     .replace(/([A-Z])/g, ' $1') // Add space before uppercase letters
