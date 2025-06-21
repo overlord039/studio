@@ -69,11 +69,13 @@ export default function LobbyPage() {
       const data: Room = await response.json();
       setRoomData(data);
       
-      const userInRoomData = data.players.find(p => p.id === currentUser.username);
-      if (userInRoomData) {
-        setSelectedTicketsToBuy(userInRoomData.tickets.length > 0 ? userInRoomData.tickets.length : data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
-      } else { 
-        setSelectedTicketsToBuy(data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
+      if (isInitialLoad) {
+        const userInRoomData = data.players.find(p => p.id === currentUser.username);
+        if (userInRoomData) {
+          setSelectedTicketsToBuy(userInRoomData.tickets.length > 0 ? userInRoomData.tickets.length : data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
+        } else { 
+          setSelectedTicketsToBuy(data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
+        }
       }
 
       if (data.isGameStarted && previousIsGameStartedRef.current === false && !isCurrentUserHost) {
