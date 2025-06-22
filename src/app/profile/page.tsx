@@ -1,11 +1,10 @@
-
 "use client";
 
 import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Award, BarChart2, Percent, Crown, TrendingUp, AlertTriangle } from "lucide-react";
+import { BarChart2, Percent, Crown, TrendingUp, AlertTriangle } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -42,14 +41,6 @@ export default function ProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
               {Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-24 rounded-lg" />)}
             </div>
-          </CardContent>
-        </Card>
-        <Card className="shadow-xl">
-          <CardHeader>
-            <Skeleton className="h-8 w-1/3" />
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
           </CardContent>
         </Card>
       </div>
@@ -98,17 +89,6 @@ export default function ProfilePage() {
           </div>
         </CardContent>
       </Card>
-
-      <Card className="shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-2xl font-semibold flex items-center"><Award className="mr-2 text-accent" /> Wins Breakdown</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Object.entries(userStats.matchesWon).map(([prize, count]) => (
-            <PrizeStatCard key={prize} prizeName={formatPrizeName(prize)} count={count} />
-          ))}
-        </CardContent>
-      </Card>
     </div>
   );
 }
@@ -131,29 +111,4 @@ function StatCard({ icon, title, value }: StatCardProps) {
       </div>
     </Card>
   );
-}
-
-interface PrizeStatCardProps {
-  prizeName: string;
-  count: number;
-}
-function PrizeStatCard({ prizeName, count }: PrizeStatCardProps) {
-    return (
-      <div className="p-4 bg-background rounded-lg border border-border flex justify-between items-center">
-        <span className="font-medium text-foreground/80">{prizeName}</span>
-        <span className="font-bold text-lg text-primary">{count}</span>
-      </div>
-    );
-}
-
-function formatPrizeName(prizeKey: string): string {
-  // Adjusted to better match PRIZE_TYPES format (e.g. "Jaldi 5", "Full House")
-  if (prizeKey === "jaldi5") return "Jaldi 5";
-  if (prizeKey === "fullHouse") return "Full House";
-
-  return prizeKey
-    .replace(/([A-Z])/g, ' $1') // Add space before uppercase letters
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
 }
