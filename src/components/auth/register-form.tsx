@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -53,7 +52,7 @@ export default function RegisterForm() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Mock registration
-    login({ username: values.username });
+    login({ username: values.username, email: values.email });
 
     toast({
       title: "Registration Successful (Mock)",

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,7 +47,7 @@ export default function LoginForm() {
     // Mock login: In a real app, you'd verify credentials with a backend.
     // For this mock, we'll use the email (or part of it) as the username.
     const username = values.email.split('@')[0]; 
-    login({ username });
+    login({ username, email: values.email });
 
     toast({
       title: "Login Successful (Mock)",

@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertTriangle, Pencil, Calendar, Hash, ClipboardCopy } from "lucide-react";
+import { AlertTriangle, Pencil, Calendar, Hash, ClipboardCopy, Mail } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -39,6 +39,7 @@ export default function ProfilePage() {
             <div className="space-y-2">
               <Skeleton className="h-8 w-40" />
               <Skeleton className="h-5 w-48" />
+              <Skeleton className="h-5 w-32" />
             </div>
           </CardHeader>
           <CardContent className="flex flex-col items-center space-y-2">
@@ -62,8 +63,7 @@ export default function ProfilePage() {
     );
   }
 
-  const username = currentUser.username;
-  const avatarFallback = username.substring(0, 2).toUpperCase();
+  const avatarFallback = currentUser.username.substring(0, 2).toUpperCase();
   const joinDateFormatted = new Date(userStats.joinDate).toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
@@ -80,19 +80,24 @@ export default function ProfilePage() {
       <Card className="shadow-xl">
         <CardHeader className="flex flex-col items-center space-y-4 text-center">
           <Avatar className="h-24 w-24 ring-4 ring-primary ring-offset-2 ring-offset-background">
-            <AvatarImage src={`https://placehold.co/100x100.png?text=${avatarFallback}`} alt={username} data-ai-hint="profile avatar" />
+            <AvatarImage src={`https://placehold.co/100x100.png?text=${avatarFallback}`} alt={currentUser.username} data-ai-hint="profile avatar" />
             <AvatarFallback>{avatarFallback}</AvatarFallback>
           </Avatar>
           <div className="relative">
-            <CardTitle className="text-4xl font-bold flex items-center gap-2">
-              {username}
+            <CardTitle className="text-4xl font-bold flex items-center justify-center gap-2">
+              {currentUser.username}
               <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
                 <Pencil className="h-4 w-4" />
               </Button>
             </CardTitle>
-            <CardDescription className="flex items-center justify-center gap-1 text-base">
-              <Calendar className="h-4 w-4" /> Joined on: {joinDateFormatted}
-            </CardDescription>
+            <div className="mt-2 space-y-1">
+                <CardDescription className="flex items-center justify-center gap-2 text-base text-muted-foreground">
+                    <Mail className="h-4 w-4" /> {currentUser.email}
+                </CardDescription>
+                <CardDescription className="flex items-center justify-center gap-2 text-sm">
+                    <Calendar className="h-4 w-4" /> Joined on: {joinDateFormatted}
+                </CardDescription>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="flex flex-col items-center space-y-2">

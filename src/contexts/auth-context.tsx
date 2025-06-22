@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { ReactNode } from 'react';
@@ -7,6 +6,7 @@ import { useRouter } from 'next/navigation';
 
 interface User {
   username: string;
+  email: string;
   // Add other user properties here if needed
 }
 
