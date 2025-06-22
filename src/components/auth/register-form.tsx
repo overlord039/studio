@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -56,7 +55,7 @@ export default function RegisterForm() {
     login({ username: values.username, email: values.email });
 
     toast({
-      title: "Registration Successful (Mock)",
+      title: "Registration Successful",
       description: `Welcome, ${values.username}! You are now logged in.`,
     });
     router.push('/profile');

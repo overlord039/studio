@@ -50,7 +50,7 @@ export default function LoginForm() {
     login({ username, email: values.email });
 
     toast({
-      title: "Login Successful (Mock)",
+      title: "Login Successful",
       description: `Welcome back, ${username}!`,
     });
     router.push('/profile'); 
