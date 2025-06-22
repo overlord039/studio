@@ -109,7 +109,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-        <div className="bg-red-600 text-white text-center py-4 rounded-lg shadow-lg relative overflow-hidden">
+        <div className="bg-primary text-primary-foreground text-center py-4 rounded-lg shadow-lg relative overflow-hidden">
             <h1 className="text-4xl font-extrabold tracking-wider" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>My Profile</h1>
         </div>
 
