@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -491,24 +492,6 @@ export default function GameRoomPage() {
             isMinimized={isBoardMinimized}
             onToggleMinimize={() => setIsBoardMinimized(prev => !prev)}
           />
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg flex items-center"><Award className="mr-2 h-5 w-5 text-primary" />Prizes Status</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setIsPrizesStatusMinimized(!isPrizesStatusMinimized)} aria-label={isPrizesStatusMinimized ? "Expand Prizes Status" : "Minimize Prizes Status"}>
-                {isPrizesStatusMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
-              </Button>
-            </CardHeader>
-            {!isPrizesStatusMinimized && (
-              <CardContent>
-                <MemoizedPrizeStatusList
-                    prizeStatus={roomData.prizeStatus}
-                    prizesForFormat={prizesForFormat}
-                    players={roomData.players}
-                    isLoading={isLoading} 
-                  />
-              </CardContent>
-            )}
-          </Card>
         </div>
 
         <div className="lg:col-span-2">
@@ -625,6 +608,24 @@ export default function GameRoomPage() {
                     </ul>
                   </>
                 )}
+              </CardContent>
+            )}
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg flex items-center"><Award className="mr-2 h-5 w-5 text-primary" />Prizes Status</CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setIsPrizesStatusMinimized(!isPrizesStatusMinimized)} aria-label={isPrizesStatusMinimized ? "Expand Prizes Status" : "Minimize Prizes Status"}>
+                {isPrizesStatusMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
+              </Button>
+            </CardHeader>
+            {!isPrizesStatusMinimized && (
+              <CardContent>
+                <MemoizedPrizeStatusList
+                    prizeStatus={roomData.prizeStatus}
+                    prizesForFormat={prizesForFormat}
+                    players={roomData.players}
+                    isLoading={isLoading} 
+                  />
               </CardContent>
             )}
           </Card>
