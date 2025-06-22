@@ -2,13 +2,12 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertTriangle, Calendar, Mail } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from "@/hooks/use-toast";
 
 // Mock data - replace with actual data fetching for a logged-in user
 const userStats = {
@@ -18,21 +17,29 @@ const userStats = {
 
 export default function ProfilePage() {
   const { currentUser, loading } = useAuth();
-  const { toast } = useToast();
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-16 w-full rounded-lg" /> 
-        <Card className="shadow-lg">
-          <CardHeader className="flex flex-col items-center space-y-4 text-center">
-            <Skeleton className="h-24 w-24 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-40" />
-              <Skeleton className="h-5 w-48" />
+      <div className="animate-fade-in max-w-lg mx-auto">
+        <Card className="shadow-xl overflow-hidden">
+          <div className="bg-muted p-8">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <Skeleton className="h-32 w-32 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-48" />
+              </div>
+            </div>
+          </div>
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-5 w-5 rounded-full" />
               <Skeleton className="h-5 w-32" />
             </div>
-          </CardHeader>
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-5 w-5 rounded-full" />
+              <Skeleton className="h-5 w-40" />
+            </div>
+          </CardContent>
         </Card>
       </div>
     );
@@ -43,7 +50,7 @@ export default function ProfilePage() {
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
         <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
         <h2 className="text-2xl font-semibold mb-2">Access Denied</h2>
-        <p className="text-muted-foreground mb-6">Please log in to view your profile and game statistics.</p>
+        <p className="text-muted-foreground mb-6">Please log in to view your profile.</p>
         <Link href="/auth/login" passHref>
           <Button size="lg">Login</Button>
         </Link>
@@ -60,32 +67,32 @@ export default function ProfilePage() {
 
 
   return (
-    <div className="space-y-6 animate-fade-in">
-        <div className="bg-primary text-primary-foreground text-center py-4 rounded-lg shadow-lg relative overflow-hidden">
-            <h1 className="text-4xl font-extrabold tracking-wider" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>My Profile</h1>
-        </div>
-
-      <Card className="shadow-xl">
-        <CardHeader className="flex flex-col items-center space-y-4 text-center pb-6">
-          <Avatar className="h-24 w-24 ring-4 ring-primary ring-offset-2 ring-offset-background">
-            <AvatarImage src={`https://placehold.co/100x100.png?text=${avatarFallback}`} alt={currentUser.username} data-ai-hint="profile avatar" />
-            <AvatarFallback>{avatarFallback}</AvatarFallback>
-          </Avatar>
-          <div className="relative">
-            <CardTitle className="text-4xl font-bold flex items-center justify-center gap-2">
-              {currentUser.username}
-            </CardTitle>
-            <div className="mt-2 space-y-1">
-                <CardDescription className="flex items-center justify-center gap-2 text-base text-muted-foreground">
-                    <Mail className="h-4 w-4" /> {currentUser.email}
-                </CardDescription>
-                <CardDescription className="flex items-center justify-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4" /> Joined on: {joinDateFormatted}
-                </CardDescription>
+    <div className="animate-fade-in max-w-lg mx-auto">
+        <Card className="shadow-xl overflow-hidden border-2 border-primary/20">
+            <div className="bg-gradient-to-br from-primary/10 to-secondary/10 p-8">
+                <div className="flex flex-col items-center gap-4 text-center">
+                     <Avatar className="h-32 w-32 border-4 border-background shadow-lg">
+                        <AvatarImage src={`https://placehold.co/128x128.png?text=${avatarFallback}`} alt={currentUser.username} data-ai-hint="profile avatar"/>
+                        <AvatarFallback className="text-4xl">{avatarFallback}</AvatarFallback>
+                    </Avatar>
+                    <div className="space-y-1">
+                        <h1 className="text-4xl font-bold">{currentUser.username}</h1>
+                    </div>
+                </div>
             </div>
-          </div>
-        </CardHeader>
-      </Card>
+            <CardContent className="p-6 space-y-4 bg-card">
+                 <div className="flex items-center gap-3 text-base">
+                    <Mail className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Email:</span>
+                    <span className="font-medium">{currentUser.email}</span>
+                </div>
+                <div className="flex items-center gap-3 text-base">
+                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                     <span className="text-muted-foreground">Joined:</span>
+                    <span className="font-medium">{joinDateFormatted}</span>
+                </div>
+            </CardContent>
+        </Card>
     </div>
   );
 }
