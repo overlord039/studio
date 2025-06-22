@@ -126,23 +126,6 @@ export default function HomePage() {
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
         <Card className="shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 bg-card/80 backdrop-blur-sm border border-border/30 rounded-lg overflow-hidden">
           <CardHeader className="text-center items-center">
-            <div className="p-3 bg-blue-500/20 rounded-full mb-4 inline-block">
-              <Speaker className="h-10 w-10 text-blue-600" />
-            </div>
-            <CardTitle className="text-2xl font-bold">Number Caller</CardTitle>
-            <CardDescription>Practice calling or host a manual game.</CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <Link href="/number-caller" passHref>
-              <Button className="w-full" size="lg">
-                Open Caller
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-        
-        <Card className="shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 bg-card/80 backdrop-blur-sm border border-border/30 rounded-lg overflow-hidden">
-          <CardHeader className="text-center items-center">
             <div className="p-3 bg-primary/20 rounded-full mb-4 inline-block">
               <UsersRound className="h-10 w-10 text-primary" />
             </div>
@@ -180,6 +163,23 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
+        <Card className="shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 bg-card/80 backdrop-blur-sm border border-border/30 rounded-lg overflow-hidden">
+          <CardHeader className="text-center items-center">
+            <div className="p-3 bg-blue-500/20 rounded-full mb-4 inline-block">
+              <Speaker className="h-10 w-10 text-blue-600" />
+            </div>
+            <CardTitle className="text-2xl font-bold">Number Caller</CardTitle>
+            <CardDescription>Practice calling or host a manual game.</CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <Link href="/number-caller" passHref>
+              <Button className="w-full" size="lg">
+                Open Caller
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+        
         <Card className="shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 bg-card/80 backdrop-blur-sm border border-border/30 rounded-lg overflow-hidden">
           <CardHeader className="text-center items-center">
             <div className="p-3 bg-yellow-500/20 rounded-full mb-4 inline-block">
