@@ -1,48 +1,86 @@
+
 "use client";
 
 import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BarChart2, Percent, Crown, TrendingUp, AlertTriangle } from "lucide-react";
+import { AlertTriangle, Pencil, Calendar, Hash, ClipboardCopy, Ticket } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from "@/hooks/use-toast";
+import { cn } from '@/lib/utils';
 
 // Mock data - replace with actual data fetching for a logged-in user
-const defaultUserStats = {
-  totalMatchesPlayed: 150,
-  matchesWon: {
-    jaldi5: 25,
-    topLine: 15,
-    middleLine: 12,
-    bottomLine: 10,
-    fullHouse: 13,
-  },
-  currentWinningStreak: 3,
-  winRate: 45, // Percentage
+const userStats = {
+  totalGames: 150,
+  jaldi5Wins: 25,
+  firstRowWins: 15,
+  secondRowWins: 12,
+  lastRowWins: 10,
+  fullHouseWins: 13,
+  joinDate: "2024-05-20T12:00:00.000Z",
+  playerId: "1F7666CD4199D647",
 };
+
+// Stat Card Component
+function StatDisplayCard({
+  icon,
+  label,
+  value,
+  className
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number | string;
+  className?: string;
+}) {
+  return (
+    <Card className={cn("p-4 flex flex-col items-center justify-center text-center shadow-lg transform transition-all hover:scale-105 hover:shadow-xl bg-card/80 backdrop-blur-sm border border-border/30", className)}>
+      <div className="text-primary mb-2">
+        {React.cloneElement(icon as React.ReactElement, { className: "h-8 w-8" })}
+      </div>
+      <p className="text-3xl font-bold">{value}</p>
+      <p className="text-sm text-muted-foreground">{label}</p>
+    </Card>
+  );
+}
+
 
 export default function ProfilePage() {
   const { currentUser, loading } = useAuth();
+  const { toast } = useToast();
+
+  const handleCopyId = () => {
+    navigator.clipboard.writeText(userStats.playerId);
+    toast({
+      title: "Player ID Copied!",
+      description: "You can now share your ID with friends.",
+    });
+  };
 
   if (loading) {
     return (
-      <div className="space-y-8">
-        <Card className="shadow-xl">
-          <CardHeader className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left">
-            <Skeleton className="h-24 w-24 rounded-full mb-4 sm:mb-0 sm:mr-6" />
-            <div>
-              <Skeleton className="h-10 w-48 mb-2" />
-              <Skeleton className="h-6 w-64" />
+      <div className="space-y-6">
+        <Skeleton className="h-16 w-full rounded-lg" /> 
+        <Card className="shadow-lg">
+          <CardHeader className="flex flex-col items-center space-y-4 text-center">
+            <Skeleton className="h-24 w-24 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-40" />
+              <Skeleton className="h-5 w-48" />
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-              {Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-24 rounded-lg" />)}
-            </div>
+          <CardContent className="flex flex-col items-center space-y-2">
+            <Skeleton className="h-6 w-64" />
           </CardContent>
         </Card>
+
+        <Skeleton className="h-8 w-32 mx-auto mt-8 mb-4" />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {Array(6).fill(0).map((_, i) => <Skeleton key={i} className="h-32 rounded-lg" />)}
+        </div>
       </div>
     );
   }
@@ -60,55 +98,62 @@ export default function ProfilePage() {
     );
   }
 
-  // Use defaultUserStats for now, in a real app, this would be fetched for currentUser
-  const userStats = defaultUserStats; 
-  const totalWins = Object.values(userStats.matchesWon).reduce((sum, count) => sum + count, 0);
   const username = currentUser.username;
   const avatarFallback = username.substring(0, 2).toUpperCase();
+  const joinDateFormatted = new Date(userStats.joinDate).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  }).replace(/ /g, '-');
+
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 animate-fade-in">
+        <div className="bg-red-600 text-white text-center py-4 rounded-lg shadow-lg relative overflow-hidden">
+            <h1 className="text-4xl font-extrabold tracking-wider" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>My Profile</h1>
+        </div>
+
       <Card className="shadow-xl">
-        <CardHeader className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left">
-          <Avatar className="h-24 w-24 mb-4 sm:mb-0 sm:mr-6 ring-4 ring-primary ring-offset-2 ring-offset-background">
-            {/* In a real app, user.avatarUrl would come from currentUser */}
+        <CardHeader className="flex flex-col items-center space-y-4 text-center">
+          <Avatar className="h-24 w-24 ring-4 ring-primary ring-offset-2 ring-offset-background">
             <AvatarImage src={`https://placehold.co/100x100.png?text=${avatarFallback}`} alt={username} data-ai-hint="profile avatar" />
             <AvatarFallback>{avatarFallback}</AvatarFallback>
           </Avatar>
-          <div>
-            <CardTitle className="text-4xl font-bold">{username}</CardTitle>
-            <CardDescription className="text-lg">Your Housie Journey and Achievements</CardDescription>
+          <div className="relative">
+            <CardTitle className="text-4xl font-bold flex items-center gap-2">
+              {username}
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </CardTitle>
+            <CardDescription className="flex items-center justify-center gap-1 text-base">
+              <Calendar className="h-4 w-4" /> Joined on: {joinDateFormatted}
+            </CardDescription>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-            <StatCard icon={<BarChart2 />} title="Total Matches Played" value={userStats.totalMatchesPlayed.toString()} />
-            <StatCard icon={<Crown />} title="Total Wins" value={totalWins.toString()} />
-            <StatCard icon={<Percent />} title="Win Rate" value={`${userStats.winRate}%`} />
-            <StatCard icon={<TrendingUp />} title="Current Winning Streak" value={userStats.currentWinningStreak.toString()} />
-          </div>
+        <CardContent className="flex flex-col items-center space-y-2">
+            <div className="flex items-center gap-2 rounded-md bg-secondary p-2 border">
+                <Hash className="h-4 w-4 text-muted-foreground" />
+                <span className="font-mono text-sm">Player ID: {userStats.playerId}</span>
+                <Button variant="ghost" size="icon" onClick={handleCopyId} className="h-7 w-7">
+                    <ClipboardCopy className="h-4 w-4" />
+                </Button>
+            </div>
         </CardContent>
       </Card>
+      
+       <div className="mt-8">
+          <h2 className="text-2xl font-bold mb-4 text-center">My Stats</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <StatDisplayCard icon={<Ticket/>} label="Total Games" value={userStats.totalGames} />
+            <StatDisplayCard icon={<Ticket/>} label="Jaldi 5 Wins" value={userStats.jaldi5Wins} />
+            <StatDisplayCard icon={<Ticket/>} label="First Row Wins" value={userStats.firstRowWins} />
+            <StatDisplayCard icon={<Ticket/>} label="Second Row Wins" value={userStats.secondRowWins} />
+            <StatDisplayCard icon={<Ticket/>} label="Last Row Wins" value={userStats.lastRowWins} />
+            <StatDisplayCard icon={<Ticket/>} label="Full House Wins" value={userStats.fullHouseWins} />
+          </div>
+        </div>
+
     </div>
-  );
-}
-
-interface StatCardProps {
-  icon: React.ReactNode;
-  title: string;
-  value: string;
-}
-
-function StatCard({ icon, title, value }: StatCardProps) {
-  return (
-    <Card className="bg-secondary/30 p-4 rounded-lg flex items-center space-x-4">
-      <div className="text-primary p-3 bg-primary/10 rounded-full">
-        {React.cloneElement(icon as React.ReactElement, { className: "h-6 w-6" })}
-      </div>
-      <div>
-        <p className="text-sm text-muted-foreground">{title}</p>
-        <p className="text-2xl font-bold">{value}</p>
-      </div>
-    </Card>
   );
 }
