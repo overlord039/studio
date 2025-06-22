@@ -5,47 +5,17 @@ import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertTriangle, Pencil, Calendar, Hash, ClipboardCopy, Ticket } from "lucide-react";
+import { AlertTriangle, Pencil, Calendar, Hash, ClipboardCopy } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from "@/hooks/use-toast";
-import { cn } from '@/lib/utils';
 
 // Mock data - replace with actual data fetching for a logged-in user
 const userStats = {
-  totalGames: 150,
-  jaldi5Wins: 25,
-  firstRowWins: 15,
-  secondRowWins: 12,
-  lastRowWins: 10,
-  fullHouseWins: 13,
   joinDate: "2024-05-20T12:00:00.000Z",
   playerId: "1F7666CD4199D647",
 };
-
-// Stat Card Component
-function StatDisplayCard({
-  icon,
-  label,
-  value,
-  className
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number | string;
-  className?: string;
-}) {
-  return (
-    <Card className={cn("p-4 flex flex-col items-center justify-center text-center shadow-lg transform transition-all hover:scale-105 hover:shadow-xl bg-card/80 backdrop-blur-sm border border-border/30", className)}>
-      <div className="text-primary mb-2">
-        {React.cloneElement(icon as React.ReactElement, { className: "h-8 w-8" })}
-      </div>
-      <p className="text-3xl font-bold">{value}</p>
-      <p className="text-sm text-muted-foreground">{label}</p>
-    </Card>
-  );
-}
 
 
 export default function ProfilePage() {
@@ -76,11 +46,6 @@ export default function ProfilePage() {
             <Skeleton className="h-6 w-64" />
           </CardContent>
         </Card>
-
-        <Skeleton className="h-8 w-32 mx-auto mt-8 mb-4" />
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {Array(6).fill(0).map((_, i) => <Skeleton key={i} className="h-32 rounded-lg" />)}
-        </div>
       </div>
     );
   }
@@ -141,19 +106,6 @@ export default function ProfilePage() {
             </div>
         </CardContent>
       </Card>
-      
-       <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-4 text-center">My Stats</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <StatDisplayCard icon={<Ticket/>} label="Total Games" value={userStats.totalGames} />
-            <StatDisplayCard icon={<Ticket/>} label="Jaldi 5 Wins" value={userStats.jaldi5Wins} />
-            <StatDisplayCard icon={<Ticket/>} label="First Row Wins" value={userStats.firstRowWins} />
-            <StatDisplayCard icon={<Ticket/>} label="Second Row Wins" value={userStats.secondRowWins} />
-            <StatDisplayCard icon={<Ticket/>} label="Last Row Wins" value={userStats.lastRowWins} />
-            <StatDisplayCard icon={<Ticket/>} label="Full House Wins" value={userStats.fullHouseWins} />
-          </div>
-        </div>
-
     </div>
   );
 }
