@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -111,7 +110,7 @@ export default function HomePage() {
                 </Button>
               </Link>
               <Link href="/auth/register" passHref>
-                <Button size="lg" variant="outline" className="text-lg px-8 py-3 border-white text-white hover:bg-primary-foreground hover:text-primary transform transition-all hover:scale-105 shadow-md hover:shadow-lg">
+                <Button size="lg" variant="secondary" className="text-lg px-8 py-3 transform transition-all hover:scale-105 shadow-md hover:shadow-lg">
                   <UserPlus className="mr-2 h-5 w-5" /> Register
                 </Button>
               </Link>
