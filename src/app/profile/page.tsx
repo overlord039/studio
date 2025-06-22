@@ -2,9 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertTriangle, Calendar, Hash, ClipboardCopy, Mail } from "lucide-react";
+import { AlertTriangle, Calendar, Mail } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,23 +13,12 @@ import { useToast } from "@/hooks/use-toast";
 // Mock data - replace with actual data fetching for a logged-in user
 const userStats = {
   joinDate: "2024-05-20T12:00:00.000Z",
-  playerId: "1F7666CD4199D647",
 };
 
 
 export default function ProfilePage() {
   const { currentUser, loading } = useAuth();
   const { toast } = useToast();
-
-  const handleCopyId = () => {
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(userStats.playerId);
-      toast({
-        title: "Player ID Copied!",
-        description: "You can now share your ID with friends.",
-      });
-    }
-  };
 
   if (loading) {
     return (
@@ -44,9 +33,6 @@ export default function ProfilePage() {
               <Skeleton className="h-5 w-32" />
             </div>
           </CardHeader>
-          <CardContent className="flex flex-col items-center space-y-2">
-            <Skeleton className="h-6 w-64" />
-          </CardContent>
         </Card>
       </div>
     );
@@ -80,7 +66,7 @@ export default function ProfilePage() {
         </div>
 
       <Card className="shadow-xl">
-        <CardHeader className="flex flex-col items-center space-y-4 text-center">
+        <CardHeader className="flex flex-col items-center space-y-4 text-center pb-6">
           <Avatar className="h-24 w-24 ring-4 ring-primary ring-offset-2 ring-offset-background">
             <AvatarImage src={`https://placehold.co/100x100.png?text=${avatarFallback}`} alt={currentUser.username} data-ai-hint="profile avatar" />
             <AvatarFallback>{avatarFallback}</AvatarFallback>
@@ -99,15 +85,6 @@ export default function ProfilePage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="flex flex-col items-center space-y-2">
-            <div className="flex items-center gap-2 rounded-md bg-secondary p-2 border">
-                <Hash className="h-4 w-4 text-muted-foreground" />
-                <span className="font-mono text-sm">Player ID: {userStats.playerId}</span>
-                <Button variant="ghost" size="icon" onClick={handleCopyId} className="h-7 w-7">
-                    <ClipboardCopy className="h-4 w-4" />
-                </Button>
-            </div>
-        </CardContent>
       </Card>
     </div>
   );
