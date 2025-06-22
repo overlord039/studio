@@ -1,11 +1,10 @@
-
 "use client";
 
 import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertTriangle, Pencil, Calendar, Hash, ClipboardCopy, Mail } from "lucide-react";
+import { AlertTriangle, Calendar, Hash, ClipboardCopy, Mail } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,11 +22,13 @@ export default function ProfilePage() {
   const { toast } = useToast();
 
   const handleCopyId = () => {
-    navigator.clipboard.writeText(userStats.playerId);
-    toast({
-      title: "Player ID Copied!",
-      description: "You can now share your ID with friends.",
-    });
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(userStats.playerId);
+      toast({
+        title: "Player ID Copied!",
+        description: "You can now share your ID with friends.",
+      });
+    }
   };
 
   if (loading) {
@@ -87,9 +88,6 @@ export default function ProfilePage() {
           <div className="relative">
             <CardTitle className="text-4xl font-bold flex items-center justify-center gap-2">
               {currentUser.username}
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                <Pencil className="h-4 w-4" />
-              </Button>
             </CardTitle>
             <div className="mt-2 space-y-1">
                 <CardDescription className="flex items-center justify-center gap-2 text-base text-muted-foreground">
