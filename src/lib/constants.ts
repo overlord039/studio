@@ -33,10 +33,10 @@ export const PRIZE_DEFINITIONS: Record<PrizeFormat, PrizeType[]> = {
 export const PRIZE_DISTRIBUTION_PERCENTAGES: Record<PrizeFormat, Record<PrizeType, number>> = {
   "Format 1": {
     [PRIZE_TYPES.JALDI_5]: 10,
-    [PRIZE_TYPES.TOP_LINE]: 15,
-    [PRIZE_TYPES.MIDDLE_LINE]: 15,
-    [PRIZE_TYPES.BOTTOM_LINE]: 15,
-    [PRIZE_TYPES.FULL_HOUSE]: 45,
+    [PRIZE_TYPES.TOP_LINE]: 20,
+    [PRIZE_TYPES.MIDDLE_LINE]: 20,
+    [PRIZE_TYPES.BOTTOM_LINE]: 20,
+    [PRIZE_TYPES.FULL_HOUSE]: 30,
   },
 };
 
