@@ -150,6 +150,8 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
   if (!room) return { error: "Room not found." };
   if (room.host.id !== hostId) return { error: "Only the host can start the game." };
   if (room.isGameStarted) return { error: "Game has already started." };
+  if (room.isGameOver) return { error: "Game is over. Reset the room to start a new game." };
+
 
   const hostPlayer = room.players.find(p => p.id === hostId && p.isHost);
   if (!hostPlayer || hostPlayer.tickets.length === 0) {
@@ -203,6 +205,34 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
   console.log(`Game started in room: ${roomId}.`);
   return room;
 }
+
+export function resetRoomStore(roomId: string, hostId: string): Room | { error: string } {
+  const room = rooms.get(roomId);
+  if (!room) return { error: "Room not found." };
+  if (room.host.id !== hostId) return { error: "Only the host can reset the game." };
+  if (!room.isGameOver) return { error: "Game is not over yet. Cannot reset." };
+
+  // Reset game state
+  room.isGameStarted = false;
+  room.isGameOver = false;
+  room.currentNumber = null;
+  room.calledNumbers = [];
+  room.numberPool = initializeNumberPool();
+  room.prizeStatus = initializePrizeStatus(room.settings);
+  room.lastNumberCalledTimestamp = undefined;
+
+  // Clear tickets for all players so they have to re-confirm
+  room.players.forEach(player => {
+    player.tickets = [];
+  });
+  
+  stopRoomTimer(roomId, "Room was reset by the host for a new game.");
+
+  rooms.set(roomId, room);
+  console.log(`Room ${roomId} was reset by host ${hostId}. Ready for a new game.`);
+  return room;
+}
+
 
 export function callNextNumberStore(roomId: string): Room | { error: string; number?: number } {
   const room = rooms.get(roomId);

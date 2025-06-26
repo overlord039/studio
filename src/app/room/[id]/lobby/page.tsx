@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangle, Edit } from "lucide-react";
+import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangle, Edit, RotateCcw } from "lucide-react";
 import type { Room, GameSettings, PrizeType, BackendPlayerInRoom } from "@/types";
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE } from "@/lib/constants";
 import React, { useEffect, useState, useCallback, useRef } from "react";
@@ -29,6 +29,7 @@ export default function LobbyPage() {
   const [selectedTicketsToBuy, setSelectedTicketsToBuy] = useState<number>(DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
   const [isJoiningOrUpdating, setIsJoiningOrUpdating] = useState(false);
   const [isEditingTickets, setIsEditingTickets] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const previousIsGameStartedRef = useRef<boolean | undefined>(undefined);
   const roomDataRef = useRef(roomData);
 
@@ -221,6 +222,36 @@ export default function LobbyPage() {
     router.push(`/room/${roomId}/play?playerTickets=${ticketsCount}`);
   };
 
+  const handleResetGame = async () => {
+    if (!currentUser || !isCurrentUserHost) {
+      toast({ title: "Unauthorized", description: "Only the host can start a new game.", variant: "destructive" });
+      return;
+    }
+    setIsResetting(true);
+    try {
+      const response = await fetch(`/api/rooms/${roomId}/reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hostId: currentUser.username }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to reset the game.");
+      }
+
+      const updatedRoomData = await response.json();
+      setRoomData(updatedRoomData);
+      toast({ title: "New Game Ready!", description: "The lobby has been reset. Players can now confirm tickets." });
+    } catch (err) {
+      console.error("Error resetting game:", err);
+      toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+
   let gameSettings: GameSettings | null = null;
   const ticketPriceParam = searchParams.get('ticketPrice');
   const lobbySizeParam = searchParams.get('lobbySize');
@@ -313,7 +344,7 @@ export default function LobbyPage() {
         <CardHeader>
           <CardTitle className="text-3xl font-bold">Lobby: #{roomData.id}</CardTitle>
           <CardDescription>
-            {roomData.isGameStarted ? "Game has started." : roomData.isGameOver ? "Game is over." : "Waiting for players. The host can start the game once conditions are met."}
+            {roomData.isGameStarted ? "Game has started." : roomData.isGameOver ? "Game is over. The host can start a new game." : "Waiting for players. The host can start the game once conditions are met."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -352,14 +383,14 @@ export default function LobbyPage() {
             </div>
           </div>
 
-          {showTicketSelectionUI && (
+          {showTicketSelectionUI && !roomData.isGameOver && (
             <Card className="bg-secondary/20">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center">
                     <Ticket className="mr-2 h-5 w-5 text-primary"/>
                     {cardTitleForTickets}
                 </CardTitle>
-                <CardDescription>Select how many tickets you want to buy.</CardDescription>
+                <CardDescription>Select how many tickets you want to buy for the next game.</CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col sm:flex-row items-center gap-4">
                  <Select
@@ -386,7 +417,7 @@ export default function LobbyPage() {
             </Card>
           )}
 
-          {!showTicketSelectionUI && doesCurrentUserHaveTickets && !roomData.isGameStarted && (
+          {!showTicketSelectionUI && doesCurrentUserHaveTickets && !roomData.isGameStarted && !roomData.isGameOver && (
             <Card className="bg-secondary/20">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center">
@@ -396,7 +427,7 @@ export default function LobbyPage() {
               </CardHeader>
               <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <p className="font-medium">
-                  You have {currentUserInRoom?.tickets.length} ticket(s) confirmed.
+                  You have {currentUserInRoom?.tickets.length} ticket(s) confirmed. Waiting for host...
                 </p>
                 <Button onClick={() => setIsEditingTickets(true)} variant="outline">
                   <Edit className="mr-2 h-4 w-4" />
@@ -405,7 +436,6 @@ export default function LobbyPage() {
               </CardContent>
             </Card>
           )}
-
 
           <div>
             <h3 className="text-xl font-semibold mb-2 flex items-center">
@@ -417,7 +447,7 @@ export default function LobbyPage() {
                   <span>
                     {player.name}
                     {player.id === currentUser?.username ? " (You)" : ""} 
-                    {player.tickets?.length > 0 ? ` (${player.tickets.length} ticket${player.tickets.length === 1 ? '' : 's'})` : " (No tickets yet)"}
+                    {player.tickets?.length > 0 ? ` (${player.tickets.length} ticket${player.tickets.length === 1 ? '' : 's'})` : (roomData.isGameOver ? " (Game Over)" : " (No tickets yet)")}
                   </span>
                   {player.isHost && <span className="text-xs font-semibold text-primary">(Host)</span>}
                 </li>
@@ -432,9 +462,9 @@ export default function LobbyPage() {
             </h3>
             <Card className="bg-secondary/30">
               <CardContent className="p-4 space-y-2">
-                 <p className="text-sm font-semibold">Current Total Prize Pool: ₹{currentTotalPrizePool.toFixed(2)}</p>
+                 <p className="text-sm font-semibold">Potential Prize Pool: ₹{currentTotalPrizePool.toFixed(2)}</p>
                  <p className="text-xs text-muted-foreground">
-                   (Based on {totalTicketsBoughtByPlayers} ticket(s) confirmed by players in this lobby)
+                   (Based on {totalTicketsBoughtByPlayers} ticket(s) confirmed by players for this round)
                  </p>
                 {prizesForFormat.map((prizeName) => {
                   const percentage = prizeDistribution[prizeName as PrizeType] || 0;
@@ -449,8 +479,8 @@ export default function LobbyPage() {
               </CardContent>
             </Card>
           </div>
-
-          {isCurrentUserHost && !roomData.isGameStarted && (
+          
+          {isCurrentUserHost && !roomData.isGameStarted && !roomData.isGameOver &&(
             <Button 
                 onClick={handleStartGame} 
                 size="lg" 
@@ -464,7 +494,8 @@ export default function LobbyPage() {
               <Play className="mr-2 h-5 w-5" /> Start Game
             </Button>
           )}
-          {isCurrentUserHost && !roomData.isGameStarted && 
+
+          {isCurrentUserHost && !roomData.isGameStarted && !roomData.isGameOver &&
             (roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart || !doesCurrentUserHaveTickets) && (
             <p className="text-center text-sm text-destructive mt-2">
               {!doesCurrentUserHaveTickets ? "Host must confirm their tickets first. " : ""}
@@ -481,15 +512,21 @@ export default function LobbyPage() {
               <Play className="mr-2 h-5 w-5" /> Go to Game / Spectate
             </Button>
           )}
-           {roomData.isGameOver && (
-             <Button 
-                onClick={() => router.push(`/room/${roomId}/lobby?rejoin=true`)} // Add a param for potential lobby logic
-                size="lg" 
-                className="w-full mt-4"
-              >
-              View Results / Play Again in Lobby
+
+          {roomData.isGameOver && isCurrentUserHost && (
+            <Button onClick={handleResetGame} size="lg" className="w-full mt-4" disabled={isResetting}>
+              {isResetting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <RotateCcw className="mr-2 h-5 w-5" />}
+              {isResetting ? "Resetting Lobby..." : "Start New Game"}
             </Button>
           )}
+
+          {roomData.isGameOver && !isCurrentUserHost && (
+            <div className="text-center mt-4 p-4 bg-secondary/40 rounded-md">
+              <p className="font-semibold">Game Over!</p>
+              <p className="text-muted-foreground">Waiting for the host to start a new game.</p>
+            </div>
+          )}
+
         </CardContent>
       </Card>
     </div>
