@@ -429,7 +429,8 @@ export default function LobbyPage() {
               </CardHeader>
               <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <p className="font-medium">
-                  You have {currentUserInRoom?.tickets.length} ticket(s) confirmed. Waiting for host...
+                  You have {currentUserInRoom?.tickets.length} ticket(s) confirmed.
+                  {!isCurrentUserHost && " Waiting for host..."}
                 </p>
                 <Button onClick={() => setIsEditingTickets(true)} variant="outline">
                   <Edit className="mr-2 h-4 w-4" />
