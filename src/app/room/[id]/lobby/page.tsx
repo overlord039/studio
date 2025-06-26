@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -228,8 +229,24 @@ export default function LobbyPage() {
     }
   };
 
-  const handleLeaveRoom = () => {
-    router.push("/");
+  const handleLeaveRoom = async () => {
+    if (!currentUser) {
+      router.push("/");
+      return;
+    }
+    try {
+      await fetch(`/api/rooms/${roomId}/leave`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId: currentUser.username }),
+      });
+      toast({ title: "You have left the room." });
+    } catch (err) {
+      console.error("Error leaving room:", err);
+      toast({ title: "Error", description: "Could not leave the room cleanly. Redirecting anyway.", variant: "destructive" });
+    } finally {
+      router.push("/");
+    }
   };
   
   const handleGoToGame = () => {

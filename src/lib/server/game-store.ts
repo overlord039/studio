@@ -210,7 +210,10 @@ export function resetRoomStore(roomId: string, hostId: string): Room | { error: 
   const room = rooms.get(roomId);
   if (!room) return { error: "Room not found." };
   if (room.host.id !== hostId) return { error: "Only the host can reset the game." };
-  if (!room.isGameOver) return { error: "Game is not over yet. Cannot reset." };
+  if (!room.isGameOver && room.isGameStarted) {
+    return { error: "Game is not over yet. Cannot reset." };
+  }
+
 
   // Reset game state
   room.isGameStarted = false;
@@ -231,6 +234,37 @@ export function resetRoomStore(roomId: string, hostId: string): Room | { error: 
   rooms.set(roomId, room);
   console.log(`Room ${roomId} was reset by host ${hostId}. Ready for a new game.`);
   return room;
+}
+
+export function removePlayerFromRoomStore(roomId: string, playerId: string): { success: boolean; error?: string } {
+  const room = rooms.get(roomId);
+  if (!room) {
+    return { success: false, error: "Room not found." };
+  }
+
+  const playerIndex = room.players.findIndex(p => p.id === playerId);
+  if (playerIndex === -1) {
+    return { success: false, error: "Player not found in room." };
+  }
+
+  const leavingPlayer = room.players[playerIndex];
+  room.players.splice(playerIndex, 1);
+  console.log(`Player ${playerId} has left room ${roomId}.`);
+
+  if (room.players.length === 0) {
+    stopRoomTimer(roomId, "Room is empty.");
+    rooms.delete(roomId);
+    console.log(`Room ${roomId} is empty and has been deleted.`);
+  } else if (leavingPlayer.isHost) {
+    // Host migration
+    const newHost = room.players[0];
+    newHost.isHost = true;
+    room.host = { id: newHost.id, name: newHost.name, isHost: true };
+    console.log(`Host migration in room ${roomId}: ${newHost.id} is the new host.`);
+  }
+  
+  rooms.set(roomId, room);
+  return { success: true };
 }
 
 

@@ -98,8 +98,6 @@ export default function GameRoomPage() {
     }
   }, [gameMessage]);
 
-  const isCurrentUserHost = roomData?.host.id === currentUser?.username;
-
   const fetchGameDetails = useCallback(async (isInitialLoad = false) => {
     if (!roomId || !currentUser?.username) {
       if (isInitialLoad) {
@@ -337,8 +335,24 @@ export default function GameRoomPage() {
     toast({ title: "New Game Setup", description: "Returning to lobby." });
   };
 
-  const handleLeaveRoom = () => {
-    router.push('/');
+  const handleLeaveRoom = async () => {
+    if (!currentUser) {
+      router.push("/");
+      return;
+    }
+    try {
+      await fetch(`/api/rooms/${roomId}/leave`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId: currentUser.username }),
+      });
+      toast({ title: "You have left the room." });
+    } catch (err) {
+      console.error("Error leaving room:", err);
+      toast({ title: "Error", description: "Could not leave the room cleanly. Redirecting anyway.", variant: "destructive" });
+    } finally {
+      router.push("/");
+    }
   };
 
   if (isLoading || authLoading) {
@@ -572,7 +586,7 @@ export default function GameRoomPage() {
                     calledNumbers={roomData.calledNumbers}
                     markedNumbers={markedNumbers}
                     onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
-                    className="min-w-[280px] sm:min-w-[300px] md:min-w-[320px]"
+                    className="min-w-[320px] sm:min-w-[340px] md:min-w-[360px]"
                   />
                 ))}
               </div>
