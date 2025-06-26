@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -69,6 +68,21 @@ export default function LobbyPage() {
         return; 
       }
       const data: Room = await response.json();
+      
+      const oldPlayers = roomDataRef.current?.players;
+      if (oldPlayers && data.players.length > oldPlayers.length && !isInitialLoad) {
+        const oldPlayerIds = new Set(oldPlayers.map(p => p.id));
+        const joinedPlayers = data.players.filter(p => !oldPlayerIds.has(p.id));
+        
+        joinedPlayers.forEach(player => {
+            if (currentUser && player.id !== currentUser.username) {
+                toast({
+                    title: "Player Joined",
+                    description: `${player.name} has joined the lobby.`
+                });
+            }
+        });
+      }
       
       if (isInitialLoad) {
         const userInRoomData = data.players.find(p => p.id === currentUser.username);
@@ -535,3 +549,5 @@ export default function LobbyPage() {
     </div>
   );
 }
+
+    
