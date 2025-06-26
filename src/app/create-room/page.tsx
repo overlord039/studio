@@ -32,7 +32,7 @@ const createRoomFormSchema = z.object({
   prizeFormat: z.string().refine(format => PRIZE_FORMATS.includes(format as PrizeFormat), { // Kept for consistency, though only one format now
     message: "Invalid prize format.",
   }),
-  numberOfTicketsPerPlayer: z.coerce.number().min(1, 'Each player must have at least 1 ticket.').max(6, 'Maximum 6 tickets per player.'),
+  numberOfTicketsPerPlayer: z.coerce.number().min(1, 'Each player must have at least 1 ticket.').max(4, 'Maximum 4 tickets per player.'),
 });
 
 type CreateRoomFormValues = z.infer<typeof createRoomFormSchema>;
@@ -186,7 +186,7 @@ export default function CreateRoomPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {[1, 2, 3, 4, 5, 6].map(num => (
+                        {[1, 2, 3, 4].map(num => (
                           <SelectItem key={num} value={String(num)}>{num} ticket(s)</SelectItem>
                         ))}
                       </SelectContent>

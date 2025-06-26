@@ -12,7 +12,7 @@ import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTING
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
 
-const MAX_TICKETS_PER_PLAYER = 6;
+const MAX_TICKETS_PER_PLAYER = 4;
 
 export default function LobbyPage() {
   const { toast } = useToast();
