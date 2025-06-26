@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangle } from "lucide-react";
+import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangle, Edit } from "lucide-react";
 import type { Room, GameSettings, PrizeType, BackendPlayerInRoom } from "@/types";
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE } from "@/lib/constants";
 import React, { useEffect, useState, useCallback, useRef } from "react";
@@ -28,6 +28,7 @@ export default function LobbyPage() {
   
   const [selectedTicketsToBuy, setSelectedTicketsToBuy] = useState<number>(DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
   const [isJoiningOrUpdating, setIsJoiningOrUpdating] = useState(false);
+  const [isEditingTickets, setIsEditingTickets] = useState(false);
   const previousIsGameStartedRef = useRef<boolean | undefined>(undefined);
   const roomDataRef = useRef(roomData);
 
@@ -151,6 +152,7 @@ export default function LobbyPage() {
       const userInUpdatedRoom = updatedRoom.players.find(p => p.id === currentUser.username);
       setSelectedTicketsToBuy(userInUpdatedRoom?.tickets.length || selectedTicketsToBuy);
       toast({ title: "Tickets Confirmed!", description: `You now have ${userInUpdatedRoom?.tickets.length || selectedTicketsToBuy} ticket(s).` });
+      setIsEditingTickets(false);
     } catch (err) {
       console.error("Error confirming/joining tickets:", err);
       toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
@@ -288,12 +290,15 @@ export default function LobbyPage() {
   const minPlayersToStart = process.env.NODE_ENV === 'development' ? 1 : MIN_LOBBY_SIZE;
 
   const showTicketSelectionUI = currentUser && !roomData.isGameStarted && 
-    (!currentUserInRoom || (currentUserInRoom && !doesCurrentUserHaveTickets));
+    (!doesCurrentUserHaveTickets || isEditingTickets);
   
   let buttonTextForConfirm = `Confirm and Join with ${selectedTicketsToBuy} ticket(s)`;
   let cardTitleForTickets = "Join Game & Buy Tickets";
 
-  if (isCurrentUserHost && !doesCurrentUserHaveTickets) {
+  if (doesCurrentUserHaveTickets && isEditingTickets) {
+    cardTitleForTickets = "Update Your Tickets";
+    buttonTextForConfirm = `Update to ${selectedTicketsToBuy} ticket(s)`;
+  } else if (isCurrentUserHost && !doesCurrentUserHaveTickets) {
       buttonTextForConfirm = `Confirm Host Tickets (${selectedTicketsToBuy})`;
       cardTitleForTickets = "Buy Your Host Tickets";
   } else if (currentUserInRoom && !doesCurrentUserHaveTickets) { 
@@ -376,6 +381,26 @@ export default function LobbyPage() {
                 <Button onClick={handleConfirmOrJoinTickets} className="w-full sm:w-auto" disabled={isJoiningOrUpdating}>
                   {isJoiningOrUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   {buttonTextForConfirm}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {!showTicketSelectionUI && doesCurrentUserHaveTickets && !roomData.isGameStarted && (
+            <Card className="bg-secondary/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center">
+                  <Ticket className="mr-2 h-5 w-5 text-primary"/>
+                  Your Confirmed Tickets
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p className="font-medium">
+                  You have {currentUserInRoom?.tickets.length} ticket(s) confirmed.
+                </p>
+                <Button onClick={() => setIsEditingTickets(true)} variant="outline">
+                  <Edit className="mr-2 h-4 w-4" />
+                  Change Tickets
                 </Button>
               </CardContent>
             </Card>
