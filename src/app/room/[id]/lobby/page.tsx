@@ -138,7 +138,12 @@ export default function LobbyPage() {
   }, [currentUser, roomId, authLoading, fetchRoomDetails]);
 
   useEffect(() => {
-    if (!roomId || !currentUser || roomData?.isGameStarted || roomData?.isGameOver || isLoading) return;
+    // Poll if the game is not actively running (i.e., it's pre-game or post-game).
+    // Stop polling if the game is in progress, as the user will be on the /play page.
+    if (!roomId || !currentUser || (roomData?.isGameStarted && !roomData.isGameOver) || isLoading) {
+      return;
+    }
+
     const intervalId = setInterval(() => {
       if (!document.hidden) fetchRoomDetails(false);
     }, 3000); 
@@ -146,8 +151,8 @@ export default function LobbyPage() {
   }, [roomId, currentUser, roomData?.isGameStarted, roomData?.isGameOver, fetchRoomDetails, isLoading]);
 
   const handleConfirmOrJoinTickets = async () => {
-    if (!currentUser || !roomData || roomData.isGameStarted) {
-        toast({title: "Cannot proceed", description: "Game already started, user not logged in, or no room data.", variant: "destructive"});
+    if (!currentUser || !roomData || (roomData.isGameStarted && !roomData.isGameOver)) {
+        toast({title: "Cannot proceed", description: "Game is active, user not logged in, or no room data.", variant: "destructive"});
         return;
     }
     setIsJoiningOrUpdating(true);
@@ -377,7 +382,7 @@ export default function LobbyPage() {
         <CardHeader>
           <CardTitle className="text-3xl font-bold">Lobby: #{roomData.id}</CardTitle>
           <CardDescription>
-            {roomData.isGameStarted ? "Game has started." : roomData.isGameOver ? "Game is over. The host can start a new game." : "Waiting for players. The host can start the game once conditions are met."}
+            {roomData.isGameStarted && !roomData.isGameOver ? "Game has started." : roomData.isGameOver ? "Game is over. The host can start a new game." : "Waiting for players. The host can start the game once conditions are met."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
