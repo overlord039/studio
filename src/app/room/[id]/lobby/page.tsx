@@ -69,7 +69,6 @@ export default function LobbyPage() {
         return; 
       }
       const data: Room = await response.json();
-      setRoomData(data);
       
       if (isInitialLoad) {
         const userInRoomData = data.players.find(p => p.id === currentUser.username);
@@ -79,13 +78,16 @@ export default function LobbyPage() {
           setSelectedTicketsToBuy(data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
         }
       }
-
-      if (data.isGameStarted && previousIsGameStartedRef.current === false && !isCurrentUserHost) {
+      
+      const currentUserIsHostInFetchedData = data.host.id === currentUser?.username;
+      if (data.isGameStarted && previousIsGameStartedRef.current === false && !currentUserIsHostInFetchedData) {
         const currentPlayerServerData = data.players.find(p => p.id === currentUser.username);
         const ticketsToTake = currentPlayerServerData?.tickets.length || 0; 
         toast({ title: "Game Started!", description: "Joining the game..." });
         router.push(`/room/${roomId}/play?playerTickets=${ticketsToTake}`);
       }
+      
+      setRoomData(data);
       previousIsGameStartedRef.current = data.isGameStarted;
 
     } catch (err) {
@@ -105,7 +107,7 @@ export default function LobbyPage() {
     } finally {
       if(isInitialLoad) setIsLoading(false);
     }
-  }, [roomId, currentUser, authLoading, router, toast, isCurrentUserHost]); 
+  }, [roomId, currentUser, authLoading, router, toast]); 
 
   useEffect(() => {
     if (currentUser && roomId && !authLoading) { 
