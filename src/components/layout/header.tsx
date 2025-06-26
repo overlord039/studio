@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -6,11 +5,35 @@ import { Button } from '@/components/ui/button';
 import { User, LogIn, UserPlus, Moon, Sun, LogOut as LogOutIcon, HelpCircle, Speaker } from 'lucide-react'; // Added Speaker
 import { useTheme } from "next-themes";
 import { useAuth } from '@/contexts/auth-context';
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { cn } from '@/lib/utils';
 
 export default function Header() {
   const { currentUser, logout, loading } = useAuth();
   const { theme, setTheme } = useTheme();
+  const [isHidden, setIsHidden] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  const controlNavbar = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      if (window.scrollY > lastScrollY && window.scrollY > 50) { // if scroll down and past 50px
+        setIsHidden(true);
+      } else { // if scroll up
+        setIsHidden(false);
+      }
+      setLastScrollY(window.scrollY); 
+    }
+  }, [lastScrollY]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('scroll', controlNavbar);
+
+      return () => {
+        window.removeEventListener('scroll', controlNavbar);
+      };
+    }
+  }, [controlNavbar]);
 
   const toggleTheme = () => {
     if (theme === 'light') {
@@ -23,7 +46,10 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-primary text-primary-foreground shadow-md sticky top-0 z-50">
+    <header className={cn(
+      "bg-primary text-primary-foreground shadow-md sticky top-0 z-50 transition-transform duration-300 ease-in-out",
+      isHidden && "-translate-y-full"
+    )}>
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="text-2xl font-bold tracking-tight">
           HousieHub
@@ -76,4 +102,3 @@ export default function Header() {
     </header>
   );
 }
-
