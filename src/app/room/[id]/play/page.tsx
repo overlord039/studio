@@ -262,11 +262,6 @@ export default function GameRoomPage() {
     }
 
     if (!roomData.calledNumbers.includes(numberValue)) {
-      toast({
-        title: "Invalid Mark",
-        description: `Number ${numberValue} has not been called yet.`,
-        variant: "destructive",
-      });
       return;
     }
     setMarkedNumbers(prev => {
