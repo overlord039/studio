@@ -139,7 +139,7 @@ export default function LobbyPage() {
 
   useEffect(() => {
     // Poll if the game is not actively running (i.e., it's pre-game or post-game).
-    // Stop polling if the game is in progress, as the user will be on the /play page.
+    // Stop polling only if the game is in progress, as the user will be on the /play page.
     if (!roomId || !currentUser || (roomData?.isGameStarted && !roomData.isGameOver) || isLoading) {
       return;
     }
