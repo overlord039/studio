@@ -13,47 +13,13 @@ import { PRIZE_TYPES } from '@/types';
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, ListOrdered, Loader2, X, Zap, Settings2 } from 'lucide-react';
+import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, ListOrdered, Loader2, X, Zap, Settings2, Play, Pause } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, NUMBERS_RANGE_MAX } from '@/lib/constants';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-
-// Memoized component for rendering the prize status list
-const MemoizedPrizeStatusList = React.memo(({ prizeStatus, prizesForFormat, players, isLoading }: {
-  prizeStatus: Room['prizeStatus'];
-  prizesForFormat: PrizeType[];
-  players: BackendPlayerInRoom[];
-  isLoading: boolean;
-}) => {
-  if (isLoading) {
-    return <p className="text-sm text-muted-foreground">Loading prize status...</p>;
-  }
-  if (!prizeStatus || !prizesForFormat || !players) {
-    return <p className="text-sm text-muted-foreground">Prize status unavailable.</p>;
-  }
-  return (
-    <ul className="space-y-1 text-sm">
-      {prizesForFormat.map(prize => {
-        const claimInfo = prizeStatus[prize];
-        let statusText = "Available";
-        if (claimInfo && claimInfo.claimedBy.length > 0) {
-          const winnerNames = claimInfo.claimedBy.map(id => players.find(p => p.id === id)?.name || id).join(', ');
-          statusText = `Claimed by ${winnerNames}`;
-        }
-        return (
-          <li key={prize} className={cn("flex justify-between", claimInfo && claimInfo.claimedBy.length > 0 ? "text-green-600 dark:text-green-400 font-semibold" : "text-muted-foreground")}>
-            <span>{prize}:</span>
-            <span>{statusText}</span>
-          </li>
-        );
-      })}
-    </ul>
-  );
-});
-MemoizedPrizeStatusList.displayName = 'MemoizedPrizeStatusList';
 
 const MemoizedHousieTicket = React.memo(HousieTicket);
 const MemoizedLiveNumberBoard = React.memo(LiveNumberBoard);
@@ -80,7 +46,6 @@ export default function GameRoomPage() {
   const [isCallingNextNumber, setIsCallingNextNumber] = useState(false);
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
 
-  const [isPrizesStatusMinimized, setIsPrizesStatusMinimized] = useState(true);
   const [isPrizeInfoMinimized, setIsPrizeInfoMinimized] = useState(true);
   const [isOtherPlayersMinimized, setIsOtherPlayersMinimized] = useState(true);
   
@@ -363,11 +328,11 @@ export default function GameRoomPage() {
     }
   };
 
-  const handleToggleCallingMode = async (isAuto: boolean) => {
+  const handleToggleCallingMode = async () => {
     if (!currentUser || !isCurrentUserHost || !roomData || roomData.isGameOver) return;
 
     setIsUpdatingMode(true);
-    const newMode = isAuto ? 'auto' : 'manual';
+    const newMode = roomData.settings.callingMode === 'auto' ? 'manual' : 'auto';
 
     try {
         const response = await fetch(`/api/rooms/${roomId}/update-calling-mode`, {
@@ -546,6 +511,8 @@ export default function GameRoomPage() {
     );
   }
 
+  const isAutoCalling = roomData.settings.callingMode === 'auto';
+
   return (
     <div className="p-2 md:p-4 space-y-4">
       <Card className="shadow-md">
@@ -557,47 +524,49 @@ export default function GameRoomPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <div className="space-y-4 lg:col-span-1">
-          <MemoizedCalledNumberDisplay 
-            currentNumber={roomData.currentNumber} 
-            isMuted={isMuted}
-            onToggleMute={() => setIsMuted(prev => !prev)}
-          />
           
-          {isCurrentUserHost && !roomData.isGameOver && (
+          {isCurrentUserHost && !roomData.isGameOver ? (
             <Card>
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="auto-call-switch" className="flex flex-col space-y-1 pr-2">
-                      <span className="font-semibold">Auto-Call Mode</span>
-                      <span className="font-normal leading-snug text-muted-foreground text-xs">
-                          {roomData.settings.callingMode === 'auto' ? "Numbers are called automatically." : "You must call numbers manually."}
-                      </span>
-                  </Label>
-                  <Switch
-                      id="auto-call-switch"
-                      checked={roomData.settings.callingMode === 'auto'}
-                      onCheckedChange={handleToggleCallingMode}
-                      disabled={isUpdatingMode}
-                      aria-label="Toggle automatic number calling"
+                <CardHeader className="pb-2 pt-3 md:pt-4">
+                    <CardTitle className="text-lg md:text-xl flex items-center"><Settings2 className="mr-2 h-5 w-5 text-primary"/>Caller Controls</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 pt-2 pb-3 md:pb-4">
+                    <Button 
+                        onClick={handleCallNextNumber}
+                        disabled={isCallingNextNumber || isAutoCalling || roomData.isGameOver}
+                        className="w-full"
+                        size="lg"
+                    >
+                        {isCallingNextNumber ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Zap className="mr-2 h-4 w-4" />
+                        )}
+                        {isCallingNextNumber ? 'Calling...' : 'Next Number'}
+                    </Button>
+                    <Button
+                        onClick={handleToggleCallingMode}
+                        disabled={isUpdatingMode || roomData.isGameOver}
+                        variant={isAutoCalling ? 'destructive' : 'default'}
+                        className="w-full"
+                        size="lg"
+                    >
+                        {isUpdatingMode ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isAutoCalling ? <Pause className="mr-2 h-4 w-4"/> : <Play className="mr-2 h-4 w-4"/>)}
+                        {isUpdatingMode ? 'Switching...' : (isAutoCalling ? 'Stop Auto Call' : 'Start Auto Call')}
+                    </Button>
+                </CardContent>
+                 <CalledNumberDisplay 
+                    currentNumber={roomData.currentNumber} 
+                    isMuted={isMuted}
+                    onToggleMute={() => setIsMuted(prev => !prev)}
                   />
-                </div>
-              </CardContent>
             </Card>
-          )}
-
-          {isCurrentUserHost && gameSettings.callingMode === 'manual' && (
-            <Button
-              onClick={handleCallNextNumber}
-              disabled={isCallingNextNumber || roomData.isGameOver}
-              className="w-full"
-            >
-              {isCallingNextNumber ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Zap className="mr-2 h-4 w-4" />
-              )}
-              {isCallingNextNumber ? 'Calling...' : 'Call Next Number'}
-            </Button>
+          ) : (
+             <CalledNumberDisplay 
+                currentNumber={roomData.currentNumber} 
+                isMuted={isMuted}
+                onToggleMute={() => setIsMuted(prev => !prev)}
+              />
           )}
 
           <MemoizedLiveNumberBoard 
@@ -725,24 +694,6 @@ export default function GameRoomPage() {
                     </ul>
                   </>
                 )}
-              </CardContent>
-            )}
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg flex items-center"><Award className="mr-2 h-5 w-5 text-primary" />Prizes Status</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setIsPrizesStatusMinimized(!isPrizesStatusMinimized)} aria-label={isPrizesStatusMinimized ? "Expand Prizes Status" : "Minimize Prizes Status"}>
-                {isPrizesStatusMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
-              </Button>
-            </CardHeader>
-            {!isPrizesStatusMinimized && (
-              <CardContent>
-                <MemoizedPrizeStatusList
-                    prizeStatus={roomData.prizeStatus}
-                    prizesForFormat={prizesForFormat}
-                    players={roomData.players}
-                    isLoading={isLoading} 
-                  />
               </CardContent>
             )}
           </Card>
