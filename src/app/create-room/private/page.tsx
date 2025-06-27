@@ -168,6 +168,32 @@ export default function CreatePrivateRoomPage() {
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="numberOfTicketsPerPlayer"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tickets Per Player (Default)</FormLabel>
+                    <Select
+                        onValueChange={(value) => field.onChange(Number(value))}
+                        defaultValue={String(field.value)}
+                        disabled={isSubmitting || authLoading}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select default tickets per player" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {[1, 2, 3, 4].map(num => (
+                          <SelectItem key={num} value={String(num)}>{num} ticket(s)</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
                <FormField
                 control={form.control}
                 name="prizeFormat"
@@ -189,32 +215,6 @@ export default function CreatePrivateRoomPage() {
                           <SelectItem key={format} value={format}>
                             {format}
                           </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="numberOfTicketsPerPlayer"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tickets Per Player (Default)</FormLabel>
-                    <Select
-                        onValueChange={(value) => field.onChange(Number(value))}
-                        defaultValue={String(field.value)}
-                        disabled={isSubmitting || authLoading}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select default tickets per player" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {[1, 2, 3, 4].map(num => (
-                          <SelectItem key={num} value={String(num)}>{num} ticket(s)</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
