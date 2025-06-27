@@ -136,7 +136,7 @@ export default function NumberCallerPage() {
             <Button 
               onClick={toggleAutoCall} 
               disabled={availableNumbers.length === 0}
-              variant={isAutoCalling ? "destructive" : "default"}
+              variant="default"
               className="w-full"
               size="default"
             >
@@ -203,5 +203,3 @@ export default function NumberCallerPage() {
     </div>
   );
 }
-
-    
