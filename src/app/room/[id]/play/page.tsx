@@ -8,16 +8,18 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import HousieTicket from '@/components/game/housie-ticket';
 import LiveNumberBoard from '@/components/game/live-number-board';
 import CalledNumberDisplay from '@/components/game/called-number-display';
-import type { HousieTicketGrid, PrizeType, Room, BackendPlayerInRoom, GameSettings } from '@/types';
+import type { HousieTicketGrid, PrizeType, Room, BackendPlayerInRoom, GameSettings, CallingMode } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, ListOrdered, Loader2, X, Zap } from 'lucide-react';
+import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, ListOrdered, Loader2, X, Zap, Settings2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, NUMBERS_RANGE_MAX } from '@/lib/constants';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 // Memoized component for rendering the prize status list
 const MemoizedPrizeStatusList = React.memo(({ prizeStatus, prizesForFormat, players, isLoading }: {
@@ -76,6 +78,7 @@ export default function GameRoomPage() {
   const [isMuted, setIsMuted] = useState(false);
   const [isBoardMinimized, setIsBoardMinimized] = useState(true);
   const [isCallingNextNumber, setIsCallingNextNumber] = useState(false);
+  const [isUpdatingMode, setIsUpdatingMode] = useState(false);
 
   const [isPrizesStatusMinimized, setIsPrizesStatusMinimized] = useState(true);
   const [isPrizeInfoMinimized, setIsPrizeInfoMinimized] = useState(true);
@@ -360,6 +363,38 @@ export default function GameRoomPage() {
     }
   };
 
+  const handleToggleCallingMode = async (isAuto: boolean) => {
+    if (!currentUser || !isCurrentUserHost || !roomData || roomData.isGameOver) return;
+
+    setIsUpdatingMode(true);
+    const newMode = isAuto ? 'auto' : 'manual';
+
+    try {
+        const response = await fetch(`/api/rooms/${roomId}/update-calling-mode`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hostId: currentUser.username, callingMode: newMode }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || `Failed to switch to ${newMode} mode.`);
+        }
+        setRoomData(data);
+        toast({
+            title: "Mode Switched",
+            description: `Number calling is now ${newMode}.`,
+        });
+    } catch (error) {
+        toast({
+            title: "Error Switching Mode",
+            description: (error as Error).message,
+            variant: "destructive",
+        });
+    } finally {
+        setIsUpdatingMode(false);
+    }
+  };
+
 
   const handlePlayAgain = () => {
     router.push(`/room/${roomId}/lobby`);
@@ -527,6 +562,29 @@ export default function GameRoomPage() {
             isMuted={isMuted}
             onToggleMute={() => setIsMuted(prev => !prev)}
           />
+          
+          {isCurrentUserHost && !roomData.isGameOver && (
+            <Card>
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="auto-call-switch" className="flex flex-col space-y-1 pr-2">
+                      <span className="font-semibold">Auto-Call Mode</span>
+                      <span className="font-normal leading-snug text-muted-foreground text-xs">
+                          {roomData.settings.callingMode === 'auto' ? "Numbers are called automatically." : "You must call numbers manually."}
+                      </span>
+                  </Label>
+                  <Switch
+                      id="auto-call-switch"
+                      checked={roomData.settings.callingMode === 'auto'}
+                      onCheckedChange={handleToggleCallingMode}
+                      disabled={isUpdatingMode}
+                      aria-label="Toggle automatic number calling"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {isCurrentUserHost && gameSettings.callingMode === 'manual' && (
             <Button
               onClick={handleCallNextNumber}
@@ -541,6 +599,7 @@ export default function GameRoomPage() {
               {isCallingNextNumber ? 'Calling...' : 'Call Next Number'}
             </Button>
           )}
+
           <MemoizedLiveNumberBoard 
             calledNumbers={roomData.calledNumbers} 
             currentNumber={roomData.currentNumber}

@@ -1,8 +1,8 @@
 
-import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid } from '@/types';
+import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid, CallingMode } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { generateImprovedHousieTicket } from '@/lib/housie';
-import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE, PRIZE_DEFINITIONS, DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER } from '@/lib/constants';
+import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE, PRIZE_DEFINITIONS, DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER, SERVER_CALL_INTERVAL } from '@/lib/constants';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -13,8 +13,6 @@ declare global {
 
 const rooms = global.housieRooms || (global.housieRooms = new Map<string, Room>());
 const roomTimers = global.roomTimers || (global.roomTimers = new Map<string, NodeJS.Timeout>());
-
-const SERVER_CALL_INTERVAL = 5000; // 5 seconds
 
 function generateRoomId(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase(); // 6-char alphanumeric
@@ -179,6 +177,10 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
       const currentRoomState = getRoomStore(roomId); // Get fresh state
       if (!currentRoomState || !currentRoomState.isGameStarted || currentRoomState.isGameOver) {
         stopRoomTimer(roomId, !currentRoomState ? "Room no longer exists" : "Game not started or already over");
+        return;
+      }
+       if (currentRoomState.settings.callingMode !== 'auto') {
+        stopRoomTimer(roomId, "Mode switched away from auto.");
         return;
       }
       
@@ -383,6 +385,52 @@ export function claimPrizeStore(
   rooms.set(roomId, room);
   return room;
 }
+
+export function updateCallingModeStore(roomId: string, hostId: string, newMode: CallingMode): Room | { error: string } {
+  const room = rooms.get(roomId);
+  if (!room) return { error: "Room not found." };
+  if (room.host.id !== hostId) return { error: "Only the host can change the calling mode." };
+  if (!room.isGameStarted || room.isGameOver) return { error: "Calling mode can only be changed during an active game." };
+
+  // Update the setting
+  room.settings.callingMode = newMode;
+  console.log(`Room ${roomId}: Calling mode changed to ${newMode} by host.`);
+
+  // Manage the timer
+  if (newMode === 'auto') {
+    if (!roomTimers.has(roomId)) {
+      console.log(`Room ${roomId}: Starting server-side auto-calling due to mode change.`);
+      const intervalId = setInterval(() => {
+        const currentRoomState = getRoomStore(roomId);
+        if (!currentRoomState || !currentRoomState.isGameStarted || currentRoomState.isGameOver) {
+          stopRoomTimer(roomId, !currentRoomState ? "Room no longer exists" : "Game not started or already over");
+          return;
+        }
+        if (currentRoomState.settings.callingMode !== 'auto') {
+            stopRoomTimer(roomId, "Mode switched away from auto.");
+            return;
+        }
+        
+        const result = callNextNumberStore(roomId); 
+        
+        if (result && 'error' in result) {
+          if (result.error === "All numbers called.") {
+            // State is handled inside callNextNumberStore
+          } else {
+              console.error(`Error auto-calling number for room ${roomId}: ${result.error}`);
+          }
+        }
+      }, SERVER_CALL_INTERVAL); 
+      roomTimers.set(roomId, intervalId);
+    }
+  } else { // newMode is 'manual'
+    stopRoomTimer(roomId, "Mode switched to manual by host.");
+  }
+
+  rooms.set(roomId, room);
+  return room;
+}
+
 
 export function getRoomStateForClient(roomId: string): Omit<Room, 'numberPool'> | undefined {
   const room = getRoomStore(roomId);

@@ -33,7 +33,6 @@ const createRoomFormSchema = z.object({
     message: "Invalid prize format.",
   }),
   numberOfTicketsPerPlayer: z.coerce.number().min(1, 'Each player must have at least 1 ticket.').max(4, 'Maximum 4 tickets per player.'),
-  callingMode: z.enum(['auto', 'manual']),
 });
 
 type CreateRoomFormValues = z.infer<typeof createRoomFormSchema>;
@@ -51,7 +50,6 @@ export default function CreatePrivateRoomPage() {
       lobbySize: DEFAULT_GAME_SETTINGS.lobbySize,
       prizeFormat: DEFAULT_GAME_SETTINGS.prizeFormat,
       numberOfTicketsPerPlayer: DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer,
-      callingMode: DEFAULT_GAME_SETTINGS.callingMode,
     },
   });
 
@@ -73,12 +71,11 @@ export default function CreatePrivateRoomPage() {
       isHost: true,
     };
 
-    const roomSettings: GameSettings = {
+    const roomSettings: Partial<GameSettings> = {
       ticketPrice: values.ticketPrice,
       lobbySize: values.lobbySize,
-      prizeFormat: values.prizeFormat,
+      prizeFormat: values.prizeFormat as PrizeFormat,
       numberOfTicketsPerPlayer: values.numberOfTicketsPerPlayer,
-      callingMode: values.callingMode,
     };
 
     try {
@@ -193,41 +190,6 @@ export default function CreatePrivateRoomPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="callingMode"
-                render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel>Number Calling Mode</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex flex-col space-y-1"
-                        disabled={isSubmitting || authLoading}
-                      >
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="auto" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Automatic (System calls numbers every 5s)
-                          </FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="manual" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Manual (Host calls next number)
-                          </FormLabel>
-                        </FormItem>
-                      </RadioGroup>
-                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

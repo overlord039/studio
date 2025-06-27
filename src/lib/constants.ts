@@ -10,6 +10,8 @@ export const MAX_LOBBY_SIZE = 50;
 
 export const DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER = 1;
 
+export const SERVER_CALL_INTERVAL = 5000; // 5 seconds
+
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
   ticketPrice: 10,
   lobbySize: 10,
