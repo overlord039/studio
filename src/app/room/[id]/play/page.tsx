@@ -13,7 +13,7 @@ import { PRIZE_TYPES } from '@/types';
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, ListOrdered, Loader2, X } from 'lucide-react';
+import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, ListOrdered, Loader2, X, Zap } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
@@ -75,6 +75,7 @@ export default function GameRoomPage() {
   const [gameMessage, setGameMessage] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isBoardMinimized, setIsBoardMinimized] = useState(true);
+  const [isCallingNextNumber, setIsCallingNextNumber] = useState(false);
 
   const [isPrizesStatusMinimized, setIsPrizesStatusMinimized] = useState(true);
   const [isPrizeInfoMinimized, setIsPrizeInfoMinimized] = useState(true);
@@ -226,13 +227,19 @@ export default function GameRoomPage() {
   // Polling for game updates
   useEffect(() => {
     if (!roomId || !currentUser || roomData?.isGameOver || isLoading) return;
+    
+    // In manual mode, poll less frequently unless host
+    const isManualMode = roomData?.settings.callingMode === 'manual';
+    const isHost = roomData?.host.id === currentUser.username;
+    const pollInterval = isManualMode && !isHost ? 7000 : 3000;
+
     const intervalId = setInterval(() => {
       if (!document.hidden) { 
         fetchGameDetails(false);
       }
-    }, 3000); 
+    }, pollInterval); 
     return () => clearInterval(intervalId);
-  }, [roomId, currentUser, roomData?.isGameOver, isLoading, fetchGameDetails]);
+  }, [roomId, currentUser, roomData?.isGameOver, roomData?.settings.callingMode, roomData?.host.id, isLoading, fetchGameDetails]);
 
 
   // Announce new numbers
@@ -256,7 +263,7 @@ export default function GameRoomPage() {
     const key = `${ticketIndex}-${rowIndex}-${colIndex}`;
 
     if (markedNumbers.has(key)) {
-      return; // Cannot unmark
+      return; 
     }
 
     if (!roomData.calledNumbers.includes(numberValue)) {
@@ -275,7 +282,6 @@ export default function GameRoomPage() {
       return;
     }
     
-    // Server now validates all tickets, so we can send 0.
     const ticketIndex = 0;
 
     try {
@@ -307,7 +313,6 @@ export default function GameRoomPage() {
             toastMessageAlert = `You successfully claimed ${prizeType}!`;
         }
 
-        // Let the polling handle the "Game Over" message
         if (updatedRoom.isGameOver) {
           toastMessageAlert = `You claimed Full House! Game Over.`
         }
@@ -329,6 +334,32 @@ export default function GameRoomPage() {
       toast({ title: "Network Error", description: `Could not claim ${prizeType}.`, variant: "destructive" });
     }
   };
+
+  const handleCallNextNumber = async () => {
+    if (!currentUser || !roomData) return;
+    setIsCallingNextNumber(true);
+    try {
+      const response = await fetch(`/api/rooms/${roomId}/call-number`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hostId: currentUser.username }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to call next number.');
+      }
+      setRoomData(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsCallingNextNumber(false);
+    }
+  };
+
 
   const handlePlayAgain = () => {
     router.push(`/room/${roomId}/lobby`);
@@ -394,6 +425,7 @@ export default function GameRoomPage() {
   const totalTicketsInGame = roomData.players.reduce((sum, player) => sum + (player.tickets?.length || 0), 0);
   const totalPrizePool = gameSettings.ticketPrice * totalTicketsInGame;
   const otherPlayers = roomData.players.filter(p => p.id !== currentUser.username);
+  const isCurrentUserHost = roomData.host.id === currentUser.username;
 
 
   if (roomData.isGameOver) {
@@ -495,6 +527,20 @@ export default function GameRoomPage() {
             isMuted={isMuted}
             onToggleMute={() => setIsMuted(prev => !prev)}
           />
+          {isCurrentUserHost && gameSettings.callingMode === 'manual' && (
+            <Button
+              onClick={handleCallNextNumber}
+              disabled={isCallingNextNumber || roomData.isGameOver}
+              className="w-full"
+            >
+              {isCallingNextNumber ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Zap className="mr-2 h-4 w-4" />
+              )}
+              {isCallingNextNumber ? 'Calling...' : 'Call Next Number'}
+            </Button>
+          )}
           <MemoizedLiveNumberBoard 
             calledNumbers={roomData.calledNumbers} 
             currentNumber={roomData.currentNumber}
@@ -512,7 +558,7 @@ export default function GameRoomPage() {
               <Alert
                 variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") || gameMessage.includes("Error") ? "destructive" : "default"}
                 className={cn(
-                  "pr-10", // Extra padding for close button
+                  "pr-10",
                   ((gameMessage.includes("claimed") || gameMessage.includes("won") || gameMessage.toLocaleLowerCase().includes("game over"))) && !gameMessage.includes("Bogey") && !gameMessage.includes("not valid") ? "bg-green-100 dark:bg-green-900 border-green-500" : ""
                 )}
               >
@@ -555,8 +601,8 @@ export default function GameRoomPage() {
                       disabled={
                         roomData.isGameOver ||
                         hasPlayerClaimedThis ||
-                        (isPrizeClaimedByAnyone && prizeType !== PRIZE_TYPES.FULL_HOUSE && !claimInfo?.claimedBy.includes(currentUser.username)) || // If claimed by others (and not you), and it's not FH, disable
-                        (isPrizeClaimedByAnyone && prizeType === PRIZE_TYPES.FULL_HOUSE) // If FH claimed by anyone, disable
+                        (isPrizeClaimedByAnyone && prizeType !== PRIZE_TYPES.FULL_HOUSE && !claimInfo?.claimedBy.includes(currentUser.username)) || 
+                        (isPrizeClaimedByAnyone && prizeType === PRIZE_TYPES.FULL_HOUSE)
                       }
                       variant={isPrizeClaimedByAnyone ? "secondary" : "default"}
                       className={cn("px-2 py-1 rounded-md text-xs sm:text-sm",

@@ -172,8 +172,8 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
   room.prizeStatus = initializePrizeStatus(room.settings);
   room.lastNumberCalledTimestamp = undefined;
   
-  // Start server-side timer for number calling
-  if (!roomTimers.has(roomId)) {
+  // Start server-side timer for number calling ONLY if mode is 'auto'
+  if (room.settings.callingMode === 'auto' && !roomTimers.has(roomId)) {
     console.log(`Room ${roomId}: Attempting to start server-side auto-calling.`);
     const intervalId = setInterval(() => {
       const currentRoomState = getRoomStore(roomId); // Get fresh state
@@ -182,12 +182,11 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
         return;
       }
       
-      const result = callNextNumberStore(roomId); // This internally updates the room in the `rooms` Map
+      const result = callNextNumberStore(roomId); 
       
       if (result && 'error' in result) {
         if (result.error === "All numbers called.") {
             // Game over state is set within callNextNumberStore
-            // Timer will be stopped by the check above in the next iteration or by claimPrize.
         } else {
             console.error(`Error auto-calling number for room ${roomId}: ${result.error}`);
         }
@@ -271,24 +270,24 @@ export function callNextNumberStore(roomId: string): Room | { error: string; num
   const room = rooms.get(roomId);
   if (!room) return { error: "Room not found." };
   if (!room.isGameStarted) return { error: "Game not started." };
-  if (room.isGameOver) { // Check if already game over
+  if (room.isGameOver) { 
     stopRoomTimer(roomId, "Game is already over (checked in callNextNumberStore).");
     return { error: "Game is over." };
   }
 
   if (room.numberPool.length === 0) {
     room.isGameOver = true;
-    room.lastNumberCalledTimestamp = new Date(); // Mark timestamp for final state
+    room.lastNumberCalledTimestamp = new Date(); 
     if (!room.prizeStatus[PRIZE_TYPES.FULL_HOUSE] || room.prizeStatus[PRIZE_TYPES.FULL_HOUSE]!.claimedBy.length === 0) {
       console.log(`Room ${roomId}: All numbers called. No Full House winner.`);
     }
-    rooms.set(roomId, room); // Save game over state
+    rooms.set(roomId, room); 
     stopRoomTimer(roomId, "All numbers called (detected in callNextNumberStore).");
     return { error: "All numbers called.", number: room.currentNumber ?? undefined };
   }
 
   const nextNumber = room.numberPool.pop();
-  if (nextNumber === undefined) { // Should be caught by previous check, but for safety
+  if (nextNumber === undefined) { 
     room.isGameOver = true;
     room.lastNumberCalledTimestamp = new Date();
     rooms.set(roomId, room);
@@ -300,7 +299,6 @@ export function callNextNumberStore(roomId: string): Room | { error: string; num
   room.calledNumbers.push(nextNumber);
   room.lastNumberCalledTimestamp = new Date();
   rooms.set(roomId, room);
-  // Logging moved to startGameInRoomStore for server-side calls
   return room;
 }
 
@@ -308,7 +306,7 @@ export function claimPrizeStore(
   roomId: string,
   playerId: string,
   prizeType: PrizeType,
-  ticketIndex: number // This is now ignored for validation, but kept for API compatibility.
+  ticketIndex: number 
 ): Room | { error: string } {
   const room = rooms.get(roomId);
   if (!room) return { error: "Room not found." };
@@ -339,21 +337,19 @@ export function claimPrizeStore(
   let isValidClaim = false;
   let winningTicket: HousieTicketGrid | null = null;
   
-  // Server-authoritative check: iterate all player tickets.
   for (const ticket of player.tickets) {
     if (housieLib.checkWinningCondition(ticket, room.calledNumbers, prizeType)) {
       isValidClaim = true;
-      winningTicket = ticket; // Store the winning ticket for Full House auto-claim logic
+      winningTicket = ticket; 
       break; 
     }
   }
 
   if (!isValidClaim) return { error: `Claim for ${prizeType} is not valid (Bogey!).` };
 
-  // Initialize claim if it doesn't exist or claimedBy is not an array
   if (!room.prizeStatus[prizeType] || !Array.isArray(room.prizeStatus[prizeType]?.claimedBy)) {
     room.prizeStatus[prizeType] = { claimedBy: [], timestamp: new Date() };
-  } else if (!room.prizeStatus[prizeType]!.timestamp) { // Set timestamp if not already set (first claim for this prize)
+  } else if (!room.prizeStatus[prizeType]!.timestamp) { 
     room.prizeStatus[prizeType]!.timestamp = new Date();
   }
   room.prizeStatus[prizeType]!.claimedBy.push(playerId);
@@ -363,7 +359,6 @@ export function claimPrizeStore(
     console.log(`Room ${roomId}: Full House claimed by ${playerId}. Game Over.`);
     stopRoomTimer(roomId, "Full House claimed");
 
-    // Auto-award unclaimed lines on the winning Full House ticket
     const linePrizesToAutoCheck: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
     for (const linePrize of linePrizesToAutoCheck) {
       const isLinePrizeClaimed = room.prizeStatus[linePrize]?.claimedBy?.length > 0;
@@ -401,7 +396,7 @@ export function getRoomStateForClient(roomId: string): Omit<Room, 'numberPool'> 
       id: p.id,
       name: p.name,
       isHost: p.isHost,
-      tickets: Array.isArray(p.tickets) ? p.tickets : [], // Ensure tickets is always an array
+      tickets: Array.isArray(p.tickets) ? p.tickets : [], 
     }));
 
     const prizeStatusForClient: Record<PrizeType, PrizeClaim | null> = {} as any;

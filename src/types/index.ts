@@ -13,12 +13,14 @@ export interface BackendPlayerInRoom extends Player {
 
 export type TicketPrice = 5 | 10 | 20 | 25 | 50 | 100;
 export type PrizeFormat = "Format 1";
+export type CallingMode = 'auto' | 'manual';
 
 export interface GameSettings {
   ticketPrice: TicketPrice;
   lobbySize: number;
   prizeFormat: PrizeFormat;
   numberOfTicketsPerPlayer: number; // How many tickets each player gets by default
+  callingMode: CallingMode;
 }
 
 export const PRIZE_TYPES = {

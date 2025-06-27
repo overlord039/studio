@@ -1,6 +1,6 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { callNextNumberStore, getRoomStateForClient } from '@/lib/server/game-store';
+import { callNextNumberStore, getRoomStateForClient, getRoomStore } from '@/lib/server/game-store';
 
 export async function POST(
   request: NextRequest,
@@ -9,24 +9,30 @@ export async function POST(
   const { roomId } = params;
 
   try {
-    // Optional: Add hostId verification if only host can call numbers
-    // const { hostId } = await request.json() as { hostId?: string };
-    // if (!hostId) return NextResponse.json({ message: 'Host ID required' }, { status: 400 });
-    // const room = getRoomStore(roomId); // fetch raw room to check host
-    // if (room && room.host.id !== hostId) {
-    //   return NextResponse.json({ message: 'Only host can call numbers' }, { status: 403 });
-    // }
-
+    const { hostId } = (await request.json()) as { hostId?: string };
+    if (!hostId) {
+      return NextResponse.json({ message: 'Host ID required to call number' }, { status: 400 });
+    }
+    
+    const room = getRoomStore(roomId); 
+    if (!room) {
+      return NextResponse.json({ message: "Room not found." }, { status: 404 });
+    }
+    if (room.host.id !== hostId) {
+      return NextResponse.json({ message: 'Only the host can call numbers manually' }, { status: 403 });
+    }
+    if (room.settings.callingMode !== 'manual') {
+        return NextResponse.json({ message: 'This room is in automatic calling mode.' }, { status: 400 });
+    }
 
     const result = callNextNumberStore(roomId);
 
     if (result && 'error' in result) {
-      // Send back the current number even if all numbers are called
       const errorResponse: { message: string, currentNumber?: number } = { message: result.error };
       if (result.number !== undefined) {
         errorResponse.currentNumber = result.number;
       }
-      return NextResponse.json(errorResponse, { status: result.error === "Room not found." ? 404 : 400 });
+      return NextResponse.json(errorResponse, { status: 400 });
     }
     
     const roomForClient = getRoomStateForClient(roomId);

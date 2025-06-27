@@ -1,61 +1,30 @@
-
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
-import { TICKET_PRICES, PRIZE_FORMATS, MIN_LOBBY_SIZE, MAX_LOBBY_SIZE, DEFAULT_GAME_SETTINGS } from "@/lib/constants";
-import type { TicketPrice, PrizeFormat, Player, Room, GameSettings } from "@/types";
-import { Settings } from "lucide-react";
-import { useAuth } from "@/contexts/auth-context";
-import { useState } from "react";
+import Link from 'next/link';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Globe, House, CheckCircle2 } from 'lucide-react';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/hooks/use-toast';
 
-const createRoomFormSchema = z.object({
-  ticketPrice: z.coerce.number().refine(price => TICKET_PRICES.includes(price as TicketPrice), {
-    message: "Invalid ticket price.",
-  }),
-  lobbySize: z.coerce.number().min(MIN_LOBBY_SIZE, `Minimum lobby size is ${MIN_LOBBY_SIZE}.`).max(MAX_LOBBY_SIZE, `Maximum lobby size is ${MAX_LOBBY_SIZE}.`),
-  prizeFormat: z.string().refine(format => PRIZE_FORMATS.includes(format as PrizeFormat), { // Kept for consistency, though only one format now
-    message: "Invalid prize format.",
-  }),
-  numberOfTicketsPerPlayer: z.coerce.number().min(1, 'Each player must have at least 1 ticket.').max(4, 'Maximum 4 tickets per player.'),
-});
+type Mode = 'public' | 'private';
 
-type CreateRoomFormValues = z.infer<typeof createRoomFormSchema>;
-
-export default function CreateRoomPage() {
-  const { toast } = useToast();
+export default function CreateRoomSelectionPage() {
+  const [selectedMode, setSelectedMode] = useState<Mode | null>(null);
   const router = useRouter();
-  const { currentUser, loading: authLoading } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { currentUser } = useAuth();
+  const { toast } = useToast();
 
-  const form = useForm<CreateRoomFormValues>({
-    resolver: zodResolver(createRoomFormSchema),
-    defaultValues: {
-      ticketPrice: DEFAULT_GAME_SETTINGS.ticketPrice,
-      lobbySize: DEFAULT_GAME_SETTINGS.lobbySize,
-      prizeFormat: DEFAULT_GAME_SETTINGS.prizeFormat,
-      numberOfTicketsPerPlayer: DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer,
-    },
-  });
-
-  async function onSubmit(values: CreateRoomFormValues) {
+  const handleSelectMode = (mode: Mode) => {
+    setSelectedMode(mode);
+  };
+  
+  const handleContinue = () => {
     if (!currentUser) {
-      toast({
+       toast({
         title: "Login Required",
         description: "Please log in to create a room.",
         variant: "destructive",
@@ -63,171 +32,89 @@ export default function CreateRoomPage() {
       router.push('/auth/login');
       return;
     }
-    setIsSubmitting(true);
-
-    const hostPlayer: Player = {
-      id: currentUser.username, 
-      name: currentUser.username,
-      isHost: true, // This is implied by creating, but explicit is fine
-    };
-
-    const roomSettings: GameSettings = {
-      ticketPrice: values.ticketPrice,
-      lobbySize: values.lobbySize,
-      prizeFormat: values.prizeFormat,
-      numberOfTicketsPerPlayer: values.numberOfTicketsPerPlayer,
-    };
-
-    try {
-      const response = await fetch('/api/rooms/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ host: hostPlayer, settings: roomSettings }),
+    
+    if (selectedMode === 'private') {
+      router.push('/create-room/private');
+    } else if (selectedMode === 'public') {
+      // Logic for public room creation, for now disabled.
+       toast({
+        title: "Coming Soon!",
+        description: "Public multiplayer rooms are not yet available.",
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to create room: ${response.statusText}`);
-      }
-
-      const newRoom: Room = await response.json(); // Expecting full Room object
-      
-      toast({
-        title: "Room Created!",
-        description: `Room ID: ${newRoom.id}. Share this ID with friends!`,
-      });
-      // Navigate to lobby, room details will be fetched there
-      router.push(`/room/${newRoom.id}/lobby`);
-
-    } catch (error) {
-      console.error("Error creating room:", error);
-      toast({
-        title: "Error",
-        description: (error as Error).message || "Could not create room. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
     }
-  }
+  };
+
+  const options = [
+    {
+      mode: 'public' as Mode,
+      title: "Public Multiplayer",
+      subtitle: "Play globally with auto-called numbers",
+      icon: Globe,
+      description: "Numbers are called automatically at a fixed speed. No host controls for manual calling.",
+      disabled: true,
+      href: "#"
+    },
+    {
+      mode: 'private' as Mode,
+      title: "Private Multiplayer",
+      subtitle: "Play with friends and family",
+      icon: House,
+      description: "Host can choose between automatic system calls or manual calls, and can pause/resume the game.",
+      disabled: false,
+      href: "/create-room/private"
+    }
+  ];
 
   return (
     <div className="flex flex-col items-center justify-center py-12">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center">
-           <div className="flex justify-center mb-4">
-            <Settings className="h-12 w-12 text-primary" />
-          </div>
-          <CardTitle className="text-3xl font-bold">Create Housie Game</CardTitle>
-          <CardDescription>Set up your game and invite friends!</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="ticketPrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ticket Price (₹)</FormLabel>
-                    <Select 
-                        onValueChange={(value) => field.onChange(Number(value))} 
-                        defaultValue={String(field.value)}
-                        disabled={isSubmitting || authLoading}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select ticket price" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {TICKET_PRICES.map(price => (
-                          <SelectItem key={price} value={String(price)}>₹{price}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lobbySize"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Lobby Size (Max Players)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder={`e.g., ${DEFAULT_GAME_SETTINGS.lobbySize}`} 
-                        {...field} 
-                        onChange={e => field.onChange(parseInt(e.target.value,10) || 0)}
-                        disabled={isSubmitting || authLoading}
-                        />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="numberOfTicketsPerPlayer"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tickets Per Player (Default)</FormLabel>
-                    <Select
-                        onValueChange={(value) => field.onChange(Number(value))}
-                        defaultValue={String(field.value)}
-                        disabled={isSubmitting || authLoading}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select default tickets per player" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {[1, 2, 3, 4].map(num => (
-                          <SelectItem key={num} value={String(num)}>{num} ticket(s)</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="prizeFormat"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Prize Format</FormLabel>
-                     <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                        disabled={isSubmitting || authLoading}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select prize format" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {PRIZE_FORMATS.map(format => (
-                          <SelectItem key={format} value={format}>{format} (Standard)</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || authLoading}>
-                {isSubmitting ? "Creating Room..." : "Create Room"}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+      <div className="text-center mb-10">
+        <h1 className="text-4xl font-bold">Choose Your Game Mode</h1>
+        <p className="text-muted-foreground mt-2 text-lg">Select how you want to play Housie.</p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+        {options.map((option) => (
+           <Card
+            key={option.mode}
+            onClick={() => !option.disabled && handleSelectMode(option.mode)}
+            className={cn(
+              "shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer relative overflow-hidden border-2",
+              selectedMode === option.mode ? 'border-primary shadow-primary/20' : 'border-transparent',
+              option.disabled ? 'opacity-50 cursor-not-allowed hover:transform-none' : ''
+            )}
+          >
+             {selectedMode === option.mode && (
+              <div className="absolute top-3 right-3 bg-primary text-primary-foreground rounded-full p-1">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+            )}
+             {option.disabled && (
+                <div className="absolute top-2 right-2 bg-muted text-muted-foreground text-xs font-bold uppercase px-2 py-1 rounded-full">
+                    Coming Soon
+                </div>
+            )}
+            <CardHeader className="items-center text-center">
+              <div className="p-4 bg-primary/20 rounded-full mb-4 inline-block">
+                <option.icon className="h-12 w-12 text-primary" />
+              </div>
+              <CardTitle className="text-2xl font-bold">{option.title}</CardTitle>
+              <CardDescription>{option.subtitle}</CardDescription>
+            </CardHeader>
+            <CardContent className="text-center">
+              <p className="text-muted-foreground min-h-[4rem]">{option.description}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+       <div className="mt-12 w-full max-w-sm">
+          <Button
+            size="lg"
+            className="w-full"
+            disabled={!selectedMode}
+            onClick={handleContinue}
+          >
+           Continue
+          </Button>
+      </div>
     </div>
   );
 }
