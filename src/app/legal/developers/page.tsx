@@ -53,14 +53,14 @@ export default function DevelopersPage() {
         </CardContent>
       </Card>
       
-      <div className="text-center mt-8 space-y-6">
+      <div className="text-center mt-8">
           <p className="flex justify-center items-center gap-2 text-sm text-muted-foreground">
             <span>This site was built with</span>
             <Heart className="h-4 w-4 text-red-500 fill-current" />
             <span>using React, Node.js, and AI-assisted tools.</span>
           </p>
           <Link href="/" passHref>
-            <Button variant="outline">
+            <Button variant="outline" className="mt-8">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Home
             </Button>
