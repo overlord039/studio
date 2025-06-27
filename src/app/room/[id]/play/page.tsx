@@ -552,14 +552,16 @@ export default function GameRoomPage() {
                           aria-label="Toggle automatic number calling"
                       />
                   </div>
-                  <Button 
-                      onClick={handleCallNextNumber}
-                      disabled={isCallingNextNumber || isAutoCalling || roomData.isGameOver}
-                      className="w-full"
-                  >
-                      <Zap className="mr-2 h-4 w-4" />
-                      {isCallingNextNumber ? 'Calling...' : 'Call Next Number'}
-                  </Button>
+                  {!isAutoCalling && (
+                    <Button 
+                        onClick={handleCallNextNumber}
+                        disabled={isCallingNextNumber || roomData.isGameOver}
+                        className="w-full"
+                    >
+                        <Zap className="mr-2 h-4 w-4" />
+                        {isCallingNextNumber ? 'Calling...' : 'Call Next Number'}
+                    </Button>
+                  )}
               </CardContent>
             </Card>
           )}
@@ -728,3 +730,5 @@ export default function GameRoomPage() {
     </div>
   );
 }
+
+    
