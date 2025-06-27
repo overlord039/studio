@@ -22,18 +22,18 @@ export default function LiveNumberBoard({ calledNumbers, currentNumber, isMinimi
   return (
     <Card className="shadow-lg">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <CardTitle className="text-lg font-semibold flex items-center">
-            <ListOrdered className="mr-2 h-5 w-5 text-primary" />
-            Number Board
-          </CardTitle>
-          <span className="text-xs text-muted-foreground">
-            {numbersRemaining} numbers remaining. Total Called: {totalCalled}.
+        <CardTitle className="text-lg font-semibold flex items-center">
+          <ListOrdered className="mr-2 h-5 w-5 text-primary" />
+          Number Board
+        </CardTitle>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-muted-foreground hidden md:block">
+            {numbersRemaining} numbers remaining &middot; {totalCalled} called
           </span>
+          <Button variant="ghost" size="sm" onClick={onToggleMinimize} aria-label={isMinimized ? "Expand board" : "Minimize board"}>
+            {isMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
+          </Button>
         </div>
-        <Button variant="ghost" size="sm" onClick={onToggleMinimize} aria-label={isMinimized ? "Expand board" : "Minimize board"}>
-          {isMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
-        </Button>
       </CardHeader>
       {!isMinimized && (
         <CardContent className="pt-0">
