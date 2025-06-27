@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +18,8 @@ interface GameOption {
   description: string;
   disabled: boolean;
   href: string;
+  iconBgColor: string;
+  iconTextColor: string;
 }
 
 export default function CreateRoomSelectionPage() {
@@ -32,7 +35,9 @@ export default function CreateRoomSelectionPage() {
       icon: Globe,
       description: "Numbers are called automatically at a fixed speed. No host controls for manual calling.",
       disabled: false,
-      href: "/create-room/public"
+      href: "/create-room/public",
+      iconBgColor: "bg-accent/20",
+      iconTextColor: "text-accent",
     },
     {
       mode: 'private' as Mode,
@@ -41,7 +46,9 @@ export default function CreateRoomSelectionPage() {
       icon: House,
       description: "Host can choose between automatic system calls or manual calls, and can pause/resume the game.",
       disabled: false,
-      href: "/create-room/private"
+      href: "/create-room/private",
+      iconBgColor: "bg-primary/20",
+      iconTextColor: "text-primary",
     }
   ];
   
@@ -89,8 +96,8 @@ export default function CreateRoomSelectionPage() {
                 </div>
             )}
             <CardHeader className="items-center text-center">
-              <div className="p-4 bg-primary/20 rounded-full mb-4 inline-block">
-                <option.icon className="h-12 w-12 text-primary" />
+              <div className={cn("p-4 rounded-full mb-4 inline-block", option.iconBgColor)}>
+                <option.icon className={cn("h-12 w-12", option.iconTextColor)} />
               </div>
               <CardTitle className="text-2xl font-bold">{option.title}</CardTitle>
               <CardDescription>{option.subtitle}</CardDescription>
