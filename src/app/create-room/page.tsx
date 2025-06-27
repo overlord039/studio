@@ -1,10 +1,7 @@
 "use client";
 
-import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Globe, House, CheckCircle2 } from 'lucide-react';
-import { useState } from 'react';
+import { Globe, House } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
@@ -12,39 +9,22 @@ import { useToast } from '@/hooks/use-toast';
 
 type Mode = 'public' | 'private';
 
+interface GameOption {
+  mode: Mode;
+  title: string;
+  subtitle: string;
+  icon: React.ElementType;
+  description: string;
+  disabled: boolean;
+  href: string;
+}
+
 export default function CreateRoomSelectionPage() {
-  const [selectedMode, setSelectedMode] = useState<Mode | null>(null);
   const router = useRouter();
   const { currentUser } = useAuth();
   const { toast } = useToast();
 
-  const handleSelectMode = (mode: Mode) => {
-    setSelectedMode(mode);
-  };
-  
-  const handleContinue = () => {
-    if (!currentUser) {
-       toast({
-        title: "Login Required",
-        description: "Please log in to create a room.",
-        variant: "destructive",
-      });
-      router.push('/auth/login');
-      return;
-    }
-    
-    if (selectedMode === 'private') {
-      router.push('/create-room/private');
-    } else if (selectedMode === 'public') {
-      // Logic for public room creation, for now disabled.
-       toast({
-        title: "Coming Soon!",
-        description: "Public multiplayer rooms are not yet available.",
-      });
-    }
-  };
-
-  const options = [
+  const options: GameOption[] = [
     {
       mode: 'public' as Mode,
       title: "Public Multiplayer",
@@ -64,6 +44,28 @@ export default function CreateRoomSelectionPage() {
       href: "/create-room/private"
     }
   ];
+  
+  const handleCardClick = (option: GameOption) => {
+    if (option.disabled) {
+      toast({
+        title: "Coming Soon!",
+        description: "Public multiplayer rooms are not yet available.",
+      });
+      return;
+    }
+
+    if (!currentUser) {
+       toast({
+        title: "Login Required",
+        description: "Please log in to create a room.",
+        variant: "destructive",
+      });
+      router.push('/auth/login');
+      return;
+    }
+    
+    router.push(option.href);
+  };
 
   return (
     <div className="flex flex-col items-center justify-center py-12">
@@ -75,18 +77,12 @@ export default function CreateRoomSelectionPage() {
         {options.map((option) => (
            <Card
             key={option.mode}
-            onClick={() => !option.disabled && handleSelectMode(option.mode)}
+            onClick={() => handleCardClick(option)}
             className={cn(
-              "shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer relative overflow-hidden border-2",
-              selectedMode === option.mode ? 'border-primary shadow-primary/20' : 'border-transparent',
+              "shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer relative overflow-hidden border-2 border-transparent",
               option.disabled ? 'opacity-50 cursor-not-allowed hover:transform-none' : ''
             )}
           >
-             {selectedMode === option.mode && (
-              <div className="absolute top-3 right-3 bg-primary text-primary-foreground rounded-full p-1">
-                <CheckCircle2 className="h-5 w-5" />
-              </div>
-            )}
              {option.disabled && (
                 <div className="absolute top-2 right-2 bg-muted text-muted-foreground text-xs font-bold uppercase px-2 py-1 rounded-full">
                     Coming Soon
@@ -104,16 +100,6 @@ export default function CreateRoomSelectionPage() {
             </CardContent>
           </Card>
         ))}
-      </div>
-       <div className="mt-12 w-full max-w-sm">
-          <Button
-            size="lg"
-            className="w-full"
-            disabled={!selectedMode}
-            onClick={handleContinue}
-          >
-           Continue
-          </Button>
       </div>
     </div>
   );
