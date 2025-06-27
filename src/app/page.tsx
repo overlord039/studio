@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -25,7 +26,7 @@ import {
   SunMoon,
   GraduationCap,
   ChevronRight,
-  Calculator // Added Calculator icon
+  Calculator
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -124,9 +125,9 @@ export default function HomePage() {
 
       {/* Main Options */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-        <Card className="shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 bg-card/80 backdrop-blur-sm border border-border/30 rounded-lg overflow-hidden">
+        <Card className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 group rounded-lg overflow-hidden">
           <CardHeader className="text-center items-center">
-            <div className="p-3 bg-primary/20 rounded-full mb-4 inline-block">
+            <div className="p-3 bg-primary/10 group-hover:bg-primary/20 transition-colors rounded-full mb-4 inline-block">
               <UsersRound className="h-10 w-10 text-primary" />
             </div>
             <CardTitle className="text-2xl font-bold">Create Multiplayer Room</CardTitle>
@@ -139,10 +140,10 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 bg-card/80 backdrop-blur-sm border border-border/30 rounded-lg overflow-hidden">
+        <Card className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 group rounded-lg overflow-hidden">
           <CardHeader className="text-center items-center">
-            <div className="p-3 bg-green-500/20 rounded-full mb-4 inline-block">
-             <KeyRound className="h-10 w-10 text-green-600" />
+            <div className="p-3 bg-accent/10 group-hover:bg-accent/20 transition-colors rounded-full mb-4 inline-block">
+             <KeyRound className="h-10 w-10 text-accent" />
             </div>
             <CardTitle className="text-2xl font-bold">Join Room</CardTitle>
             <CardDescription>Enter a Room ID to join a game.</CardDescription>
@@ -163,9 +164,9 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 bg-card/80 backdrop-blur-sm border border-border/30 rounded-lg overflow-hidden">
+        <Card className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 group rounded-lg overflow-hidden">
           <CardHeader className="text-center items-center">
-            <div className="p-3 bg-blue-500/20 rounded-full mb-4 inline-block">
+            <div className="p-3 bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors rounded-full mb-4 inline-block">
               <Speaker className="h-10 w-10 text-blue-600" />
             </div>
             <CardTitle className="text-2xl font-bold">Number Caller</CardTitle>
@@ -173,24 +174,24 @@ export default function HomePage() {
           </CardHeader>
           <CardContent className="text-center">
             <Link href="/number-caller" passHref>
-              <Button className="w-full" size="lg">
+              <Button variant="outline" className="w-full" size="lg">
                 Open Caller
               </Button>
             </Link>
           </CardContent>
         </Card>
         
-        <Card className="shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 bg-card/80 backdrop-blur-sm border border-border/30 rounded-lg overflow-hidden">
+        <Card className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 group rounded-lg overflow-hidden">
           <CardHeader className="text-center items-center">
-            <div className="p-3 bg-yellow-500/20 rounded-full mb-4 inline-block">
-              <Calculator className="h-10 w-10 text-yellow-600" />
+            <div className="p-3 bg-green-500/10 group-hover:bg-green-500/20 transition-colors rounded-full mb-4 inline-block">
+              <Calculator className="h-10 w-10 text-green-600" />
             </div>
             <CardTitle className="text-2xl font-bold">Prize Calculator</CardTitle>
             <CardDescription>Calculate prize money distribution.</CardDescription>
           </CardHeader>
           <CardContent className="text-center">
             <Link href="/prize-calculator" passHref>
-              <Button className="w-full" size="lg">
+              <Button variant="outline" className="w-full" size="lg">
                 Open Calculator
               </Button>
             </Link>
