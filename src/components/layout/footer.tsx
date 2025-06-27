@@ -20,15 +20,15 @@ const DiscordIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 const footerLinks = [
-    { name: 'Support', href: '#' },
-    { name: 'About', href: '#' },
-    { name: 'Developers', href: '#' },
-    { name: 'User Agreement', href: '#' },
-    { name: 'Privacy Policy', href: '#' },
-    { name: 'Privacy Settings', href: '#' },
-    { name: 'Fair Play', href: '#' },
-    { name: 'Compliance', href: '#' },
-    { name: 'HousieHub © 2025', href: '#' },
+    { name: 'Support', href: '/legal/support' },
+    { name: 'About', href: '/legal/about' },
+    { name: 'Developers', href: '/legal/developers' },
+    { name: 'User Agreement', href: '/legal/user-agreement' },
+    { name: 'Privacy Policy', href: '/legal/privacy-policy' },
+    { name: 'Privacy Settings', href: '/legal/privacy-settings' },
+    { name: 'Fair Play', href: '/legal/fair-play' },
+    { name: 'Compliance', href: '/legal/compliance' },
+    { name: 'HousieHub © 2025', href: '/' },
 ];
 
 const socialLinks = [
