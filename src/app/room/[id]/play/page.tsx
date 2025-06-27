@@ -533,11 +533,17 @@ export default function GameRoomPage() {
 
           {isCurrentUserHost && !roomData.isGameOver && (
             <Card>
-              <CardHeader className="pb-2 pt-3 md:pt-4">
-                  <CardTitle className="text-lg md:text-xl flex items-center"><Settings2 className="mr-2 h-5 w-5 text-primary"/>Caller Controls</CardTitle>
+              <CardHeader className="pb-2 pt-3">
+                  <CardTitle className="text-lg flex items-center"><Settings2 className="mr-2 h-5 w-5 text-primary"/>Caller Controls</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 p-4">
-                  <div className="flex items-center space-x-2 rounded-md border p-3">
+              <CardContent className="p-3 pt-0 space-y-3">
+                  <div className="flex items-center justify-between rounded-md border p-3">
+                      <Label htmlFor="calling-mode-switch" className="flex flex-col cursor-pointer">
+                          <span className="font-semibold">Auto-Call</span>
+                          <span className="text-xs text-muted-foreground">
+                              {isAutoCalling ? "System is calling" : "Paused, call manually"}
+                          </span>
+                      </Label>
                       <Switch
                           id="calling-mode-switch"
                           checked={isAutoCalling}
@@ -545,19 +551,13 @@ export default function GameRoomPage() {
                           disabled={isUpdatingMode || roomData.isGameOver}
                           aria-label="Toggle automatic number calling"
                       />
-                      <Label htmlFor="calling-mode-switch" className="flex flex-col cursor-pointer">
-                          <span>Auto-Call Mode</span>
-                          <span className="text-xs font-normal text-muted-foreground">
-                              {isAutoCalling ? "Numbers are called automatically." : "Host calls numbers manually."}
-                          </span>
-                      </Label>
                   </div>
                   <Button 
                       onClick={handleCallNextNumber}
                       disabled={isCallingNextNumber || isAutoCalling || roomData.isGameOver}
                       className="w-full"
                   >
-                      {isCallingNextNumber ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+                      <Zap className="mr-2 h-4 w-4" />
                       {isCallingNextNumber ? 'Calling...' : 'Call Next Number'}
                   </Button>
               </CardContent>
