@@ -21,6 +21,7 @@ export interface GameSettings {
   prizeFormat: PrizeFormat;
   numberOfTicketsPerPlayer: number; // How many tickets each player gets by default
   callingMode: CallingMode;
+  isPublic?: boolean;
 }
 
 export const PRIZE_TYPES = {

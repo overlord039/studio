@@ -31,8 +31,8 @@ export default function CreateRoomSelectionPage() {
       subtitle: "Play globally with auto-called numbers",
       icon: Globe,
       description: "Numbers are called automatically at a fixed speed. No host controls for manual calling.",
-      disabled: true,
-      href: "#"
+      disabled: false,
+      href: "/create-room/public"
     },
     {
       mode: 'private' as Mode,
@@ -49,7 +49,7 @@ export default function CreateRoomSelectionPage() {
     if (option.disabled) {
       toast({
         title: "Coming Soon!",
-        description: "Public multiplayer rooms are not yet available.",
+        description: "This feature is not yet available.",
       });
       return;
     }

@@ -426,6 +426,7 @@ export default function GameRoomPage() {
   const totalPrizePool = gameSettings.ticketPrice * totalTicketsInGame;
   const otherPlayers = roomData.players.filter(p => p.id !== currentUser.username);
   const isCurrentUserHost = roomData.host.id === currentUser.username;
+  const ticketsText = (count: number) => count === 1 ? 'ticket' : 'tickets';
 
 
   if (roomData.isGameOver) {
@@ -518,7 +519,7 @@ export default function GameRoomPage() {
       <Card className="shadow-md">
         <CardContent className="p-3 md:p-4 flex flex-col sm:flex-row justify-between items-center text-sm">
           <div>Room ID: #{roomId} | Prize Pool: ₹{totalPrizePool.toFixed(2)} | Players: {roomData.players.length}</div>
-          <div className="font-semibold text-primary">{currentUser.username} ({myTickets.length} {myTickets.length === 1 ? 'ticket' : 'tickets'})</div>
+          <div className="font-semibold text-primary">{currentUser.username} ({myTickets.length} {ticketsText(myTickets.length)})</div>
         </CardContent>
       </Card>
 
@@ -531,7 +532,7 @@ export default function GameRoomPage() {
               onToggleMute={() => setIsMuted(prev => !prev)}
             />
 
-          {isCurrentUserHost && !roomData.isGameOver && (
+          {isCurrentUserHost && !roomData.settings.isPublic && !roomData.isGameOver && (
             <Card>
               <CardHeader className="pb-2 pt-3">
                   <CardTitle className="text-lg flex items-center"><Settings2 className="mr-2 h-5 w-5 text-primary"/>Caller Controls</CardTitle>
@@ -708,7 +709,7 @@ export default function GameRoomPage() {
                       {otherPlayers.map((player, index) => (
                         <li key={player.id || index} className="flex justify-between items-center">
                           <span>{player.name}</span>
-                          <span className="text-muted-foreground">{player.tickets?.length || 0} {(player.tickets?.length || 0) === 1 ? 'ticket' : 'tickets'}</span>
+                          <span className="text-muted-foreground">{player.tickets?.length || 0} {ticketsText(player.tickets?.length || 0)}</span>
                         </li>
                       ))}
                       {otherPlayers.length === 0 && <li className="text-muted-foreground">No other players in the room.</li>}
