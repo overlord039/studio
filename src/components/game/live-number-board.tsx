@@ -1,7 +1,6 @@
-
 "use client";
 
-import React from 'react'; // Removed useState as it's now controlled by parent
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MinusSquare, PlusSquare, ListOrdered } from 'lucide-react';
@@ -17,14 +16,21 @@ interface LiveNumberBoardProps {
 
 export default function LiveNumberBoard({ calledNumbers, currentNumber, isMinimized, onToggleMinimize }: LiveNumberBoardProps) {
   const numbers = Array.from({ length: NUMBERS_RANGE_MAX - NUMBERS_RANGE_MIN + 1 }, (_, i) => NUMBERS_RANGE_MIN + i);
+  const totalCalled = calledNumbers.length;
+  const numbersRemaining = NUMBERS_RANGE_MAX - totalCalled;
 
   return (
     <Card className="shadow-lg">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg font-semibold flex items-center">
-          <ListOrdered className="mr-2 h-5 w-5 text-primary" />
-          Number Board
-        </CardTitle>
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <CardTitle className="text-lg font-semibold flex items-center">
+            <ListOrdered className="mr-2 h-5 w-5 text-primary" />
+            Number Board
+          </CardTitle>
+          <span className="text-xs text-muted-foreground">
+            {numbersRemaining} remaining. {totalCalled} called.
+          </span>
+        </div>
         <Button variant="ghost" size="sm" onClick={onToggleMinimize} aria-label={isMinimized ? "Expand board" : "Minimize board"}>
           {isMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
         </Button>
@@ -54,5 +60,3 @@ export default function LiveNumberBoard({ calledNumbers, currentNumber, isMinimi
     </Card>
   );
 }
-
-    

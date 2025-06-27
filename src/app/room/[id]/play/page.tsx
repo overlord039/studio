@@ -572,9 +572,6 @@ export default function GameRoomPage() {
             isMinimized={isBoardMinimized}
             onToggleMinimize={() => setIsBoardMinimized(prev => !prev)}
           />
-          <p className="text-center text-xs text-muted-foreground">
-            {NUMBERS_RANGE_MAX - roomData.calledNumbers.length} numbers remaining. Total Called: {roomData.calledNumbers.length}.
-          </p>
         </div>
 
         <div className="lg:col-span-2">
@@ -730,5 +727,3 @@ export default function GameRoomPage() {
     </div>
   );
 }
-
-    
