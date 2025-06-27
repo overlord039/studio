@@ -525,48 +525,43 @@ export default function GameRoomPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <div className="space-y-4 lg:col-span-1">
           
-          {isCurrentUserHost && !roomData.isGameOver ? (
+           <CalledNumberDisplay 
+              currentNumber={roomData.currentNumber} 
+              isMuted={isMuted}
+              onToggleMute={() => setIsMuted(prev => !prev)}
+            />
+
+          {isCurrentUserHost && !roomData.isGameOver && (
             <Card>
-                <CardHeader className="pb-2 pt-3 md:pt-4">
-                    <CardTitle className="text-lg md:text-xl flex items-center"><Settings2 className="mr-2 h-5 w-5 text-primary"/>Caller Controls</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 pt-2 pb-3 md:pb-4">
-                    <Button 
-                        onClick={handleCallNextNumber}
-                        disabled={isCallingNextNumber || isAutoCalling || roomData.isGameOver}
-                        className="w-full"
-                        size="lg"
-                    >
-                        {isCallingNextNumber ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Zap className="mr-2 h-4 w-4" />
-                        )}
-                        {isCallingNextNumber ? 'Calling...' : 'Next Number'}
-                    </Button>
-                    <Button
-                        onClick={handleToggleCallingMode}
-                        disabled={isUpdatingMode || roomData.isGameOver}
-                        variant={isAutoCalling ? 'destructive' : 'default'}
-                        className="w-full"
-                        size="lg"
-                    >
-                        {isUpdatingMode ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isAutoCalling ? <Pause className="mr-2 h-4 w-4"/> : <Play className="mr-2 h-4 w-4"/>)}
-                        {isUpdatingMode ? 'Switching...' : (isAutoCalling ? 'Stop Auto Call' : 'Start Auto Call')}
-                    </Button>
-                </CardContent>
-                 <CalledNumberDisplay 
-                    currentNumber={roomData.currentNumber} 
-                    isMuted={isMuted}
-                    onToggleMute={() => setIsMuted(prev => !prev)}
-                  />
+              <CardHeader className="pb-2 pt-3 md:pt-4">
+                  <CardTitle className="text-lg md:text-xl flex items-center"><Settings2 className="mr-2 h-5 w-5 text-primary"/>Caller Controls</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 p-4">
+                  <div className="flex items-center space-x-2 rounded-md border p-3">
+                      <Switch
+                          id="calling-mode-switch"
+                          checked={isAutoCalling}
+                          onCheckedChange={handleToggleCallingMode}
+                          disabled={isUpdatingMode || roomData.isGameOver}
+                          aria-label="Toggle automatic number calling"
+                      />
+                      <Label htmlFor="calling-mode-switch" className="flex flex-col cursor-pointer">
+                          <span>Auto-Call Mode</span>
+                          <span className="text-xs font-normal text-muted-foreground">
+                              {isAutoCalling ? "Numbers are called automatically." : "Host calls numbers manually."}
+                          </span>
+                      </Label>
+                  </div>
+                  <Button 
+                      onClick={handleCallNextNumber}
+                      disabled={isCallingNextNumber || isAutoCalling || roomData.isGameOver}
+                      className="w-full"
+                  >
+                      {isCallingNextNumber ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+                      {isCallingNextNumber ? 'Calling...' : 'Call Next Number'}
+                  </Button>
+              </CardContent>
             </Card>
-          ) : (
-             <CalledNumberDisplay 
-                currentNumber={roomData.currentNumber} 
-                isMuted={isMuted}
-                onToggleMute={() => setIsMuted(prev => !prev)}
-              />
           )}
 
           <MemoizedLiveNumberBoard 
