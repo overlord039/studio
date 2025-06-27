@@ -329,7 +329,7 @@ export default function GameRoomPage() {
   };
 
   const handleToggleCallingMode = async () => {
-    if (!currentUser || !isCurrentUserHost || !roomData || roomData.isGameOver) return;
+    if (!currentUser || !isCurrentUserHost || !roomData || roomData.isGameOver || roomData.settings.isPublic) return;
 
     setIsUpdatingMode(true);
     const newMode = roomData.settings.callingMode === 'auto' ? 'manual' : 'auto';
@@ -655,7 +655,6 @@ export default function GameRoomPage() {
                     calledNumbers={roomData.calledNumbers}
                     markedNumbers={markedNumbers}
                     onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
-                    className="min-w-[320px] sm:min-w-[340px] md:min-w-[360px]"
                   />
                 ))}
               </div>
@@ -728,3 +727,4 @@ export default function GameRoomPage() {
     </div>
   );
 }
+
