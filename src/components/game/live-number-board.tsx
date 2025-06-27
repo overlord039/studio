@@ -28,7 +28,7 @@ export default function LiveNumberBoard({ calledNumbers, currentNumber, isMinimi
             Number Board
           </CardTitle>
           <span className="text-xs text-muted-foreground">
-            {numbersRemaining} remaining. {totalCalled} called.
+            {numbersRemaining} numbers remaining. Total Called: {totalCalled}.
           </span>
         </div>
         <Button variant="ghost" size="sm" onClick={onToggleMinimize} aria-label={isMinimized ? "Expand board" : "Minimize board"}>
