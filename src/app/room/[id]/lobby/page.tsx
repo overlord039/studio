@@ -173,8 +173,9 @@ export default function LobbyPage() {
       const updatedRoom: Room = await response.json();
       setRoomData(updatedRoom); 
       const userInUpdatedRoom = updatedRoom.players.find(p => p.id === currentUser.username);
-      setSelectedTicketsToBuy(userInUpdatedRoom?.tickets.length || selectedTicketsToBuy);
-      toast({ title: "Tickets Confirmed!", description: `You now have ${userInUpdatedRoom?.tickets.length || selectedTicketsToBuy} ticket(s).` });
+      const finalTicketCount = userInUpdatedRoom?.tickets.length || selectedTicketsToBuy;
+      setSelectedTicketsToBuy(finalTicketCount);
+      toast({ title: "Tickets Confirmed!", description: `You now have ${finalTicketCount} ${finalTicketCount === 1 ? 'ticket' : 'tickets'}.` });
       setIsEditingTickets(false);
     } catch (err) {
       console.error("Error confirming/joining tickets:", err);
@@ -361,12 +362,13 @@ export default function LobbyPage() {
   const showTicketSelectionUI = currentUser && !roomData.isGameStarted && 
     (!doesCurrentUserHaveTickets || isEditingTickets);
   
-  let buttonTextForConfirm = `Confirm and Join with ${selectedTicketsToBuy} ticket(s)`;
+  const ticketsText = (count: number) => count === 1 ? 'ticket' : 'tickets';
+  let buttonTextForConfirm = `Confirm and Join with ${selectedTicketsToBuy} ${ticketsText(selectedTicketsToBuy)}`;
   let cardTitleForTickets = "Join Game & Buy Tickets";
 
   if (doesCurrentUserHaveTickets && isEditingTickets) {
     cardTitleForTickets = "Update Your Tickets";
-    buttonTextForConfirm = `Update to ${selectedTicketsToBuy} ticket(s)`;
+    buttonTextForConfirm = `Update to ${selectedTicketsToBuy} ${ticketsText(selectedTicketsToBuy)}`;
   } else if (isCurrentUserHost && !doesCurrentUserHaveTickets) {
       buttonTextForConfirm = `Confirm Host Tickets (${selectedTicketsToBuy})`;
       cardTitleForTickets = "Buy Your Host Tickets";
@@ -442,7 +444,7 @@ export default function LobbyPage() {
                   <SelectContent>
                     {Array.from({ length: MAX_TICKETS_PER_PLAYER }, (_, i) => i + 1).map(num => (
                       <SelectItem key={num} value={String(num)}>
-                        {num} ticket(s)
+                        {num} {ticketsText(num)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -465,7 +467,7 @@ export default function LobbyPage() {
               </CardHeader>
               <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <p className="font-medium">
-                  You have {currentUserInRoom?.tickets.length} ticket(s) confirmed.
+                  You have {currentUserInRoom?.tickets.length} {ticketsText(currentUserInRoom?.tickets.length ?? 0)} confirmed.
                   {!isCurrentUserHost && " Waiting for host..."}
                 </p>
                 <Button onClick={() => setIsEditingTickets(true)} variant="outline">
@@ -503,7 +505,7 @@ export default function LobbyPage() {
               <CardContent className="p-4 space-y-2">
                  <p className="text-sm font-semibold">Potential Prize Pool: ₹{currentTotalPrizePool.toFixed(2)}</p>
                  <p className="text-xs text-muted-foreground">
-                   (Based on {totalTicketsBoughtByPlayers} ticket(s) confirmed by players for this round)
+                   (Based on {totalTicketsBoughtByPlayers} {ticketsText(totalTicketsBoughtByPlayers)} confirmed by players for this round)
                  </p>
                 {prizesForFormat.map((prizeName) => {
                   const percentage = prizeDistribution[prizeName as PrizeType] || 0;
@@ -571,5 +573,7 @@ export default function LobbyPage() {
     </div>
   );
 }
+
+    
 
     
