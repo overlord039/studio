@@ -168,6 +168,34 @@ export default function CreatePrivateRoomPage() {
                   </FormItem>
                 )}
               />
+               <FormField
+                control={form.control}
+                name="prizeFormat"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Prize Format</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={isSubmitting || authLoading}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select prize format" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {PRIZE_FORMATS.map((format) => (
+                          <SelectItem key={format} value={format}>
+                            {format}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="numberOfTicketsPerPlayer"
