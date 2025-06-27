@@ -518,7 +518,7 @@ export default function GameRoomPage() {
       <Card className="shadow-md">
         <CardContent className="p-3 md:p-4 flex flex-col sm:flex-row justify-between items-center text-sm">
           <div>Room ID: #{roomId} | Prize Pool: ₹{totalPrizePool.toFixed(2)} | Players: {roomData.players.length}</div>
-          <div className="font-semibold text-primary">{currentUser.username} ({myTickets.length} ticket(s))</div>
+          <div className="font-semibold text-primary">{currentUser.username} ({myTickets.length} {myTickets.length === 1 ? 'ticket' : 'tickets'})</div>
         </CardContent>
       </Card>
 
@@ -708,7 +708,7 @@ export default function GameRoomPage() {
                       {otherPlayers.map((player, index) => (
                         <li key={player.id || index} className="flex justify-between items-center">
                           <span>{player.name}</span>
-                          <span className="text-muted-foreground">{player.tickets?.length || 0} ticket{ (player.tickets?.length || 0) === 1 ? '' : 's'}</span>
+                          <span className="text-muted-foreground">{player.tickets?.length || 0} {(player.tickets?.length || 0) === 1 ? 'ticket' : 'tickets'}</span>
                         </li>
                       ))}
                       {otherPlayers.length === 0 && <li className="text-muted-foreground">No other players in the room.</li>}
