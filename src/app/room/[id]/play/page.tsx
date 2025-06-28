@@ -529,7 +529,7 @@ export default function GameRoomPage() {
           
           {isCurrentUserHost && !roomData.settings.isPublic && !roomData.isGameOver && (
             <Card>
-              <CardContent className="p-3 space-y-3">
+              <CardContent className="p-3">
                   <div className="flex items-center justify-between rounded-md border p-3">
                       <Label htmlFor="calling-mode-switch" className="flex flex-col cursor-pointer">
                           <span className="font-semibold">Auto-Call</span>
@@ -545,16 +545,6 @@ export default function GameRoomPage() {
                           aria-label="Toggle automatic number calling"
                       />
                   </div>
-                  {!isAutoCalling && (
-                    <Button 
-                        onClick={handleCallNextNumber}
-                        disabled={isCallingNextNumber || roomData.isGameOver}
-                        className="w-full"
-                    >
-                        <Zap className="mr-2 h-4 w-4" />
-                        {isCallingNextNumber ? 'Calling...' : 'Call Next Number'}
-                    </Button>
-                  )}
               </CardContent>
             </Card>
           )}
@@ -566,6 +556,16 @@ export default function GameRoomPage() {
             onToggleMute={() => setIsMuted(prev => !prev)}
           />
 
+          {isCurrentUserHost && !isAutoCalling && !roomData.isGameOver && (
+            <Button 
+                onClick={handleCallNextNumber}
+                disabled={isCallingNextNumber || roomData.isGameOver}
+                className="w-full"
+            >
+                <Zap className="mr-2 h-4 w-4" />
+                {isCallingNextNumber ? 'Calling...' : 'Call Next Number'}
+            </Button>
+          )}
         </div>
 
         <div className="lg:col-span-2">
@@ -670,7 +670,7 @@ export default function GameRoomPage() {
                     calledNumbers={roomData.calledNumbers}
                     markedNumbers={markedNumbers}
                     onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
-                    className="text-3xl p-2"
+                    className="text-2xl p-2"
                   />
                 ))}
               </div>
@@ -743,4 +743,5 @@ export default function GameRoomPage() {
     </div>
   );
 }
+
 
