@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -8,7 +7,6 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import HousieTicket from '@/components/game/housie-ticket';
 import LiveNumberBoard from '@/components/game/live-number-board';
 import CalledNumberDisplay from '@/components/game/called-number-display';
-import RecentNumbersDisplay from '@/components/game/recent-numbers-display';
 import type { HousieTicketGrid, PrizeType, Room, BackendPlayerInRoom, GameSettings, CallingMode } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
@@ -25,7 +23,6 @@ import { Label } from '@/components/ui/label';
 const MemoizedHousieTicket = React.memo(HousieTicket);
 const MemoizedLiveNumberBoard = React.memo(LiveNumberBoard);
 const MemoizedCalledNumberDisplay = React.memo(CalledNumberDisplay);
-const MemoizedRecentNumbersDisplay = React.memo(RecentNumbersDisplay);
 
 
 export default function GameRoomPage() {
@@ -529,12 +526,11 @@ export default function GameRoomPage() {
         <div className="space-y-4 lg:col-span-1">
           
            <MemoizedCalledNumberDisplay 
-              currentNumber={roomData.currentNumber} 
+              currentNumber={roomData.currentNumber}
+              calledNumbers={roomData.calledNumbers}
               isMuted={isMuted}
               onToggleMute={() => setIsMuted(prev => !prev)}
             />
-          
-          <MemoizedRecentNumbersDisplay calledNumbers={roomData.calledNumbers} />
 
           {isCurrentUserHost && !roomData.settings.isPublic && !roomData.isGameOver && (
             <Card>
