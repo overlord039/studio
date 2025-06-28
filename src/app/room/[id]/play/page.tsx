@@ -572,7 +572,7 @@ export default function GameRoomPage() {
         </div>
 
         <div className="lg:col-span-2">
-          <div className="max-w-5xl mx-auto space-y-4">
+          <div className="max-w-7xl mx-auto space-y-4">
             {gameMessage && (
               <Alert
                 variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") || gameMessage.includes("Error") ? "destructive" : "default"}
@@ -643,8 +643,8 @@ export default function GameRoomPage() {
               <h2 className="text-xl font-semibold">Your Tickets ({myTickets.length})</h2>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="text-md font-semibold">
-                    <Table className="mr-2 h-5 w-5 text-primary" />
+                  <Button variant="outline" size="sm" className="font-semibold">
+                    <Table className="mr-2 h-4 w-4 text-primary" />
                     Number Board
                   </Button>
                 </DialogTrigger>
