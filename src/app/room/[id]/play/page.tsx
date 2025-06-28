@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -12,7 +13,7 @@ import { PRIZE_TYPES } from '@/types';
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, ListOrdered, Loader2, X, Zap, Settings2, Play, Pause } from 'lucide-react';
+import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Table, Loader2, X, Zap, Settings2, Play, Pause } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
@@ -572,7 +573,7 @@ export default function GameRoomPage() {
               <Card className="shadow-lg cursor-pointer hover:bg-secondary/50 transition-colors">
                 <CardHeader className="flex flex-row items-center justify-between pb-2 pt-3 px-3">
                   <CardTitle className="text-lg font-semibold flex items-center">
-                    <ListOrdered className="mr-2 h-5 w-5 text-primary" />
+                    <Table className="mr-2 h-5 w-5 text-primary" />
                     Number Board
                   </CardTitle>
                   <div className="flex items-center gap-2">
@@ -587,7 +588,7 @@ export default function GameRoomPage() {
             <DialogContent className="max-w-md p-4">
               <DialogHeader className="pb-2">
                 <DialogTitle className="flex items-center">
-                  <ListOrdered className="mr-2 h-5 w-5 text-primary" /> Number Board
+                  <Table className="mr-2 h-5 w-5 text-primary" /> Number Board
                 </DialogTitle>
               </DialogHeader>
               <MemoizedLiveNumberBoard
@@ -602,7 +603,7 @@ export default function GameRoomPage() {
         </div>
 
         <div className="lg:col-span-2">
-          <div className="max-w-3xl mx-auto space-y-4">
+          <div className="max-w-4xl mx-auto space-y-4">
             {gameMessage && (
               <Alert
                 variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") || gameMessage.includes("Error") ? "destructive" : "default"}
