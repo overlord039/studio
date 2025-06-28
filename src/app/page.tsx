@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -98,10 +97,10 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
         <div className="relative z-10">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-primary-foreground mb-6 tracking-tight animate-fade-in-down" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.3)'}}>
-            Welcome to the Ultimate Multiplayer Tambola Experience!
+            Welcome to the Ultimate Multiplayer Housie Experience!
           </h1>
           <p className="text-lg md:text-xl text-primary-foreground/90 mb-10 max-w-3xl mx-auto animate-fade-in-up">
-            Gather your friends and family for an exciting game of Housie (Tambola/Bingo). Create rooms, join games, and win big!
+            Gather your friends and family for an exciting game of Housie. Create rooms, join games, and win big!
           </p>
           {!loading && !currentUser && (
             <div className="space-x-4 animate-fade-in">
@@ -170,7 +169,7 @@ export default function HomePage() {
               <Speaker className="h-10 w-10 text-blue-600" />
             </div>
             <CardTitle className="text-2xl font-bold">Number Caller</CardTitle>
-            <CardDescription>Practice calling or host a manual game.</CardDescription>
+            <CardDescription>For automatic or manual number calling.</CardDescription>
           </CardHeader>
           <CardContent className="text-center">
             <Link href="/number-caller" passHref>
