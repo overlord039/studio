@@ -10,11 +10,6 @@ import {
   Speaker,
   UsersRound, 
   KeyRound, 
-  Ticket,
-  List,
-  CheckSquare,
-  Award,
-  Users,
   Zap,
   Shuffle,
   ShieldCheck,
@@ -68,14 +63,6 @@ export default function HomePage() {
     }
     router.push('/create-room');
   };
-
-  const howToPlaySteps = [
-    { icon: Ticket, title: "Get Your Tickets", description: "Players receive virtual tickets with a unique set of random numbers." },
-    { icon: List, title: "Numbers Called", description: "Listen up! Numbers are called out one-by-one in real-time." },
-    { icon: CheckSquare, title: "Mark Your Numbers", description: "If a called number matches one on your ticket, mark it off." },
-    { icon: Award, title: "Claim Prizes", description: "Be the first to complete patterns like Jaldi 5, Lines, or a Full House to win!" },
-    { icon: Users, title: "Play With Friends", description: "Create private rooms to play with friends or join public games for more fun." },
-  ];
 
   const whyPlayWithUsFeatures = [
     { icon: Zap, title: "Real-time Multiplayer", description: "Experience seamless gameplay with friends, powered by fast technology." },
@@ -191,31 +178,6 @@ export default function HomePage() {
             </Link>
           </CardContent>
         </Card>
-      </section>
-
-      {/* How to Play Section */}
-      <section className="py-12 md:py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold">How to Play HousieHub</h2>
-          <p className="text-muted-foreground mt-2 text-lg">A quick guide to get you started.</p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 max-w-7xl mx-auto">
-          {howToPlaySteps.map((step, index) => (
-            <div
-              key={index}
-              className="group relative p-6 bg-card border border-border/20 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 ease-in-out text-center overflow-hidden hover:shadow-primary/20"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative z-10 flex flex-col items-center">
-                  <div className="mb-4 flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
-                    <step.icon className="h-8 w-8" />
-                  </div>
-                  <h3 className="text-lg font-bold text-card-foreground mb-2">{step.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
       </section>
 
       {/* Why Play With Us? Section */}
