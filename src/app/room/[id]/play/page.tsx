@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import HousieTicket from '@/components/game/housie-ticket';
-import LiveNumberBoard from '@/components/game/live-number-board';
 import CalledNumberDisplay from '@/components/game/called-number-display';
 import type { HousieTicketGrid, PrizeType, Room, BackendPlayerInRoom, GameSettings, CallingMode } from '@/types';
 import { PRIZE_TYPES } from '@/types';
@@ -21,6 +20,8 @@ import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTING
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import LiveNumberBoard from '@/components/game/live-number-board';
+
 
 const MemoizedHousieTicket = React.memo(HousieTicket);
 const MemoizedLiveNumberBoard = React.memo(LiveNumberBoard);
@@ -568,33 +569,6 @@ export default function GameRoomPage() {
             </Card>
           )}
 
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full justify-between items-center text-md font-semibold">
-                <span className="flex items-center">
-                  <Table className="mr-2 h-5 w-5 text-primary" />
-                  Number Board
-                </span>
-                <span className="text-sm font-normal text-muted-foreground bg-muted px-2 py-1 rounded-full">
-                  {NUMBERS_RANGE_MAX - roomData.calledNumbers.length} left
-                </span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md p-4">
-              <DialogHeader className="pb-2">
-                <DialogTitle className="flex items-center">
-                  <Table className="mr-2 h-5 w-5 text-primary" /> Number Board
-                </DialogTitle>
-              </DialogHeader>
-              <MemoizedLiveNumberBoard
-                calledNumbers={roomData.calledNumbers}
-                currentNumber={roomData.currentNumber}
-              />
-              <p className="text-center text-sm text-muted-foreground pt-2">
-                {NUMBERS_RANGE_MAX - roomData.calledNumbers.length} numbers remaining &middot; {roomData.calledNumbers.length} called
-              </p>
-            </DialogContent>
-          </Dialog>
         </div>
 
         <div className="lg:col-span-2">
@@ -664,8 +638,38 @@ export default function GameRoomPage() {
                 })}
               </div>
             )}
+            
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Your Tickets ({myTickets.length})</h2>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="justify-between items-center text-md font-semibold">
+                    <span className="flex items-center">
+                      <Table className="mr-2 h-5 w-5 text-primary" />
+                      Number Board
+                    </span>
+                    <span className="text-sm font-normal text-muted-foreground bg-muted px-2 py-1 rounded-full ml-4">
+                      {NUMBERS_RANGE_MAX - roomData.calledNumbers.length} left
+                    </span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md p-4">
+                  <DialogHeader className="pb-2">
+                    <DialogTitle className="flex items-center">
+                      <Table className="mr-2 h-5 w-5 text-primary" /> Number Board
+                    </DialogTitle>
+                  </DialogHeader>
+                  <MemoizedLiveNumberBoard
+                    calledNumbers={roomData.calledNumbers}
+                    currentNumber={roomData.currentNumber}
+                  />
+                  <p className="text-center text-sm text-muted-foreground pt-2">
+                    {NUMBERS_RANGE_MAX - roomData.calledNumbers.length} numbers remaining &middot; {roomData.calledNumbers.length} called
+                  </p>
+                </DialogContent>
+              </Dialog>
+            </div>
 
-            <h2 className="text-xl font-semibold text-center">Your Tickets ({myTickets.length})</h2>
             {myTickets.length === 0 && !roomData.isGameOver && roomData.isGameStarted && <p className="text-center text-muted-foreground">You are spectating or have no tickets in this game.</p>}
             <ScrollArea className="max-h-[60vh] lg:max-h-none">
               <div className="flex flex-wrap justify-center gap-4">
