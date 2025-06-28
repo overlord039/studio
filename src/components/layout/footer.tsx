@@ -28,7 +28,6 @@ const footerLinks = [
     { name: 'Privacy Settings', href: '/legal/privacy-settings' },
     { name: 'Fair Play', href: '/legal/fair-play' },
     { name: 'Compliance', href: '/legal/compliance' },
-    { name: 'HousieHub © 2025', href: '/' },
 ];
 
 const socialLinks = [
@@ -44,33 +43,44 @@ const socialLinks = [
 export default function Footer() {
     return (
         <footer className="bg-neutral-900 text-neutral-400 py-8 mt-auto">
-            <div className="container mx-auto px-4 text-center">
-                <nav className="flex justify-center flex-wrap items-center text-xs mb-6" aria-label="Footer navigation">
-                    {footerLinks.map((link, index) => (
-                        <React.Fragment key={link.name}>
-                            <Link href={link.href} className="hover:text-white transition-colors py-1 px-2">
-                                {link.name}
-                            </Link>
-                            {index < footerLinks.length - 1 && (
-                                <span className="text-neutral-600 hidden md:inline" aria-hidden="true">•</span>
-                            )}
-                        </React.Fragment>
-                    ))}
-                </nav>
+            <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0">
+                {/* Logo on the left */}
+                <div className="text-center md:text-left">
+                    <Link href="/" className="text-2xl font-bold tracking-tight text-white hover:text-neutral-300 transition-colors">
+                        HousieHub
+                    </Link>
+                    <p className="text-xs text-neutral-500 mt-1">HousieHub © 2025</p>
+                </div>
 
-                <div className="flex justify-center items-center space-x-6" aria-label="Social media links">
-                    {socialLinks.map((social) => (
-                        <Link
-                            href={social.href}
-                            key={social.name}
-                            aria-label={social.name}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-neutral-500 hover:text-white transition-colors"
-                        >
-                            <social.icon className="h-5 w-5" />
-                        </Link>
-                    ))}
+                {/* Links and Socials on the right */}
+                <div className="flex flex-col items-center md:items-end space-y-6">
+                    <nav className="flex justify-center md:justify-end flex-wrap items-center text-xs" aria-label="Footer navigation">
+                        {footerLinks.map((link, index) => (
+                            <React.Fragment key={link.name}>
+                                <Link href={link.href} className="hover:text-white transition-colors py-1 px-2">
+                                    {link.name}
+                                </Link>
+                                {index < footerLinks.length - 1 && (
+                                    <span className="text-neutral-600 hidden md:inline" aria-hidden="true">•</span>
+                                )}
+                            </React.Fragment>
+                        ))}
+                    </nav>
+
+                    <div className="flex justify-center items-center space-x-6" aria-label="Social media links">
+                        {socialLinks.map((social) => (
+                            <Link
+                                href={social.href}
+                                key={social.name}
+                                aria-label={social.name}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-neutral-500 hover:text-white transition-colors"
+                            >
+                                <social.icon className="h-5 w-5" />
+                            </Link>
+                        ))}
+                    </div>
                 </div>
             </div>
         </footer>
