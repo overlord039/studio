@@ -74,7 +74,7 @@ export default function Footer() {
             <div className="container mx-auto px-4">
                 {isHomePage ? (
                     <>
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-6">
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-4">
                             <div className="col-span-2 lg:col-span-2">
                                 <div className="flex items-center gap-1 mb-2">
                                     <p className="text-xs text-neutral-500">Powered by</p>
@@ -82,8 +82,8 @@ export default function Footer() {
                                         <Image
                                             src="/logonew.png"
                                             alt="HousieHub Logo"
-                                            width={100}
-                                            height={28}
+                                            width={80}
+                                            height={22}
                                             className="h-auto"
                                         />
                                     </Link>
@@ -103,10 +103,10 @@ export default function Footer() {
                             </div>
                         </div>
                         
-                        <div className="mt-6 pt-4 border-t border-neutral-800 flex flex-col sm:flex-row justify-between items-center">
-                            <p className="text-xs text-neutral-500 order-2 sm:order-1 mt-4 sm:mt-0">HousieHub © 2025</p>
+                        <div className="mt-4 pt-2 border-t border-neutral-800 flex flex-col sm:flex-row justify-between items-center">
+                            <p className="text-xs text-neutral-500 order-2 sm:order-1 mt-2 sm:mt-0">HousieHub © 2025</p>
                             <div className="order-1 sm:order-2">
-                                <div className="flex items-center space-x-4" aria-label="Social media links">
+                                <div className="flex items-center space-x-3" aria-label="Social media links">
                                     {socialLinks.map((social) => (
                                         <Link
                                             href={social.href}
@@ -116,7 +116,7 @@ export default function Footer() {
                                             rel="noopener noreferrer"
                                             className="text-neutral-500 hover:text-white transition-colors"
                                         >
-                                            <social.icon className="h-4 w-4" />
+                                            <social.icon className="h-3 w-3" />
                                         </Link>
                                     ))}
                                 </div>
@@ -131,8 +131,8 @@ export default function Footer() {
                                 <Image
                                     src="/logonew.png"
                                     alt="HousieHub Logo"
-                                    width={100}
-                                    height={28}
+                                    width={80}
+                                    height={22}
                                     className="h-auto"
                                  />
                             </Link>
