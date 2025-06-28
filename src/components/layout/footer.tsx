@@ -81,7 +81,7 @@ export default function Footer() {
                                     <p className="text-sm text-neutral-500">Powered by</p>
                                     <Link href="/" className="inline-block transition-opacity hover:opacity-80">
                                         <Image
-                                            src="/logo.png"
+                                            src="/logonew.png"
                                             alt="HousieHub Logo"
                                             width={160}
                                             height={45}
@@ -130,12 +130,12 @@ export default function Footer() {
                             <p className="text-sm text-neutral-500">Powered by</p>
                             <Link href="/" className="inline-block transition-opacity hover:opacity-80">
                                 <Image
-                                    src="/logo.png"
+                                    src="/logonew.png"
                                     alt="HousieHub Logo"
                                     width={160}
                                     height={45}
                                     className="h-auto"
-                                />
+                                 />
                             </Link>
                         </div>
                          <p className="text-sm text-neutral-500">HousieHub © 2025</p>
