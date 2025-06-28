@@ -66,8 +66,8 @@ export default function Footer() {
     return (
         <footer className="bg-neutral-900 text-neutral-400 py-12 mt-auto">
             <div className="container mx-auto px-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
-                    <div className="col-span-2 md:col-span-1">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-8">
+                    <div className="col-span-2 lg:col-span-2">
                         <Link href="/" className="inline-block transition-opacity hover:opacity-80 mb-4">
                             <Image
                                 src="/newlogo.png"
@@ -81,26 +81,35 @@ export default function Footer() {
                            Play Housie online with friends and family.
                         </p>
                     </div>
-                    <FooterLinkList title="Company" links={companyLinks} />
-                    <FooterLinkList title="Legal" links={legalLinks} />
-                    <FooterLinkList title="Gameplay" links={gameplayLinks} />
+                    <div className="col-span-1">
+                        <FooterLinkList title="Company" links={companyLinks} />
+                    </div>
+                     <div className="col-span-1">
+                        <FooterLinkList title="Legal" links={legalLinks} />
+                    </div>
+                     <div className="col-span-1">
+                        <FooterLinkList title="Gameplay" links={gameplayLinks} />
+                    </div>
                 </div>
                 
                 <div className="mt-8 pt-8 border-t border-neutral-800 flex flex-col sm:flex-row justify-between items-center">
                     <p className="text-sm text-neutral-500 order-2 sm:order-1 mt-4 sm:mt-0">HousieHub © 2025</p>
-                    <div className="flex items-center space-x-6 order-1 sm:order-2" aria-label="Social media links">
-                        {socialLinks.map((social) => (
-                            <Link
-                                href={social.href}
-                                key={social.name}
-                                aria-label={social.name}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-neutral-500 hover:text-white transition-colors"
-                            >
-                                <social.icon className="h-5 w-5" />
-                            </Link>
-                        ))}
+                    <div className="order-1 sm:order-2">
+                        <p className="text-sm text-neutral-500 mb-2 text-center sm:text-right">Powered by</p>
+                        <div className="flex items-center space-x-6" aria-label="Social media links">
+                            {socialLinks.map((social) => (
+                                <Link
+                                    href={social.href}
+                                    key={social.name}
+                                    aria-label={social.name}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-neutral-500 hover:text-white transition-colors"
+                                >
+                                    <social.icon className="h-5 w-5" />
+                                </Link>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
