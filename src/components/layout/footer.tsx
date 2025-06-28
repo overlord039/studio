@@ -71,7 +71,7 @@ export default function Footer() {
     const isHomePage = pathname === '/';
 
     return (
-        <footer className="bg-neutral-900 text-neutral-400 py-12 mt-auto">
+        <footer className="bg-neutral-900 text-neutral-400 py-8 mt-auto">
             <div className="container mx-auto px-4">
                 {isHomePage ? (
                     <>
