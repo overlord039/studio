@@ -670,7 +670,7 @@ export default function GameRoomPage() {
                     calledNumbers={roomData.calledNumbers}
                     markedNumbers={markedNumbers}
                     onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
-                    className="text-2xl p-2"
+                    className="text-lg p-2"
                   />
                 ))}
               </div>
@@ -681,7 +681,7 @@ export default function GameRoomPage() {
         <div className="space-y-4 lg:col-span-1">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg">Prize Info</CardTitle>
+              <CardTitle className="text-lg flex items-center"><Award className="mr-2 h-5 w-5 text-primary" />Prize Info</CardTitle>
               <Button variant="ghost" size="sm" onClick={() => setIsPrizeInfoMinimized(!isPrizeInfoMinimized)} aria-label={isPrizeInfoMinimized ? "Expand Prize Info" : "Minimize Prize Info"}>
                 {isPrizeInfoMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
               </Button>
@@ -743,5 +743,3 @@ export default function GameRoomPage() {
     </div>
   );
 }
-
-
