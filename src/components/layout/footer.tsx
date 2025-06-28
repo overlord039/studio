@@ -2,12 +2,6 @@ import Link from 'next/link';
 import React from 'react';
 import { Bot, X, Youtube, Twitch, Instagram } from 'lucide-react';
 
-const AppleIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
-        <path d="M12.15,1.99a2.89,2.89,0,0,0-2.23.83,2.57,2.57,0,0,0-1,1.1,4.71,4.71,0,0,0-1.24,3.12A14,14,0,0,0,7.7,9.45c.1.8.27,1.6.46,2.41s.44,1.57.73,2.33a18.3,18.3,0,0,1-3.2,1.3,3.5,3.5,0,0,1-1.64-.51c-1.19-.7-2.22-2.3-2-4.06a5.21,5.21,0,0,1,2.32-3.55,5,5,0,0,1,3.67-1.14,1.3,1.3,0,0,1,.77-.19,2.32,2.32,0,0,1,1.2-.38C13.56,5.34,14.28,2,15,2A2.43,2.43,0,0,1,12.15,1.99Zm-2.62,8c.19-1.72.85-3.22,1.93-4.27s1.9-1.57,2.59-2.71c-.85-.52-1.92-.62-2.8-.62-1.45,0-2.94.77-4,2S8.14,9.2,8.47,10.8a4.12,4.12,0,0,0,2,4,4.2,4.2,0,0,0,3.44,1.2c.67,0,1.25-.13,1.93-.36a11.83,11.83,0,0,1-2.08-3.83Z" />
-    </svg>
-);
-
 const AndroidIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <Bot {...props} />
 );
@@ -38,7 +32,6 @@ const footerLinks = [
 ];
 
 const socialLinks = [
-    { name: 'Apple App Store', href: '#', icon: AppleIcon },
     { name: 'Google Play Store', href: '#', icon: AndroidIcon },
     { name: 'TikTok', href: '#', icon: TikTokIcon },
     { name: 'X (Twitter)', href: '#', icon: X },
