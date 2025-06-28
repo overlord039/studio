@@ -52,11 +52,11 @@ const socialLinks = [
 
 const FooterLinkList = ({ title, links }: { title: string, links: { name: string, href: string }[] }) => (
     <div>
-        <h3 className="text-xs font-semibold text-neutral-200 tracking-wider uppercase mb-2">{title}</h3>
-        <ul className="space-y-1">
+        <h3 className="text-sm font-semibold text-neutral-200 tracking-wider uppercase mb-3">{title}</h3>
+        <ul className="space-y-2">
             {links.map(link => (
                 <li key={link.name}>
-                    <Link href={link.href} className="text-xs hover:text-white transition-colors">
+                    <Link href={link.href} className="text-sm hover:text-white transition-colors">
                         {link.name}
                     </Link>
                 </li>
@@ -70,25 +70,26 @@ export default function Footer() {
     const isHomePage = pathname === '/';
 
     return (
-        <footer className="bg-neutral-900 text-neutral-400 py-2 mt-auto">
+        <footer className="bg-neutral-900 text-neutral-400 mt-auto">
             <div className="container mx-auto px-4">
                 {isHomePage ? (
-                    <>
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-4">
+                    // "Old" full footer for homepage with original larger styles
+                    <div className="py-12">
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-8">
                             <div className="col-span-2 lg:col-span-2">
-                                <div className="flex items-center gap-1 mb-2">
-                                    <p className="text-xs text-neutral-500">Powered by</p>
+                                <div className="flex items-center gap-2 mb-4">
+                                    <p className="text-sm text-neutral-500">Powered by</p>
                                     <Link href="/" className="inline-block transition-opacity hover:opacity-80">
                                         <Image
                                             src="/logonew.png"
                                             alt="HousieHub Logo"
-                                            width={80}
-                                            height={22}
+                                            width={100}
+                                            height={28}
                                             className="h-auto"
                                         />
                                     </Link>
                                 </div>
-                                <p className="text-xs pr-4">
+                                <p className="text-sm pr-4">
                                    Play Housie online with friends and family.
                                 </p>
                             </div>
@@ -103,10 +104,10 @@ export default function Footer() {
                             </div>
                         </div>
                         
-                        <div className="mt-4 pt-2 border-t border-neutral-800 flex flex-col sm:flex-row justify-between items-center">
-                            <p className="text-xs text-neutral-500 order-2 sm:order-1 mt-2 sm:mt-0">HousieHub © 2025</p>
+                        <div className="mt-8 pt-8 border-t border-neutral-800 flex flex-col sm:flex-row justify-between items-center">
+                            <p className="text-sm text-neutral-500 order-2 sm:order-1 mt-4 sm:mt-0">HousieHub © 2025</p>
                             <div className="order-1 sm:order-2">
-                                <div className="flex items-center space-x-3" aria-label="Social media links">
+                                <div className="flex items-center space-x-4" aria-label="Social media links">
                                     {socialLinks.map((social) => (
                                         <Link
                                             href={social.href}
@@ -116,28 +117,31 @@ export default function Footer() {
                                             rel="noopener noreferrer"
                                             className="text-neutral-500 hover:text-white transition-colors"
                                         >
-                                            <social.icon className="h-3 w-3" />
+                                            <social.icon className="h-4 w-4" />
                                         </Link>
                                     ))}
                                 </div>
                             </div>
                         </div>
-                    </>
+                    </div>
                 ) : (
-                    <div className="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left gap-2">
-                        <div className="flex items-center gap-1">
-                            <p className="text-xs text-neutral-500">Powered by</p>
-                            <Link href="/" className="inline-block transition-opacity hover:opacity-80">
-                                <Image
-                                    src="/logonew.png"
-                                    alt="HousieHub Logo"
-                                    width={80}
-                                    height={22}
-                                    className="h-auto"
-                                 />
-                            </Link>
+                    // Compact footer for other pages
+                    <div className="py-2">
+                        <div className="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left gap-2">
+                            <div className="flex items-center gap-1">
+                                <p className="text-xs text-neutral-500">Powered by</p>
+                                <Link href="/" className="inline-block transition-opacity hover:opacity-80">
+                                    <Image
+                                        src="/logonew.png"
+                                        alt="HousieHub Logo"
+                                        width={80}
+                                        height={22}
+                                        className="h-auto"
+                                     />
+                                </Link>
+                            </div>
+                             <p className="text-xs text-neutral-500">HousieHub © 2025</p>
                         </div>
-                         <p className="text-xs text-neutral-500">HousieHub © 2025</p>
                     </div>
                 )}
             </div>
