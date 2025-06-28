@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { User, LogIn, UserPlus, Moon, Sun, LogOut as LogOutIcon, HelpCircle } from 'lucide-react';
+import { User, LogIn, UserPlus, Moon, Sun, HelpCircle } from 'lucide-react';
 import { useTheme } from "next-themes";
 import { useAuth } from '@/contexts/auth-context';
 import React, { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 
 export default function Header() {
-  const { currentUser, logout, loading } = useAuth();
+  const { currentUser, loading } = useAuth();
   const { theme, setTheme } = useTheme();
   const [isHidden, setIsHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -69,9 +69,6 @@ export default function Header() {
                   <User className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">Profile</span>
                 </Button>
               </Link>
-              <Button variant="ghost" className="text-primary-foreground hover:bg-primary/80 px-2 md:px-3" onClick={logout}>
-                <LogOutIcon className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">Logout</span>
-              </Button>
             </>
           ) : (
             <>

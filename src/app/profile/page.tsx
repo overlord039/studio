@@ -2,9 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertTriangle, Calendar, Mail } from "lucide-react";
+import { AlertTriangle, Calendar, Mail, LogOut } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,7 +16,7 @@ const userStats = {
 
 
 export default function ProfilePage() {
-  const { currentUser, loading } = useAuth();
+  const { currentUser, loading, logout } = useAuth();
 
   if (loading) {
     return (
@@ -92,6 +92,12 @@ export default function ProfilePage() {
                     <span className="font-medium">{joinDateFormatted}</span>
                 </div>
             </CardContent>
+            <CardFooter className="bg-card pt-0 p-6">
+                <Button onClick={logout} variant="destructive" className="w-full">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                </Button>
+            </CardFooter>
         </Card>
     </div>
   );
