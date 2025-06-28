@@ -19,16 +19,22 @@ const DiscordIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-
-const footerLinks = [
-    { name: 'Support', href: '/legal/support' },
+const companyLinks = [
     { name: 'About', href: '/legal/about' },
     { name: 'Developers', href: '/legal/developers' },
+    { name: 'Support', href: '/legal/support' },
+];
+
+const legalLinks = [
     { name: 'User Agreement', href: '/legal/user-agreement' },
     { name: 'Privacy Policy', href: '/legal/privacy-policy' },
-    { name: 'Privacy Settings', href: '/legal/privacy-settings' },
-    { name: 'Fair Play', href: '/legal/fair-play' },
     { name: 'Compliance', href: '/legal/compliance' },
+];
+
+const gameplayLinks = [
+    { name: 'How to Play', href: '/how-to-play' },
+    { name: 'Fair Play', href: '/legal/fair-play' },
+    { name: 'Privacy Settings', href: '/legal/privacy-settings' },
 ];
 
 const socialLinks = [
@@ -41,40 +47,48 @@ const socialLinks = [
     { name: 'Discord', href: '#', icon: DiscordIcon },
 ];
 
+const FooterLinkList = ({ title, links }: { title: string, links: { name: string, href: string }[] }) => (
+    <div>
+        <h3 className="text-sm font-semibold text-neutral-200 tracking-wider uppercase mb-4">{title}</h3>
+        <ul className="space-y-2">
+            {links.map(link => (
+                <li key={link.name}>
+                    <Link href={link.href} className="text-sm hover:text-white transition-colors">
+                        {link.name}
+                    </Link>
+                </li>
+            ))}
+        </ul>
+    </div>
+);
+
 export default function Footer() {
     return (
-        <footer className="bg-neutral-900 text-neutral-400 py-8 mt-auto">
-            <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-start md:items-center space-y-6 md:space-y-0">
-                {/* Logo on the left */}
-                <div>
-                    <Link href="/" className="inline-block transition-opacity hover:opacity-80">
-                         <Image
-                            src="/logo.png"
-                            alt="HousieHub Logo"
-                            width={140}
-                            height={40}
-                            className="h-auto"
-                        />
-                    </Link>
-                    <p className="text-xs text-neutral-500 mt-1">HousieHub © 2025</p>
+        <footer className="bg-neutral-900 text-neutral-400 py-12 mt-auto">
+            <div className="container mx-auto px-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+                    <div className="col-span-2 md:col-span-1">
+                        <Link href="/" className="inline-block transition-opacity hover:opacity-80 mb-4">
+                            <Image
+                                src="/logo.png"
+                                alt="HousieHub Logo"
+                                width={140}
+                                height={40}
+                                className="h-auto"
+                            />
+                        </Link>
+                        <p className="text-sm pr-4">
+                           Play Housie online with friends and family.
+                        </p>
+                    </div>
+                    <FooterLinkList title="Company" links={companyLinks} />
+                    <FooterLinkList title="Legal" links={legalLinks} />
+                    <FooterLinkList title="Gameplay" links={gameplayLinks} />
                 </div>
-
-                {/* Links and Socials on the right */}
-                <div className="flex flex-col items-center md:items-end space-y-6">
-                    <nav className="flex justify-center md:justify-end flex-wrap items-center text-xs" aria-label="Footer navigation">
-                        {footerLinks.map((link, index) => (
-                            <React.Fragment key={link.name}>
-                                <Link href={link.href} className="hover:text-white transition-colors py-1 px-2">
-                                    {link.name}
-                                </Link>
-                                {index < footerLinks.length - 1 && (
-                                    <span className="text-neutral-600 hidden md:inline" aria-hidden="true">•</span>
-                                )}
-                            </React.Fragment>
-                        ))}
-                    </nav>
-
-                    <div className="flex justify-center items-center space-x-6" aria-label="Social media links">
+                
+                <div className="mt-8 pt-8 border-t border-neutral-800 flex flex-col sm:flex-row justify-between items-center">
+                    <p className="text-sm text-neutral-500 order-2 sm:order-1 mt-4 sm:mt-0">HousieHub © 2025</p>
+                    <div className="flex items-center space-x-6 order-1 sm:order-2" aria-label="Social media links">
                         {socialLinks.map((social) => (
                             <Link
                                 href={social.href}
