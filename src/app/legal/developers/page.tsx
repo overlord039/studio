@@ -54,10 +54,8 @@ export default function DevelopersPage() {
       </Card>
       
       <div className="text-center mt-8">
-          <p className="flex justify-center items-center gap-2 text-sm text-muted-foreground">
-            <span>This site was built with</span>
-            <Heart className="h-4 w-4 text-red-500 fill-current" />
-            <span>using React, Node.js, and AI-assisted tools.</span>
+          <p className="text-sm text-muted-foreground">
+            Created with care using React, Node.js, and AI, so you can enjoy Housie with family and friends, near or far.
           </p>
           <Link href="/" passHref>
             <Button variant="outline" className="mt-8">
