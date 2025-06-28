@@ -1,12 +1,9 @@
-
 "use client";
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
 import { 
   LogIn as LogInIcon, 
   UserPlus, 
@@ -22,9 +19,7 @@ import {
   Shuffle,
   ShieldCheck,
   Smartphone,
-  Laptop,
   SunMoon,
-  GraduationCap,
   ChevronRight,
   Calculator
 } from 'lucide-react';
@@ -97,10 +92,10 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
         <div className="relative z-10">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-primary-foreground mb-6 tracking-tight animate-fade-in-down" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.3)'}}>
-            Welcome to the Ultimate Multiplayer Housie Experience!
+          Welcome to HousieHub!
           </h1>
           <p className="text-lg md:text-xl text-primary-foreground/90 mb-10 max-w-3xl mx-auto animate-fade-in-up">
-            Gather your friends and family for an exciting game of Housie. Create rooms, join games, and win big!
+          Play Housie anytime, anywhere with family and friends. Create rooms, join games, and enjoy winning together!
           </p>
           {!loading && !currentUser && (
             <div className="space-x-4 animate-fade-in">
@@ -202,23 +197,25 @@ export default function HomePage() {
       <section className="py-12 md:py-16">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold">How to Play HousieHub</h2>
-          <p className="text-muted-foreground mt-2 text-lg">Simple steps to enjoy the game!</p>
+          <p className="text-muted-foreground mt-2 text-lg">A quick guide to get you started.</p>
         </div>
-        <Accordion type="single" collapsible defaultValue="item-0" className="w-full max-w-3xl mx-auto space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 max-w-7xl mx-auto">
           {howToPlaySteps.map((step, index) => (
-            <AccordionItem value={`item-${index}`} key={index} className="bg-card/50 border border-border/30 rounded-lg shadow-sm">
-              <AccordionTrigger className="text-xl font-semibold p-6 hover:no-underline">
-                <div className="flex items-center space-x-4">
-                  <step.icon className="h-7 w-7 text-primary" />
-                  <span>{step.title}</span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="text-base leading-relaxed p-6 pt-0 pl-16 text-muted-foreground">
-                {step.description}
-              </AccordionContent>
-            </AccordionItem>
+            <div
+              key={index}
+              className="group relative p-6 bg-card border border-border/20 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 ease-in-out text-center overflow-hidden hover:shadow-primary/20"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative z-10 flex flex-col items-center">
+                  <div className="mb-4 flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
+                    <step.icon className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-lg font-bold text-card-foreground mb-2">{step.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+              </div>
+            </div>
           ))}
-        </Accordion>
+        </div>
       </section>
 
       {/* Why Play With Us? Section */}
