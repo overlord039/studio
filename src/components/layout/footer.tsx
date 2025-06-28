@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import React from 'react';
+import Image from 'next/image';
 import { Bot, X, Youtube, Twitch, Instagram } from 'lucide-react';
 
 const AndroidIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -46,8 +47,15 @@ export default function Footer() {
             <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0">
                 {/* Logo on the left */}
                 <div className="text-center md:text-left">
-                    <Link href="/" className="text-2xl font-bold tracking-tight text-white hover:text-neutral-300 transition-colors">
-                        HousieHub
+                    <Link href="/" className="inline-block transition-opacity hover:opacity-80">
+                         <Image
+                            src="https://placehold.co/140x40.png"
+                            alt="HousieHub Logo"
+                            width={140}
+                            height={40}
+                            className="h-auto"
+                            data-ai-hint="logo"
+                        />
                     </Link>
                     <p className="text-xs text-neutral-500 mt-1">HousieHub © 2025</p>
                 </div>
