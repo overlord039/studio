@@ -70,10 +70,10 @@ export default function Footer() {
                     <div className="col-span-2 md:col-span-1">
                         <Link href="/" className="inline-block transition-opacity hover:opacity-80 mb-4">
                             <Image
-                                src="/logo.png"
+                                src="/newlogo.png"
                                 alt="HousieHub Logo"
-                                width={140}
-                                height={40}
+                                width={160}
+                                height={45}
                                 className="h-auto"
                             />
                         </Link>
