@@ -95,7 +95,6 @@ export default function Footer() {
                 <div className="mt-8 pt-8 border-t border-neutral-800 flex flex-col sm:flex-row justify-between items-center">
                     <p className="text-sm text-neutral-500 order-2 sm:order-1 mt-4 sm:mt-0">HousieHub © 2025</p>
                     <div className="order-1 sm:order-2">
-                        <p className="text-sm text-neutral-500 mb-2 text-center sm:text-right">Powered by</p>
                         <div className="flex items-center space-x-6" aria-label="Social media links">
                             {socialLinks.map((social) => (
                                 <Link
