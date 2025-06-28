@@ -643,14 +643,9 @@ export default function GameRoomPage() {
               <h2 className="text-xl font-semibold">Your Tickets ({myTickets.length})</h2>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="justify-between items-center text-md font-semibold">
-                    <span className="flex items-center">
-                      <Table className="mr-2 h-5 w-5 text-primary" />
-                      Number Board
-                    </span>
-                    <span className="text-sm font-normal text-muted-foreground bg-muted px-2 py-1 rounded-full ml-4">
-                      {NUMBERS_RANGE_MAX - roomData.calledNumbers.length} left
-                    </span>
+                  <Button variant="outline" className="text-md font-semibold">
+                    <Table className="mr-2 h-5 w-5 text-primary" />
+                    Number Board
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-md p-4">
