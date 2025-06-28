@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, NUMBERS_RANGE_MAX } from '@/lib/constants';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const MemoizedHousieTicket = React.memo(HousieTicket);
 const MemoizedLiveNumberBoard = React.memo(LiveNumberBoard);
@@ -41,7 +42,6 @@ export default function GameRoomPage() {
   const [markedNumbers, setMarkedNumbers] = useState<Set<string>>(new Set());
   const [gameMessage, setGameMessage] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
-  const [isBoardMinimized, setIsBoardMinimized] = useState(true);
   const [isCallingNextNumber, setIsCallingNextNumber] = useState(false);
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
 
@@ -567,12 +567,38 @@ export default function GameRoomPage() {
             </Card>
           )}
 
-          <MemoizedLiveNumberBoard 
-            calledNumbers={roomData.calledNumbers} 
-            currentNumber={roomData.currentNumber}
-            isMinimized={isBoardMinimized}
-            onToggleMinimize={() => setIsBoardMinimized(prev => !prev)}
-          />
+          <Dialog>
+            <DialogTrigger asChild>
+              <Card className="shadow-lg cursor-pointer hover:bg-secondary/50 transition-colors">
+                <CardHeader className="flex flex-row items-center justify-between pb-2 pt-3 px-3">
+                  <CardTitle className="text-lg font-semibold flex items-center">
+                    <ListOrdered className="mr-2 h-5 w-5 text-primary" />
+                    Number Board
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground hidden md:block">
+                      {NUMBERS_RANGE_MAX - roomData.calledNumbers.length} remaining
+                    </span>
+                    <PlusSquare className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                </CardHeader>
+              </Card>
+            </DialogTrigger>
+            <DialogContent className="max-w-md p-4">
+              <DialogHeader className="pb-2">
+                <DialogTitle className="flex items-center">
+                  <ListOrdered className="mr-2 h-5 w-5 text-primary" /> Number Board
+                </DialogTitle>
+              </DialogHeader>
+              <MemoizedLiveNumberBoard
+                calledNumbers={roomData.calledNumbers}
+                currentNumber={roomData.currentNumber}
+              />
+              <p className="text-center text-sm text-muted-foreground pt-2">
+                {NUMBERS_RANGE_MAX - roomData.calledNumbers.length} numbers remaining &middot; {roomData.calledNumbers.length} called
+              </p>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="lg:col-span-2">
