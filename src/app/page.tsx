@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -87,7 +88,6 @@ export default function HomePage() {
     { icon: ShieldCheck, title: "Secure & Private", description: "Play with peace of mind. Your game, your rules. No account sharing needed." },
     { icon: Smartphone, title: "Play Anywhere", description: "Enjoy HousieHub on your desktop, tablet, or mobile phone." },
     { icon: SunMoon, title: "Light & Dark Mode", description: "Choose a theme that suits your eyes for comfortable long play sessions." },
-    { icon: GraduationCap, title: "Practice Mode", description: "New to Housie? Sharpen your skills in our stress-free practice mode." },
   ];
 
   return (
@@ -169,7 +169,7 @@ export default function HomePage() {
               <Speaker className="h-10 w-10 text-blue-600" />
             </div>
             <CardTitle className="text-2xl font-bold">Number Caller</CardTitle>
-            <CardDescription>For automatic or manual number calling.</CardDescription>
+            <CardDescription>System auto-call or manual calling</CardDescription>
           </CardHeader>
           <CardContent className="text-center">
             <Link href="/number-caller" passHref>
