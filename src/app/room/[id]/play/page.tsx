@@ -570,20 +570,15 @@ export default function GameRoomPage() {
 
           <Dialog>
             <DialogTrigger asChild>
-              <Card className="shadow-lg cursor-pointer hover:bg-secondary/50 transition-colors">
-                <CardHeader className="flex flex-row items-center justify-between pb-2 pt-3 px-3">
-                  <CardTitle className="text-lg font-semibold flex items-center">
-                    <Table className="mr-2 h-5 w-5 text-primary" />
-                    Number Board
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground hidden md:block">
-                      {NUMBERS_RANGE_MAX - roomData.calledNumbers.length} remaining
-                    </span>
-                    <PlusSquare className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                </CardHeader>
-              </Card>
+              <Button variant="outline" className="w-full justify-between items-center text-md font-semibold">
+                <span className="flex items-center">
+                  <Table className="mr-2 h-5 w-5 text-primary" />
+                  Number Board
+                </span>
+                <span className="text-sm font-normal text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                  {NUMBERS_RANGE_MAX - roomData.calledNumbers.length} left
+                </span>
+              </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md p-4">
               <DialogHeader className="pb-2">
@@ -603,7 +598,7 @@ export default function GameRoomPage() {
         </div>
 
         <div className="lg:col-span-2">
-          <div className="max-w-4xl mx-auto space-y-4">
+          <div className="max-w-5xl mx-auto space-y-4">
             {gameMessage && (
               <Alert
                 variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") || gameMessage.includes("Error") ? "destructive" : "default"}
