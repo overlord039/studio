@@ -12,7 +12,7 @@ import { PRIZE_TYPES } from '@/types';
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause } from 'lucide-react';
+import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause, Table } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
@@ -527,13 +527,6 @@ export default function GameRoomPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <div className="space-y-4 lg:col-span-1">
           
-           <MemoizedCalledNumberDisplay 
-              currentNumber={roomData.currentNumber}
-              calledNumbers={roomData.calledNumbers}
-              isMuted={isMuted}
-              onToggleMute={() => setIsMuted(prev => !prev)}
-            />
-
           {isCurrentUserHost && !roomData.settings.isPublic && !roomData.isGameOver && (
             <Card>
               <CardContent className="p-3 space-y-3">
@@ -566,10 +559,17 @@ export default function GameRoomPage() {
             </Card>
           )}
 
+          <MemoizedCalledNumberDisplay 
+            currentNumber={roomData.currentNumber}
+            calledNumbers={roomData.calledNumbers}
+            isMuted={isMuted}
+            onToggleMute={() => setIsMuted(prev => !prev)}
+          />
+
         </div>
 
         <div className="lg:col-span-2">
-          <div className="max-w-4xl mx-auto space-y-4">
+          <div className="max-w-7xl mx-auto space-y-4">
             {gameMessage && (
               <Alert
                 variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") || gameMessage.includes("Error") ? "destructive" : "default"}
@@ -640,7 +640,7 @@ export default function GameRoomPage() {
               <h2 className="text-xl font-semibold">Your Tickets ({myTickets.length})</h2>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="default" size="sm" className="font-semibold">
+                   <Button variant="default" size="sm" className="font-semibold">
                     Number Board
                   </Button>
                 </DialogTrigger>
@@ -670,6 +670,7 @@ export default function GameRoomPage() {
                     calledNumbers={roomData.calledNumbers}
                     markedNumbers={markedNumbers}
                     onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
+                    className="text-3xl p-2"
                   />
                 ))}
               </div>
@@ -742,3 +743,4 @@ export default function GameRoomPage() {
     </div>
   );
 }
+
