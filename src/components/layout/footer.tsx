@@ -22,19 +22,13 @@ const DiscordIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-const companyLinks = [
+const allFooterLinks = [
     { name: 'About', href: '/legal/about' },
     { name: 'Developers', href: '/legal/developers' },
     { name: 'Support', href: '/legal/support' },
-];
-
-const legalLinks = [
     { name: 'User Agreement', href: '/legal/user-agreement' },
     { name: 'Privacy Policy', href: '/legal/privacy-policy' },
     { name: 'Compliance', href: '/legal/compliance' },
-];
-
-const gameplayLinks = [
     { name: 'How to Play', href: '/how-to-play' },
     { name: 'Fair Play', href: '/legal/fair-play' },
     { name: 'Privacy Settings', href: '/legal/privacy-settings' },
@@ -50,21 +44,6 @@ const socialLinks = [
     { name: 'Discord', href: '#', icon: DiscordIcon },
 ];
 
-const FooterLinkList = ({ title, links }: { title: string, links: { name: string, href: string }[] }) => (
-    <div>
-        <h3 className="text-sm font-semibold text-neutral-200 tracking-wider uppercase mb-3">{title}</h3>
-        <ul className="space-y-2">
-            {links.map(link => (
-                <li key={link.name}>
-                    <Link href={link.href} className="text-sm hover:text-white transition-colors">
-                        {link.name}
-                    </Link>
-                </li>
-            ))}
-        </ul>
-    </div>
-);
-
 export default function Footer() {
     const pathname = usePathname();
     const isHomePage = pathname === '/';
@@ -75,10 +54,12 @@ export default function Footer() {
                 {isHomePage ? (
                     // Full footer for homepage
                     <div className="py-12">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 text-center md:text-left">
-                            <FooterLinkList title="Company" links={companyLinks} />
-                            <FooterLinkList title="Legal" links={legalLinks} />
-                            <FooterLinkList title="Gameplay" links={gameplayLinks} />
+                        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-8">
+                            {allFooterLinks.map(link => (
+                                <Link key={link.name} href={link.href} className="text-sm hover:text-white transition-colors">
+                                    {link.name}
+                                </Link>
+                            ))}
                         </div>
                         
                         <div className="text-center my-8">
