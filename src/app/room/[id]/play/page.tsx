@@ -576,7 +576,7 @@ export default function GameRoomPage() {
         </div>
 
         <div className="lg:col-span-2">
-          <div className="max-w-xl mx-auto space-y-4">
+          <div className="max-w-3xl mx-auto space-y-4">
             {gameMessage && (
               <Alert
                 variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") || gameMessage.includes("Error") ? "destructive" : "default"}
