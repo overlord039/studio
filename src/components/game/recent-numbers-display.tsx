@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -26,20 +25,26 @@ const RecentNumbersDisplay: React.FC<RecentNumbersDisplayProps> = ({ calledNumbe
         </CardHeader>
         <CardContent className="p-3 pt-0">
             <div className="flex h-12 items-center justify-center gap-2 overflow-hidden">
-                {displayNumbers.map((num, index) => (
-                    <div
-                    key={num !== null ? `recent-${num}` : `empty-${index}`}
-                    className={cn(
-                        "flex size-9 items-center justify-center rounded-full border text-base font-bold transition-all duration-300",
-                        index === 0 && num !== null ? "bg-accent text-accent-foreground ring-2 ring-accent/50" : "bg-card text-card-foreground opacity-60",
-                        num === null ? "border-dashed bg-muted/50" : "",
-                        // Add animation only to the newest number when it appears
-                        index === 0 && num !== null ? "animate-scale-in-pop" : "scale-100"
-                    )}
-                    >
-                    {num}
-                    </div>
-                ))}
+                {displayNumbers.map((num, index) => {
+                    const isMostRecent = index === 0 && num !== null;
+                    const isOlderNumber = index > 0 && num !== null;
+                    const isEmptySlot = num === null;
+                    
+                    return (
+                        <div
+                        key={num !== null ? `recent-${num}` : `empty-${index}`}
+                        className={cn(
+                            "flex size-9 items-center justify-center rounded-full border text-base font-bold transition-all duration-300",
+                            isMostRecent && "bg-accent text-accent-foreground ring-2 ring-accent/50 animate-scale-in-pop",
+                            isOlderNumber && "bg-card text-card-foreground opacity-60 border-primary",
+                            isEmptySlot && "border-dashed bg-muted/50",
+                            !isMostRecent && "scale-100"
+                        )}
+                        >
+                        {num}
+                        </div>
+                    );
+                })}
             </div>
         </CardContent>
     </Card>
