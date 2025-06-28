@@ -44,7 +44,7 @@ export default function HousieTicket({ ticketIndex, ticket, calledNumbers, onNum
               key={cellKey}
               onClick={() => number && onNumberClick?.(number, r, c)}
               className={cn(
-                "aspect-square flex items-center justify-center text-base md:text-lg lg:text-xl font-medium border border-border/50 transition-colors duration-150 ease-in-out",
+                "aspect-square flex items-center justify-center text-xl md:text-2xl lg:text-3xl font-medium border border-border/50 transition-colors duration-150 ease-in-out",
                 status === 'empty' ? 'bg-muted/30 text-transparent' : 'cursor-pointer', // Make empty cells non-interactive text-wise
                 status === 'called-marked' ? 'bg-green-500 text-white' : '', // Player marked: green, static
                 status === 'default' && number !== null ? 'bg-card text-card-foreground hover:bg-secondary/50' : '', // Default state for un-marked numbers
