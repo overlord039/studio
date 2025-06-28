@@ -1,7 +1,11 @@
+
+"use client";
+
 import Link from 'next/link';
 import React from 'react';
 import Image from 'next/image';
 import { Bot, X, Youtube, Twitch, Instagram } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 const AndroidIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <Bot {...props} />
@@ -63,16 +67,70 @@ const FooterLinkList = ({ title, links }: { title: string, links: { name: string
 );
 
 export default function Footer() {
+    const pathname = usePathname();
+    const isHomePage = pathname === '/';
+
     return (
         <footer className="bg-neutral-900 text-neutral-400 py-12 mt-auto">
             <div className="container mx-auto px-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-8">
-                    <div className="col-span-2 lg:col-span-2">
-                        <div className="flex items-center gap-1 mb-4">
+                {isHomePage ? (
+                    <>
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-8">
+                            <div className="col-span-2 lg:col-span-2">
+                                <div className="flex items-center gap-1 mb-4">
+                                    <p className="text-sm text-neutral-500">Powered by</p>
+                                    <Link href="/" className="inline-block transition-opacity hover:opacity-80">
+                                        <Image
+                                            src="/logo.png"
+                                            alt="HousieHub Logo"
+                                            width={160}
+                                            height={45}
+                                            className="h-auto"
+                                        />
+                                    </Link>
+                                </div>
+                                <p className="text-sm pr-4">
+                                   Play Housie online with friends and family.
+                                </p>
+                            </div>
+                            <div className="col-span-1">
+                                <FooterLinkList title="Company" links={companyLinks} />
+                            </div>
+                             <div className="col-span-1">
+                                <FooterLinkList title="Legal" links={legalLinks} />
+                            </div>
+                             <div className="col-span-1">
+                                <FooterLinkList title="Gameplay" links={gameplayLinks} />
+                            </div>
+                        </div>
+                        
+                        <div className="mt-8 pt-8 border-t border-neutral-800 flex flex-col sm:flex-row justify-between items-center">
+                            <p className="text-sm text-neutral-500 order-2 sm:order-1 mt-4 sm:mt-0">HousieHub © 2025</p>
+                            <div className="order-1 sm:order-2">
+                                <div className="flex items-center space-x-6" aria-label="Social media links">
+                                    {socialLinks.map((social) => (
+                                        <Link
+                                            href={social.href}
+                                            key={social.name}
+                                            aria-label={social.name}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-neutral-500 hover:text-white transition-colors"
+                                        >
+                                            <social.icon className="h-5 w-5" />
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <div className="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left gap-4">
+                        <div className="flex items-center gap-1">
                             <p className="text-sm text-neutral-500">Powered by</p>
                             <Link href="/" className="inline-block transition-opacity hover:opacity-80">
                                 <Image
-                                    src="/newlogo.png"
+                                    src="/logo.png"
                                     alt="HousieHub Logo"
                                     width={160}
                                     height={45}
@@ -80,40 +138,9 @@ export default function Footer() {
                                 />
                             </Link>
                         </div>
-                        <p className="text-sm pr-4">
-                           Play Housie online with friends and family.
-                        </p>
+                         <p className="text-sm text-neutral-500">HousieHub © 2025</p>
                     </div>
-                    <div className="col-span-1">
-                        <FooterLinkList title="Company" links={companyLinks} />
-                    </div>
-                     <div className="col-span-1">
-                        <FooterLinkList title="Legal" links={legalLinks} />
-                    </div>
-                     <div className="col-span-1">
-                        <FooterLinkList title="Gameplay" links={gameplayLinks} />
-                    </div>
-                </div>
-                
-                <div className="mt-8 pt-8 border-t border-neutral-800 flex flex-col sm:flex-row justify-between items-center">
-                    <p className="text-sm text-neutral-500 order-2 sm:order-1 mt-4 sm:mt-0">HousieHub © 2025</p>
-                    <div className="order-1 sm:order-2">
-                        <div className="flex items-center space-x-6" aria-label="Social media links">
-                            {socialLinks.map((social) => (
-                                <Link
-                                    href={social.href}
-                                    key={social.name}
-                                    aria-label={social.name}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-neutral-500 hover:text-white transition-colors"
-                                >
-                                    <social.icon className="h-5 w-5" />
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
-                </div>
+                )}
             </div>
         </footer>
     );
