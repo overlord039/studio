@@ -49,12 +49,11 @@ export default function Footer() {
                 <div className="text-center md:text-left">
                     <Link href="/" className="inline-block transition-opacity hover:opacity-80">
                          <Image
-                            src="https://placehold.co/140x40/000000/ff0000.png"
+                            src="/logo.png"
                             alt="HousieHub Logo"
                             width={140}
                             height={40}
                             className="h-auto"
-                            data-ai-hint="logo bull"
                         />
                     </Link>
                     <p className="text-xs text-neutral-500 mt-1">HousieHub © 2025</p>
