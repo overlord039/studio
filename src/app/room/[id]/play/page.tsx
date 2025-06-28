@@ -643,8 +643,7 @@ export default function GameRoomPage() {
               <h2 className="text-xl font-semibold">Your Tickets ({myTickets.length})</h2>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="font-semibold">
-                    <Table className="mr-2 h-4 w-4 text-primary" />
+                  <Button variant="default" size="sm">
                     Number Board
                   </Button>
                 </DialogTrigger>
