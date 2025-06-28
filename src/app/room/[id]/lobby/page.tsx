@@ -11,6 +11,7 @@ import type { Room, GameSettings, PrizeType, BackendPlayerInRoom } from "@/types
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE } from "@/lib/constants";
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
+import { playSound } from "@/lib/sounds";
 
 const MAX_TICKETS_PER_PLAYER = 4;
 
@@ -77,6 +78,7 @@ export default function LobbyPage() {
         
         joinedPlayers.forEach(player => {
             if (currentUser && player.id !== currentUser.username) {
+                playSound('game notification.wav');
                 toast({
                     title: "Player Joined",
                     description: `${player.name} has joined the lobby.`
@@ -96,6 +98,7 @@ export default function LobbyPage() {
       
       const currentUserIsHostInFetchedData = data.host.id === currentUser?.username;
       if (data.isGameStarted && previousIsGameStartedRef.current === false && !currentUserIsHostInFetchedData) {
+        playSound('game starting.wav');
         const currentPlayerServerData = data.players.find(p => p.id === currentUser.username);
         const ticketsToTake = currentPlayerServerData?.tickets.length || 0; 
         toast({ title: "Game Started!", description: "Joining the game..." });
@@ -225,6 +228,7 @@ export default function LobbyPage() {
       }
       const updatedRoom: Room = await response.json();
       const ticketsToTake = updatedRoom.players.find(p => p.id === currentUser.username)?.tickets.length || 0;
+      playSound('game starting.wav');
       toast({ title: "Game Starting!", description: `Navigating to game room ${roomId}.` });
       router.push(`/room/${roomId}/play?playerTickets=${ticketsToTake}`);
     } catch (err) {

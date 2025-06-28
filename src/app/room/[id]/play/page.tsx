@@ -21,6 +21,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import LiveNumberBoard from '@/components/game/live-number-board';
+import { playSound } from '@/lib/sounds';
 
 
 const MemoizedHousieTicket = React.memo(HousieTicket);
@@ -98,6 +99,10 @@ export default function GameRoomPage() {
       }
       const data: Room = await response.json();
       
+      if (data.isGameOver && !roomDataRef.current?.isGameOver) {
+        playSound('game over.wav');
+      }
+      
       const oldPrizeStatus = previousPrizeStatusRef.current;
       const newPrizeStatus = data.prizeStatus;
 
@@ -114,6 +119,7 @@ export default function GameRoomPage() {
                   const newlyAddedClaimants = newClaimants.filter(id => !oldClaimants.includes(id));
                   
                   if (newlyAddedClaimants.length > 0) {
+                      playSound('win.wav');
                       const claimantNames = newlyAddedClaimants
                           .map(id => {
                               const player = data.players.find(p => p.id === id);
@@ -238,6 +244,7 @@ export default function GameRoomPage() {
     if (!roomData.calledNumbers.includes(numberValue)) {
       return;
     }
+    playSound('marking number.wav');
     setMarkedNumbers(prev => {
       const newMarked = new Set(prev);
       newMarked.add(key);
@@ -263,6 +270,7 @@ export default function GameRoomPage() {
       const result = await response.json();
 
       if (!response.ok) {
+         playSound('game notification.wav');
          setGameMessage(prev => {
             if (roomDataRef.current && !roomDataRef.current.isGameOver && result.message) {
                 return (!prev || !prev.includes("Game Over!")) ? result.message : prev;
