@@ -44,9 +44,9 @@ const socialLinks = [
 export default function Footer() {
     return (
         <footer className="bg-neutral-900 text-neutral-400 py-8 mt-auto">
-            <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0">
+            <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-start md:items-center space-y-6 md:space-y-0">
                 {/* Logo on the left */}
-                <div className="text-center md:text-left">
+                <div>
                     <Link href="/" className="inline-block transition-opacity hover:opacity-80">
                          <Image
                             src="/logo.png"
