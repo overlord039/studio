@@ -12,7 +12,7 @@ import { PRIZE_TYPES } from '@/types';
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Table, Loader2, X, Zap, Settings2, Play, Pause } from 'lucide-react';
+import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
@@ -536,10 +536,7 @@ export default function GameRoomPage() {
 
           {isCurrentUserHost && !roomData.settings.isPublic && !roomData.isGameOver && (
             <Card>
-              <CardHeader className="pb-2 pt-3">
-                  <CardTitle className="text-lg flex items-center"><Settings2 className="mr-2 h-5 w-5 text-primary"/>Caller Controls</CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 pt-0 space-y-3">
+              <CardContent className="p-3 space-y-3">
                   <div className="flex items-center justify-between rounded-md border p-3">
                       <Label htmlFor="calling-mode-switch" className="flex flex-col cursor-pointer">
                           <span className="font-semibold">Auto-Call</span>
@@ -572,7 +569,7 @@ export default function GameRoomPage() {
         </div>
 
         <div className="lg:col-span-2">
-          <div className="max-w-7xl mx-auto space-y-4">
+          <div className="max-w-4xl mx-auto space-y-4">
             {gameMessage && (
               <Alert
                 variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") || gameMessage.includes("Error") ? "destructive" : "default"}
@@ -643,15 +640,13 @@ export default function GameRoomPage() {
               <h2 className="text-xl font-semibold">Your Tickets ({myTickets.length})</h2>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="default" size="sm">
+                  <Button variant="default" size="sm" className="font-semibold">
                     Number Board
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-md p-4">
                   <DialogHeader className="pb-2">
-                    <DialogTitle className="flex items-center">
-                      <Table className="mr-2 h-5 w-5 text-primary" /> Number Board
-                    </DialogTitle>
+                    <DialogTitle>Number Board</DialogTitle>
                   </DialogHeader>
                   <MemoizedLiveNumberBoard
                     calledNumbers={roomData.calledNumbers}
