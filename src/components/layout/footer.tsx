@@ -73,35 +73,30 @@ export default function Footer() {
         <footer className="bg-neutral-900 text-neutral-400 mt-auto">
             <div className="container mx-auto px-4">
                 {isHomePage ? (
-                    // "Old" full footer for homepage with original larger styles
+                    // Full footer for homepage
                     <div className="py-12">
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-8">
-                            <div className="col-span-2 lg:col-span-2">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <p className="text-sm text-neutral-500">Powered by</p>
-                                    <Link href="/" className="inline-block transition-opacity hover:opacity-80">
-                                        <Image
-                                            src="/logonew.png"
-                                            alt="HousieHub Logo"
-                                            width={100}
-                                            height={28}
-                                            className="h-auto"
-                                        />
-                                    </Link>
-                                </div>
-                                <p className="text-sm pr-4">
-                                   Play Housie online with friends and family.
-                                </p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 text-center md:text-left">
+                            <FooterLinkList title="Company" links={companyLinks} />
+                            <FooterLinkList title="Legal" links={legalLinks} />
+                            <FooterLinkList title="Gameplay" links={gameplayLinks} />
+                        </div>
+                        
+                        <div className="text-center my-8">
+                             <div className="flex items-center justify-center gap-2 mb-2">
+                                <p className="text-sm text-neutral-500">Powered by</p>
+                                <Link href="/" className="inline-block transition-opacity hover:opacity-80">
+                                    <Image
+                                        src="/logonew.png"
+                                        alt="HousieHub Logo"
+                                        width={100}
+                                        height={28}
+                                        className="h-auto"
+                                    />
+                                </Link>
                             </div>
-                            <div className="col-span-1">
-                                <FooterLinkList title="Company" links={companyLinks} />
-                            </div>
-                             <div className="col-span-1">
-                                <FooterLinkList title="Legal" links={legalLinks} />
-                            </div>
-                             <div className="col-span-1">
-                                <FooterLinkList title="Gameplay" links={gameplayLinks} />
-                            </div>
+                            <p className="text-sm">
+                               Play Housie online with friends and family.
+                            </p>
                         </div>
                         
                         <div className="mt-8 pt-8 border-t border-neutral-800 flex flex-col sm:flex-row justify-between items-center">
