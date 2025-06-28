@@ -387,7 +387,7 @@ export default function LobbyPage() {
     <div className="space-y-8">
       <Card className="shadow-xl">
         <CardHeader>
-          <CardTitle className="text-3xl font-bold">Lobby: #${roomData.id}</CardTitle>
+          <CardTitle className="text-3xl font-bold">Lobby: #{roomData.id}</CardTitle>
           <CardDescription>
             {roomData.isGameStarted && !roomData.isGameOver ? "Game has started." : roomData.isGameOver ? "Game is over. The host can start a new game." : "Waiting for players. The host can start the game once conditions are met."}
           </CardDescription>
@@ -395,16 +395,16 @@ export default function LobbyPage() {
         <CardContent className="space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="space-y-1">
-              <p><strong>Ticket Price:</strong> ₹${gameSettings.ticketPrice}</p>
-              <p><strong>Max Players:</strong> ${gameSettings.lobbySize}</p>
-              <p><strong>Prize Format:</strong> ${gameSettings.prizeFormat}</p>
-              <p><strong>Default Tickets/Player:</strong> ${gameSettings.numberOfTicketsPerPlayer}</p>
+              <p><strong>Ticket Price:</strong> ₹{gameSettings.ticketPrice}</p>
+              <p><strong>Max Players:</strong> {gameSettings.lobbySize}</p>
+              <p><strong>Prize Format:</strong> {gameSettings.prizeFormat}</p>
+              <p><strong>Default Tickets/Player:</strong> {gameSettings.numberOfTicketsPerPlayer}</p>
             </div>
             <div className="flex flex-col items-stretch gap-3 w-full sm:max-w-xs">
               <div className="flex items-center justify-between gap-2 p-2 border rounded-md bg-secondary/20">
                 <div className="flex items-baseline">
                   <span className="text-sm font-medium mr-1">Room ID:</span>
-                  <span className="text-lg font-bold text-primary select-all">${roomData.id}</span>
+                  <span className="text-lg font-bold text-primary select-all">{roomData.id}</span>
                 </div>
                 <Button
                   variant="ghost"
@@ -485,7 +485,7 @@ export default function LobbyPage() {
 
           <div>
             <h3 className="text-xl font-semibold mb-2 flex items-center">
-              <Users className="mr-2 h-5 w-5 text-primary" /> Players (${roomData.players.length}/${gameSettings.lobbySize})
+              <Users className="mr-2 h-5 w-5 text-primary" /> Players ({roomData.players.length}/{gameSettings.lobbySize})
             </h3>
             <ul className="space-y-2 rounded-md border p-4 max-h-60 overflow-y-auto">
               {roomData.players.map(player => (
@@ -508,17 +508,17 @@ export default function LobbyPage() {
             </h3>
             <Card className="bg-secondary/30">
               <CardContent className="p-4 space-y-2">
-                 <p className="text-sm font-semibold">Potential Prize Pool: ₹${currentTotalPrizePool.toFixed(2)}</p>
+                 <p className="text-sm font-semibold">Potential Prize Pool: ₹{currentTotalPrizePool.toFixed(2)}</p>
                  <p className="text-xs text-muted-foreground">
-                   (Based on ${totalTicketsBoughtByPlayers} ${ticketsText(totalTicketsBoughtByPlayers)} confirmed by players for this round)
+                   (Based on {totalTicketsBoughtByPlayers} {ticketsText(totalTicketsBoughtByPlayers)} confirmed by players for this round)
                  </p>
                 {prizesForFormat.map((prizeName) => {
                   const percentage = prizeDistribution[prizeName as PrizeType] || 0;
                   const prizeAmount = (currentTotalPrizePool * percentage) / 100;
                   return (
                     <div key={prizeName} className="flex justify-between items-center text-sm">
-                      <span>${prizeName}:</span>
-                      <span className="font-semibold">₹${prizeAmount.toFixed(2)} (${percentage}%)</span>
+                      <span>{prizeName}:</span>
+                      <span className="font-semibold">₹{prizeAmount.toFixed(2)} ({percentage}%)</span>
                     </div>
                   );
                 })}
