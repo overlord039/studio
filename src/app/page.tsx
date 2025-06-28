@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -155,7 +156,7 @@ export default function HomePage() {
           </CardHeader>
           <CardContent className="text-center">
             <Link href="/number-caller" passHref>
-              <Button variant="outline" className="w-full" size="lg">
+              <Button className="w-full" size="lg">
                 Open Caller
               </Button>
             </Link>
