@@ -72,11 +72,6 @@ export default function Header() {
                   <LogIn className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">Login</span>
                 </Button>
               </Link>
-              <Link href="/auth/register" passHref>
-                <Button variant="ghost" className="text-primary-foreground hover:bg-primary/80 px-2 md:px-3">
-                  <UserPlus className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">Register</span>
-                </Button>
-              </Link>
             </>
           )}
           
