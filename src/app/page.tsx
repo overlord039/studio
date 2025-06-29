@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -64,14 +63,6 @@ export default function HomePage() {
     }
     router.push('/create-room');
   };
-
-  const whyPlayWithUsFeatures = [
-    { icon: Zap, title: "Real-time Multiplayer", description: "Experience seamless gameplay with friends, powered by fast technology." },
-    { icon: Shuffle, title: "Fair Ticket Generation", description: "Our advanced algorithm ensures unique and fair Housie tickets every time." },
-    { icon: ShieldCheck, title: "Secure & Private", description: "Play with peace of mind. Your game, your rules. No account sharing needed." },
-    { icon: Smartphone, title: "Play Anywhere", description: "Enjoy HousieHub on your desktop, tablet, or mobile phone." },
-    { icon: SunMoon, title: "Light & Dark Mode", description: "Choose a theme that suits your eyes for comfortable long play sessions." },
-  ];
 
   return (
     <div className="py-8 md:py-12 space-y-16 md:space-y-24">
@@ -179,47 +170,6 @@ export default function HomePage() {
             </Link>
           </CardContent>
         </Card>
-      </section>
-
-      {/* Why Play With Us? Section */}
-      <section className="py-12 md:py-16 bg-secondary/20 rounded-xl">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold">Why Play With Us?</h2>
-          <p className="text-muted-foreground mt-2 text-lg">The best Housie experience, tailored for you.</p>
-        </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-6xl mx-auto">
-          {whyPlayWithUsFeatures.map((feature, index) => (
-            <Card key={index} className="bg-card p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-              <div className="flex items-center space-x-4 mb-3">
-                <div className="p-2 bg-primary/10 rounded-full">
-                  <feature.icon className="h-7 w-7 text-primary" />
-                </div>
-                <CardTitle className="text-xl font-semibold">{feature.title}</CardTitle>
-              </div>
-              <CardDescription className="text-sm text-muted-foreground">{feature.description}</CardDescription>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* Call to Action / Footer Placeholder */}
-      <section className="text-center py-16">
-        <h2 className="text-3xl font-bold mb-4">Ready to Play?</h2>
-        <p className="text-muted-foreground mb-8 text-lg max-w-xl mx-auto">
-          Create an account or log in to start your Housie adventure. Invite your friends and let the fun begin!
-        </p>
-        {!currentUser && !loading && (
-          <Link href="/auth/register" passHref>
-            <Button size="lg" className="px-10 py-3 text-lg bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white transform transition-all hover:scale-105 shadow-lg">
-              Get Started Now <ChevronRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
-        )}
-         {currentUser && (
-          <Button size="lg" className="px-10 py-3 text-lg bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white transform transition-all hover:scale-105 shadow-lg" onClick={handleCreateRoom}>
-              Host a New Game <ChevronRight className="ml-2 h-5 w-5" />
-            </Button>
-        )}
       </section>
     </div>
   );
