@@ -57,10 +57,10 @@ export default function Header() {
               </Button>
           </Link>
           {loading ? (
-            <div className="h-8 w-8 bg-primary/50 animate-pulse rounded-full"></div> 
+            <div className="h-8 w-8 bg-primary/50 animate-pulse rounded-full border-2 border-primary-foreground/50"></div> 
           ) : currentUser ? (
             <Link href="/profile" passHref>
-              <Button variant="secondary" className="relative p-0 h-8 w-8 rounded-full">
+              <Button variant="secondary" className="relative p-0 h-8 w-8 rounded-full border-2 border-primary-foreground/50">
                 <Avatar className="h-8 w-8">
                   <AvatarImage 
                     src={`https://placehold.co/32x32.png?text=${currentUser.username.substring(0, 2).toUpperCase()}`} 
