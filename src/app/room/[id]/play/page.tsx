@@ -554,27 +554,9 @@ export default function GameRoomPage() {
                 )}
                 {isResetting ? "Resetting..." : (isCurrentUserHost ? "Start New Game in Lobby" : "Back to Lobby")}
               </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" className="w-full" size="lg">
-                    <LogOut className="mr-2 h-5 w-5" /> Leave Room
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      You will be removed from this game session.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel className="bg-green-600 text-primary-foreground hover:bg-green-700 border-transparent">Stay</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleLeaveRoom} className={buttonVariants({ variant: "destructive" })}>
-                      Leave
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <Button variant="outline" className="w-full" size="lg" onClick={handleLeaveRoom}>
+                <LogOut className="mr-2 h-5 w-5" /> Leave Room
+              </Button>
             </div>
           </CardContent>
         </Card>
