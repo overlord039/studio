@@ -5,6 +5,7 @@ import './globals.css';
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from '@/contexts/auth-context';
 import PageLayout from '@/components/layout/page-layout';
+import { SoundProvider } from '@/contexts/sound-context';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -29,16 +30,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
-        <AuthProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <PageLayout>{children}</PageLayout>
-          </ThemeProvider>
-        </AuthProvider>
+        <SoundProvider>
+          <AuthProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <PageLayout>{children}</PageLayout>
+            </ThemeProvider>
+          </AuthProvider>
+        </SoundProvider>
       </body>
     </html>
   );

@@ -1,11 +1,22 @@
 "use client";
 
+const LOCAL_STORAGE_KEY = 'housiehub-sound-muted';
+
 /**
- * Plays a sound file from the /public directory.
+ * Plays a sound file from the /public directory, respecting the user's mute preference.
  * @param soundFile The path to the sound file (e.g., 'win.wav').
  */
 export function playSound(soundFile: string) {
   if (typeof window !== 'undefined' && typeof Audio !== 'undefined') {
+    try {
+        const isMuted = localStorage.getItem(LOCAL_STORAGE_KEY) === 'true';
+        if (isMuted) {
+            return;
+        }
+    } catch (error) {
+        console.warn("Could not check sound preference from localStorage. Sound will be played by default.", error);
+    }
+    
     const audio = new Audio(`/${soundFile}`);
     audio.play().catch(error => {
         // This error is common in browsers that block autoplay.
