@@ -98,9 +98,9 @@ export default function LobbyPage() {
       
       const currentUserIsHostInFetchedData = data.host.id === currentUser?.username;
       if (data.isGameStarted && previousIsGameStartedRef.current === false && !currentUserIsHostInFetchedData) {
-        playSound('game starting.wav');
         const currentPlayerServerData = data.players.find(p => p.id === currentUser.username);
         const ticketsToTake = currentPlayerServerData?.tickets.length || 0; 
+        playSound('game starting.wav');
         toast({ title: "Game Started!", description: "Joining the game..." });
         router.push(`/room/${roomId}/play?playerTickets=${ticketsToTake}`);
       }
@@ -159,6 +159,7 @@ export default function LobbyPage() {
         return;
     }
     setIsJoiningOrUpdating(true);
+    playSound('buy.wav');
     try {
       const response = await fetch(`/api/rooms/${roomId}/join`, {
         method: 'POST',
@@ -178,7 +179,6 @@ export default function LobbyPage() {
       const userInUpdatedRoom = updatedRoom.players.find(p => p.id === currentUser.username);
       const finalTicketCount = userInUpdatedRoom?.tickets.length || selectedTicketsToBuy;
       setSelectedTicketsToBuy(finalTicketCount);
-      playSound('buy.wav');
       toast({ title: "Tickets Confirmed!", description: `You now have ${finalTicketCount} ${finalTicketCount === 1 ? 'ticket' : 'tickets'}.` });
       setIsEditingTickets(false);
     } catch (err) {
@@ -201,6 +201,8 @@ export default function LobbyPage() {
       toast({ title: "Error", description: "Only the host can start the game, or room data is missing.", variant: "destructive" });
       return;
     }
+
+    playSound('game starting.wav');
 
     const hostPlayerWithTickets = roomData.players.find(p => p.id === currentUser.username && p.isHost && p.tickets.length > 0);
     if (!hostPlayerWithTickets) {
@@ -229,7 +231,6 @@ export default function LobbyPage() {
       }
       const updatedRoom: Room = await response.json();
       const ticketsToTake = updatedRoom.players.find(p => p.id === currentUser.username)?.tickets.length || 0;
-      playSound('game starting.wav');
       toast({ title: "Game Starting!", description: `Navigating to game room ${roomId}.` });
       router.push(`/room/${roomId}/play?playerTickets=${ticketsToTake}`);
     } catch (err) {
@@ -387,7 +388,7 @@ export default function LobbyPage() {
     <div className="space-y-8">
       <Card className="shadow-xl">
         <CardHeader>
-          <CardTitle className="text-3xl font-bold">Lobby: #{roomData.id}</CardTitle>
+          <CardTitle className="text-3xl font-bold">Lobby: {roomData.id}</CardTitle>
           <CardDescription>
             {roomData.isGameStarted && !roomData.isGameOver ? "Game has started." : roomData.isGameOver ? "Game is over. The host can start a new game." : "Waiting for players. The host can start the game once conditions are met."}
           </CardDescription>
@@ -469,7 +470,7 @@ export default function LobbyPage() {
                   <Ticket className="mr-2 h-5 w-5 text-primary"/>
                   Your Confirmed Tickets
                 </CardTitle>
-              </CardHeader>
+              </Header>
               <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <p className="font-medium">
                   You have {currentUserInRoom?.tickets.length} {ticketsText(currentUserInRoom?.tickets.length ?? 0)} confirmed.
@@ -578,9 +579,3 @@ export default function LobbyPage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
