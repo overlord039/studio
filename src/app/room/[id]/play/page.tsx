@@ -2,17 +2,17 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import HousieTicket from '@/components/game/housie-ticket';
 import CalledNumberDisplay from '@/components/game/called-number-display';
-import type { HousieTicketGrid, PrizeType, Room, BackendPlayerInRoom, GameSettings, CallingMode } from '@/types';
+import type { HousieTicketGrid, PrizeType, Room, GameSettings, CallingMode } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause, Table } from 'lucide-react';
+import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
@@ -22,6 +22,17 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import LiveNumberBoard from '@/components/game/live-number-board';
 import { playSound } from '@/lib/sounds';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 
 const MemoizedHousieTicket = React.memo(HousieTicket);
@@ -402,7 +413,7 @@ export default function GameRoomPage() {
 
   const handleLeaveRoom = async () => {
     if (!currentUser) {
-      router.push("/");
+      router.push(`/room/${roomId}/lobby`);
       return;
     }
     try {
@@ -416,7 +427,7 @@ export default function GameRoomPage() {
       console.error("Error leaving room:", err);
       toast({ title: "Error", description: "Could not leave the room cleanly. Redirecting anyway.", variant: "destructive" });
     } finally {
-      router.push("/");
+      router.push(`/room/${roomId}/lobby`);
     }
   };
 
@@ -543,9 +554,27 @@ export default function GameRoomPage() {
                 )}
                 {isResetting ? "Resetting..." : (isCurrentUserHost ? "Start New Game in Lobby" : "Back to Lobby")}
               </Button>
-              <Button onClick={handleLeaveRoom} variant="outline" className="w-full" size="lg">
-                <LogOut className="mr-2 h-5 w-5" /> Leave Room
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="w-full" size="lg">
+                    <LogOut className="mr-2 h-5 w-5" /> Leave Room
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      You will be removed from this game session.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Stay</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleLeaveRoom} className={buttonVariants({ variant: "destructive" })}>
+                      Leave
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </CardContent>
         </Card>
@@ -775,9 +804,27 @@ export default function GameRoomPage() {
             )}
           </Card>
 
-          <Button onClick={handleLeaveRoom} variant="destructive" className="w-full mt-2" size="sm">
-            <LogOut className="mr-2 h-4 w-4" /> Leave Game
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="w-full mt-2" size="sm">
+                <LogOut className="mr-2 h-4 w-4" /> Leave Game
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure you want to leave the game?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will remove you from the current game session. If you are the host, a new host will be assigned.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Stay</AlertDialogCancel>
+                <AlertDialogAction onClick={handleLeaveRoom} className={buttonVariants({ variant: "destructive" })}>
+                  Leave
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </div>
