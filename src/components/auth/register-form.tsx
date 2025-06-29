@@ -58,7 +58,7 @@ export default function RegisterForm() {
       title: "Registration Successful",
       description: `Welcome, ${values.username}! You are now logged in.`,
     });
-    router.push('/profile');
+    router.push('/');
     setIsLoading(false);
   }
 

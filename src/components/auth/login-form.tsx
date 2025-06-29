@@ -53,7 +53,7 @@ export default function LoginForm() {
       title: "Login Successful",
       description: `Welcome back, ${username}!`,
     });
-    router.push('/profile'); 
+    router.push('/'); 
     setIsLoading(false);
   }
 
