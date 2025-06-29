@@ -100,7 +100,7 @@ export default function LobbyPage() {
       if (data.isGameStarted && previousIsGameStartedRef.current === false && !currentUserIsHostInFetchedData) {
         const currentPlayerServerData = data.players.find(p => p.id === currentUser.username);
         const ticketsToTake = currentPlayerServerData?.tickets.length || 0; 
-        playSound('game starting.wav');
+        playSound('gamestarting.wav');
         toast({ title: "Game Started!", description: "Joining the game..." });
         router.push(`/room/${roomId}/play?playerTickets=${ticketsToTake}`);
       }
@@ -202,7 +202,7 @@ export default function LobbyPage() {
       return;
     }
 
-    playSound('game starting.wav');
+    playSound('gamestarting.wav');
 
     const hostPlayerWithTickets = roomData.players.find(p => p.id === currentUser.username && p.isHost && p.tickets.length > 0);
     if (!hostPlayerWithTickets) {
@@ -470,7 +470,7 @@ export default function LobbyPage() {
                   <Ticket className="mr-2 h-5 w-5 text-primary"/>
                   Your Confirmed Tickets
                 </CardTitle>
-              </Header>
+              </CardHeader>
               <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <p className="font-medium">
                   You have {currentUserInRoom?.tickets.length} {ticketsText(currentUserInRoom?.tickets.length ?? 0)} confirmed.
@@ -579,3 +579,5 @@ export default function LobbyPage() {
     </div>
   );
 }
+
+    
