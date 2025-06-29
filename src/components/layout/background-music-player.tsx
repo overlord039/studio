@@ -12,7 +12,7 @@ export default function BackgroundMusicPlayer() {
   // Set volume once the audio element is available.
   useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.volume = 0.5;
+      audioRef.current.volume = 0.3;
     }
   }, []);
 
