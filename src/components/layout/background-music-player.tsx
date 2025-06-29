@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
@@ -57,6 +56,6 @@ export default function BackgroundMusicPlayer() {
   // The audio element is rendered but not played until user interaction and isBgmEnabled is true.
   // We don't use the `autoPlay` attribute to avoid browser blocking issues.
   return (
-    <audio ref={audioRef} src="/bgm.mp3" loop />
+    <audio ref={audioRef} src="/BGM.mp3" loop />
   );
 }
