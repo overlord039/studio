@@ -47,6 +47,7 @@ export default function GameRoomPage() {
   const [isMuted, setIsMuted] = useState(false);
   const [isCallingNextNumber, setIsCallingNextNumber] = useState(false);
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const [isPrizeInfoMinimized, setIsPrizeInfoMinimized] = useState(true);
   const [isOtherPlayersMinimized, setIsOtherPlayersMinimized] = useState(true);
@@ -369,10 +370,34 @@ export default function GameRoomPage() {
     }
   };
 
+  const isCurrentUserHost = roomData?.host.id === currentUser?.username;
 
-  const handlePlayAgain = () => {
-    router.push(`/room/${roomId}/lobby`);
-    toast({ title: "New Game Setup", description: "Returning to lobby." });
+  const handlePlayAgain = async () => {
+    if (!currentUser) return;
+    
+    if (isCurrentUserHost) {
+      setIsResetting(true);
+      try {
+        const response = await fetch(`/api/rooms/${roomId}/reset`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hostId: currentUser.username }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to reset the game.");
+        }
+        router.push(`/room/${roomId}/lobby`);
+        toast({ title: "New Game Ready!", description: "The lobby has been reset for all players." });
+      } catch (err) {
+        console.error("Error resetting game:", err);
+        toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
+        setIsResetting(false);
+      }
+    } else {
+      router.push(`/room/${roomId}/lobby`);
+      toast({ title: "Returning to Lobby", description: "Waiting for host to start a new game." });
+    }
   };
 
   const handleLeaveRoom = async () => {
@@ -434,7 +459,6 @@ export default function GameRoomPage() {
   const totalTicketsInGame = roomData.players.reduce((sum, player) => sum + (player.tickets?.length || 0), 0);
   const totalPrizePool = gameSettings.ticketPrice * totalTicketsInGame;
   const otherPlayers = roomData.players.filter(p => p.id !== currentUser.username);
-  const isCurrentUserHost = roomData.host.id === currentUser.username;
   const ticketsText = (count: number) => count === 1 ? 'ticket' : 'tickets';
 
 
@@ -511,8 +535,13 @@ export default function GameRoomPage() {
               </ul>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 mt-6">
-              <Button onClick={handlePlayAgain} className="w-full" size="lg">
-                <RotateCcw className="mr-2 h-5 w-5" /> Back to Lobby
+              <Button onClick={handlePlayAgain} className="w-full" size="lg" disabled={isResetting}>
+                {isResetting ? (
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                ) : (
+                  <RotateCcw className="mr-2 h-5 w-5" />
+                )}
+                {isResetting ? "Resetting..." : (isCurrentUserHost ? "Start New Game in Lobby" : "Back to Lobby")}
               </Button>
               <Button onClick={handleLeaveRoom} variant="outline" className="w-full" size="lg">
                 <LogOut className="mr-2 h-5 w-5" /> Leave Room
