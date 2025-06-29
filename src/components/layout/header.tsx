@@ -19,6 +19,11 @@ export default function Header() {
   const { isMuted, toggleMute } = useSound();
   const [isHidden, setIsHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const controlNavbar = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -41,6 +46,39 @@ export default function Header() {
     }
   }, [controlNavbar]);
 
+  const AuthContent = () => {
+    // On the server, or before the client has mounted, show a placeholder.
+    if (!isClient) {
+      return <div className="h-8 w-8 bg-primary/50 animate-pulse rounded-full border-2 border-primary-foreground/50"></div>;
+    }
+
+    // On the client, show the loading spinner until auth state is resolved.
+    if (loading) {
+      return <div className="h-8 w-8 bg-primary/50 animate-pulse rounded-full border-2 border-primary-foreground/50"></div>;
+    }
+
+    // Once loading is false, show the avatar if logged in, or nothing if not.
+    if (currentUser) {
+      return (
+        <Link href="/profile" passHref>
+          <Button variant="secondary" className="relative p-0 h-8 w-8 rounded-full border-2 border-primary-foreground/50">
+            <Avatar className="h-8 w-8">
+              <AvatarImage 
+                src={`https://placehold.co/32x32.png?text=${currentUser.username.substring(0, 2).toUpperCase()}`} 
+                alt={currentUser.username} 
+                data-ai-hint="profile avatar"
+              />
+              <AvatarFallback>{currentUser.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+          </Button>
+        </Link>
+      );
+    }
+    
+    // Render nothing if not logged in (to avoid layout shift, we could use a placeholder div)
+    return null;
+  };
+
   return (
     <header className={cn(
       "bg-primary text-primary-foreground shadow-md sticky top-0 z-50 transition-transform duration-300 ease-in-out",
@@ -56,23 +94,7 @@ export default function Header() {
                   <HelpCircle className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">How to Play</span>
               </Button>
           </Link>
-          {loading ? (
-            <div className="h-8 w-8 bg-primary/50 animate-pulse rounded-full border-2 border-primary-foreground/50"></div> 
-          ) : currentUser ? (
-            <Link href="/profile" passHref>
-              <Button variant="secondary" className="relative p-0 h-8 w-8 rounded-full border-2 border-primary-foreground/50">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage 
-                    src={`https://placehold.co/32x32.png?text=${currentUser.username.substring(0, 2).toUpperCase()}`} 
-                    alt={currentUser.username} 
-                    data-ai-hint="profile avatar"
-                  />
-                  <AvatarFallback>{currentUser.username.substring(0, 2).toUpperCase()}</AvatarFallback>
-                </Avatar>
-              </Button>
-            </Link>
-          ) : null}
-          
+          <AuthContent />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
