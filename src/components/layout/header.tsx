@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -51,7 +52,7 @@ export default function Header() {
         </Link>
         <nav className="flex items-center space-x-2 md:space-x-3">
           <Link href="/how-to-play" passHref>
-              <Button variant="ghost" className="text-primary-foreground hover:bg-primary/80 px-2 md:px-3">
+              <Button variant="secondary" className="px-2 md:px-3">
                   <HelpCircle className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">How to Play</span>
               </Button>
           </Link>
