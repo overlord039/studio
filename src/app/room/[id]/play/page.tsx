@@ -413,7 +413,7 @@ export default function GameRoomPage() {
 
   const handleLeaveRoom = async () => {
     if (!currentUser) {
-      router.push(`/room/${roomId}/lobby`);
+      router.push('/');
       return;
     }
     try {
@@ -427,7 +427,7 @@ export default function GameRoomPage() {
       console.error("Error leaving room:", err);
       toast({ title: "Error", description: "Could not leave the room cleanly. Redirecting anyway.", variant: "destructive" });
     } finally {
-      router.push(`/room/${roomId}/lobby`);
+      router.push('/');
     }
   };
 
