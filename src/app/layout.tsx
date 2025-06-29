@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from '@/contexts/auth-context';
 import PageLayout from '@/components/layout/page-layout';
 import { SoundProvider } from '@/contexts/sound-context';
+import BackgroundMusicPlayer from '@/components/layout/background-music-player';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -39,6 +40,7 @@ export default function RootLayout({
               disableTransitionOnChange
             >
               <PageLayout>{children}</PageLayout>
+              <BackgroundMusicPlayer />
             </ThemeProvider>
           </AuthProvider>
         </SoundProvider>
