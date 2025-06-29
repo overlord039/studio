@@ -444,10 +444,12 @@ export default function GameRoomPage() {
     };
 
     let currentUserWinnings = 0;
+    const currentUserPrizeNames: PrizeType[] = [];
     if (currentUser) {
         prizesForFormat.forEach(prize => {
             const claimInfo = roomData.prizeStatus[prize];
             if (claimInfo && claimInfo.claimedBy.includes(currentUser.username)) {
+                currentUserPrizeNames.push(prize);
                 const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
                 const prizeAmount = (totalPrizePool * percentage) / 100;
                 const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
@@ -467,9 +469,10 @@ export default function GameRoomPage() {
           </CardHeader>
           <CardContent className="space-y-4">
              {currentUserWinnings > 0 && (
-                <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50">
+                <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
                     <p className="text-lg font-semibold">Congratulations, {currentUser.username}!</p>
                     <p className="text-2xl font-bold text-green-700 dark:text-green-300">You won a total of {formatCurrency(currentUserWinnings)}!</p>
+                    <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
                 </div>
             )}
             <h3 className="text-xl font-semibold text-center mb-2 flex items-center justify-center">
