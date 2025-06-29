@@ -17,7 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 export default function Header() {
   const { currentUser, loading } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { isMuted, toggleMute } = useSound();
+  const { isSfxMuted, toggleSfxMute, isBgmEnabled, toggleBgm } = useSound();
   const [isHidden, setIsHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -97,8 +97,12 @@ export default function Header() {
               <DropdownMenuLabel>Settings</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center justify-between cursor-pointer">
-                <Label htmlFor="sound-toggle" className="pr-2 cursor-pointer">Sound</Label>
-                <Switch id="sound-toggle" checked={!isMuted} onCheckedChange={toggleMute} />
+                <Label htmlFor="bgm-toggle" className="pr-2 cursor-pointer">Background Music</Label>
+                <Switch id="bgm-toggle" checked={isBgmEnabled} onCheckedChange={toggleBgm} />
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center justify-between cursor-pointer">
+                <Label htmlFor="sfx-toggle" className="pr-2 cursor-pointer">Sound Effects</Label>
+                <Switch id="sfx-toggle" checked={!isSfxMuted} onCheckedChange={toggleSfxMute} />
               </DropdownMenuItem>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>

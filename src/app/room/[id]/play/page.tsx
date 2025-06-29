@@ -16,6 +16,7 @@ import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, Rotate
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
+import { useSound } from '@/contexts/sound-context';
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, NUMBERS_RANGE_MAX } from '@/lib/constants';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -47,6 +48,7 @@ export default function GameRoomPage() {
   const roomId = routeParams.id as string;
   const { toast } = useToast();
   const { currentUser, loading: authLoading } = useAuth();
+  const { isSfxMuted, toggleSfxMute } = useSound();
 
   const [roomData, setRoomData] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,7 +57,6 @@ export default function GameRoomPage() {
   const [myTickets, setMyTickets] = useState<HousieTicketGrid[]>([]);
   const [markedNumbers, setMarkedNumbers] = useState<Set<string>>(new Set());
   const [gameMessage, setGameMessage] = useState<string | null>(null);
-  const [isMuted, setIsMuted] = useState(false);
   const [isCallingNextNumber, setIsCallingNextNumber] = useState(false);
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -232,7 +233,7 @@ export default function GameRoomPage() {
   // Announce new numbers
   useEffect(() => {
     if (roomData && roomData.currentNumber !== null && roomData.currentNumber !== previousCurrentNumberRef.current) {
-      if (!isMuted && typeof window !== 'undefined' && window.speechSynthesis) {
+      if (!isSfxMuted && typeof window !== 'undefined' && window.speechSynthesis) {
         const utterance = new SpeechSynthesisUtterance(String(roomData.currentNumber));
         window.speechSynthesis.speak(utterance);
         
@@ -242,7 +243,7 @@ export default function GameRoomPage() {
       }
       previousCurrentNumberRef.current = roomData.currentNumber;
     }
-  }, [roomData?.currentNumber, isMuted]);
+  }, [roomData?.currentNumber, isSfxMuted]);
 
 
   const handleNumberClick = (ticketIndex: number, numberValue: number, rowIndex: number, colIndex: number) => {
@@ -603,8 +604,8 @@ export default function GameRoomPage() {
           <MemoizedCalledNumberDisplay 
             currentNumber={roomData.currentNumber}
             calledNumbers={roomData.calledNumbers}
-            isMuted={isMuted}
-            onToggleMute={() => setIsMuted(prev => !prev)}
+            isMuted={isSfxMuted}
+            onToggleMute={toggleSfxMute}
           />
 
           {isCurrentUserHost && !isAutoCalling && !roomData.isGameOver && (

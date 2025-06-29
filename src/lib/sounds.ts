@@ -1,6 +1,7 @@
+
 "use client";
 
-const LOCAL_STORAGE_KEY = 'housiehub-sound-muted';
+const SFX_MUTED_KEY = 'housiehub-sfx-muted';
 
 /**
  * Plays a sound file from the /public directory, respecting the user's mute preference.
@@ -9,7 +10,7 @@ const LOCAL_STORAGE_KEY = 'housiehub-sound-muted';
 export function playSound(soundFile: string) {
   if (typeof window !== 'undefined' && typeof Audio !== 'undefined') {
     try {
-        const isMuted = localStorage.getItem(LOCAL_STORAGE_KEY) === 'true';
+        const isMuted = localStorage.getItem(SFX_MUTED_KEY) === 'true';
         if (isMuted) {
             return;
         }

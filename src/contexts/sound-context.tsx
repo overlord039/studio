@@ -4,42 +4,71 @@
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
-const LOCAL_STORAGE_KEY = 'housiehub-sound-muted';
+const SFX_MUTED_KEY = 'housiehub-sfx-muted';
+const BGM_ENABLED_KEY = 'housiehub-bgm-enabled';
 
 interface SoundContextType {
-  isMuted: boolean;
-  toggleMute: () => void;
+  isSfxMuted: boolean;
+  toggleSfxMute: () => void;
+  isBgmEnabled: boolean;
+  toggleBgm: () => void;
 }
 
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
 
 export function SoundProvider({ children }: { children: ReactNode }) {
-  const [isMuted, setIsMuted] = useState(true);
+  const [isSfxMuted, setIsSfxMuted] = useState(true); // Default to muted on server
+  const [isBgmEnabled, setIsBgmEnabled] = useState(false); // Default to disabled on server
 
   useEffect(() => {
+    // This effect runs only on the client
     try {
-      const storedMuteState = localStorage.getItem(LOCAL_STORAGE_KEY);
-      // On the client, set the actual state from localStorage. Default to un-muted (false) if nothing is stored.
-      setIsMuted(storedMuteState === 'true');
+      const storedSfxMuteState = localStorage.getItem(SFX_MUTED_KEY);
+      // Default to not muted if nothing is stored
+      setIsSfxMuted(storedSfxMuteState === 'true');
+
+      const storedBgmEnabledState = localStorage.getItem(BGM_ENABLED_KEY);
+      // Default to disabled (false) if nothing is stored
+      setIsBgmEnabled(storedBgmEnabledState === 'true');
+
     } catch (error) {
       console.error("Could not read sound settings from localStorage", error);
-      setIsMuted(false); // Default to not muted on error
+      // Sensible defaults on error
+      setIsSfxMuted(false); 
+      setIsBgmEnabled(false);
     }
   }, []);
 
-  const toggleMute = useCallback(() => {
-    setIsMuted(prevMuted => {
+  const toggleSfxMute = useCallback(() => {
+    setIsSfxMuted(prevMuted => {
       const newMutedState = !prevMuted;
       try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, String(newMutedState));
+        localStorage.setItem(SFX_MUTED_KEY, String(newMutedState));
       } catch (error) {
-        console.error("Could not save sound settings to localStorage", error);
+        console.error("Could not save SFX mute settings to localStorage", error);
       }
       return newMutedState;
     });
   }, []);
 
-  const value = React.useMemo(() => ({ isMuted, toggleMute }), [isMuted, toggleMute]);
+  const toggleBgm = useCallback(() => {
+    setIsBgmEnabled(prevEnabled => {
+        const newEnabledState = !prevEnabled;
+        try {
+            localStorage.setItem(BGM_ENABLED_KEY, String(newEnabledState));
+        } catch (error) {
+            console.error("Could not save BGM settings to localStorage", error);
+        }
+        return newEnabledState;
+    });
+  }, []);
+
+  const value = React.useMemo(() => ({ 
+    isSfxMuted, 
+    toggleSfxMute,
+    isBgmEnabled,
+    toggleBgm
+  }), [isSfxMuted, toggleSfxMute, isBgmEnabled, toggleBgm]);
 
   return (
     <SoundContext.Provider value={value}>
