@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -61,7 +60,7 @@ export default function Header() {
           ) : currentUser ? (
             <>
               <Link href="/profile" passHref>
-                <Button variant="ghost" className="text-primary-foreground hover:bg-primary/80 px-2 md:px-3">
+                <Button variant="secondary" className="px-2 md:px-3">
                   <User className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">Profile</span>
                 </Button>
               </Link>
