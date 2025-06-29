@@ -159,7 +159,6 @@ export default function LobbyPage() {
         return;
     }
     setIsJoiningOrUpdating(true);
-    playSound('buy.wav');
     try {
       const response = await fetch(`/api/rooms/${roomId}/join`, {
         method: 'POST',
@@ -174,6 +173,7 @@ export default function LobbyPage() {
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to confirm tickets or join room.");
       }
+      playSound('buy.wav');
       const updatedRoom: Room = await response.json();
       setRoomData(updatedRoom); 
       const userInUpdatedRoom = updatedRoom.players.find(p => p.id === currentUser.username);
@@ -580,4 +580,3 @@ export default function LobbyPage() {
   );
 }
 
-    
