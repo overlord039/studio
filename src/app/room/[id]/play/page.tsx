@@ -568,7 +568,7 @@ export default function GameRoomPage() {
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Stay</AlertDialogCancel>
+                    <AlertDialogCancel className="bg-green-600 text-primary-foreground hover:bg-green-700 border-transparent">Stay</AlertDialogCancel>
                     <AlertDialogAction onClick={handleLeaveRoom} className={buttonVariants({ variant: "destructive" })}>
                       Leave
                     </AlertDialogAction>
@@ -818,7 +818,7 @@ export default function GameRoomPage() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Stay</AlertDialogCancel>
+                <AlertDialogCancel className="bg-green-600 text-primary-foreground hover:bg-green-700 border-transparent">Stay</AlertDialogCancel>
                 <AlertDialogAction onClick={handleLeaveRoom} className={buttonVariants({ variant: "destructive" })}>
                   Leave
                 </AlertDialogAction>
