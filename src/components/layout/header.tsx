@@ -45,14 +45,14 @@ export default function Header() {
   const AuthContent = () => {
     // On the server, and on the client before auth state is loaded, show a placeholder.
     if (loading) {
-      return <div className="h-8 w-8 bg-primary/50 animate-pulse rounded-full border-2 border-primary-foreground/50"></div>;
+      return <div className="h-8 w-8 bg-primary/50 animate-pulse rounded-full border-2 border-primary"></div>;
     }
 
     // Once loading is complete, render based on currentUser
     if (currentUser) {
       return (
         <Link href="/profile" passHref>
-          <Button variant="secondary" className="relative p-0 h-8 w-8 rounded-full border-2 border-primary-foreground/50">
+          <Button variant="secondary" className="relative p-0 h-8 w-8 rounded-full border-2 border-primary">
             <Avatar className="h-8 w-8">
               <AvatarImage 
                 src={`https://placehold.co/32x32.png?text=${currentUser.username.substring(0, 2).toUpperCase()}`} 
@@ -85,7 +85,9 @@ export default function Header() {
                   <HelpCircle className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">How to Play</span>
               </Button>
           </Link>
+          
           <AuthContent />
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
