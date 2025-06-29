@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { User, LogIn, UserPlus, Moon, Sun, HelpCircle, Settings } from 'lucide-react';
+import { Moon, Sun, HelpCircle, Settings } from 'lucide-react';
 import { useTheme } from "next-themes";
 import { useAuth } from '@/contexts/auth-context';
 import React, { useState, useEffect, useCallback } from 'react';
@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useSound } from '@/contexts/sound-context';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function Header() {
   const { currentUser, loading } = useAuth();
@@ -59,8 +60,16 @@ export default function Header() {
             <div className="h-8 w-20 bg-primary/50 animate-pulse rounded-md"></div> 
           ) : currentUser ? (
             <Link href="/profile" passHref>
-              <Button variant="secondary" className="px-2 md:px-3">
-                <User className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">{currentUser.username}</span>
+              <Button variant="secondary" className="px-2 md:px-3 flex items-center gap-2">
+                <Avatar className="h-6 w-6">
+                  <AvatarImage 
+                    src={`https://placehold.co/32x32.png?text=${currentUser.username.substring(0, 2).toUpperCase()}`} 
+                    alt={currentUser.username} 
+                    data-ai-hint="profile avatar"
+                  />
+                  <AvatarFallback>{currentUser.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <span className="hidden md:inline">{currentUser.username}</span>
               </Button>
             </Link>
           ) : null}
