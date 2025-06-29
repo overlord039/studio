@@ -9,6 +9,13 @@ export default function BackgroundMusicPlayer() {
   const { isBgmEnabled } = useSound();
   const [hasInteracted, setHasInteracted] = useState(false);
 
+  // Set volume once the audio element is available.
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = 0.5;
+    }
+  }, []);
+
   // This effect handles playing/pausing the audio based on the context and user interaction.
   useEffect(() => {
     const audio = audioRef.current;
