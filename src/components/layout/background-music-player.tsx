@@ -39,15 +39,18 @@ export default function BackgroundMusicPlayer() {
       setHasInteracted(true);
     };
 
-    // Listen for click or keydown to trigger the music.
+    // Listen for click, keydown, or touch to trigger the music.
     // The `once: true` option automatically removes the listener after it's called.
     window.addEventListener('click', handleFirstInteraction, { once: true });
     window.addEventListener('keydown', handleFirstInteraction, { once: true });
+    window.addEventListener('touchstart', handleFirstInteraction, { once: true });
+
 
     return () => {
       // Cleanup listeners if component unmounts before interaction.
       window.removeEventListener('click', handleFirstInteraction);
       window.removeEventListener('keydown', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
     };
   }, []); // Empty dependency array means this runs only once on mount.
 
