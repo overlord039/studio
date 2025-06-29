@@ -61,7 +61,7 @@ export default function Header() {
             <>
               <Link href="/profile" passHref>
                 <Button variant="secondary" className="px-2 md:px-3">
-                  <User className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">Profile</span>
+                  <User className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">{currentUser.username}</span>
                 </Button>
               </Link>
             </>
