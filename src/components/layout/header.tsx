@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -19,11 +20,6 @@ export default function Header() {
   const { isMuted, toggleMute } = useSound();
   const [isHidden, setIsHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const controlNavbar = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -47,17 +43,12 @@ export default function Header() {
   }, [controlNavbar]);
 
   const AuthContent = () => {
-    // On the server, or before the client has mounted, show a placeholder.
-    if (!isClient) {
-      return <div className="h-8 w-8 bg-primary/50 animate-pulse rounded-full border-2 border-primary-foreground/50"></div>;
-    }
-
-    // On the client, show the loading spinner until auth state is resolved.
+    // On the server, and on the client before auth state is loaded, show a placeholder.
     if (loading) {
       return <div className="h-8 w-8 bg-primary/50 animate-pulse rounded-full border-2 border-primary-foreground/50"></div>;
     }
 
-    // Once loading is false, show the avatar if logged in, or nothing if not.
+    // Once loading is complete, render based on currentUser
     if (currentUser) {
       return (
         <Link href="/profile" passHref>
@@ -75,8 +66,8 @@ export default function Header() {
       );
     }
     
-    // Render nothing if not logged in (to avoid layout shift, we could use a placeholder div)
-    return null;
+    // If not loading and no user, render an empty div to prevent layout shift
+    return <div className="h-8 w-8" />;
   };
 
   return (

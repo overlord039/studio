@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ReactNode } from 'react';
@@ -13,23 +14,20 @@ interface SoundContextType {
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
 
 export function SoundProvider({ children }: { children: ReactNode }) {
-  const [isMuted, setIsMuted] = useState(true); // Default to muted until client loads
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
 
   useEffect(() => {
     try {
       const storedMuteState = localStorage.getItem(LOCAL_STORAGE_KEY);
-      // Default to not muted if no setting is found
+      // On the client, set the actual state from localStorage. Default to un-muted (false) if nothing is stored.
       setIsMuted(storedMuteState === 'true');
     } catch (error) {
       console.error("Could not read sound settings from localStorage", error);
       setIsMuted(false); // Default to not muted on error
     }
-    setHasLoaded(true);
   }, []);
 
   const toggleMute = useCallback(() => {
-    if (!hasLoaded) return;
     setIsMuted(prevMuted => {
       const newMutedState = !prevMuted;
       try {
@@ -39,9 +37,9 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       }
       return newMutedState;
     });
-  }, [hasLoaded]);
+  }, []);
 
-  const value = React.useMemo(() => ({ isMuted: hasLoaded ? isMuted : true, toggleMute }), [isMuted, toggleMute, hasLoaded]);
+  const value = React.useMemo(() => ({ isMuted, toggleMute }), [isMuted, toggleMute]);
 
   return (
     <SoundContext.Provider value={value}>
