@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -93,7 +94,7 @@ const SettingsModal = () => {
   );
 
   return (
-    <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 overflow-hidden bg-background text-foreground border-border shadow-2xl">
+    <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 overflow-hidden">
         {/* Header Ribbon */}
         <header className="bg-primary text-primary-foreground text-center p-4 relative flex-shrink-0">
             <h2 className="text-2xl font-bold tracking-wider">SETTINGS</h2>
@@ -105,7 +106,7 @@ const SettingsModal = () => {
 
         <div className="flex flex-grow min-h-0">
             {/* Left Sidebar */}
-            <aside className="w-1/4 bg-background p-4 border-r border-border/10">
+            <aside className="w-1/4 bg-card p-4 border-r border-border">
                 <nav className="flex flex-col gap-2">
                     <TabButton id="general" label="General" icon={Settings} />
                     <TabButton id="social" label="Social" icon={Users} />
@@ -115,7 +116,7 @@ const SettingsModal = () => {
             </aside>
 
             {/* Main Content */}
-            <main className="w-3/4 p-8 overflow-y-auto">
+            <main className="w-3/4 p-8 overflow-y-auto bg-background">
                 {activeTab === 'general' && (
                     <div className="space-y-8">
                         <div className="space-y-4">
@@ -178,14 +179,16 @@ const SettingsModal = () => {
                         <p className="text-muted-foreground max-w-md mx-auto">
                             Learn all the rules and features of HousieHub to get started. Clicking the button below will take you to our detailed guide.
                         </p>
-                        <DialogClose asChild>
-                            <Link href="/how-to-play" passHref>
-                                <Button className="w-full max-w-sm mx-auto" size="lg">
-                                    <HelpCircle className="mr-2 h-5 w-5" />
-                                    Open How to Play Page
-                                </Button>
-                            </Link>
-                        </DialogClose>
+                        <div className="pt-4">
+                            <DialogClose asChild>
+                                <Link href="/how-to-play" passHref>
+                                    <Button className="w-full max-w-sm mx-auto" size="lg">
+                                        <HelpCircle className="mr-2 h-5 w-5" />
+                                        Open How to Play Page
+                                    </Button>
+                                </Link>
+                            </DialogClose>
+                        </div>
                     </div>
                 )}
 
