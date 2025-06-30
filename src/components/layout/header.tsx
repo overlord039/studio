@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -70,6 +69,20 @@ const SettingsModal = () => {
       <Icon className="mr-3 h-5 w-5" /> {label}
     </Button>
   );
+  
+  const MobileTabButton = ({ id, label, icon: Icon }: { id: string, label: string, icon: React.ElementType }) => (
+    <Button
+      variant="ghost"
+      className={cn(
+        "flex-col h-auto p-2 rounded-lg text-xs w-1/4",
+        activeTab === id ? 'bg-primary/10 text-primary' : 'text-muted-foreground'
+      )}
+      onClick={() => setActiveTab(id)}
+    >
+      <Icon className="h-5 w-5 mb-1" />
+      {label}
+    </Button>
+  );
 
   const ThemeToggle = () => (
     <div className="p-1 bg-secondary rounded-lg flex items-center justify-around">
@@ -96,19 +109,19 @@ const SettingsModal = () => {
   );
 
   return (
-    <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 overflow-hidden">
+    <DialogContent className="w-full h-full max-h-full md:max-w-4xl md:h-[80vh] flex flex-col p-0 overflow-hidden md:rounded-lg">
         {/* Header Ribbon */}
         <header className="bg-primary text-primary-foreground text-center p-4 relative flex-shrink-0">
             <h2 className="text-2xl font-bold tracking-wider">SETTINGS</h2>
              <DialogClose className="absolute right-4 top-1/2 -translate-y-1/2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-                <X className="h-6 w-6" />
+                <X className="h-7 w-7" />
                 <span className="sr-only">Close</span>
             </DialogClose>
         </header>
 
-        <div className="flex flex-grow min-h-0">
-            {/* Left Sidebar */}
-            <aside className="w-1/4 bg-card p-4 border-r border-border">
+        <div className="flex flex-col md:flex-row flex-grow min-h-0">
+            {/* Left Sidebar (Desktop) */}
+            <aside className="hidden md:block w-1/4 bg-card p-4 border-r border-border">
                 <nav className="flex flex-col gap-2">
                     <TabButton id="general" label="General" icon={Settings} />
                     <TabButton id="social" label="Social" icon={Users} />
@@ -116,111 +129,121 @@ const SettingsModal = () => {
                     <TabButton id="about" label="About" icon={Info} />
                 </nav>
             </aside>
+            
+            <div className="flex-grow flex flex-col">
+              {/* Mobile Tabs */}
+              <nav className="flex md:hidden p-1 border-b justify-around bg-card">
+                  <MobileTabButton id="general" label="General" icon={Settings} />
+                  <MobileTabButton id="social" label="Social" icon={Users} />
+                  <MobileTabButton id="how-to-play" label="How to Play" icon={HelpCircle} />
+                  <MobileTabButton id="about" label="About" icon={Info} />
+              </nav>
 
-            {/* Main Content */}
-            <main className="w-3/4 p-8 overflow-y-auto bg-background">
-                {activeTab === 'general' && (
-                    <div className="space-y-8">
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
-                                <Label htmlFor="sfx-toggle" className="flex items-center gap-2 cursor-pointer"><Volume2/> Sound Effects</Label>
-                                <Switch id="sfx-toggle" checked={!isSfxMuted} onCheckedChange={toggleSfxMute} />
-                            </div>
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
-                                <Label htmlFor="bgm-toggle" className="flex items-center gap-2 cursor-pointer"><Music/> Background Music</Label>
-                                <Switch id="bgm-toggle" checked={isBgmEnabled} onCheckedChange={toggleBgm} />
-                            </div>
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
-                                <Label htmlFor="notifications-toggle" className="flex items-center gap-2 text-muted-foreground"><Bell/> Notifications</Label>
-                                <Switch id="notifications-toggle" disabled />
-                            </div>
-                            <div className="p-3 rounded-lg bg-secondary/30 space-y-2">
-                                <Label>Theme</Label>
-                                <ThemeToggle />
-                            </div>
-                        </div>
-                        <div className="pt-8 border-t border-border/10">
-                            <h3 className="text-xl font-semibold text-destructive mb-2">Danger Zone</h3>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                <Button variant="destructive" className="w-full"><Trash2 className="mr-2"/> Delete Account</Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete your account and remove your data from our servers.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={logout} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
-                                </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </div>
-                    </div>
-                )}
+              {/* Main Content */}
+              <main className="flex-grow p-6 md:p-8 overflow-y-auto bg-background">
+                  {activeTab === 'general' && (
+                      <div className="space-y-8">
+                          <div className="space-y-4">
+                              <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                                  <Label htmlFor="sfx-toggle" className="flex items-center gap-2 cursor-pointer"><Volume2/> Sound Effects</Label>
+                                  <Switch id="sfx-toggle" checked={!isSfxMuted} onCheckedChange={toggleSfxMute} />
+                              </div>
+                              <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                                  <Label htmlFor="bgm-toggle" className="flex items-center gap-2 cursor-pointer"><Music/> Background Music</Label>
+                                  <Switch id="bgm-toggle" checked={isBgmEnabled} onCheckedChange={toggleBgm} />
+                              </div>
+                              <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                                  <Label htmlFor="notifications-toggle" className="flex items-center gap-2 text-muted-foreground"><Bell/> Notifications</Label>
+                                  <Switch id="notifications-toggle" disabled />
+                              </div>
+                              <div className="p-3 rounded-lg bg-secondary/30 space-y-2">
+                                  <Label>Theme</Label>
+                                  <ThemeToggle />
+                              </div>
+                          </div>
+                          <div className="pt-8 border-t border-border/10">
+                              <h3 className="text-xl font-semibold text-destructive mb-2">Danger Zone</h3>
+                              <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                  <Button variant="destructive" className="w-full"><Trash2 className="mr-2"/> Delete Account</Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                      This action cannot be undone. This will permanently delete your account and remove your data from our servers.
+                                      </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={logout} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                  </AlertDialogContent>
+                              </AlertDialog>
+                          </div>
+                      </div>
+                  )}
 
-                {activeTab === 'social' && (
-                    <div className="space-y-6">
-                        <h3 className="text-xl font-semibold">Social Accounts</h3>
-                        <p className="text-muted-foreground">Connect your accounts for a seamless HousieHub experience with friends.</p>
-                        <div className="space-y-3">
-                        <Button className="w-full bg-white text-black hover:bg-gray-200 shadow-sm"><GoogleIcon className="mr-2 h-5 w-5 fill-current" /> Continue with Google</Button>
-                        <Button className="w-full bg-[#1877F2] text-white hover:bg-[#166fe5] shadow-sm"><Facebook className="mr-2 h-5 w-5" /> Login with Facebook</Button>
-                        <Button variant="secondary" className="w-full" onClick={handleShare}><Share2 className="mr-2 h-5 w-5" /> Share Website</Button>
-                        </div>
-                    </div>
-                )}
+                  {activeTab === 'social' && (
+                      <div className="space-y-6">
+                          <h3 className="text-xl font-semibold">Social Accounts</h3>
+                          <p className="text-muted-foreground">Connect your accounts for a seamless HousieHub experience with friends.</p>
+                          <div className="space-y-3">
+                          <Button className="w-full bg-white text-black hover:bg-gray-200 shadow-sm"><GoogleIcon className="mr-2 h-5 w-5 fill-current" /> Continue with Google</Button>
+                          <Button className="w-full bg-[#1877F2] text-white hover:bg-[#166fe5] shadow-sm"><Facebook className="mr-2 h-5 w-5" /> Login with Facebook</Button>
+                          <Button variant="secondary" className="w-full" onClick={handleShare}><Share2 className="mr-2 h-5 w-5" /> Share Website</Button>
+                          </div>
+                      </div>
+                  )}
 
-                {activeTab === 'how-to-play' && (
-                    <div className="space-y-4">
-                        <h3 className="text-2xl font-bold flex items-center"><HelpCircle className="mr-2 h-7 w-7 text-primary" /> How to Play</h3>
-                        <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
-                            <AccordionItem value="item-1">
-                                <AccordionTrigger className="text-lg">1. Get Started</AccordionTrigger>
-                                <AccordionContent className="text-base">
-                                Create an account and log in. You can then create a new game room to host, or join a friend's room using their unique Room ID.
-                                </AccordionContent>
-                            </AccordionItem>
-                            <AccordionItem value="item-2">
-                                <AccordionTrigger className="text-lg">2. The Game</AccordionTrigger>
-                                <AccordionContent className="text-base">
-                                Once in the game lobby, confirm how many tickets you want to play with. When the game starts, numbers from 1 to 90 are called out. Click the matching numbers on your tickets to mark them.
-                                </AccordionContent>
-                            </AccordionItem>
-                            <AccordionItem value="item-3">
-                                <AccordionTrigger className="text-lg">3. Win Prizes</AccordionTrigger>
-                                <AccordionContent className="text-base">
-                                When you complete a winning pattern (e.g., Jaldi 5, a full line, or a Full House), click the corresponding 'Claim' button. The system automatically validates your claim. The first valid claim wins the prize for that pattern!
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Accordion>
-                    </div>
-                )}
+                  {activeTab === 'how-to-play' && (
+                      <div className="space-y-4">
+                          <h3 className="text-2xl font-bold flex items-center"><HelpCircle className="mr-2 h-7 w-7 text-primary" /> How to Play</h3>
+                          <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+                              <AccordionItem value="item-1">
+                                  <AccordionTrigger className="text-lg">1. Get Started</AccordionTrigger>
+                                  <AccordionContent className="text-base">
+                                  Create an account and log in. You can then create a new game room to host, or join a friend's room using their unique Room ID.
+                                  </AccordionContent>
+                              </AccordionItem>
+                              <AccordionItem value="item-2">
+                                  <AccordionTrigger className="text-lg">2. The Game</AccordionTrigger>
+                                  <AccordionContent className="text-base">
+                                  Once in the game lobby, confirm how many tickets you want to play with. When the game starts, numbers from 1 to 90 are called out. Click the matching numbers on your tickets to mark them.
+                                  </AccordionContent>
+                              </AccordionItem>
+                              <AccordionItem value="item-3">
+                                  <AccordionTrigger className="text-lg">3. Win Prizes</AccordionTrigger>
+                                  <AccordionContent className="text-base">
+                                  When you complete a winning pattern (e.g., Jaldi 5, a full line, or a Full House), click the corresponding 'Claim' button. The system automatically validates your claim. The first valid claim wins the prize for that pattern!
+                                  </AccordionContent>
+                              </AccordionItem>
+                          </Accordion>
+                      </div>
+                  )}
 
-                {activeTab === 'about' && (
-                    <div className="flex flex-col items-center text-center space-y-6">
-                        <Image src="/logonew.png" alt="HousieHub Logo" width={150} height={42} className="h-auto" />
-                        <div className="space-y-2">
-                            <p>Developed by: <span className="font-bold">Durga Sankar</span></p>
-                            <div className="flex justify-center items-center space-x-4">
-                                <a href="#" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                                <Linkedin className="h-6 w-6" />
-                                </a>
-                                <a href="mailto:durgasankar.d@gmail.com" aria-label="Email" className="text-muted-foreground hover:text-primary transition-colors">
-                                <Mail className="h-6 w-6" />
-                                </a>
-                            </div>
-                        </div>
-                        <Link href="/legal/privacy-policy" className="text-sm font-bold uppercase tracking-wider underline hover:text-primary">
-                            Privacy Policy
-                        </Link>
-                        <p className="text-xs italic text-muted-foreground">Sound effects and music sourced from pixabay</p>
-                    </div>
-                )}
-            </main>
+                  {activeTab === 'about' && (
+                      <div className="flex flex-col items-center text-center space-y-6">
+                          <Image src="/logonew.png" alt="HousieHub Logo" width={150} height={42} className="h-auto" />
+                          <div className="space-y-2">
+                              <p>Developed by: <span className="font-bold">Durga Sankar</span></p>
+                              <div className="flex justify-center items-center space-x-4">
+                                  <a href="#" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                                  <Linkedin className="h-6 w-6" />
+                                  </a>
+                                  <a href="mailto:durgasankar.d@gmail.com" aria-label="Email" className="text-muted-foreground hover:text-primary transition-colors">
+                                  <Mail className="h-6 w-6" />
+                                  </a>
+                              </div>
+                          </div>
+                          <Link href="/legal/privacy-policy" className="text-sm font-bold uppercase tracking-wider underline hover:text-primary">
+                              Privacy Policy
+                          </Link>
+                          <p className="text-xs italic text-muted-foreground">Sound effects and music sourced from pixabay</p>
+                      </div>
+                  )}
+              </main>
+            </div>
         </div>
     </DialogContent>
   );
