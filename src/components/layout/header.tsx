@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -110,6 +109,7 @@ const SettingsModal = () => {
                 <nav className="flex flex-col gap-2">
                     <TabButton id="general" label="General" icon={Settings} />
                     <TabButton id="social" label="Social" icon={Users} />
+                    <TabButton id="how-to-play" label="How to Play" icon={HelpCircle} />
                     <TabButton id="about" label="About" icon={Info} />
                 </nav>
             </aside>
@@ -168,6 +168,24 @@ const SettingsModal = () => {
                         <Button className="w-full bg-[#1877F2] text-white hover:bg-[#166fe5] shadow-sm"><Facebook className="mr-2 h-5 w-5" /> Login with Facebook</Button>
                         <Button variant="secondary" className="w-full" onClick={handleShare}><Share2 className="mr-2 h-5 w-5" /> Share Website</Button>
                         </div>
+                    </div>
+                )}
+
+                {activeTab === 'how-to-play' && (
+                    <div className="space-y-6 text-center">
+                        <HelpCircle className="mx-auto h-16 w-16 text-primary" />
+                        <h3 className="text-2xl font-bold">How to Play Guide</h3>
+                        <p className="text-muted-foreground max-w-md mx-auto">
+                            Learn all the rules and features of HousieHub to get started. Clicking the button below will take you to our detailed guide.
+                        </p>
+                        <DialogClose asChild>
+                            <Link href="/how-to-play" passHref>
+                                <Button className="w-full max-w-sm mx-auto" size="lg">
+                                    <HelpCircle className="mr-2 h-5 w-5" />
+                                    Open How to Play Page
+                                </Button>
+                            </Link>
+                        </DialogClose>
                     </div>
                 )}
 
@@ -258,12 +276,6 @@ export default function Header() {
           HousieHub
         </Link>
         <nav className="flex items-center space-x-2 md:space-x-3">
-          <Link href="/how-to-play" passHref>
-              <Button variant="secondary" className="px-2 md:px-3">
-                  <HelpCircle className="mr-0 md:mr-2 h-4 w-4" /> <span className="hidden md:inline">How to Play</span>
-              </Button>
-          </Link>
-          
           <AuthContent />
 
           <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
