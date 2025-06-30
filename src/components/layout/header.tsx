@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -244,9 +243,6 @@ const SettingsModal = () => {
                           Feel free to reach out if you have ideas, suggestions, or wish to collaborate.
                         </p>
                         <div className="flex justify-center items-center space-x-6">
-                          <a href="#" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                            <Linkedin className="h-7 w-7" />
-                          </a>
                           <a href="mailto:durgasankar.d@gmail.com" aria-label="Email" className="text-muted-foreground hover:text-primary transition-colors">
                             <Mail className="h-7 w-7" />
                           </a>
@@ -258,19 +254,9 @@ const SettingsModal = () => {
                   {activeTab === 'about' && (
                       <div className="flex flex-col items-center text-center space-y-6">
                            <div>
-                              <p className="text-center">Developed by:</p>
-                              <p className="font-semibold text-lg"></p>
-                          </div>
+                              <p className="text-center">Developed by</p>
+                           </div>
                           <Image src="/logonew.png" alt="HousieHub Logo" width={150} height={42} className="h-auto" />
-                          <div className="space-y-2">
-                              <div className="flex justify-center items-center space-x-4">
-                                  <a href="#" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                                  <Linkedin className="h-6 w-6" />
-                                  </a>
-                                  <a href="mailto:durgasankar.d@gmail.com" aria-label="Email" className="text-muted-foreground hover:text-primary transition-colors">
-                                  </a>
-                              </div>
-                          </div>
                            <Link href="/legal/privacy-policy" onClick={() => { setIsSettingsOpen(false); router.push('/legal/privacy-policy'); }} className="text-sm font-bold uppercase tracking-wider underline hover:text-primary">
                               Privacy Policy
                           </Link>
