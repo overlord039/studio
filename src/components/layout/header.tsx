@@ -16,6 +16,8 @@ import { Dialog, DialogContent, DialogTrigger, DialogClose } from '@/components/
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Skeleton } from '@/components/ui/skeleton';
+import { useRouter } from 'next/navigation';
 
 
 const SettingsModal = () => {
@@ -24,6 +26,7 @@ const SettingsModal = () => {
   const { isSfxMuted, toggleSfxMute, isBgmEnabled, toggleBgm } = useSound();
   const { logout } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleShare = async () => {
     const shareData = {
@@ -110,7 +113,6 @@ const SettingsModal = () => {
 
   return (
     <DialogContent className="w-full h-full max-h-full md:max-w-4xl md:h-[80vh] flex flex-col p-0 overflow-hidden md:rounded-lg">
-        {/* Header Ribbon */}
         <header className="bg-primary text-primary-foreground text-center p-4 relative flex-shrink-0">
             <h2 className="text-2xl font-bold tracking-wider">SETTINGS</h2>
              <DialogClose className="absolute right-4 top-1/2 -translate-y-1/2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
@@ -120,7 +122,6 @@ const SettingsModal = () => {
         </header>
 
         <div className="flex flex-col md:flex-row flex-grow min-h-0">
-            {/* Left Sidebar (Desktop) */}
             <aside className="hidden md:block w-1/4 bg-card p-4 border-r border-border">
                 <nav className="flex flex-col gap-2">
                     <TabButton id="general" label="General" icon={Settings} />
@@ -131,15 +132,13 @@ const SettingsModal = () => {
             </aside>
             
             <div className="flex-grow flex flex-col">
-              {/* Mobile Tabs */}
-              <nav className="flex md:hidden p-1 border-b justify-around bg-card">
+              <nav className="md:hidden flex-shrink-0 flex p-1 border-b justify-around bg-card">
                   <MobileTabButton id="general" label="General" icon={Settings} />
                   <MobileTabButton id="social" label="Social" icon={Users} />
                   <MobileTabButton id="how-to-play" label="How to Play" icon={HelpCircle} />
                   <MobileTabButton id="about" label="About" icon={Info} />
               </nav>
 
-              {/* Main Content */}
               <main className="flex-grow p-6 md:p-8 overflow-y-auto bg-background">
                   {activeTab === 'general' && (
                       <div className="space-y-8">
@@ -235,7 +234,7 @@ const SettingsModal = () => {
                                   </a>
                               </div>
                           </div>
-                          <Link href="/legal/privacy-policy" className="text-sm font-bold uppercase tracking-wider underline hover:text-primary">
+                          <Link href="/legal/privacy-policy" onClick={() => (document.querySelector('[data-radix-dialog-close]') as HTMLElement)?.click()} className="text-sm font-bold uppercase tracking-wider underline hover:text-primary">
                               Privacy Policy
                           </Link>
                           <p className="text-xs italic text-muted-foreground">Sound effects and music sourced from pixabay</p>
@@ -276,11 +275,23 @@ export default function Header() {
 
   const AuthContent = () => {
     if (loading) {
-      return <div className="h-10 w-10 bg-primary/50 animate-pulse rounded-full border-2 border-primary"></div>;
+      return <Skeleton className="h-10 w-24 rounded-md" />;
     }
 
-    if (currentUser) {
-      return (
+    if (!currentUser) {
+        return (
+            <div className="flex items-center gap-2">
+                <Link href="/auth/login" passHref>
+                    <Button variant="secondary">Login</Button>
+                </Link>
+                <Link href="/auth/register" passHref>
+                    <Button variant="ghost">Register</Button>
+                </Link>
+            </div>
+        );
+    }
+    
+    return (
         <Link href="/profile" passHref>
           <Button variant="secondary" className="relative p-0 h-10 w-10 rounded-full border-2 border-primary">
             <Avatar className="h-10 w-10">
@@ -293,10 +304,7 @@ export default function Header() {
             </Avatar>
           </Button>
         </Link>
-      );
-    }
-    
-    return <div className="h-10 w-10" />;
+    );
   };
 
   return (
