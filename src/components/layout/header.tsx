@@ -268,7 +268,6 @@ const SettingsModal = () => {
                                   <Linkedin className="h-6 w-6" />
                                   </a>
                                   <a href="mailto:durgasankar.d@gmail.com" aria-label="Email" className="text-muted-foreground hover:text-primary transition-colors">
-                                  <Mail className="h-6 w-6" />
                                   </a>
                               </div>
                           </div>
@@ -371,3 +370,4 @@ export default function Header() {
     </header>
   );
 }
+    
