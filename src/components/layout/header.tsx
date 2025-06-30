@@ -234,7 +234,7 @@ const SettingsModal = () => {
                                   </a>
                               </div>
                           </div>
-                           <Link href="/legal/privacy-policy" onClick={() => (document.querySelector('[data-radix-dialog-close]') as HTMLElement)?.click()} className="text-sm font-bold uppercase tracking-wider underline hover:text-primary">
+                           <Link href="/legal/privacy-policy" onClick={() => router.push('/legal/privacy-policy')} className="text-sm font-bold uppercase tracking-wider underline hover:text-primary">
                               Privacy Policy
                           </Link>
                           <p className="text-xs italic text-muted-foreground">Sound effects and music sourced from pixabay</p>
