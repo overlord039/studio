@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -224,7 +225,10 @@ const SettingsModal = () => {
 
                   {activeTab === 'about' && (
                       <div className="flex flex-col items-center text-center space-y-6">
-                          <p>Developed by: <span className="font-bold">Durga Sankar</span></p>
+                           <div>
+                              <p>Developed by</p>
+                              <p className="font-bold">Durga Sankar</p>
+                          </div>
                           <Image src="/logonew.png" alt="HousieHub Logo" width={150} height={42} className="h-auto" />
                           <div className="space-y-2">
                               <div className="flex justify-center items-center space-x-4">
@@ -236,7 +240,7 @@ const SettingsModal = () => {
                                   </a>
                               </div>
                           </div>
-                           <Link href="/legal/privacy-policy" onClick={() => setIsSettingsOpen(false)} className="text-sm font-bold uppercase tracking-wider underline hover:text-primary">
+                           <Link href="/legal/privacy-policy" onClick={() => { router.push('/legal/privacy-policy'); setIsSettingsOpen(false); }} className="text-sm font-bold uppercase tracking-wider underline hover:text-primary">
                               Privacy Policy
                           </Link>
                           <p className="text-xs italic text-muted-foreground">Sound effects and music sourced from pixabay</p>
