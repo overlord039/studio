@@ -162,7 +162,6 @@ const SettingsModal = () => {
                               </div>
                           </div>
                           <div className="pt-8 border-t border-border/10">
-                              <h3 className="text-xl font-semibold text-destructive mb-2">Danger Zone</h3>
                               <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                   <Button variant="destructive" className="w-full"><Trash2 className="mr-2"/> Delete Account</Button>
@@ -197,29 +196,29 @@ const SettingsModal = () => {
                   )}
 
                   {activeTab === 'how-to-play' && (
-                      <div className="space-y-4">
-                          <h3 className="text-2xl font-bold flex items-center"><HelpCircle className="mr-2 h-7 w-7 text-primary" /> How to Play</h3>
-                          <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
-                              <AccordionItem value="item-1">
-                                  <AccordionTrigger className="text-lg">1. Get Started</AccordionTrigger>
-                                  <AccordionContent className="text-base">
-                                  Create an account and log in. You can then create a new game room to host, or join a friend's room using their unique Room ID.
-                                  </AccordionContent>
-                              </AccordionItem>
-                              <AccordionItem value="item-2">
-                                  <AccordionTrigger className="text-lg">2. The Game</AccordionTrigger>
-                                  <AccordionContent className="text-base">
-                                  Once in the game lobby, confirm how many tickets you want to play with. When the game starts, numbers from 1 to 90 are called out. Click the matching numbers on your tickets to mark them.
-                                  </AccordionContent>
-                              </AccordionItem>
-                              <AccordionItem value="item-3">
-                                  <AccordionTrigger className="text-lg">3. Win Prizes</AccordionTrigger>
-                                  <AccordionContent className="text-base">
-                                  When you complete a winning pattern (e.g., Jaldi 5, a full line, or a Full House), click the corresponding 'Claim' button. The system automatically validates your claim. The first valid claim wins the prize for that pattern!
-                                  </AccordionContent>
-                              </AccordionItem>
-                          </Accordion>
-                      </div>
+                     <div className="space-y-4">
+                        <h3 className="text-2xl font-bold flex items-center"><HelpCircle className="mr-2 h-7 w-7 text-primary" /> How to Play</h3>
+                        <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+                            <AccordionItem value="item-1">
+                                <AccordionTrigger className="text-lg">1. Get Started</AccordionTrigger>
+                                <AccordionContent className="text-base">
+                                Create an account and log in. You can then create a new game room to host, or join a friend's room using their unique Room ID.
+                                </AccordionContent>
+                            </AccordionItem>
+                            <AccordionItem value="item-2">
+                                <AccordionTrigger className="text-lg">2. The Game</AccordionTrigger>
+                                <AccordionContent className="text-base">
+                                Once in the game lobby, confirm how many tickets you want to play with. When the game starts, numbers from 1 to 90 are called out. Click the matching numbers on your tickets to mark them.
+                                </AccordionContent>
+                            </AccordionItem>
+                            <AccordionItem value="item-3">
+                                <AccordionTrigger className="text-lg">3. Win Prizes</AccordionTrigger>
+                                <AccordionContent className="text-base">
+                                When you complete a winning pattern (e.g., Jaldi 5, a full line, or a Full House), click the corresponding 'Claim' button. The system automatically validates your claim. The first valid claim wins the prize for that pattern!
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+                    </div>
                   )}
 
                   {activeTab === 'about' && (
