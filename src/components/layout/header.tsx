@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Settings, HelpCircle, X, Volume2, Music, Bell, Trash2, Users, Info, Facebook, Share2, Linkedin, Mail, Sun, Moon, Monitor } from 'lucide-react';
+import { Settings, HelpCircle, X, Volume2, Music, Bell, Trash2, Users, Info, Facebook, Share2, Linkedin, Mail, Sun, Moon, Monitor, FileCode } from 'lucide-react';
 import { useTheme } from "next-themes";
 import { useAuth } from '@/contexts/auth-context';
 import React, { useState, useEffect, useCallback } from 'react';
@@ -130,6 +130,7 @@ const SettingsModal = () => {
                     <TabButton id="general" label="General" icon={Settings} />
                     <TabButton id="social" label="Social" icon={Users} />
                     <TabButton id="how-to-play" label="How to Play" icon={HelpCircle} />
+                    <TabButton id="developer-note" label="Developer Note" icon={FileCode} />
                     <TabButton id="about" label="About" icon={Info} />
                 </nav>
             </aside>
@@ -139,6 +140,7 @@ const SettingsModal = () => {
                   <MobileTabButton id="general" label="General" icon={Settings} />
                   <MobileTabButton id="social" label="Social" icon={Users} />
                   <MobileTabButton id="how-to-play" label="How to Play" icon={HelpCircle} />
+                  <MobileTabButton id="developer-note" label="Developer" icon={FileCode} />
                   <MobileTabButton id="about" label="About" icon={Info} />
               </nav>
 
@@ -223,10 +225,41 @@ const SettingsModal = () => {
                     </div>
                   )}
 
+                  {activeTab === 'developer-note' && (
+                    <div className="text-center space-y-6 text-card-foreground/80">
+                      <h3 className="text-2xl font-bold">🎉 Developer Note</h3>
+                      <p>
+                        Hi, I’m <span className="font-semibold text-primary">Durga Sankar</span>, the developer of this Housie platform.
+                      </p>
+                      <p>
+                        This is my original idea, built using AI tools to streamline development. My goal was simple: to help families and friends play Housie easily, whether they are near or far.
+                      </p>
+                      <p>
+                        I believe technology should bring people closer, and this is my small step toward that goal.
+                      </p>
+                      <p className="font-semibold text-xl pt-2">– Durga Sankar</p>
+                      
+                      <div className="border-t pt-6 space-y-2">
+                        <p className="text-sm">
+                          Feel free to reach out if you have ideas, suggestions, or wish to collaborate.
+                        </p>
+                        <div className="flex justify-center items-center space-x-6">
+                          <a href="#" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                            <Linkedin className="h-7 w-7" />
+                          </a>
+                          <a href="mailto:durgasankar.d@gmail.com" aria-label="Email" className="text-muted-foreground hover:text-primary transition-colors">
+                            <Mail className="h-7 w-7" />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {activeTab === 'about' && (
                       <div className="flex flex-col items-center text-center space-y-6">
                            <div>
-                              <p className="text-center">Developed by</p>
+                              <p className="text-center">Developed by:</p>
+                              <p className="font-semibold text-lg"></p>
                           </div>
                           <Image src="/logonew.png" alt="HousieHub Logo" width={150} height={42} className="h-auto" />
                           <div className="space-y-2">
@@ -239,7 +272,7 @@ const SettingsModal = () => {
                                   </a>
                               </div>
                           </div>
-                           <Link href="/legal/privacy-policy" onClick={() => { router.push('/legal/privacy-policy'); setIsSettingsOpen(false); }} className="text-sm font-bold uppercase tracking-wider underline hover:text-primary">
+                           <Link href="/legal/privacy-policy" onClick={() => { setIsSettingsOpen(false); router.push('/legal/privacy-policy'); }} className="text-sm font-bold uppercase tracking-wider underline hover:text-primary">
                               Privacy Policy
                           </Link>
                           <p className="text-xs italic text-muted-foreground">Sound effects and music sourced from pixabay</p>

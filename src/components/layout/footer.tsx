@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -24,7 +25,6 @@ const DiscordIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 const allFooterLinks = [
     { name: 'About', href: '/legal/about' },
-    { name: 'Developers', href: '/legal/developers' },
     { name: 'Support', href: '/legal/support' },
     { name: 'User Agreement', href: '/legal/user-agreement' },
     { name: 'Privacy Policy', href: '/legal/privacy-policy' },
