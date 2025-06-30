@@ -16,6 +16,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
 
 const SettingsModal = () => {
   const [activeTab, setActiveTab] = useState('general');
@@ -173,22 +175,28 @@ const SettingsModal = () => {
                 )}
 
                 {activeTab === 'how-to-play' && (
-                    <div className="space-y-6 text-center">
-                        <HelpCircle className="mx-auto h-16 w-16 text-primary" />
-                        <h3 className="text-2xl font-bold">How to Play Guide</h3>
-                        <p className="text-muted-foreground max-w-md mx-auto">
-                            Learn all the rules and features of HousieHub to get started. Clicking the button below will take you to our detailed guide.
-                        </p>
-                        <div className="pt-4">
-                            <DialogClose asChild>
-                                <Link href="/how-to-play" passHref>
-                                    <Button className="w-full max-w-sm mx-auto" size="lg">
-                                        <HelpCircle className="mr-2 h-5 w-5" />
-                                        Open How to Play Page
-                                    </Button>
-                                </Link>
-                            </DialogClose>
-                        </div>
+                    <div className="space-y-4">
+                        <h3 className="text-2xl font-bold flex items-center"><HelpCircle className="mr-2 h-7 w-7 text-primary" /> How to Play</h3>
+                        <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+                            <AccordionItem value="item-1">
+                                <AccordionTrigger className="text-lg">1. Get Started</AccordionTrigger>
+                                <AccordionContent className="text-base">
+                                Create an account and log in. You can then create a new game room to host, or join a friend's room using their unique Room ID.
+                                </AccordionContent>
+                            </AccordionItem>
+                            <AccordionItem value="item-2">
+                                <AccordionTrigger className="text-lg">2. The Game</AccordionTrigger>
+                                <AccordionContent className="text-base">
+                                Once in the game lobby, confirm how many tickets you want to play with. When the game starts, numbers from 1 to 90 are called out. Click the matching numbers on your tickets to mark them.
+                                </AccordionContent>
+                            </AccordionItem>
+                            <AccordionItem value="item-3">
+                                <AccordionTrigger className="text-lg">3. Win Prizes</AccordionTrigger>
+                                <AccordionContent className="text-base">
+                                When you complete a winning pattern (e.g., Jaldi 5, a full line, or a Full House), click the corresponding 'Claim' button. The system automatically validates your claim. The first valid claim wins the prize for that pattern!
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
                     </div>
                 )}
 
