@@ -42,10 +42,9 @@ const MemoizedCalledNumberDisplay = React.memo(CalledNumberDisplay);
 
 
 export default function GameRoomPage() {
-  const routeParams = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const roomId = routeParams.id as string;
+  const { id: roomId } = useParams() as { id: string };
   const { toast } = useToast();
   const { currentUser, loading: authLoading } = useAuth();
   const { isSfxMuted, toggleSfxMute } = useSound();
