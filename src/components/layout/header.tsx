@@ -226,8 +226,7 @@ const SettingsModal = () => {
                   {activeTab === 'about' && (
                       <div className="flex flex-col items-center text-center space-y-6">
                            <div>
-                              <p>Developed by</p>
-                              <p className="font-bold">Durga Sankar</p>
+                              <p className="text-center">Developed by</p>
                           </div>
                           <Image src="/logonew.png" alt="HousieHub Logo" width={150} height={42} className="h-auto" />
                           <div className="space-y-2">
