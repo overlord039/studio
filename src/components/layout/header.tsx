@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -253,14 +254,14 @@ export default function Header() {
 
   const AuthContent = () => {
     if (loading) {
-      return <div className="h-8 w-8 bg-primary/50 animate-pulse rounded-full border-2 border-primary"></div>;
+      return <div className="h-10 w-10 bg-primary/50 animate-pulse rounded-full border-2 border-primary"></div>;
     }
 
     if (currentUser) {
       return (
         <Link href="/profile" passHref>
-          <Button variant="secondary" className="relative p-0 h-8 w-8 rounded-full border-2 border-primary">
-            <Avatar className="h-8 w-8">
+          <Button variant="secondary" className="relative p-0 h-10 w-10 rounded-full border-2 border-primary">
+            <Avatar className="h-10 w-10">
               <AvatarImage 
                 src={`https://placehold.co/32x32.png?text=${currentUser.username.substring(0, 2).toUpperCase()}`} 
                 alt={currentUser.username} 
@@ -273,7 +274,7 @@ export default function Header() {
       );
     }
     
-    return <div className="h-8 w-8" />;
+    return <div className="h-10 w-10" />;
   };
 
   return (
@@ -290,8 +291,8 @@ export default function Header() {
 
           <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
-                <Settings className="h-6 w-6" />
+              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80 h-10 w-10">
+                <Settings className="h-7 w-7" />
                 <span className="sr-only">Settings</span>
               </Button>
             </DialogTrigger>
