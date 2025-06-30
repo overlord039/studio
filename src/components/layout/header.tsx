@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -292,7 +291,7 @@ export default function Header() {
           <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
             <DialogTrigger asChild>
               <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
-                <Settings className="h-[1.2rem] w-[1.2rem]" />
+                <Settings className="h-6 w-6" />
                 <span className="sr-only">Settings</span>
               </Button>
             </DialogTrigger>
