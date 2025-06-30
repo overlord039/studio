@@ -234,7 +234,7 @@ const SettingsModal = () => {
                                   </a>
                               </div>
                           </div>
-                          <Link href="/legal/privacy-policy" onClick={() => (document.querySelector('[data-radix-dialog-close]') as HTMLElement)?.click()} className="text-sm font-bold uppercase tracking-wider underline hover:text-primary">
+                           <Link href="/legal/privacy-policy" onClick={() => (document.querySelector('[data-radix-dialog-close]') as HTMLElement)?.click()} className="text-sm font-bold uppercase tracking-wider underline hover:text-primary">
                               Privacy Policy
                           </Link>
                           <p className="text-xs italic text-muted-foreground">Sound effects and music sourced from pixabay</p>
@@ -279,21 +279,21 @@ export default function Header() {
     }
 
     if (!currentUser) {
-        return (
-            <div className="flex items-center gap-2">
-                <Link href="/auth/login" passHref>
-                    <Button variant="secondary">Login</Button>
-                </Link>
-                <Link href="/auth/register" passHref>
-                    <Button variant="ghost">Register</Button>
-                </Link>
-            </div>
-        );
+      return (
+        <div className="flex items-center gap-2">
+          <Link href="/auth/login" passHref>
+            <Button variant="secondary">Login</Button>
+          </Link>
+          <Link href="/auth/register" passHref>
+            <Button variant="ghost">Register</Button>
+          </Link>
+        </div>
+      );
     }
     
     return (
         <Link href="/profile" passHref>
-          <Button variant="secondary" className="relative p-0 h-10 w-10 rounded-full border-2 border-primary">
+          <Button variant="secondary" className="relative p-0 h-10 w-10 rounded-full border-2 border-black">
             <Avatar className="h-10 w-10">
               <AvatarImage 
                 src={`https://placehold.co/32x32.png?text=${currentUser.username.substring(0, 2).toUpperCase()}`} 
