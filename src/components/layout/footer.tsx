@@ -24,12 +24,9 @@ const DiscordIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 const allFooterLinks = [
-    { name: 'About', href: '/legal/about' },
     { name: 'Support', href: '/legal/support' },
     { name: 'User Agreement', href: '/legal/user-agreement' },
-    { name: 'Privacy Policy', href: '/legal/privacy-policy' },
     { name: 'Compliance', href: '/legal/compliance' },
-    { name: 'How to Play', href: '/how-to-play' },
     { name: 'Fair Play', href: '/legal/fair-play' },
     { name: 'Privacy Settings', href: '/legal/privacy-settings' },
 ];
