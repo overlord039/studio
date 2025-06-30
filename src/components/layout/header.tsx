@@ -94,7 +94,7 @@ const SettingsModal = () => {
   );
 
   return (
-    <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 overflow-hidden">
+    <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 overflow-hidden bg-background text-foreground border-border shadow-2xl">
         {/* Header Ribbon */}
         <header className="bg-primary text-primary-foreground text-center p-4 relative flex-shrink-0">
             <h2 className="text-2xl font-bold tracking-wider">SETTINGS</h2>
@@ -119,19 +119,19 @@ const SettingsModal = () => {
                 {activeTab === 'general' && (
                     <div className="space-y-8">
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-background">
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
                                 <Label htmlFor="sfx-toggle" className="flex items-center gap-2 cursor-pointer"><Volume2/> Sound Effects</Label>
                                 <Switch id="sfx-toggle" checked={!isSfxMuted} onCheckedChange={toggleSfxMute} />
                             </div>
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-background">
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
                                 <Label htmlFor="bgm-toggle" className="flex items-center gap-2 cursor-pointer"><Music/> Background Music</Label>
                                 <Switch id="bgm-toggle" checked={isBgmEnabled} onCheckedChange={toggleBgm} />
                             </div>
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-background">
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
                                 <Label htmlFor="notifications-toggle" className="flex items-center gap-2 text-muted-foreground"><Bell/> Notifications</Label>
                                 <Switch id="notifications-toggle" disabled />
                             </div>
-                            <div className="p-3 rounded-lg bg-background space-y-2">
+                            <div className="p-3 rounded-lg bg-secondary/30 space-y-2">
                                 <Label>Theme</Label>
                                 <ThemeToggle />
                             </div>
@@ -189,7 +189,6 @@ const SettingsModal = () => {
                             Privacy Policy
                         </Link>
                         <p className="text-xs italic text-muted-foreground">Sound effects and music sourced from pixabay</p>
-                        <p className="text-xs italic text-muted-foreground">Built with ❤️ using React, Node, and AI-assisted tools.</p>
                     </div>
                 )}
             </main>
