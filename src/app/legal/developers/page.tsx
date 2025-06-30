@@ -42,10 +42,10 @@ export default function DevelopersPage() {
               Feel free to reach out if you have ideas, suggestions, or wish to collaborate.
             </p>
             <div className="flex justify-center items-center space-x-6">
-              <a href="[Your LinkedIn URL]" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="#" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                 <Linkedin className="h-7 w-7" />
               </a>
-              <a href="mailto:[Your Email Address]" aria-label="Email" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="mailto:durgasankar.d@gmail.com" aria-label="Email" className="text-muted-foreground hover:text-primary transition-colors">
                 <Mail className="h-7 w-7" />
               </a>
             </div>
