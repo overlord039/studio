@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -27,7 +28,6 @@ const SettingsModal = () => {
   const { logout } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
 
   const handleShare = async () => {
@@ -252,15 +252,36 @@ const SettingsModal = () => {
                   )}
 
                   {activeTab === 'about' && (
-                      <div className="flex flex-col items-center text-center space-y-6">
-                           <div>
-                              <p className="text-center">Developed by</p>
+                      <div className="flex flex-col items-center text-center space-y-8">
+                           <div className="text-center">
+                              <p>Developed by</p>
                            </div>
                           <Image src="/logonew.png" alt="HousieHub Logo" width={150} height={42} className="h-auto" />
-                           <Link href="/legal/privacy-policy" onClick={() => { setIsSettingsOpen(false); router.push('/legal/privacy-policy'); }} className="text-sm font-bold uppercase tracking-wider underline hover:text-primary">
-                              Privacy Policy
-                          </Link>
-                          <p className="text-xs italic text-muted-foreground">Sound effects and music sourced from pixabay</p>
+                          
+                           <div className="w-full pt-6 border-t">
+                              <h4 className="text-lg font-semibold mb-4">Legal & Information</h4>
+                              <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-center">
+                                  {[
+                                      { name: 'Support', href: '/legal/support' },
+                                      { name: 'User Agreement', href: '/legal/user-agreement' },
+                                      { name: 'Compliance', href: '/legal/compliance' },
+                                      { name: 'Fair Play', href: '/legal/fair-play' },
+                                      { name: 'Privacy Policy', href: '/legal/privacy-policy' },
+                                      { name: 'Privacy Settings', href: '/legal/privacy-settings' },
+                                  ].map(link => (
+                                      <DialogClose asChild key={link.href}>
+                                          <Link
+                                              href={link.href}
+                                              className="text-sm font-medium underline hover:text-primary"
+                                          >
+                                              {link.name}
+                                          </Link>
+                                      </DialogClose>
+                                  ))}
+                              </div>
+                          </div>
+
+                          <p className="text-xs italic text-muted-foreground pt-4">Sound effects and music sourced from pixabay</p>
                       </div>
                   )}
               </main>

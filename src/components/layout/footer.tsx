@@ -23,14 +23,6 @@ const DiscordIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-const allFooterLinks = [
-    { name: 'Support', href: '/legal/support' },
-    { name: 'User Agreement', href: '/legal/user-agreement' },
-    { name: 'Compliance', href: '/legal/compliance' },
-    { name: 'Fair Play', href: '/legal/fair-play' },
-    { name: 'Privacy Settings', href: '/legal/privacy-settings' },
-];
-
 const socialLinks = [
     { name: 'Google Play Store', href: '#', icon: AndroidIcon },
     { name: 'TikTok', href: '#', icon: TikTokIcon },
@@ -51,14 +43,6 @@ export default function Footer() {
                 {isHomePage ? (
                     // Full footer for homepage
                     <div className="py-12">
-                        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-8">
-                            {allFooterLinks.map(link => (
-                                <Link key={link.name} href={link.href} className="text-sm hover:text-white transition-colors">
-                                    {link.name}
-                                </Link>
-                            ))}
-                        </div>
-                        
                         <div className="text-center my-8">
                              <div className="flex items-center justify-center gap-2 mb-2">
                                 <p className="text-sm text-neutral-500">Powered by</p>
