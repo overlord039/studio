@@ -27,6 +27,8 @@ const SettingsModal = () => {
   const { logout } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
 
   const handleShare = async () => {
     const shareData = {
@@ -222,9 +224,9 @@ const SettingsModal = () => {
 
                   {activeTab === 'about' && (
                       <div className="flex flex-col items-center text-center space-y-6">
+                          <p>Developed by: <span className="font-bold">Durga Sankar</span></p>
                           <Image src="/logonew.png" alt="HousieHub Logo" width={150} height={42} className="h-auto" />
                           <div className="space-y-2">
-                              <p>Developed by: <span className="font-bold">Durga Sankar</span></p>
                               <div className="flex justify-center items-center space-x-4">
                                   <a href="#" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                                   <Linkedin className="h-6 w-6" />
@@ -234,7 +236,7 @@ const SettingsModal = () => {
                                   </a>
                               </div>
                           </div>
-                           <Link href="/legal/privacy-policy" onClick={() => router.push('/legal/privacy-policy')} className="text-sm font-bold uppercase tracking-wider underline hover:text-primary">
+                           <Link href="/legal/privacy-policy" onClick={() => setIsSettingsOpen(false)} className="text-sm font-bold uppercase tracking-wider underline hover:text-primary">
                               Privacy Policy
                           </Link>
                           <p className="text-xs italic text-muted-foreground">Sound effects and music sourced from pixabay</p>
