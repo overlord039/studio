@@ -173,7 +173,8 @@ export default function NumberCallerPage() {
                 </Button>
             </div>
 
-            <Button onClick={() => router.back()} variant="secondary" className="w-full">
+            {/* Desktop Back Button */}
+            <Button onClick={() => router.back()} variant="secondary" className="w-full hidden md:flex">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
@@ -204,6 +205,12 @@ export default function NumberCallerPage() {
             <p className="text-center text-xs text-muted-foreground mt-1">
                 {availableNumbers.length} numbers remaining. Total Called: {calledNumbers.length}.
             </p>
+
+            {/* Mobile Back Button */}
+            <Button onClick={() => router.back()} variant="secondary" className="w-full flex md:hidden">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
         </div>
       </div>
     </div>
