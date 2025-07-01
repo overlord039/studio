@@ -188,7 +188,15 @@ export default function NumberCallerPage() {
                     <p className="text-xs md:text-sm uppercase tracking-wider mb-0.5">Last Called Number</p>
                     {currentNumber !== null ? (
                     <div className="flex items-center justify-center">
-                        <Volume2 className="h-4 w-4 md:h-5 md:w-5 mr-1 md:mr-2 opacity-80" />
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={toggleMute} 
+                          className="text-primary-foreground hover:bg-primary/80 h-8 w-8 mr-2"
+                          aria-label={isMuted ? "Unmute voice" : "Mute voice"}
+                        >
+                          {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                        </Button>
                         <p className="text-5xl md:text-7xl font-bold animate-fade-in">{currentNumber}</p>
                     </div>
                     ) : (
