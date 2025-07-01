@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -127,14 +128,6 @@ export default function NumberCallerPage() {
           </CardHeader>
           <CardContent className="space-y-2 pt-2 pb-3 md:pb-4">
             <Button 
-              onClick={callNextNumber} 
-              disabled={isAutoCalling || availableNumbers.length === 0} 
-              className="w-full"
-              size="default"
-            >
-              <Zap className="mr-2 h-4 w-4"/> Next Number
-            </Button>
-            <Button 
               onClick={toggleAutoCall} 
               disabled={availableNumbers.length === 0}
               variant="default"
@@ -143,6 +136,14 @@ export default function NumberCallerPage() {
             >
               {isAutoCalling ? <Pause className="mr-2 h-4 w-4"/> : <Play className="mr-2 h-4 w-4"/>}
               {isAutoCalling ? 'Stop Auto Call' : 'Start Auto Call'}
+            </Button>
+            <Button 
+              onClick={callNextNumber} 
+              disabled={isAutoCalling || availableNumbers.length === 0} 
+              className="w-full"
+              size="default"
+            >
+              <Zap className="mr-2 h-4 w-4"/> Next Number
             </Button>
             
             <div className="space-y-1">
