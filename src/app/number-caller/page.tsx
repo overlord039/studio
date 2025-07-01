@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -164,15 +163,9 @@ export default function NumberCallerPage() {
               </Select>
             </div>
 
-            <div className="flex space-x-2">
-                 <Button onClick={toggleMute} variant="outline" className="flex-1" size="default">
-                    {isMuted ? <VolumeX className="mr-2 h-4 w-4"/> : <Volume2 className="mr-2 h-4 w-4"/>}
-                    {isMuted ? 'Unmute' : 'Mute'}
-                </Button>
-                <Button onClick={resetGame} variant="outline" className="flex-1" size="default">
-                    <RotateCcw className="mr-2 h-4 w-4"/> Reset
-                </Button>
-            </div>
+            <Button onClick={resetGame} variant="outline" className="w-full" size="default">
+                <RotateCcw className="mr-2 h-4 w-4"/> Reset
+            </Button>
 
             {/* Desktop Back Button */}
             <Button onClick={() => router.back()} variant="secondary" className="w-full hidden md:flex">
