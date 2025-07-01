@@ -1,12 +1,12 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import LiveNumberBoard from '@/components/game/live-number-board';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Speaker, Play, Pause, RotateCcw, Volume2, VolumeX, Zap, Settings2 } from 'lucide-react';
+import { Speaker, Play, Pause, RotateCcw, Volume2, VolumeX, Zap, Settings2, ArrowLeft } from 'lucide-react';
 import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 
@@ -22,6 +22,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 const ALL_NUMBERS = Array.from({ length: NUMBERS_RANGE_MAX - NUMBERS_RANGE_MIN + 1 }, (_, i) => NUMBERS_RANGE_MIN + i);
 
 export default function NumberCallerPage() {
+  const router = useRouter();
   const [currentNumber, setCurrentNumber] = useState<number | null>(null);
   const [calledNumbers, setCalledNumbers] = useState<number[]>([]);
   const [availableNumbers, setAvailableNumbers] = useState<number[]>(shuffleArray(ALL_NUMBERS));
@@ -171,6 +172,11 @@ export default function NumberCallerPage() {
                     <RotateCcw className="mr-2 h-4 w-4"/> Reset
                 </Button>
             </div>
+
+            <Button onClick={() => router.back()} variant="secondary" className="w-full">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
           </CardContent>
         </Card>
 
