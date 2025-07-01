@@ -67,31 +67,31 @@ export default function HomePage() {
   return (
     <div className="py-8 md:py-12 space-y-16 md:space-y-24">
       {/* Hero Section */}
-      <section className="text-center py-12 md:py-20 bg-gradient-to-br from-primary via-purple-600 to-accent rounded-xl shadow-2xl relative overflow-hidden">
+      <section className="text-center py-8 sm:py-12 md:py-20 bg-gradient-to-br from-primary via-purple-600 to-accent rounded-xl shadow-2xl relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
         <div className="relative z-10 px-4">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-primary-foreground mb-4 tracking-tight animate-fade-in-down" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.3)'}}>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-primary-foreground mb-4 tracking-tight animate-fade-in-down" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.3)'}}>
           Welcome to HousieHub!
           </h1>
-          <p className="text-lg md:text-xl text-primary-foreground/90 mb-8 max-w-3xl mx-auto animate-fade-in-up">
+          <p className="text-base md:text-lg text-primary-foreground/90 mb-8 max-w-3xl mx-auto animate-fade-in-up">
           Play Housie anytime, anywhere with family and friends. Create rooms, join games, and enjoy winning together!
           </p>
           {!loading && !currentUser && (
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4 animate-fade-in">
               <Link href="/auth/login" passHref>
-                <Button size="lg" variant="secondary" className="w-full max-w-xs sm:w-auto text-lg px-8 py-3 transform transition-all hover:scale-105 shadow-md hover:shadow-lg">
+                <Button size="lg" variant="secondary" className="w-full max-w-xs sm:w-auto px-8 py-3 transform transition-all hover:scale-105 shadow-md hover:shadow-lg">
                   <LogInIcon className="mr-2 h-5 w-5" /> Login
                 </Button>
               </Link>
               <Link href="/auth/register" passHref>
-                <Button size="lg" variant="secondary" className="w-full max-w-xs sm:w-auto text-lg px-8 py-3 transform transition-all hover:scale-105 shadow-md hover:shadow-lg">
+                <Button size="lg" variant="secondary" className="w-full max-w-xs sm:w-auto px-8 py-3 transform transition-all hover:scale-105 shadow-md hover:shadow-lg">
                   <UserPlus className="mr-2 h-5 w-5" /> Register
                 </Button>
               </Link>
             </div>
           )}
           {currentUser && (
-            <p className="text-lg text-primary-foreground/90 animate-fade-in">Logged in as: <span className="font-semibold">{currentUser.username}</span></p>
+            <p className="text-base text-primary-foreground/90 animate-fade-in">Logged in as: <span className="font-semibold">{currentUser.username}</span></p>
           )}
         </div>
       </section>
