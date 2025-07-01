@@ -10,24 +10,26 @@ import type { ReactNode } from 'react';
 
 export default function PageLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
-    // A simple check to see if we are on the play page.
-    const isGamePage = pathname?.includes('/room/') && pathname.endsWith('/play');
+    // Check for pages that should have a custom layout (no header/footer).
+    const isSpecialLayoutPage = 
+      (pathname?.includes('/room/') && pathname.endsWith('/play')) || 
+      pathname === '/number-caller';
 
     const mainClassName = cn(
         "flex-grow",
-        // For all pages except the game page, apply standard container padding.
-        // The game page will manage its own padding.
-        !isGamePage && "container mx-auto px-4 py-8"
+        // For all pages except special layout pages, apply standard container padding.
+        // The special pages will manage their own padding.
+        !isSpecialLayoutPage && "container mx-auto px-4 py-8"
     );
 
     return (
         <>
-            {!isGamePage && <Header />}
+            {!isSpecialLayoutPage && <Header />}
             <main className={mainClassName}>
                 {children}
             </main>
             <Toaster />
-            {!isGamePage && <Footer />}
+            {!isSpecialLayoutPage && <Footer />}
         </>
     );
 }
