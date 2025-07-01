@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -165,12 +166,12 @@ export default function NumberCallerPage() {
 
             {/* Desktop Buttons */}
             <div className="hidden pt-2 md:flex md:gap-2">
-                <Button onClick={resetGame} variant="outline" className="flex-1" size="default">
-                    <RotateCcw className="mr-2 h-4 w-4"/> Reset
-                </Button>
-                <Button onClick={() => router.back()} variant="secondary" className="flex-1">
+                <Button onClick={() => router.back()} variant="destructive" className="flex-1">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back
+                </Button>
+                <Button onClick={resetGame} variant="outline" className="flex-1" size="default">
+                    <RotateCcw className="mr-2 h-4 w-4"/> Reset
                 </Button>
             </div>
           </CardContent>
@@ -211,12 +212,12 @@ export default function NumberCallerPage() {
 
             {/* Mobile Buttons */}
             <div className="flex w-full gap-2 md:hidden">
-                <Button onClick={resetGame} variant="outline" className="flex-1" size="default">
-                    <RotateCcw className="mr-2 h-4 w-4"/> Reset
-                </Button>
-                <Button onClick={() => router.back()} variant="secondary" className="flex-1">
+                <Button onClick={() => router.back()} variant="destructive" className="flex-1">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back
+                </Button>
+                <Button onClick={resetGame} variant="outline" className="flex-1" size="default">
+                    <RotateCcw className="mr-2 h-4 w-4"/> Reset
                 </Button>
             </div>
         </div>
