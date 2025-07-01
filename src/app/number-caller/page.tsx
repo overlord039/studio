@@ -5,11 +5,10 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import LiveNumberBoard from '@/components/game/live-number-board';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Speaker, Play, Pause, RotateCcw, Volume2, VolumeX, Zap, Settings2, ArrowLeft } from 'lucide-react';
 import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
+import LiveNumberBoard from '@/components/game/live-number-board';
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const newArray = [...array];
@@ -146,24 +145,6 @@ export default function NumberCallerPage() {
               <Zap className="mr-2 h-4 w-4"/> Next Number
             </Button>
             
-            <div className="space-y-1">
-              <label htmlFor="speed-select" className="text-xs font-medium text-muted-foreground">Auto-Call Speed (seconds)</label>
-              <Select 
-                value={String(autoCallSpeed)} 
-                onValueChange={(value) => setAutoCallSpeed(Number(value))}
-                disabled={isAutoCalling}
-              >
-                <SelectTrigger id="speed-select" className="h-9">
-                  <SelectValue placeholder="Select speed" />
-                </SelectTrigger>
-                <SelectContent>
-                  {[2, 3, 4, 5, 6, 7, 8, 9, 10].map(s => (
-                    <SelectItem key={s} value={String(s)}>{s} seconds</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Desktop Buttons */}
             <div className="hidden pt-2 md:flex md:gap-2">
                 <Button onClick={() => router.back()} variant="destructive" className="flex-1">
