@@ -163,15 +163,16 @@ export default function NumberCallerPage() {
               </Select>
             </div>
 
-            <Button onClick={resetGame} variant="outline" className="w-full" size="default">
-                <RotateCcw className="mr-2 h-4 w-4"/> Reset
-            </Button>
-
-            {/* Desktop Back Button */}
-            <Button onClick={() => router.back()} variant="secondary" className="w-full hidden md:flex">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
+            {/* Desktop Buttons */}
+            <div className="hidden pt-2 md:flex md:gap-2">
+                <Button onClick={resetGame} variant="outline" className="flex-1" size="default">
+                    <RotateCcw className="mr-2 h-4 w-4"/> Reset
+                </Button>
+                <Button onClick={() => router.back()} variant="secondary" className="flex-1">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back
+                </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -208,11 +209,16 @@ export default function NumberCallerPage() {
                 {availableNumbers.length} numbers remaining. Total Called: {calledNumbers.length}.
             </p>
 
-            {/* Mobile Back Button */}
-            <Button onClick={() => router.back()} variant="secondary" className="w-full flex md:hidden">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
+            {/* Mobile Buttons */}
+            <div className="flex w-full gap-2 md:hidden">
+                <Button onClick={resetGame} variant="outline" className="flex-1" size="default">
+                    <RotateCcw className="mr-2 h-4 w-4"/> Reset
+                </Button>
+                <Button onClick={() => router.back()} variant="secondary" className="flex-1">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back
+                </Button>
+            </div>
         </div>
       </div>
     </div>
