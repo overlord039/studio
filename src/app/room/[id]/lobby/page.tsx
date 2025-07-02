@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -389,10 +388,8 @@ export default function LobbyPage() {
       <Card className="shadow-xl">
         <CardHeader className="p-3 md:p-4">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-xl md:text-3xl font-bold">
-              Lobby: <span className="text-accent">{roomData.id}</span>
-            </CardTitle>
-            <div className="flex items-center gap-2">
+            <CardTitle className="text-xl md:text-3xl font-bold flex items-center gap-2">
+              <span>Lobby: <span className="text-accent">{roomData.id}</span></span>
               <Button
                 variant="ghost"
                 size="icon"
@@ -405,19 +402,8 @@ export default function LobbyPage() {
               >
                 <ClipboardCopy className="h-4 w-4" />
               </Button>
-            </div>
-          </div>
-          <CardDescription className="text-xs">
-            {roomData.isGameStarted && !roomData.isGameOver ? "Game has started." : roomData.isGameOver ? "Game is over. The host can start a new game." : "Waiting for players. The host can start the game once conditions are met."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-3 md:p-4 pt-0 space-y-3 md:space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 md:gap-4">
-            <div className="space-y-1 text-xs md:text-sm">
-              <p><strong>Ticket Price:</strong> ₹{gameSettings.ticketPrice}</p>
-              <p><strong>Max Players:</strong> {gameSettings.lobbySize}</p>
-            </div>
-            <div className="flex w-full sm:w-auto justify-end">
+            </CardTitle>
+            <div className="flex items-center gap-2">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="icon" aria-label="Leave Room">
@@ -437,6 +423,17 @@ export default function LobbyPage() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+            </div>
+          </div>
+          <CardDescription className="text-xs">
+            {roomData.isGameStarted && !roomData.isGameOver ? "Game has started." : roomData.isGameOver ? "Game is over. The host can start a new game." : "Waiting for players. The host can start the game once conditions are met."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-3 md:p-4 pt-0 space-y-3 md:space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 md:gap-4">
+            <div className="space-y-1 text-xs md:text-sm">
+              <p><strong>Ticket Price:</strong> ₹{gameSettings.ticketPrice}</p>
+              <p><strong>Max Players:</strong> {gameSettings.lobbySize}</p>
             </div>
           </div>
 
