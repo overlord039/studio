@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -392,21 +393,24 @@ export default function LobbyPage() {
 
 
   return (
-    <div className="p-4 pt-8 md:p-6 md:pt-12 space-y-4">
+    <div className="p-4 pt-8 md:p-6 md:pt-12 space-y-4 md:space-y-6">
       <Card className="shadow-xl">
         <CardHeader className="p-2 md:p-3">
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg md:text-2xl font-bold flex items-center gap-2">
-              <span>Lobby: <span className="text-accent">{roomData.id}</span></span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleCopyRoomId}
-                className="h-7 w-7"
-                aria-label="Copy Room ID"
-              >
-                <ClipboardCopy className="h-4 w-4" />
-              </Button>
+              <span>Lobby:</span>
+              <div className="flex items-center gap-1 bg-muted p-1.5 rounded-lg border">
+                <span className="font-mono text-accent tracking-widest">{roomData.id}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCopyRoomId}
+                  className="h-6 w-6"
+                  aria-label="Copy Room ID"
+                >
+                  <ClipboardCopy className="h-4 w-4" />
+                </Button>
+              </div>
             </CardTitle>
             <div className="flex items-center gap-2">
               <AlertDialog>
