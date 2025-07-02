@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangle, Edit, RotateCcw } from "lucide-react";
+import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangle, Edit, RotateCcw, Crown, UserX } from "lucide-react";
 import type { Room, GameSettings, PrizeType, BackendPlayerInRoom } from "@/types";
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE } from "@/lib/constants";
 import React, { useEffect, useState, useCallback, useRef } from "react";
@@ -301,6 +302,54 @@ export default function LobbyPage() {
     navigator.clipboard.writeText(roomData.id);
     toast({ title: "Room ID Copied!", description: "You can now share this ID with your friends." });
   };
+  
+  const handleTransferHost = async (newHostId: string) => {
+    if (!currentUser || !isCurrentUserHost) {
+        toast({ title: "Unauthorized", description: "Only the host can transfer ownership.", variant: "destructive" });
+        return;
+    }
+    try {
+        const response = await fetch(`/api/rooms/${roomId}/transfer-host`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hostId: currentUser.username, newHostId }),
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Failed to transfer host.");
+        }
+        const updatedRoom = await response.json();
+        setRoomData(updatedRoom);
+        toast({ title: "Host Transferred", description: `${updatedRoom.host.name} is the new host.` });
+    } catch (err) {
+        console.error("Error transferring host:", err);
+        toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
+    }
+  };
+
+  const handleKickPlayer = async (playerIdToKick: string) => {
+    if (!currentUser || !isCurrentUserHost) {
+        toast({ title: "Unauthorized", description: "Only the host can kick players.", variant: "destructive" });
+        return;
+    }
+    try {
+        const response = await fetch(`/api/rooms/${roomId}/kick-player`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hostId: currentUser.username, playerIdToKick }),
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Failed to kick player.");
+        }
+        const updatedRoom = await response.json();
+        setRoomData(updatedRoom);
+        toast({ title: "Player Kicked", description: "The player has been removed from the lobby." });
+    } catch (err) {
+        console.error("Error kicking player:", err);
+        toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
+    }
+  };
 
 
   let gameSettings: GameSettings | null = null;
@@ -403,7 +452,7 @@ export default function LobbyPage() {
 
 
   return (
-    <div className="p-4 pt-8 md:p-6 md:pt-12 space-y-4 md:space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       <Card className="shadow-xl">
         <CardHeader className="p-2 md:p-3">
           <div className="flex justify-between items-center">
@@ -518,12 +567,60 @@ export default function LobbyPage() {
             <ul className="space-y-2 rounded-md border p-2 md:p-4 max-h-40 md:max-h-60 overflow-y-auto text-xs md:text-sm">
               {roomData.players.map(player => (
                 <li key={player.id} className="flex justify-between items-center p-2 bg-secondary/30 rounded">
-                  <span>
-                    {player.name}
-                    {player.id === currentUser?.username ? " (You)" : ""} 
-                    {player.tickets?.length > 0 ? ` (${player.tickets.length} ticket${player.tickets.length === 1 ? '' : 's'})` : (roomData.isGameOver ? " (Game Over)" : " (No tickets yet)")}
-                  </span>
-                  {player.isHost && <span className="text-xs font-semibold text-primary">(Host)</span>}
+                  <div className="flex flex-col">
+                    <div className="flex items-center">
+                      <span className="font-medium">{player.name}</span>
+                      {player.id === currentUser?.username && <span className="text-xs text-muted-foreground ml-1.5">(You)</span>}
+                      {player.isHost && <span className="text-xs font-semibold text-primary ml-1.5">(Host)</span>}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {player.tickets?.length > 0 ? `${player.tickets.length} ticket${player.tickets.length === 1 ? '' : 's'}` : (roomData.isGameOver ? "Game Over" : "No tickets yet")}
+                    </span>
+                  </div>
+                  
+                  {isCurrentUserHost && player.id !== currentUser?.username && !roomData.isGameStarted && (
+                    <div className="flex items-center gap-1">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Make ${player.name} host`}>
+                            <Crown className="h-4 w-4 text-yellow-500" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Transfer Host?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to make {player.name} the new host? You will lose host privileges.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleTransferHost(player.id)}>Confirm</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Kick ${player.name}`}>
+                            <UserX className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Kick Player?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to remove {player.name} from the lobby?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleKickPlayer(player.id)} className={buttonVariants({ variant: "destructive" })}>Kick</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  )}
                 </li>
               ))}
               {roomData.players.length === 0 && <li className="text-muted-foreground">No players yet. Join in!</li>}

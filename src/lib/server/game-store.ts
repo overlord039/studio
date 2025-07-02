@@ -267,6 +267,56 @@ export function removePlayerFromRoomStore(roomId: string, playerId: string): { s
   return { success: true };
 }
 
+export function transferHostStore(
+  roomId: string,
+  currentHostId: string,
+  newHostId: string
+): Room | { error: string } {
+  const room = rooms.get(roomId);
+  if (!room) return { error: "Room not found." };
+  if (room.host.id !== currentHostId) return { error: "Only the current host can transfer ownership." };
+  if (room.isGameStarted) return { error: "Cannot transfer host once the game has started." };
+
+  const currentHost = room.players.find(p => p.id === currentHostId);
+  const newHost = room.players.find(p => p.id === newHostId);
+
+  if (!currentHost) return { error: "Current host not found in players list." };
+  if (!newHost) return { error: "Target player to become host not found." };
+
+  // Swap host status
+  currentHost.isHost = false;
+  newHost.isHost = true;
+  room.host = { id: newHost.id, name: newHost.name, isHost: true };
+
+  rooms.set(roomId, room);
+  console.log(`Host for room ${roomId} transferred from ${currentHostId} to ${newHostId}.`);
+  return room;
+}
+
+export function kickPlayerStore(
+  roomId: string,
+  hostId: string,
+  playerIdToKick: string
+): Room | { error: string } {
+  const room = rooms.get(roomId);
+  if (!room) return { error: "Room not found." };
+  if (room.host.id !== hostId) return { error: "Only the host can kick players." };
+  if (hostId === playerIdToKick) return { error: "Host cannot kick themselves." };
+  if (room.isGameStarted) return { error: "Cannot kick players once the game has started." };
+
+  const playerIndex = room.players.findIndex(p => p.id === playerIdToKick);
+  if (playerIndex === -1) {
+    return { error: "Player to kick not found in room." };
+  }
+
+  const kickedPlayerName = room.players[playerIndex].name;
+  room.players.splice(playerIndex, 1);
+  
+  rooms.set(roomId, room);
+  console.log(`Player ${kickedPlayerName} (${playerIdToKick}) was kicked from room ${roomId} by host ${hostId}.`);
+  return room;
+}
+
 
 export function callNextNumberStore(roomId: string): Room | { error: string; number?: number } {
   const room = rooms.get(roomId);
