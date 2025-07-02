@@ -71,7 +71,7 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
         <div className="relative z-10 px-4">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-primary-foreground mb-4 tracking-tight animate-fade-in-down" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.3)'}}>
-          Welcome to HousieHub!
+            {currentUser ? `Welcome, ${currentUser.username}!` : 'Welcome to HousieHub!'}
           </h1>
           <p className="text-base md:text-lg text-primary-foreground/90 mb-8 max-w-3xl mx-auto animate-fade-in-up">
           Play Housie anytime, anywhere with family and friends. Create rooms, join games, and enjoy winning together!
