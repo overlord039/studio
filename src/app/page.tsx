@@ -65,12 +65,12 @@ export default function HomePage() {
   };
 
   return (
-    <div className="py-8 md:py-12 space-y-16 md:space-y-24">
+    <div className="py-8 space-y-8 md:space-y-16">
       {/* Hero Section */}
-      <section className="text-center py-8 sm:py-12 md:py-20 bg-gradient-to-br from-primary via-purple-600 to-accent rounded-xl shadow-2xl relative overflow-hidden">
+      <section className="text-center py-8 sm:py-10 md:py-16 bg-gradient-to-br from-primary via-purple-600 to-accent rounded-xl shadow-2xl relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
         <div className="relative z-10 px-4">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-primary-foreground mb-8 tracking-tight animate-fade-in-down" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.3)'}}>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-primary-foreground mb-6 tracking-tight animate-fade-in-down" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.3)'}}>
             {currentUser ? `Welcome, ${currentUser.username}!` : 'Welcome to HousieHub!'}
           </h1>
           
@@ -92,7 +92,7 @@ export default function HomePage() {
       </section>
 
       {/* Main Options */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <Card 
           className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 group rounded-lg overflow-hidden cursor-pointer flex flex-col"
           onClick={handleCreateRoom}
@@ -100,34 +100,34 @@ export default function HomePage() {
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCreateRoom() }}
         >
-          <CardHeader className="text-center items-center flex-grow flex flex-col justify-center p-6">
-            <div className="p-3 bg-primary/10 group-hover:bg-primary/20 transition-colors rounded-full mb-4 inline-block">
-              <UsersRound className="h-10 w-10 text-primary" />
+          <CardHeader className="text-center items-center flex-grow flex flex-col justify-center p-4">
+            <div className="p-3 bg-primary/10 group-hover:bg-primary/20 transition-colors rounded-full mb-3 inline-block">
+              <UsersRound className="h-8 w-8 text-primary" />
             </div>
-            <CardTitle className="text-2xl font-bold">Create Multiplayer Room</CardTitle>
-            <CardDescription>Host a game for your friends.</CardDescription>
+            <CardTitle className="text-xl font-bold">Create Multiplayer Room</CardTitle>
+            <CardDescription className="text-sm">Host a game for your friends.</CardDescription>
           </CardHeader>
         </Card>
 
         <Card className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 group rounded-lg overflow-hidden">
-          <CardHeader className="text-center items-center">
-            <div className="p-3 bg-accent/10 group-hover:bg-accent/20 transition-colors rounded-full mb-4 inline-block">
-             <KeyRound className="h-10 w-10 text-accent" />
+          <CardHeader className="text-center items-center p-4">
+            <div className="p-3 bg-accent/10 group-hover:bg-accent/20 transition-colors rounded-full mb-3 inline-block">
+             <KeyRound className="h-8 w-8 text-accent" />
             </div>
-            <CardTitle className="text-2xl font-bold">Join Room</CardTitle>
-            <CardDescription>Enter a Room ID to join a game.</CardDescription>
+            <CardTitle className="text-xl font-bold">Join Room</CardTitle>
+            <CardDescription className="text-sm">Enter a Room ID to join.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 px-4 pb-4">
             <Input 
               type="text" 
               placeholder="Enter Room ID" 
-              className="text-center h-12 text-base"
+              className="text-center h-10 text-sm"
               value={joinRoomId}
               onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
               disabled={loading}
               maxLength={6}
             />
-            <Button variant="outline" className="w-full" size="lg" onClick={handleJoinRoom} disabled={loading}>
+            <Button variant="outline" className="w-full" onClick={handleJoinRoom} disabled={loading}>
               Join Game
             </Button>
           </CardContent>
@@ -140,12 +140,12 @@ export default function HomePage() {
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push('/number-caller') }}
         >
-          <CardHeader className="text-center items-center flex-grow flex flex-col justify-center p-6">
-            <div className="p-3 bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors rounded-full mb-4 inline-block">
-              <Speaker className="h-10 w-10 text-blue-600" />
+          <CardHeader className="text-center items-center flex-grow flex flex-col justify-center p-4">
+            <div className="p-3 bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors rounded-full mb-3 inline-block">
+              <Speaker className="h-8 w-8 text-blue-600" />
             </div>
-            <CardTitle className="text-2xl font-bold">Number Caller</CardTitle>
-            <CardDescription>System auto-call or manual calling</CardDescription>
+            <CardTitle className="text-xl font-bold">Number Caller</CardTitle>
+            <CardDescription className="text-sm">Manual or auto calling.</CardDescription>
           </CardHeader>
         </Card>
         
@@ -156,12 +156,12 @@ export default function HomePage() {
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push('/prize-calculator') }}
         >
-          <CardHeader className="text-center items-center flex-grow flex flex-col justify-center p-6">
-            <div className="p-3 bg-green-500/10 group-hover:bg-green-500/20 transition-colors rounded-full mb-4 inline-block">
-              <Calculator className="h-10 w-10 text-green-600" />
+          <CardHeader className="text-center items-center flex-grow flex flex-col justify-center p-4">
+            <div className="p-3 bg-green-500/10 group-hover:bg-green-500/20 transition-colors rounded-full mb-3 inline-block">
+              <Calculator className="h-8 w-8 text-green-600" />
             </div>
-            <CardTitle className="text-2xl font-bold">Prize Calculator</CardTitle>
-            <CardDescription>Calculate prize money distribution.</CardDescription>
+            <CardTitle className="text-xl font-bold">Prize Calculator</CardTitle>
+            <CardDescription className="text-sm">Plan prize distribution.</CardDescription>
           </CardHeader>
         </Card>
       </section>
