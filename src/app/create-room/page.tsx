@@ -78,10 +78,10 @@ export default function CreateRoomSelectionPage() {
   return (
     <div className="flex flex-col items-center justify-center py-12">
       <div className="text-center mb-10">
-        <h1 className="text-3xl font-bold">Choose Your Game Mode</h1>
+        <h1 className="text-2xl font-bold">Choose Your Game Mode</h1>
         <p className="text-muted-foreground mt-2 text-lg">Select how you want to play Housie.</p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl">
         {options.map((option) => (
            <Card
             key={option.mode}
@@ -97,19 +97,19 @@ export default function CreateRoomSelectionPage() {
                 </div>
             )}
             <CardHeader className="items-center text-center">
-              <div className={cn("p-4 rounded-full mb-4 inline-block", option.iconBgColor)}>
-                <option.icon className={cn("h-12 w-12", option.iconTextColor)} />
+              <div className={cn("p-3 rounded-full mb-4 inline-block", option.iconBgColor)}>
+                <option.icon className={cn("h-10 w-10", option.iconTextColor)} />
               </div>
-              <CardTitle className="text-2xl font-bold">{option.title}</CardTitle>
+              <CardTitle className="text-xl font-bold">{option.title}</CardTitle>
               <CardDescription>{option.subtitle}</CardDescription>
             </CardHeader>
             <CardContent className="text-center">
-              <p className="text-muted-foreground min-h-[4rem]">{option.description}</p>
+              <p className="text-muted-foreground min-h-[3rem]">{option.description}</p>
             </CardContent>
           </Card>
         ))}
       </div>
-      <div className="mt-12 w-full max-w-4xl">
+      <div className="mt-12 w-full max-w-3xl">
         <Link href="/" passHref>
           <Button variant="outline">
             <LogOut className="mr-2 h-4 w-4 rotate-180" />
