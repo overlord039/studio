@@ -453,7 +453,7 @@ export default function LobbyPage() {
                   Your Confirmed Tickets
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-2 md:p-3 pt-0 flex flex-col sm:flex-row items-center justify-between gap-2 md:gap-4">
+              <CardContent className="p-2 md:p-3 pt-0 flex flex-row items-center justify-between gap-2 md:gap-4">
                 <p className="font-medium text-xs md:text-sm">
                   You have {currentUserInRoom?.tickets.length} {ticketsText(currentUserInRoom?.tickets.length ?? 0)} confirmed.
                   {!isCurrentUserHost && " Waiting for host..."}
