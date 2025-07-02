@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
 
 const MAX_TICKETS_PER_PLAYER = 4;
 
@@ -299,6 +300,12 @@ export default function LobbyPage() {
     }
   };
 
+  const handleCopyRoomId = () => {
+    if (!roomData) return;
+    navigator.clipboard.writeText(roomData.id);
+    toast({ title: "Room ID Copied!", description: "You can now share this ID with your friends." });
+  };
+
 
   let gameSettings: GameSettings | null = null;
   const ticketPriceParam = searchParams.get('ticketPrice');
@@ -385,7 +392,7 @@ export default function LobbyPage() {
 
 
   return (
-    <div className="p-2 md:p-4 md:pt-2 space-y-2 md:space-y-4">
+    <div className="p-4 pt-8 md:p-6 md:pt-12 space-y-4">
       <Card className="shadow-xl">
         <CardHeader className="p-2 md:p-3">
           <div className="flex justify-between items-center">
@@ -394,10 +401,7 @@ export default function LobbyPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => {
-                  navigator.clipboard.writeText(roomData.id);
-                  toast({ title: "Room ID Copied!", description: "You can now share this ID with your friends." });
-                }}
+                onClick={handleCopyRoomId}
                 className="h-7 w-7"
                 aria-label="Copy Room ID"
               >
@@ -431,8 +435,8 @@ export default function LobbyPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-3 md:p-4 pt-0 space-y-3 md:space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 md:gap-4">
-            <div className="space-y-1 text-sm md:text-base">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 md:gap-4 text-base md:text-lg">
+            <div className="space-y-1">
               <p><strong>Ticket Price:</strong> ₹{gameSettings.ticketPrice}</p>
               <p><strong>Max Players:</strong> {gameSettings.lobbySize}</p>
             </div>
