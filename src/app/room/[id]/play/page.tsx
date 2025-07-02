@@ -721,7 +721,7 @@ export default function GameRoomPage() {
                     calledNumbers={roomData.calledNumbers}
                     markedNumbers={markedNumbers}
                     onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
-                    className="text-lg p-2"
+                    className="w-full max-w-xs"
                   />
                 ))}
               </div>
