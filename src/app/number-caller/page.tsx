@@ -114,10 +114,7 @@ export default function NumberCallerPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
         <Card className="md:col-span-1 shadow-lg">
-          <CardHeader className="pb-2 pt-3 md:pt-4">
-            <CardTitle className="text-lg md:text-xl flex items-center"><Settings2 className="mr-2 h-5 w-5 text-primary"/>Caller Controls</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 pt-2 pb-3 md:pb-4">
+          <CardContent className="p-4">
              <div className="flex items-center justify-between rounded-md border p-3">
                 <Label htmlFor="calling-mode-switch" className="flex flex-col cursor-pointer">
                     <span className="font-semibold">Auto-Call</span>
