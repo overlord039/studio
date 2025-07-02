@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -68,7 +67,7 @@ export default function HomePage() {
   return (
     <div className="flex-grow flex flex-col items-center justify-center space-y-6">
       {/* Hero Section */}
-      <section className="text-center py-6 bg-gradient-to-br from-primary via-purple-600 to-accent rounded-xl shadow-2xl relative overflow-hidden w-full">
+      <section className="text-center py-2 bg-gradient-to-br from-primary via-purple-600 to-accent rounded-xl shadow-2xl relative overflow-hidden w-full">
         <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
         <div className="relative z-10 px-4">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-primary-foreground mb-4 tracking-tight animate-fade-in-down" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.3)'}}>
@@ -76,14 +75,14 @@ export default function HomePage() {
           </h1>
           
           {!loading && !currentUser && (
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 animate-fade-in">
+            <div className="flex flex-row justify-center items-center gap-4 animate-fade-in">
               <Link href="/auth/login" passHref>
-                <Button size="lg" variant="secondary" className="w-full max-w-xs sm:w-auto px-8 py-3 transform transition-all hover:scale-105 shadow-md hover:shadow-lg">
+                <Button size="lg" variant="secondary" className="w-auto px-8 py-3 transform transition-all hover:scale-105 shadow-md hover:shadow-lg">
                   <LogInIcon className="mr-2 h-5 w-5" /> Login
                 </Button>
               </Link>
               <Link href="/auth/register" passHref>
-                <Button size="lg" variant="secondary" className="w-full max-w-xs sm:w-auto px-8 py-3 transform transition-all hover:scale-105 shadow-md hover:shadow-lg">
+                <Button size="lg" variant="secondary" className="w-auto px-8 py-3 transform transition-all hover:scale-105 shadow-md hover:shadow-lg">
                   <UserPlus className="mr-2 h-5 w-5" /> Register
                 </Button>
               </Link>
