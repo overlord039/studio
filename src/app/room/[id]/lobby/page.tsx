@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -386,9 +387,9 @@ export default function LobbyPage() {
   return (
     <div className="p-2 md:p-4 md:pt-2 space-y-2 md:space-y-4">
       <Card className="shadow-xl">
-        <CardHeader className="p-3 md:p-4">
+        <CardHeader className="p-2 md:p-3">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-xl md:text-3xl font-bold flex items-center gap-2">
+            <CardTitle className="text-lg md:text-2xl font-bold flex items-center gap-2">
               <span>Lobby: <span className="text-accent">{roomData.id}</span></span>
               <Button
                 variant="ghost"
@@ -397,7 +398,7 @@ export default function LobbyPage() {
                   navigator.clipboard.writeText(roomData.id);
                   toast({ title: "Room ID Copied!", description: "You can now share this ID with your friends." });
                 }}
-                className="h-8 w-8"
+                className="h-7 w-7"
                 aria-label="Copy Room ID"
               >
                 <ClipboardCopy className="h-4 w-4" />
@@ -406,7 +407,7 @@ export default function LobbyPage() {
             <div className="flex items-center gap-2">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="icon" aria-label="Leave Room">
+                  <Button variant="destructive" size="icon" className="h-8 w-8" aria-label="Leave Room">
                     <LogOut className="h-4 w-4" />
                   </Button>
                 </AlertDialogTrigger>
