@@ -418,13 +418,13 @@ export default function LobbyPage() {
                 </CardTitle>
                 <CardDescription className="text-xs md:text-sm">Select how many tickets you want to buy for the next game.</CardDescription>
               </CardHeader>
-              <CardContent className="p-2 md:p-3 pt-0 flex flex-col sm:flex-row items-center gap-2 md:gap-4">
+              <CardContent className="p-2 md:p-3 pt-0 flex flex-row items-center gap-2 md:gap-4">
                  <Select
                   value={String(selectedTicketsToBuy)}
                   onValueChange={(value) => setSelectedTicketsToBuy(Number(value))}
                   disabled={isJoiningOrUpdating}
                 >
-                  <SelectTrigger className="w-full sm:w-[180px] h-9 md:h-10 text-xs md:text-sm">
+                  <SelectTrigger className="w-[180px] h-9 md:h-10 text-xs md:text-sm">
                     <SelectValue placeholder="Select tickets" />
                   </SelectTrigger>
                   <SelectContent>
@@ -435,7 +435,7 @@ export default function LobbyPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button onClick={handleConfirmOrJoinTickets} className="w-full sm:w-auto text-xs md:text-sm h-9 md:h-10" disabled={isJoiningOrUpdating}>
+                <Button onClick={handleConfirmOrJoinTickets} className="w-auto text-xs md:text-sm h-9 md:h-10" disabled={isJoiningOrUpdating}>
                   {isJoiningOrUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   {buttonTextForConfirm}
                 </Button>
