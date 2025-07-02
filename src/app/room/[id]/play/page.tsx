@@ -568,7 +568,7 @@ export default function GameRoomPage() {
   const isAutoCalling = roomData.settings.callingMode === 'auto';
 
   return (
-    <div className="p-2 md:p-4 space-y-4">
+    <div className="container mx-auto my-4 p-4 border rounded-xl shadow-lg space-y-4">
       <Card className="shadow-md">
         <CardContent className="p-3 md:p-4 flex flex-col sm:flex-row justify-between items-center text-sm">
           <div>Room ID: #{roomId} | Prize Pool: ₹{totalPrizePool.toFixed(2)} | Players: {roomData.players.length}</div>
@@ -721,7 +721,7 @@ export default function GameRoomPage() {
                     calledNumbers={roomData.calledNumbers}
                     markedNumbers={markedNumbers}
                     onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
-                    className="w-full max-w-xs"
+                    className="w-full max-w-xs text-sm"
                   />
                 ))}
               </div>
