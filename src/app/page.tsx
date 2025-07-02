@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -65,9 +66,9 @@ export default function HomePage() {
   };
 
   return (
-    <div className="py-8 space-y-8 md:space-y-16">
+    <div className="flex-grow flex flex-col items-center justify-center space-y-8">
       {/* Hero Section */}
-      <section className="text-center py-8 sm:py-10 md:py-16 bg-gradient-to-br from-primary via-purple-600 to-accent rounded-xl shadow-2xl relative overflow-hidden">
+      <section className="text-center py-8 bg-gradient-to-br from-primary via-purple-600 to-accent rounded-xl shadow-2xl relative overflow-hidden w-full">
         <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
         <div className="relative z-10 px-4">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-primary-foreground mb-6 tracking-tight animate-fade-in-down" style={{textShadow: '2px 2px 4px rgba(0,0,0,0.3)'}}>
@@ -92,7 +93,7 @@ export default function HomePage() {
       </section>
 
       {/* Main Options */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 w-full">
         <Card 
           className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 group rounded-lg overflow-hidden cursor-pointer flex flex-col"
           onClick={handleCreateRoom}
