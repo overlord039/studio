@@ -383,15 +383,15 @@ export default function LobbyPage() {
 
 
   return (
-    <div className="space-y-8">
+    <div className="p-2 md:p-4 space-y-4">
       <Card className="shadow-xl">
         <CardHeader>
-          <CardTitle className="text-3xl font-bold">Lobby: {roomData.id}</CardTitle>
+          <CardTitle className="text-2xl md:text-3xl font-bold">Lobby: {roomData.id}</CardTitle>
           <CardDescription>
             {roomData.isGameStarted && !roomData.isGameOver ? "Game has started." : roomData.isGameOver ? "Game is over. The host can start a new game." : "Waiting for players. The host can start the game once conditions are met."}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="space-y-1">
               <p><strong>Ticket Price:</strong> ₹{gameSettings.ticketPrice}</p>
@@ -483,7 +483,7 @@ export default function LobbyPage() {
           )}
 
           <div>
-            <h3 className="text-xl font-semibold mb-2 flex items-center">
+            <h3 className="text-lg md:text-xl font-semibold mb-2 flex items-center">
               <Users className="mr-2 h-5 w-5 text-primary" /> Players ({roomData.players.length}/{gameSettings.lobbySize})
             </h3>
             <ul className="space-y-2 rounded-md border p-4 max-h-60 overflow-y-auto">
@@ -502,7 +502,7 @@ export default function LobbyPage() {
           </div>
           
            <div>
-            <h3 className="text-xl font-semibold mb-2 flex items-center">
+            <h3 className="text-lg md:text-xl font-semibold mb-2 flex items-center">
                 <Gift className="mr-2 h-5 w-5 text-primary" /> Prize Distribution
             </h3>
             <Card className="bg-secondary/30">
@@ -528,7 +528,6 @@ export default function LobbyPage() {
           {isCurrentUserHost && !roomData.isGameStarted && !roomData.isGameOver &&(
             <Button 
                 onClick={handleStartGame} 
-                size="lg" 
                 className="w-full mt-4" 
                 disabled={ 
                     isJoiningOrUpdating || 
@@ -551,7 +550,6 @@ export default function LobbyPage() {
           {roomData.isGameStarted && !roomData.isGameOver && (
              <Button 
                 onClick={handleGoToGame} 
-                size="lg" 
                 className="w-full mt-4"
               >
               <Play className="mr-2 h-5 w-5" /> Go to Game / Spectate
@@ -559,7 +557,7 @@ export default function LobbyPage() {
           )}
 
           {roomData.isGameOver && isCurrentUserHost && (
-            <Button onClick={handleResetGame} size="lg" className="w-full mt-4" disabled={isResetting}>
+            <Button onClick={handleResetGame} className="w-full mt-4" disabled={isResetting}>
               {isResetting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <RotateCcw className="mr-2 h-5 w-5" />}
               {isResetting ? "Resetting Lobby..." : "Start New Game"}
             </Button>
@@ -577,3 +575,5 @@ export default function LobbyPage() {
     </div>
   );
 }
+
+    
