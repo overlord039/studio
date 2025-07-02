@@ -379,7 +379,21 @@ export default function LobbyPage() {
     <div className="p-2 md:p-4 md:pt-2 space-y-2 md:space-y-4">
       <Card className="shadow-xl">
         <CardHeader className="p-3 md:p-4">
-          <CardTitle className="text-xl md:text-3xl font-bold">Lobby: {roomData.id}</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-xl md:text-3xl font-bold">Lobby: {roomData.id}</CardTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                navigator.clipboard.writeText(roomData.id);
+                toast({ title: "Room ID Copied!", description: "You can now share this ID with your friends." });
+              }}
+              className="h-8 w-8"
+              aria-label="Copy Room ID"
+            >
+              <ClipboardCopy className="h-4 w-4" />
+            </Button>
+          </div>
           <CardDescription className="text-xs">
             {roomData.isGameStarted && !roomData.isGameOver ? "Game has started." : roomData.isGameOver ? "Game is over. The host can start a new game." : "Waiting for players. The host can start the game once conditions are met."}
           </CardDescription>
@@ -391,24 +405,6 @@ export default function LobbyPage() {
               <p><strong>Max Players:</strong> {gameSettings.lobbySize}</p>
             </div>
             <div className="flex flex-col items-stretch gap-2 md:gap-3 w-full sm:max-w-xs">
-              <div className="flex items-center justify-between gap-2 p-2 border rounded-md bg-secondary/20">
-                <div className="flex items-baseline">
-                  <span className="text-sm font-medium mr-1">Room ID:</span>
-                  <span className="text-lg font-bold text-primary select-all">{roomData.id}</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    navigator.clipboard.writeText(roomData.id);
-                    toast({ title: "Room ID Copied!", description: "You can now share this ID with your friends." });
-                  }}
-                  className="h-8 w-8"
-                  aria-label="Copy Room ID"
-                >
-                  <ClipboardCopy className="h-4 w-4" />
-                </Button>
-              </div>
               <Button onClick={handleLeaveRoom} variant="destructive" size="sm">
                 <LogOut className="mr-2 h-4 w-4" /> Leave Room
               </Button>
