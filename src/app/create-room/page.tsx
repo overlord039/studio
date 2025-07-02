@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Globe, House, Home } from 'lucide-react';
+import { Globe, House, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
@@ -112,7 +112,7 @@ export default function CreateRoomSelectionPage() {
       <div className="mt-12 w-full max-w-4xl">
         <Link href="/" passHref>
           <Button variant="outline">
-            <Home className="mr-2 h-4 w-4" />
+            <LogOut className="mr-2 h-4 w-4" />
             Back to Home
           </Button>
         </Link>
