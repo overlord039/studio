@@ -15,10 +15,11 @@ export default function PageLayout({ children }: { children: ReactNode }) {
     // Check for pages that should have a custom layout (no container padding).
     const isSpecialLayoutPage = 
       (pathname?.includes('/room/') && pathname.endsWith('/play')) || 
-      pathname?.startsWith('/number-caller');
+      pathname?.startsWith('/number-caller') ||
+      pathname?.startsWith('/create-room');
 
     const mainClassName = cn(
-        "flex-grow",
+        "flex-grow flex flex-col",
         // For all pages except special layout pages, apply standard container padding.
         // The special pages will manage their own padding.
         !isSpecialLayoutPage && "container mx-auto px-4 py-8"
