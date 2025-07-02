@@ -98,19 +98,20 @@ export default function HomePage() {
 
       {/* Main Options */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-        <Card className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 group rounded-lg overflow-hidden">
-          <CardHeader className="text-center items-center">
+        <Card 
+          className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 group rounded-lg overflow-hidden cursor-pointer flex flex-col"
+          onClick={handleCreateRoom}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCreateRoom() }}
+        >
+          <CardHeader className="text-center items-center flex-grow flex flex-col justify-center p-6">
             <div className="p-3 bg-primary/10 group-hover:bg-primary/20 transition-colors rounded-full mb-4 inline-block">
               <UsersRound className="h-10 w-10 text-primary" />
             </div>
             <CardTitle className="text-2xl font-bold">Create Multiplayer Room</CardTitle>
             <CardDescription>Host a game for your friends.</CardDescription>
           </CardHeader>
-          <CardContent className="text-center">
-            <Button className="w-full" size="lg" onClick={handleCreateRoom} disabled={loading}>
-              Create Room
-            </Button>
-          </CardContent>
         </Card>
 
         <Card className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 group rounded-lg overflow-hidden">
@@ -137,38 +138,36 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 group rounded-lg overflow-hidden">
-          <CardHeader className="text-center items-center">
+        <Card 
+          className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 group rounded-lg overflow-hidden cursor-pointer flex flex-col"
+          onClick={() => router.push('/number-caller')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push('/number-caller') }}
+        >
+          <CardHeader className="text-center items-center flex-grow flex flex-col justify-center p-6">
             <div className="p-3 bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors rounded-full mb-4 inline-block">
               <Speaker className="h-10 w-10 text-blue-600" />
             </div>
             <CardTitle className="text-2xl font-bold">Number Caller</CardTitle>
             <CardDescription>System auto-call or manual calling</CardDescription>
           </CardHeader>
-          <CardContent className="text-center">
-            <Link href="/number-caller" passHref>
-              <Button className="w-full" size="lg">
-                Open Caller
-              </Button>
-            </Link>
-          </CardContent>
         </Card>
         
-        <Card className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 group rounded-lg overflow-hidden">
-          <CardHeader className="text-center items-center">
+        <Card 
+          className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 group rounded-lg overflow-hidden cursor-pointer flex flex-col"
+          onClick={() => router.push('/prize-calculator')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push('/prize-calculator') }}
+        >
+          <CardHeader className="text-center items-center flex-grow flex flex-col justify-center p-6">
             <div className="p-3 bg-green-500/10 group-hover:bg-green-500/20 transition-colors rounded-full mb-4 inline-block">
               <Calculator className="h-10 w-10 text-green-600" />
             </div>
             <CardTitle className="text-2xl font-bold">Prize Calculator</CardTitle>
             <CardDescription>Calculate prize money distribution.</CardDescription>
           </CardHeader>
-          <CardContent className="text-center">
-            <Link href="/prize-calculator" passHref>
-              <Button className="w-full" size="lg">
-                Open Calculator
-              </Button>
-            </Link>
-          </CardContent>
         </Card>
       </section>
     </div>
