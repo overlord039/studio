@@ -9,7 +9,10 @@ import type { ReactNode } from 'react';
 
 export default function PageLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
-    // Check for pages that should have a custom layout (no header/footer).
+    // Only show header and footer on the homepage.
+    const showHeaderAndFooter = pathname === '/';
+
+    // Check for pages that should have a custom layout (no container padding).
     const isSpecialLayoutPage = 
       (pathname?.includes('/room/') && pathname.endsWith('/play')) || 
       pathname?.startsWith('/number-caller');
@@ -23,12 +26,12 @@ export default function PageLayout({ children }: { children: ReactNode }) {
 
     return (
         <>
-            {!isSpecialLayoutPage && <Header />}
+            {showHeaderAndFooter && <Header />}
             <main className={mainClassName}>
                 {children}
             </main>
             <Toaster />
-            {!isSpecialLayoutPage && <Footer />}
+            {showHeaderAndFooter && <Footer />}
         </>
     );
 }
