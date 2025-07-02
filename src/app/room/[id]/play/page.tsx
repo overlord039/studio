@@ -61,9 +61,6 @@ export default function GameRoomPage() {
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
-  const [isPrizeInfoMinimized, setIsPrizeInfoMinimized] = useState(true);
-  const [isOtherPlayersMinimized, setIsOtherPlayersMinimized] = useState(true);
-  
   const previousCurrentNumberRef = useRef<number | null>(null);
   const roomDataRef = useRef(roomData);
   const previousPrizeStatusRef = useRef<Room['prizeStatus'] | null>(null);
@@ -730,16 +727,15 @@ export default function GameRoomPage() {
         </div>
 
         <div className="space-y-4 lg:col-span-1">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg flex items-center"><Award className="mr-2 h-5 w-5 text-primary" />Prize Info</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setIsPrizeInfoMinimized(!isPrizeInfoMinimized)} aria-label={isPrizeInfoMinimized ? "Expand Prize Info" : "Minimize Prize Info"}>
-                {isPrizeInfoMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
-              </Button>
-            </CardHeader>
-            {!isPrizeInfoMinimized && (
-              <CardContent>
-                {isLoading ? (
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full justify-start"><Award className="mr-2 h-5 w-5 text-primary" />Prize Info</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Prize Info</DialogTitle>
+              </DialogHeader>
+              {isLoading ? (
                   <p className="text-sm text-muted-foreground">Loading prize info...</p>
                 ) : (
                   <>
@@ -755,19 +751,18 @@ export default function GameRoomPage() {
                     </ul>
                   </>
                 )}
-              </CardContent>
-            )}
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg flex items-center"><Users className="mr-2 h-5 w-5 text-primary" />Other Players ({otherPlayers.length})</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setIsOtherPlayersMinimized(!isOtherPlayersMinimized)} aria-label={isOtherPlayersMinimized ? "Expand Other Players" : "Minimize Other Players"}>
-                {isOtherPlayersMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
-              </Button>
-            </CardHeader>
-            {!isOtherPlayersMinimized && (
-              <CardContent>
-                {isLoading ? (
+            </DialogContent>
+          </Dialog>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full justify-start"><Users className="mr-2 h-5 w-5 text-primary" />Other Players ({otherPlayers.length})</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Other Players ({otherPlayers.length})</DialogTitle>
+              </DialogHeader>
+              {isLoading ? (
                   <p className="text-sm text-muted-foreground">Loading player list...</p>
                 ) : (
                   <ScrollArea className="h-40">
@@ -785,9 +780,9 @@ export default function GameRoomPage() {
                     </ul>
                   </ScrollArea>
                 )}
-              </CardContent>
-            )}
-          </Card>
+            </DialogContent>
+          </Dialog>
+
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
