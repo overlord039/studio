@@ -702,10 +702,9 @@ export default function GameRoomPage() {
                   <MemoizedLiveNumberBoard
                     calledNumbers={roomData.calledNumbers}
                     currentNumber={roomData.currentNumber}
+                    remainingCount={NUMBERS_RANGE_MAX - roomData.calledNumbers.length}
+                    calledCount={roomData.calledNumbers.length}
                   />
-                  <p className="text-center text-sm text-muted-foreground pt-2">
-                    {NUMBERS_RANGE_MAX - roomData.calledNumbers.length} numbers remaining &middot; {roomData.calledNumbers.length} called
-                  </p>
                 </DialogContent>
               </Dialog>
             </div>

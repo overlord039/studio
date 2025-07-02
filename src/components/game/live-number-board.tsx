@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -12,9 +13,11 @@ interface LiveNumberBoardProps {
   currentNumber: number | null;
   isMinimized?: boolean;
   onToggleMinimize?: () => void;
+  remainingCount?: number;
+  calledCount?: number;
 }
 
-export default function LiveNumberBoard({ calledNumbers, currentNumber, isMinimized, onToggleMinimize }: LiveNumberBoardProps) {
+export default function LiveNumberBoard({ calledNumbers, currentNumber, isMinimized, onToggleMinimize, remainingCount, calledCount }: LiveNumberBoardProps) {
   const numbers = Array.from({ length: NUMBERS_RANGE_MAX - NUMBERS_RANGE_MIN + 1 }, (_, i) => NUMBERS_RANGE_MIN + i);
 
   const Board = () => (
@@ -38,6 +41,17 @@ export default function LiveNumberBoard({ calledNumbers, currentNumber, isMinimi
     </div>
   );
 
+  const InfoText = () => {
+    if (typeof remainingCount !== 'number' || typeof calledCount !== 'number') {
+      return null;
+    }
+    return (
+      <p className="text-center text-xs text-muted-foreground pt-2">
+        {remainingCount} numbers remaining. Total Called: {calledCount}.
+      </p>
+    );
+  };
+  
   if (typeof onToggleMinimize !== 'undefined' && typeof isMinimized !== 'undefined') {
     return (
        <Card>
@@ -50,11 +64,17 @@ export default function LiveNumberBoard({ calledNumbers, currentNumber, isMinimi
             {!isMinimized && (
               <CardContent className="p-3 pt-0">
                 <Board />
+                <InfoText />
               </CardContent>
             )}
           </Card>
     )
   }
 
-  return <Board />;
+  return (
+    <>
+      <Board />
+      <InfoText />
+    </>
+  );
 }

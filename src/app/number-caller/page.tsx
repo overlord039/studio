@@ -172,10 +172,9 @@ export default function NumberCallerPage() {
                 currentNumber={currentNumber}
                 isMinimized={isBoardMinimized}
                 onToggleMinimize={() => setIsBoardMinimized(!isBoardMinimized)}
+                remainingCount={availableNumbers.length}
+                calledCount={calledNumbers.length}
             />
-            <p className="text-center text-xs text-muted-foreground mt-1">
-                {availableNumbers.length} numbers remaining. Total Called: {calledNumbers.length}.
-            </p>
 
             {/* Mobile Buttons */}
             <div className="flex w-full gap-2 md:hidden">
