@@ -121,19 +121,21 @@ export default function HomePage() {
               <CardDescription className="text-sm">Enter a Room ID to join.</CardDescription>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3 px-4 pb-4">
-            <Input 
-              type="text" 
-              placeholder="Enter Room ID" 
-              className="text-center h-10 text-sm"
-              value={joinRoomId}
-              onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
-              disabled={loading}
-              maxLength={6}
-            />
-            <Button variant="outline" className="w-full" onClick={handleJoinRoom} disabled={loading}>
-              Join Game
-            </Button>
+          <CardContent className="px-4 pb-4">
+            <div className="flex w-full items-center space-x-2">
+              <Input
+                type="text"
+                placeholder="Enter Room ID"
+                className="h-10 text-sm"
+                value={joinRoomId}
+                onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
+                disabled={loading}
+                maxLength={6}
+              />
+              <Button variant="outline" onClick={handleJoinRoom} disabled={loading}>
+                Join
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
