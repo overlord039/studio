@@ -736,9 +736,8 @@ export default function GameRoomPage() {
         <div className="space-y-4 lg:col-span-1">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" className="w-full justify-start">
-                <Menu className="mr-2 h-5 w-5 text-primary" />
-                Game Info & Players
+              <Button variant="outline" size="icon" aria-label="Game Info & Players">
+                <Menu className="h-5 w-5 text-primary" />
               </Button>
             </SheetTrigger>
             <SheetContent>
