@@ -574,13 +574,90 @@ export default function GameRoomPage() {
   return (
     <div className="container mx-auto my-4 p-4 border rounded-xl shadow-lg space-y-4">
       <Card className="shadow-md">
-        <CardContent className="p-3 md:p-4 flex flex-col sm:flex-row justify-between items-center text-sm">
-          <div>Room ID: #{roomId} | Prize Pool: ₹{totalPrizePool.toFixed(2)} | Players: {roomData.players.length}</div>
+        <CardContent className="p-3 md:p-4 flex flex-col sm:flex-row justify-between items-center text-sm gap-4">
+          <div className="flex-grow">Room ID: #{roomId} | Prize Pool: ₹{totalPrizePool.toFixed(2)} | Players: {roomData.players.length}</div>
           <div className="font-semibold text-primary">{currentUser.username} ({myTickets.length} {ticketsText(myTickets.length)})</div>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" aria-label="Game Info & Players">
+                <Menu className="h-5 w-5 text-primary" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="flex flex-col">
+              <SheetHeader>
+                <SheetTitle>Game Info & Players</SheetTitle>
+              </SheetHeader>
+              <div className="py-4 space-y-6 flex-grow overflow-y-auto">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2 flex items-center"><Award className="mr-2 h-5 w-5 text-primary" />Prize Info</h3>
+                   {isLoading ? (
+                      <p className="text-sm text-muted-foreground">Loading prize info...</p>
+                  ) : (
+                  <>
+                      <p className="text-sm text-muted-foreground">Potential prize money based on total tickets.</p>
+                      <ul className="space-y-1 mt-2 text-sm">
+                      {prizesForFormat.map(prize => {
+                          const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
+                          const prizeAmount = (totalPrizePool * percentage) / 100;
+                          return (
+                          <li key={prize}>{prize}: ₹{prizeAmount.toFixed(2)} ({percentage}%)</li>
+                          );
+                      })}
+                      </ul>
+                  </>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-2 flex items-center"><Users className="mr-2 h-5 w-5 text-primary" />Other Players ({otherPlayers.length})</h3>
+                  {isLoading ? (
+                      <p className="text-sm text-muted-foreground">Loading player list...</p>
+                      ) : (
+                      <ScrollArea className="h-40">
+                          <ul className="space-y-1 mt-2 text-sm">
+                          {otherPlayers.map((player, index) => (
+                              <li key={player.id || index} className="flex justify-between items-center">
+                              <span>
+                                  {player.name}
+                                  {player.isHost && <span className="ml-2 text-xs font-semibold text-primary">(Host)</span>}
+                              </span>
+                              <span className="text-muted-foreground">{player.tickets?.length || 0} {ticketsText(player.tickets?.length || 0)}</span>
+                              </li>
+                          ))}
+                          {otherPlayers.length === 0 && <li className="text-muted-foreground">No other players in the room.</li>}
+                          </ul>
+                      </ScrollArea>
+                  )}
+                </div>
+              </div>
+              <div className="border-t pt-4">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="w-full" size="sm">
+                      <LogOut className="mr-2 h-4 w-4" /> Leave Game
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure you want to leave the game?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will remove you from the current game session. If you are the host, a new host will be assigned.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="bg-green-600 text-primary-foreground hover:bg-green-700 border-transparent">Stay</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleLeaveRoom} className={buttonVariants({ variant: "destructive" })}>
+                        Leave
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </SheetContent>
+          </Sheet>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="space-y-4 lg:col-span-1">
           
           {isCurrentUserHost && !roomData.settings.isPublic && !roomData.isGameOver && (
@@ -731,85 +808,6 @@ export default function GameRoomPage() {
               </div>
             </ScrollArea>
           </div>
-        </div>
-
-        <div className="space-y-4 lg:col-span-1">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon" aria-label="Game Info & Players">
-                <Menu className="h-5 w-5 text-primary" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>Game Info & Players</SheetTitle>
-              </SheetHeader>
-              <div className="py-4 space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-2 flex items-center"><Award className="mr-2 h-5 w-5 text-primary" />Prize Info</h3>
-                   {isLoading ? (
-                      <p className="text-sm text-muted-foreground">Loading prize info...</p>
-                  ) : (
-                  <>
-                      <p className="text-sm text-muted-foreground">Potential prize money based on total tickets.</p>
-                      <ul className="space-y-1 mt-2 text-sm">
-                      {prizesForFormat.map(prize => {
-                          const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
-                          const prizeAmount = (totalPrizePool * percentage) / 100;
-                          return (
-                          <li key={prize}>{prize}: ₹{prizeAmount.toFixed(2)} ({percentage}%)</li>
-                          );
-                      })}
-                      </ul>
-                  </>
-                  )}
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold mb-2 flex items-center"><Users className="mr-2 h-5 w-5 text-primary" />Other Players ({otherPlayers.length})</h3>
-                  {isLoading ? (
-                      <p className="text-sm text-muted-foreground">Loading player list...</p>
-                      ) : (
-                      <ScrollArea className="h-40">
-                          <ul className="space-y-1 mt-2 text-sm">
-                          {otherPlayers.map((player, index) => (
-                              <li key={player.id || index} className="flex justify-between items-center">
-                              <span>
-                                  {player.name}
-                                  {player.isHost && <span className="ml-2 text-xs font-semibold text-primary">(Host)</span>}
-                              </span>
-                              <span className="text-muted-foreground">{player.tickets?.length || 0} {ticketsText(player.tickets?.length || 0)}</span>
-                              </li>
-                          ))}
-                          {otherPlayers.length === 0 && <li className="text-muted-foreground">No other players in the room.</li>}
-                          </ul>
-                      </ScrollArea>
-                  )}
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
-
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="w-full mt-2" size="sm">
-                <LogOut className="mr-2 h-4 w-4" /> Leave Game
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure you want to leave the game?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will remove you from the current game session. If you are the host, a new host will be assigned.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="bg-green-600 text-primary-foreground hover:bg-green-700 border-transparent">Stay</AlertDialogCancel>
-                <AlertDialogAction onClick={handleLeaveRoom} className={buttonVariants({ variant: "destructive" })}>
-                  Leave
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </div>
       </div>
     </div>
