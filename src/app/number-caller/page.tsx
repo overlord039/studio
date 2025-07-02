@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -144,17 +143,6 @@ export default function NumberCallerPage() {
                 aria-label="Toggle automatic number calling"
               />
             </div>
-
-            {!isAutoCalling && (
-              <Button 
-                onClick={callNextNumber} 
-                disabled={availableNumbers.length === 0} 
-                className="w-full"
-                size="default"
-              >
-                <Zap className="mr-2 h-4 w-4"/> Next Number
-              </Button>
-            )}
             
             {/* Desktop Buttons */}
             <div className="hidden pt-2 md:flex md:gap-2">
@@ -176,6 +164,17 @@ export default function NumberCallerPage() {
                 isMuted={isMuted}
                 onToggleMute={toggleMute}
             />
+
+            {!isAutoCalling && (
+              <Button 
+                onClick={callNextNumber} 
+                disabled={availableNumbers.length === 0} 
+                className="w-full"
+                size="lg"
+              >
+                <Zap className="mr-2 h-4 w-4"/> Next Number
+              </Button>
+            )}
             
             <LiveNumberBoard 
                 calledNumbers={calledNumbers.slice().sort((a,b) => a - b)}
