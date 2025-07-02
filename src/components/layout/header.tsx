@@ -114,7 +114,7 @@ const SettingsModal = () => {
   );
 
   return (
-    <DialogContent className="w-full max-w-lg max-h-[85vh] md:max-w-4xl md:h-[80vh] flex flex-col p-0 overflow-hidden rounded-lg">
+    <DialogContent className="max-h-[85vh] md:max-w-4xl md:h-[80vh] flex flex-col p-0 overflow-hidden rounded-lg">
         <header className="bg-primary text-primary-foreground text-center p-4 relative flex-shrink-0">
             <h2 className="text-2xl font-bold tracking-wider">SETTINGS</h2>
              <DialogClose className="absolute right-4 top-1/2 -translate-y-1/2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
@@ -377,4 +377,6 @@ export default function Header() {
     </header>
   );
 }
+    
+
     
