@@ -114,7 +114,7 @@ const SettingsModal = () => {
   );
 
   return (
-    <DialogContent className="max-h-[85vh] md:max-w-4xl md:h-[80vh] flex flex-col p-0 overflow-hidden rounded-lg">
+    <DialogContent className="max-h-[85vh] w-[90vw] md:max-w-4xl md:h-[80vh] flex flex-col p-0 overflow-hidden rounded-lg">
         <header className="bg-primary text-primary-foreground text-center p-4 relative flex-shrink-0">
             <h2 className="text-2xl font-bold tracking-wider">SETTINGS</h2>
              <DialogClose className="absolute right-4 top-1/2 -translate-y-1/2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
@@ -225,26 +225,29 @@ const SettingsModal = () => {
                   )}
 
                   {activeTab === 'developer-note' && (
-                    <div className="text-center space-y-6 text-card-foreground/80">
-                      <h3 className="text-2xl font-bold">🎉 Developer Note</h3>
-                      <p>
+                    <div className="text-center space-y-4 text-card-foreground/80">
+                      <h3 className="text-xl font-bold">🎉 Developer Note</h3>
+                      <p className="text-sm">
                         Hi, I’m <span className="font-semibold text-primary">Durga Sankar</span>, the developer of this Housie platform.
                       </p>
-                      <p>
+                      <p className="text-sm">
                         This is my original idea, built using AI tools to streamline development. My goal was simple: to help families and friends play Housie easily, whether they are near or far.
                       </p>
-                      <p>
+                      <p className="text-sm">
                         I believe technology should bring people closer, and this is my small step toward that goal.
                       </p>
-                      <p className="font-semibold text-xl pt-2">– Durga Sankar</p>
+                      <p className="font-semibold text-lg pt-2">– Durga Sankar</p>
                       
-                      <div className="border-t pt-6 space-y-2">
-                        <p className="text-sm">
+                      <div className="border-t pt-4 space-y-2">
+                        <p className="text-xs">
                           Feel free to reach out if you have ideas, suggestions, or wish to collaborate.
                         </p>
                         <div className="flex justify-center items-center space-x-6">
                           <a href="mailto:durgasankar.d@gmail.com" aria-label="Email" className="text-muted-foreground hover:text-primary transition-colors">
-                            <Mail className="h-7 w-7" />
+                            <Mail className="h-6 w-6" />
+                          </a>
+                          <a href="https://www.linkedin.com/in/durga-sankar-d/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary transition-colors">
+                            <Linkedin className="h-6 w-6" />
                           </a>
                         </div>
                       </div>
