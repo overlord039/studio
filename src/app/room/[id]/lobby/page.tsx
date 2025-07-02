@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -360,18 +361,15 @@ export default function LobbyPage() {
     (!doesCurrentUserHaveTickets || isEditingTickets);
   
   const ticketsText = (count: number) => count === 1 ? 'ticket' : 'tickets';
-  let buttonTextForConfirm = `Confirm and Join with ${selectedTicketsToBuy} ${ticketsText(selectedTicketsToBuy)}`;
+  const buttonTextForConfirm = "Confirm";
   let cardTitleForTickets = "Join Game & Buy Tickets";
 
   if (doesCurrentUserHaveTickets && isEditingTickets) {
     cardTitleForTickets = "Update Your Tickets";
-    buttonTextForConfirm = `Update to ${selectedTicketsToBuy} ${ticketsText(selectedTicketsToBuy)}`;
   } else if (isCurrentUserHost && !doesCurrentUserHaveTickets) {
-      buttonTextForConfirm = `Confirm Host Tickets (${selectedTicketsToBuy})`;
-      cardTitleForTickets = "Buy Your Host Tickets";
+    cardTitleForTickets = "Buy Your Host Tickets";
   } else if (currentUserInRoom && !doesCurrentUserHaveTickets) { 
-      buttonTextForConfirm = `Confirm My Tickets (${selectedTicketsToBuy})`;
-      cardTitleForTickets = "Confirm Your Tickets";
+    cardTitleForTickets = "Confirm Your Tickets";
   }
 
 
