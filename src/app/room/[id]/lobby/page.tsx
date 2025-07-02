@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -433,7 +432,7 @@ export default function LobbyPage() {
         </CardHeader>
         <CardContent className="p-3 md:p-4 pt-0 space-y-3 md:space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 md:gap-4">
-            <div className="space-y-1 text-xs md:text-sm">
+            <div className="space-y-1 text-sm md:text-base">
               <p><strong>Ticket Price:</strong> ₹{gameSettings.ticketPrice}</p>
               <p><strong>Max Players:</strong> {gameSettings.lobbySize}</p>
             </div>
