@@ -434,9 +434,9 @@ export default function LobbyPage() {
             {roomData.isGameStarted && !roomData.isGameOver ? "Game has started." : roomData.isGameOver ? "Game is over. The host can start a new game." : "Waiting for players. The host can start the game once conditions are met."}
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-3 md:p-4 pt-0 space-y-3 md:space-y-4">
+        <CardContent className="p-3 md:p-4 pt-0 space-y-4 md:space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 md:gap-4 text-base md:text-lg">
-            <div className="space-y-1">
+            <div className="space-y-1 text-base md:text-lg">
               <p><strong>Ticket Price:</strong> ₹{gameSettings.ticketPrice}</p>
               <p><strong>Max Players:</strong> {gameSettings.lobbySize}</p>
             </div>
