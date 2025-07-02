@@ -774,7 +774,10 @@ export default function GameRoomPage() {
                     <ul className="space-y-1 mt-2 text-sm">
                       {otherPlayers.map((player, index) => (
                         <li key={player.id || index} className="flex justify-between items-center">
-                          <span>{player.name}</span>
+                          <span>
+                            {player.name}
+                            {player.isHost && <span className="ml-2 text-xs font-semibold text-primary">(Host)</span>}
+                          </span>
                           <span className="text-muted-foreground">{player.tickets?.length || 0} {ticketsText(player.tickets?.length || 0)}</span>
                         </li>
                       ))}
