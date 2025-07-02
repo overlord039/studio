@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -49,10 +48,6 @@ export default function LobbyPage() {
   useEffect(() => {
     roomDataRef.current = roomData;
   }, [roomData]);
-
-  const currentUserInRoom = roomData?.players.find(p => p.id === currentUser?.username);
-  const isCurrentUserHost = roomData?.host.id === currentUser?.username;
-  const doesCurrentUserHaveTickets = !!currentUserInRoom && currentUserInRoom.tickets.length > 0;
 
   const fetchRoomDetails = useCallback(async (isInitialLoad = false) => {
     if (!roomId || !currentUser) {
@@ -368,6 +363,21 @@ export default function LobbyPage() {
     );
   }
   
+  const currentUserInRoom = roomData?.players.find(p => p.id === currentUser?.username);
+  const isCurrentUserHost = roomData?.host.id === currentUser?.username;
+  const doesCurrentUserHaveTickets = !!currentUserInRoom && currentUserInRoom.tickets.length > 0;
+
+  if (roomData.isGameStarted && !roomData.isGameOver && !currentUserInRoom) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center p-4">
+        <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
+        <h2 className="text-2xl font-semibold mb-2">Game in Progress</h2>
+        <p className="text-muted-foreground mb-6">This game has already started. You cannot join or spectate at this time.</p>
+        <Button onClick={() => router.push('/')} size="lg">Go to Homepage</Button>
+      </div>
+    );
+  }
+
   const currentPrizeFormat = gameSettings.prizeFormat;
   const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
   const prizeDistribution = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat] || {};
