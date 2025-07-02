@@ -5,11 +5,13 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Speaker, Play, Pause, RotateCcw, Zap, Settings2, ArrowLeft } from 'lucide-react';
+import { Speaker, RotateCcw, Zap, Settings2, ArrowLeft } from 'lucide-react';
 import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import LiveNumberBoard from '@/components/game/live-number-board';
 import CalledNumberDisplay from '@/components/game/called-number-display';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const newArray = [...array];
@@ -28,7 +30,7 @@ export default function NumberCallerPage() {
   const [calledNumbers, setCalledNumbers] = useState<number[]>([]);
   const [availableNumbers, setAvailableNumbers] = useState<number[]>(shuffleArray(ALL_NUMBERS));
   const [isAutoCalling, setIsAutoCalling] = useState(false);
-  const [autoCallSpeed, setAutoCallSpeed] = useState(5); // Default speed in seconds
+  const [autoCallSpeed] = useState(5); // Fixed speed in seconds
   const [isMuted, setIsMuted] = useState(false);
   const [isBoardMinimized, setIsBoardMinimized] = useState(true); // Board is minimized by default
   const autoCallIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -126,25 +128,33 @@ export default function NumberCallerPage() {
           <CardHeader className="pb-2 pt-3 md:pt-4">
             <CardTitle className="text-lg md:text-xl flex items-center"><Settings2 className="mr-2 h-5 w-5 text-primary"/>Caller Controls</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 pt-2 pb-3 md:pb-4">
-            <Button 
-              onClick={toggleAutoCall} 
-              disabled={availableNumbers.length === 0}
-              variant="default"
-              className="w-full"
-              size="default"
-            >
-              {isAutoCalling ? <Pause className="mr-2 h-4 w-4"/> : <Play className="mr-2 h-4 w-4"/>}
-              {isAutoCalling ? 'Stop Auto Call' : 'Start Auto Call'}
-            </Button>
-            <Button 
-              onClick={callNextNumber} 
-              disabled={isAutoCalling || availableNumbers.length === 0} 
-              className="w-full"
-              size="default"
-            >
-              <Zap className="mr-2 h-4 w-4"/> Next Number
-            </Button>
+          <CardContent className="space-y-4 pt-2 pb-3 md:pb-4">
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <Label htmlFor="auto-call-switch" className="flex flex-col cursor-pointer">
+                <span className="font-semibold">Auto-Call</span>
+                <span className="text-xs text-muted-foreground">
+                  {isAutoCalling ? "System is calling" : "Paused, call manually"}
+                </span>
+              </Label>
+              <Switch
+                id="auto-call-switch"
+                checked={isAutoCalling}
+                onCheckedChange={toggleAutoCall}
+                disabled={availableNumbers.length === 0}
+                aria-label="Toggle automatic number calling"
+              />
+            </div>
+
+            {!isAutoCalling && (
+              <Button 
+                onClick={callNextNumber} 
+                disabled={availableNumbers.length === 0} 
+                className="w-full"
+                size="default"
+              >
+                <Zap className="mr-2 h-4 w-4"/> Next Number
+              </Button>
+            )}
             
             {/* Desktop Buttons */}
             <div className="hidden pt-2 md:flex md:gap-2">
