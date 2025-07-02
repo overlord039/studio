@@ -46,7 +46,7 @@ export default function LiveNumberBoard({ calledNumbers, currentNumber, isMinimi
       return null;
     }
     return (
-      <p className="text-center text-xs text-muted-foreground pt-2">
+      <p className="text-center text-xs text-muted-foreground pb-2">
         {remainingCount} numbers remaining. Total Called: {calledCount}.
       </p>
     );
@@ -63,8 +63,8 @@ export default function LiveNumberBoard({ calledNumbers, currentNumber, isMinimi
             </CardHeader>
             {!isMinimized && (
               <CardContent className="p-3 pt-0">
-                <Board />
                 <InfoText />
+                <Board />
               </CardContent>
             )}
           </Card>
@@ -73,8 +73,8 @@ export default function LiveNumberBoard({ calledNumbers, currentNumber, isMinimi
 
   return (
     <>
-      <Board />
       <InfoText />
+      <Board />
     </>
   );
 }
