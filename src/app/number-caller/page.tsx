@@ -117,7 +117,7 @@ export default function NumberCallerPage() {
           </div>
           <CardTitle className="text-2xl md:text-3xl font-extrabold tracking-tight">Housie Number Caller</CardTitle>
           <CardDescription className="text-primary-foreground/80 text-sm md:text-base">
-            Manually or automatically call numbers for your game.
+            Manually or automatically call numbers.
           </CardDescription>
         </CardHeader>
       </Card>
