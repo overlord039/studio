@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -77,12 +76,12 @@ export default function CreateRoomSelectionPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center py-8">
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold">Choose Your Game Mode</h1>
-        <p className="text-muted-foreground mt-2 text-lg">Select how you want to play Housie.</p>
+    <div className="flex flex-col items-center py-4 md:justify-center md:py-8">
+      <div className="text-center mb-4 md:mb-6">
+        <h1 className="text-xl font-bold">Choose Your Game Mode</h1>
+        <p className="text-muted-foreground mt-2 text-base">Select how you want to play Housie.</p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-lg">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-md">
         {options.map((option) => (
            <Card
             key={option.mode}
@@ -97,20 +96,20 @@ export default function CreateRoomSelectionPage() {
                     Coming Soon
                 </div>
             )}
-            <CardHeader className="items-center text-center p-4">
-              <div className={cn("p-2 rounded-full mb-3 inline-block", option.iconBgColor)}>
-                <option.icon className={cn("h-8 w-8", option.iconTextColor)} />
+            <CardHeader className="items-center text-center p-3">
+              <div className={cn("p-2 rounded-full mb-2 inline-block", option.iconBgColor)}>
+                <option.icon className={cn("h-6 w-6", option.iconTextColor)} />
               </div>
-              <CardTitle className="text-lg font-bold">{option.title}</CardTitle>
-              <CardDescription className="text-sm">{option.subtitle}</CardDescription>
+              <CardTitle className="text-base font-bold">{option.title}</CardTitle>
+              <CardDescription className="text-xs">{option.subtitle}</CardDescription>
             </CardHeader>
-            <CardContent className="text-center p-4 pt-0">
-              <p className="text-muted-foreground text-sm min-h-[3rem]">{option.description}</p>
+            <CardContent className="text-center p-3 pt-0">
+              <p className="text-muted-foreground text-xs">{option.description}</p>
             </CardContent>
           </Card>
         ))}
       </div>
-      <div className="mt-8 w-full max-w-lg">
+      <div className="mt-4 md:mt-6 w-full max-w-md">
         <Link href="/" passHref>
           <Button variant="outline">
             <LogOut className="mr-2 h-4 w-4 rotate-180" />
