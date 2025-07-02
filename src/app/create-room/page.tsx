@@ -1,12 +1,13 @@
-
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Globe, House } from 'lucide-react';
+import { Globe, House, Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 type Mode = 'public' | 'private';
 
@@ -107,6 +108,14 @@ export default function CreateRoomSelectionPage() {
             </CardContent>
           </Card>
         ))}
+      </div>
+      <div className="mt-12">
+        <Link href="/" passHref>
+          <Button variant="outline">
+            <Home className="mr-2 h-4 w-4" />
+            Back to Home
+          </Button>
+        </Link>
       </div>
     </div>
   );
