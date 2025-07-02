@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -458,7 +457,7 @@ export default function LobbyPage() {
                   You have {currentUserInRoom?.tickets.length} {ticketsText(currentUserInRoom?.tickets.length ?? 0)} confirmed.
                   {!isCurrentUserHost && " Waiting for host..."}
                 </p>
-                <Button onClick={() => setIsEditingTickets(true)} variant="outline" size="sm">
+                <Button onClick={() => setIsEditingTickets(true)} variant="outline" className="text-xs md:text-sm h-9 md:h-10">
                   <Edit className="mr-2 h-4 w-4" />
                   Change Tickets
                 </Button>
