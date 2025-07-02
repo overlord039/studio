@@ -1,6 +1,7 @@
+
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +12,17 @@ import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTING
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { playSound } from "@/lib/sounds";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const MAX_TICKETS_PER_PLAYER = 4;
 
@@ -380,18 +392,20 @@ export default function LobbyPage() {
             <CardTitle className="text-xl md:text-3xl font-bold">
               Lobby: <span className="text-accent">{roomData.id}</span>
             </CardTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                navigator.clipboard.writeText(roomData.id);
-                toast({ title: "Room ID Copied!", description: "You can now share this ID with your friends." });
-              }}
-              className="h-8 w-8"
-              aria-label="Copy Room ID"
-            >
-              <ClipboardCopy className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  navigator.clipboard.writeText(roomData.id);
+                  toast({ title: "Room ID Copied!", description: "You can now share this ID with your friends." });
+                }}
+                className="h-8 w-8"
+                aria-label="Copy Room ID"
+              >
+                <ClipboardCopy className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
           <CardDescription className="text-xs">
             {roomData.isGameStarted && !roomData.isGameOver ? "Game has started." : roomData.isGameOver ? "Game is over. The host can start a new game." : "Waiting for players. The host can start the game once conditions are met."}
@@ -403,10 +417,26 @@ export default function LobbyPage() {
               <p><strong>Ticket Price:</strong> ₹{gameSettings.ticketPrice}</p>
               <p><strong>Max Players:</strong> {gameSettings.lobbySize}</p>
             </div>
-            <div className="flex flex-col items-stretch gap-2 md:gap-3 w-full sm:max-w-xs">
-              <Button onClick={handleLeaveRoom} variant="destructive" size="sm">
-                <LogOut className="mr-2 h-4 w-4" /> Leave Room
-              </Button>
+            <div className="flex w-full sm:w-auto justify-end">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="icon" aria-label="Leave Room">
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      If you are the host, another player will become the host. You can rejoin later if the game hasn't started.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleLeaveRoom} className={buttonVariants({ variant: "destructive" })}>Leave</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
 
@@ -419,13 +449,13 @@ export default function LobbyPage() {
                 </CardTitle>
                 <CardDescription className="text-xs md:text-sm">Select how many tickets you want to buy for the next game.</CardDescription>
               </CardHeader>
-              <CardContent className="p-2 md:p-3 pt-0 flex items-center gap-2 md:gap-4">
+              <CardContent className="p-2 md:p-3 pt-0 flex flex-col sm:flex-row items-stretch gap-2 md:gap-4">
                  <Select
                   value={String(selectedTicketsToBuy)}
                   onValueChange={(value) => setSelectedTicketsToBuy(Number(value))}
                   disabled={isJoiningOrUpdating}
                 >
-                  <SelectTrigger className="w-auto sm:w-[180px] h-9 md:h-10 text-xs md:text-sm flex-1">
+                  <SelectTrigger className="w-full sm:w-[180px] h-9 md:h-10 text-xs md:text-sm">
                     <SelectValue placeholder="Select tickets" />
                   </SelectTrigger>
                   <SelectContent>
@@ -436,7 +466,7 @@ export default function LobbyPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button onClick={handleConfirmOrJoinTickets} className="w-auto text-xs md:text-sm h-9 md:h-10" disabled={isJoiningOrUpdating}>
+                <Button onClick={handleConfirmOrJoinTickets} className="w-full sm:w-auto text-xs md:text-sm h-9 md:h-10" disabled={isJoiningOrUpdating}>
                   {isJoiningOrUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   {buttonTextForConfirm}
                 </Button>
