@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -33,7 +32,6 @@ export default function NumberCallerPage() {
   const [isAutoCalling, setIsAutoCalling] = useState(false);
   const autoCallSpeed = 5; // Fixed speed in seconds
   const { isSfxMuted, toggleSfxMute } = useSound();
-  const [isBoardMinimized, setIsBoardMinimized] = useState(true); // Board is minimized by default
   const autoCallIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
@@ -66,7 +64,6 @@ export default function NumberCallerPage() {
     setCurrentNumber(null);
     setCalledNumbers([]);
     setAvailableNumbers(shuffleArray(ALL_NUMBERS));
-    setIsBoardMinimized(true); // Ensure board is minimized on reset
     toast({ title: "Game Reset", description: "Ready to call numbers again!"});
   };
 
@@ -149,8 +146,8 @@ export default function NumberCallerPage() {
           <LiveNumberBoard 
             calledNumbers={sortedCalledNumbers}
             currentNumber={currentNumber}
-            isMinimized={isBoardMinimized}
-            onToggleMinimize={() => setIsBoardMinimized(!isBoardMinimized)}
+            isMinimized={false}
+            onToggleMinimize={() => {}}
             remainingCount={NUMBERS_RANGE_MAX - sortedCalledNumbers.length}
             calledCount={sortedCalledNumbers.length}
           />

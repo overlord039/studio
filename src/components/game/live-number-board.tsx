@@ -57,16 +57,11 @@ export default function LiveNumberBoard({ calledNumbers, currentNumber, isMinimi
        <Card>
             <CardHeader className="flex flex-row items-center justify-between p-3">
               <CardTitle className="text-lg">Number Board</CardTitle>
-              <Button variant="ghost" size="sm" onClick={onToggleMinimize} aria-label={isMinimized ? "Expand Number Board" : "Minimize Number Board"}>
-                {isMinimized ? <PlusSquare className="h-5 w-5" /> : <MinusSquare className="h-5 w-5" />}
-              </Button>
             </CardHeader>
-            {!isMinimized && (
-              <CardContent className="p-3 pt-0">
-                <InfoText />
-                <Board />
-              </CardContent>
-            )}
+            <CardContent className="p-3 pt-0">
+              <InfoText />
+              <Board />
+            </CardContent>
           </Card>
     )
   }
