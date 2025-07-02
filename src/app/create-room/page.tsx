@@ -109,7 +109,7 @@ export default function CreateRoomSelectionPage() {
           </Card>
         ))}
       </div>
-      <div className="mt-12">
+      <div className="mt-12 w-full max-w-4xl">
         <Link href="/" passHref>
           <Button variant="outline">
             <Home className="mr-2 h-4 w-4" />
