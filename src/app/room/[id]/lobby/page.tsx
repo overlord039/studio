@@ -378,7 +378,9 @@ export default function LobbyPage() {
       <Card className="shadow-xl">
         <CardHeader className="p-3 md:p-4">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-xl md:text-3xl font-bold">Lobby: {roomData.id}</CardTitle>
+            <CardTitle className="text-xl md:text-3xl font-bold">
+              Lobby: <span className="text-accent">{roomData.id}</span>
+            </CardTitle>
             <Button
               variant="ghost"
               size="icon"
@@ -418,13 +420,13 @@ export default function LobbyPage() {
                 </CardTitle>
                 <CardDescription className="text-xs md:text-sm">Select how many tickets you want to buy for the next game.</CardDescription>
               </CardHeader>
-              <CardContent className="p-2 md:p-3 pt-0 flex flex-row items-center gap-2 md:gap-4">
+              <CardContent className="p-2 md:p-3 pt-0 flex items-center gap-2 md:gap-4">
                  <Select
                   value={String(selectedTicketsToBuy)}
                   onValueChange={(value) => setSelectedTicketsToBuy(Number(value))}
                   disabled={isJoiningOrUpdating}
                 >
-                  <SelectTrigger className="w-[180px] h-9 md:h-10 text-xs md:text-sm">
+                  <SelectTrigger className="w-auto sm:w-[180px] h-9 md:h-10 text-xs md:text-sm flex-1">
                     <SelectValue placeholder="Select tickets" />
                   </SelectTrigger>
                   <SelectContent>
