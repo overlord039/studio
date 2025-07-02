@@ -29,7 +29,7 @@ const MAX_TICKETS_PER_PLAYER = 4;
 export default function LobbyPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const params = React.use(useParams());
+  const params = useParams();
   const roomId = (params as { id: string }).id;
   const { currentUser, loading: authLoading } = useAuth();
   const searchParams = useSearchParams(); 
