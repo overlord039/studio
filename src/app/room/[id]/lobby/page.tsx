@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -387,7 +388,7 @@ export default function LobbyPage() {
       <Card className="shadow-xl">
         <CardHeader>
           <CardTitle className="text-2xl md:text-3xl font-bold">Lobby: {roomData.id}</CardTitle>
-          <CardDescription>
+          <CardDescription className="text-xs">
             {roomData.isGameStarted && !roomData.isGameOver ? "Game has started." : roomData.isGameOver ? "Game is over. The host can start a new game." : "Waiting for players. The host can start the game once conditions are met."}
           </CardDescription>
         </CardHeader>
@@ -575,5 +576,3 @@ export default function LobbyPage() {
     </div>
   );
 }
-
-    
