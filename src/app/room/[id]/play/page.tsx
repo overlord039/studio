@@ -12,7 +12,7 @@ import { PRIZE_TYPES } from '@/types';
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause } from 'lucide-react';
+import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause, Menu } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
@@ -34,6 +34,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 
 const MemoizedHousieTicket = React.memo(HousieTicket);
@@ -727,62 +734,61 @@ export default function GameRoomPage() {
         </div>
 
         <div className="space-y-4 lg:col-span-1">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full justify-start"><Award className="mr-2 h-5 w-5 text-primary" />Prize Info</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Prize Info</DialogTitle>
-              </DialogHeader>
-              {isLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading prize info...</p>
-                ) : (
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="w-full justify-start">
+                <Menu className="mr-2 h-5 w-5 text-primary" />
+                Game Info & Players
+              </Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>Game Info & Players</SheetTitle>
+              </SheetHeader>
+              <div className="py-4 space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-2 flex items-center"><Award className="mr-2 h-5 w-5 text-primary" />Prize Info</h3>
+                   {isLoading ? (
+                      <p className="text-sm text-muted-foreground">Loading prize info...</p>
+                  ) : (
                   <>
-                    <p className="text-sm text-muted-foreground">Potential prize money based on total tickets.</p>
-                    <ul className="space-y-1 mt-2 text-sm">
+                      <p className="text-sm text-muted-foreground">Potential prize money based on total tickets.</p>
+                      <ul className="space-y-1 mt-2 text-sm">
                       {prizesForFormat.map(prize => {
-                        const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
-                        const prizeAmount = (totalPrizePool * percentage) / 100;
-                        return (
+                          const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
+                          const prizeAmount = (totalPrizePool * percentage) / 100;
+                          return (
                           <li key={prize}>{prize}: ₹{prizeAmount.toFixed(2)} ({percentage}%)</li>
-                        );
+                          );
                       })}
-                    </ul>
+                      </ul>
                   </>
-                )}
-            </DialogContent>
-          </Dialog>
-
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full justify-start"><Users className="mr-2 h-5 w-5 text-primary" />Other Players ({otherPlayers.length})</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Other Players ({otherPlayers.length})</DialogTitle>
-              </DialogHeader>
-              {isLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading player list...</p>
-                ) : (
-                  <ScrollArea className="h-40">
-                    <ul className="space-y-1 mt-2 text-sm">
-                      {otherPlayers.map((player, index) => (
-                        <li key={player.id || index} className="flex justify-between items-center">
-                          <span>
-                            {player.name}
-                            {player.isHost && <span className="ml-2 text-xs font-semibold text-primary">(Host)</span>}
-                          </span>
-                          <span className="text-muted-foreground">{player.tickets?.length || 0} {ticketsText(player.tickets?.length || 0)}</span>
-                        </li>
-                      ))}
-                      {otherPlayers.length === 0 && <li className="text-muted-foreground">No other players in the room.</li>}
-                    </ul>
-                  </ScrollArea>
-                )}
-            </DialogContent>
-          </Dialog>
-
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-2 flex items-center"><Users className="mr-2 h-5 w-5 text-primary" />Other Players ({otherPlayers.length})</h3>
+                  {isLoading ? (
+                      <p className="text-sm text-muted-foreground">Loading player list...</p>
+                      ) : (
+                      <ScrollArea className="h-40">
+                          <ul className="space-y-1 mt-2 text-sm">
+                          {otherPlayers.map((player, index) => (
+                              <li key={player.id || index} className="flex justify-between items-center">
+                              <span>
+                                  {player.name}
+                                  {player.isHost && <span className="ml-2 text-xs font-semibold text-primary">(Host)</span>}
+                              </span>
+                              <span className="text-muted-foreground">{player.tickets?.length || 0} {ticketsText(player.tickets?.length || 0)}</span>
+                              </li>
+                          ))}
+                          {otherPlayers.length === 0 && <li className="text-muted-foreground">No other players in the room.</li>}
+                          </ul>
+                      </ScrollArea>
+                  )}
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
