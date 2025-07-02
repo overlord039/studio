@@ -1,4 +1,3 @@
-
 "use client";
 
 import { usePathname } from 'next/navigation';
@@ -13,7 +12,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
     // Check for pages that should have a custom layout (no header/footer).
     const isSpecialLayoutPage = 
       (pathname?.includes('/room/') && pathname.endsWith('/play')) || 
-      pathname === '/number-caller';
+      pathname?.startsWith('/number-caller');
 
     const mainClassName = cn(
         "flex-grow",
