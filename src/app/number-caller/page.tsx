@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Speaker, VolumeX, RotateCcw, Zap, Settings2, Play, Pause, X } from 'lucide-react';
+import { Speaker, VolumeX, RotateCcw, Zap, Settings2, Play, Pause, Home } from 'lucide-react';
 import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import LiveNumberBoard from '@/components/game/live-number-board';
@@ -159,8 +159,8 @@ export default function NumberCallerPage() {
           />
 
           <div className="flex w-full gap-2 pt-2">
-            <Button onClick={() => router.back()} variant="destructive" className="flex-1">
-                <X className="mr-2 h-4 w-4" /> Back
+            <Button onClick={() => router.push('/')} variant="destructive" className="flex-1">
+                <Home className="mr-2 h-4 w-4" /> Back to Home
             </Button>
             <Button onClick={resetGame} variant="outline" className="flex-1">
                 <RotateCcw className="mr-2 h-4 w-4" /> Reset
