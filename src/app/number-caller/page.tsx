@@ -5,10 +5,11 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Speaker, Play, Pause, RotateCcw, Volume2, VolumeX, Zap, Settings2, ArrowLeft } from 'lucide-react';
+import { Speaker, Play, Pause, RotateCcw, Zap, Settings2, ArrowLeft } from 'lucide-react';
 import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import LiveNumberBoard from '@/components/game/live-number-board';
+import CalledNumberDisplay from '@/components/game/called-number-display';
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const newArray = [...array];
@@ -51,7 +52,7 @@ export default function NumberCallerPage() {
     const nextNumber = availableNumbers[0]; // Get the first number from the shuffled list
     setAvailableNumbers(prev => prev.slice(1)); // Remove it from available
     setCurrentNumber(nextNumber);
-    setCalledNumbers(prev => [...prev, nextNumber].sort((a,b) => a-b)); // Add to called, keep sorted
+    setCalledNumbers(prev => [...prev, nextNumber]); // Add to called, keep in call order
     speakNumber(nextNumber);
     return nextNumber; // Return the called number
   }, [availableNumbers, speakNumber, toast]);
@@ -159,30 +160,15 @@ export default function NumberCallerPage() {
         </Card>
 
         <div className="md:col-span-2 space-y-3">
-            <Card className="shadow-lg bg-primary text-primary-foreground">
-                <CardContent className="p-3 text-center relative">
-                    <p className="text-xs md:text-sm uppercase tracking-wider mb-0.5">Last Called Number</p>
-                    {currentNumber !== null ? (
-                    <div className="flex items-center justify-center">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={toggleMute} 
-                          className="text-primary-foreground hover:bg-primary/80 h-8 w-8 mr-2"
-                          aria-label={isMuted ? "Unmute voice" : "Mute voice"}
-                        >
-                          {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-                        </Button>
-                        <p className="text-5xl md:text-7xl font-bold animate-fade-in">{currentNumber}</p>
-                    </div>
-                    ) : (
-                    <p className="text-3xl md:text-5xl font-semibold text-primary-foreground/70">-</p>
-                    )}
-                </CardContent>
-            </Card>
+            <CalledNumberDisplay
+                currentNumber={currentNumber}
+                calledNumbers={calledNumbers}
+                isMuted={isMuted}
+                onToggleMute={toggleMute}
+            />
             
             <LiveNumberBoard 
-                calledNumbers={calledNumbers} 
+                calledNumbers={calledNumbers.slice().sort((a,b) => a - b)}
                 currentNumber={currentNumber}
                 isMinimized={isBoardMinimized}
                 onToggleMinimize={() => setIsBoardMinimized(!isBoardMinimized)}
