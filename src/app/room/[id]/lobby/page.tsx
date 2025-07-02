@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -185,13 +184,6 @@ export default function LobbyPage() {
       toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
     } finally {
       setIsJoiningOrUpdating(false);
-    }
-  };
-
-  const handleCopyInviteLink = () => {
-    if (typeof window !== "undefined") {
-        navigator.clipboard.writeText(window.location.href);
-        toast({ title: "Invite Link Copied!", description: "Share it with your friends." });
     }
   };
 
@@ -419,9 +411,6 @@ export default function LobbyPage() {
                   <ClipboardCopy className="h-4 w-4" />
                 </Button>
               </div>
-              <Button onClick={handleCopyInviteLink} variant="outline">
-                <ClipboardCopy className="mr-2 h-4 w-4" /> Copy Invite Link
-              </Button>
               <Button onClick={handleLeaveRoom} variant="destructive">
                 <LogOut className="mr-2 h-4 w-4" /> Leave Room
               </Button>
