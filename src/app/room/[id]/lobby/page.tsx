@@ -376,23 +376,21 @@ export default function LobbyPage() {
 
 
   return (
-    <div className="p-2 md:p-4 space-y-4">
+    <div className="p-2 md:p-4 md:pt-2 space-y-2 md:space-y-4">
       <Card className="shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-2xl md:text-3xl font-bold">Lobby: {roomData.id}</CardTitle>
+        <CardHeader className="p-3 md:p-4">
+          <CardTitle className="text-xl md:text-3xl font-bold">Lobby: {roomData.id}</CardTitle>
           <CardDescription className="text-xs">
             {roomData.isGameStarted && !roomData.isGameOver ? "Game has started." : roomData.isGameOver ? "Game is over. The host can start a new game." : "Waiting for players. The host can start the game once conditions are met."}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="space-y-1">
+        <CardContent className="p-3 md:p-4 pt-0 space-y-3 md:space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 md:gap-4">
+            <div className="space-y-1 text-xs md:text-sm">
               <p><strong>Ticket Price:</strong> ₹{gameSettings.ticketPrice}</p>
               <p><strong>Max Players:</strong> {gameSettings.lobbySize}</p>
-              <p><strong>Prize Format:</strong> {gameSettings.prizeFormat}</p>
-              <p><strong>Default Tickets/Player:</strong> {gameSettings.numberOfTicketsPerPlayer}</p>
             </div>
-            <div className="flex flex-col items-stretch gap-3 w-full sm:max-w-xs">
+            <div className="flex flex-col items-stretch gap-2 md:gap-3 w-full sm:max-w-xs">
               <div className="flex items-center justify-between gap-2 p-2 border rounded-md bg-secondary/20">
                 <div className="flex items-baseline">
                   <span className="text-sm font-medium mr-1">Room ID:</span>
@@ -411,7 +409,7 @@ export default function LobbyPage() {
                   <ClipboardCopy className="h-4 w-4" />
                 </Button>
               </div>
-              <Button onClick={handleLeaveRoom} variant="destructive">
+              <Button onClick={handleLeaveRoom} variant="destructive" size="sm">
                 <LogOut className="mr-2 h-4 w-4" /> Leave Room
               </Button>
             </div>
@@ -419,20 +417,20 @@ export default function LobbyPage() {
 
           {showTicketSelectionUI && !roomData.isGameOver && (
             <Card className="bg-secondary/20">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
+              <CardHeader className="p-2 md:p-3 pb-2">
+                <CardTitle className="text-base md:text-lg flex items-center">
                     <Ticket className="mr-2 h-5 w-5 text-primary"/>
                     {cardTitleForTickets}
                 </CardTitle>
-                <CardDescription>Select how many tickets you want to buy for the next game.</CardDescription>
+                <CardDescription className="text-xs md:text-sm">Select how many tickets you want to buy for the next game.</CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-col sm:flex-row items-center gap-4">
+              <CardContent className="p-2 md:p-3 pt-0 flex flex-col sm:flex-row items-center gap-2 md:gap-4">
                  <Select
                   value={String(selectedTicketsToBuy)}
                   onValueChange={(value) => setSelectedTicketsToBuy(Number(value))}
                   disabled={isJoiningOrUpdating}
                 >
-                  <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectTrigger className="w-full sm:w-[180px] h-9 md:h-10 text-xs md:text-sm">
                     <SelectValue placeholder="Select tickets" />
                   </SelectTrigger>
                   <SelectContent>
@@ -443,7 +441,7 @@ export default function LobbyPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button onClick={handleConfirmOrJoinTickets} className="w-full sm:w-auto" disabled={isJoiningOrUpdating}>
+                <Button onClick={handleConfirmOrJoinTickets} className="w-full sm:w-auto text-xs md:text-sm h-9 md:h-10" disabled={isJoiningOrUpdating}>
                   {isJoiningOrUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   {buttonTextForConfirm}
                 </Button>
@@ -453,18 +451,18 @@ export default function LobbyPage() {
 
           {!showTicketSelectionUI && doesCurrentUserHaveTickets && !roomData.isGameStarted && !roomData.isGameOver && (
             <Card className="bg-secondary/20">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
+              <CardHeader className="p-2 md:p-3 pb-2">
+                <CardTitle className="text-base md:text-lg flex items-center">
                   <Ticket className="mr-2 h-5 w-5 text-primary"/>
                   Your Confirmed Tickets
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p className="font-medium">
+              <CardContent className="p-2 md:p-3 pt-0 flex flex-col sm:flex-row items-center justify-between gap-2 md:gap-4">
+                <p className="font-medium text-xs md:text-sm">
                   You have {currentUserInRoom?.tickets.length} {ticketsText(currentUserInRoom?.tickets.length ?? 0)} confirmed.
                   {!isCurrentUserHost && " Waiting for host..."}
                 </p>
-                <Button onClick={() => setIsEditingTickets(true)} variant="outline">
+                <Button onClick={() => setIsEditingTickets(true)} variant="outline" size="sm">
                   <Edit className="mr-2 h-4 w-4" />
                   Change Tickets
                 </Button>
@@ -473,10 +471,10 @@ export default function LobbyPage() {
           )}
 
           <div>
-            <h3 className="text-lg md:text-xl font-semibold mb-2 flex items-center">
+            <h3 className="text-base md:text-xl font-semibold mb-2 flex items-center">
               <Users className="mr-2 h-5 w-5 text-primary" /> Players ({roomData.players.length}/{gameSettings.lobbySize})
             </h3>
-            <ul className="space-y-2 rounded-md border p-4 max-h-60 overflow-y-auto">
+            <ul className="space-y-2 rounded-md border p-2 md:p-4 max-h-40 md:max-h-60 overflow-y-auto text-xs md:text-sm">
               {roomData.players.map(player => (
                 <li key={player.id} className="flex justify-between items-center p-2 bg-secondary/30 rounded">
                   <span>
@@ -492,12 +490,12 @@ export default function LobbyPage() {
           </div>
           
            <div>
-            <h3 className="text-lg md:text-xl font-semibold mb-2 flex items-center">
+            <h3 className="text-base md:text-xl font-semibold mb-2 flex items-center">
                 <Gift className="mr-2 h-5 w-5 text-primary" /> Prize Distribution
             </h3>
             <Card className="bg-secondary/30">
-              <CardContent className="p-4 space-y-2">
-                 <p className="text-sm font-semibold">Potential Prize Pool: ₹{currentTotalPrizePool.toFixed(2)}</p>
+              <CardContent className="p-2 md:p-4 space-y-2 text-xs md:text-sm">
+                 <p className="font-semibold">Potential Prize Pool: ₹{currentTotalPrizePool.toFixed(2)}</p>
                  <p className="text-xs text-muted-foreground">
                    (Based on {totalTicketsBoughtByPlayers} {ticketsText(totalTicketsBoughtByPlayers)} confirmed by players for this round)
                  </p>
@@ -505,7 +503,7 @@ export default function LobbyPage() {
                   const percentage = prizeDistribution[prizeName as PrizeType] || 0;
                   const prizeAmount = (currentTotalPrizePool * percentage) / 100;
                   return (
-                    <div key={prizeName} className="flex justify-between items-center text-sm">
+                    <div key={prizeName} className="flex justify-between items-center text-xs md:text-sm">
                       <span>{prizeName}:</span>
                       <span className="font-semibold">₹{prizeAmount.toFixed(2)} ({percentage}%)</span>
                     </div>
@@ -518,7 +516,7 @@ export default function LobbyPage() {
           {isCurrentUserHost && !roomData.isGameStarted && !roomData.isGameOver &&(
             <Button 
                 onClick={handleStartGame} 
-                className="w-full mt-4" 
+                className="w-full mt-2 md:mt-4 h-10 md:h-12 text-sm md:text-base" 
                 disabled={ 
                     isJoiningOrUpdating || 
                     roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart || 
@@ -531,7 +529,7 @@ export default function LobbyPage() {
 
           {isCurrentUserHost && !roomData.isGameStarted && !roomData.isGameOver &&
             (roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart || !doesCurrentUserHaveTickets) && (
-            <p className="text-center text-sm text-destructive mt-2">
+            <p className="text-center text-xs md:text-sm text-destructive mt-2">
               {!doesCurrentUserHaveTickets ? "Host must confirm their tickets first. " : ""}
               {roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart && doesCurrentUserHaveTickets && `At least ${minPlayersToStart} player(s) must have tickets. `}
             </p>
@@ -540,23 +538,23 @@ export default function LobbyPage() {
           {roomData.isGameStarted && !roomData.isGameOver && (
              <Button 
                 onClick={handleGoToGame} 
-                className="w-full mt-4"
+                className="w-full mt-2 md:mt-4 h-10 md:h-12"
               >
               <Play className="mr-2 h-5 w-5" /> Go to Game / Spectate
             </Button>
           )}
 
           {roomData.isGameOver && isCurrentUserHost && (
-            <Button onClick={handleResetGame} className="w-full mt-4" disabled={isResetting}>
+            <Button onClick={handleResetGame} className="w-full mt-2 md:mt-4 h-10 md:h-12" disabled={isResetting}>
               {isResetting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <RotateCcw className="mr-2 h-5 w-5" />}
               {isResetting ? "Resetting Lobby..." : "Start New Game"}
             </Button>
           )}
 
           {roomData.isGameOver && !isCurrentUserHost && (
-            <div className="text-center mt-4 p-4 bg-secondary/40 rounded-md">
-              <p className="font-semibold">Game Over!</p>
-              <p className="text-muted-foreground">Waiting for the host to start a new game.</p>
+            <div className="text-center mt-2 md:mt-4 p-2 md:p-4 bg-secondary/40 rounded-md">
+              <p className="font-semibold text-sm md:text-base">Game Over!</p>
+              <p className="text-muted-foreground text-xs md:text-sm">Waiting for the host to start a new game.</p>
             </div>
           )}
 
