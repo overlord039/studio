@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -551,9 +550,6 @@ export default function GameRoomPage() {
               </ul>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 mt-6">
-              <Button variant="outline" className="w-full" size="lg" onClick={handleLeaveRoom}>
-                <LogOut className="mr-2 h-5 w-5" /> Leave
-              </Button>
               <Button onClick={handlePlayAgain} className="w-full" size="lg" disabled={isResetting}>
                 {isResetting ? (
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -561,6 +557,9 @@ export default function GameRoomPage() {
                   <RotateCcw className="mr-2 h-5 w-5" />
                 )}
                 {isResetting ? "Returning to Lobby..." : "To Lobby"}
+              </Button>
+              <Button variant="outline" className="w-full" size="lg" onClick={handleLeaveRoom}>
+                <LogOut className="mr-2 h-5 w-5" /> Leave
               </Button>
             </div>
           </CardContent>
