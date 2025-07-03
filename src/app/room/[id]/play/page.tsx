@@ -66,7 +66,7 @@ export default function GameRoomPage() {
   const [gameMessage, setGameMessage] = useState<string | null>(null);
   const [isCallingNextNumber, setIsCallingNextNumber] = useState(false);
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
-  const [isResetting, setIsResetting] = useState(isResetting);
+  const [isResetting, setIsResetting] = useState(false);
 
   const previousCurrentNumberRef = useRef<number | null>(null);
   const roomDataRef = useRef(roomData);
@@ -556,10 +556,10 @@ export default function GameRoomPage() {
                 ) : (
                   <RotateCcw className="mr-2 h-5 w-5" />
                 )}
-                {isResetting ? "Returning to Lobby..." : "To Lobby"}
+                {isResetting ? "Returning to Lobby..." : "Start New Game in Lobby"}
               </Button>
-              <Button variant="destructive" className="w-full" size="lg" onClick={handleLeaveRoom}>
-                <LogOut className="mr-2 h-5 w-5" /> Leave
+              <Button variant="outline" className="w-full" size="lg" onClick={handleLeaveRoom}>
+                <LogOut className="mr-2 h-5 w-5" /> Leave Room
               </Button>
             </div>
           </CardContent>
@@ -830,5 +830,3 @@ export default function GameRoomPage() {
     </div>
   );
 }
-
-    
