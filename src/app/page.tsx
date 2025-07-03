@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -65,9 +64,9 @@ export default function HomePage() {
          <Image 
             src="/applogo.png" 
             alt="HousieHub Logo" 
-            width={250} 
-            height={250} 
-            className="h-auto w-[150px] md:w-[250px]"
+            width={300} 
+            height={300} 
+            className="h-auto w-[200px] md:w-[300px]"
             priority 
           />
       </section>
