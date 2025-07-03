@@ -286,22 +286,13 @@ export default function GameRoomPage() {
 
       const result = await response.json();
 
-      if (!response.ok) {
-         playSound('game notification.wav');
-         setGameMessage(prev => {
-            if (roomDataRef.current && !roomDataRef.current.isGameOver && result.message) {
-                return (!prev || !prev.includes("Game Over!")) ? result.message : prev;
-            }
-            return prev;
-        });
-        toast({ title: `${prizeType} Claim Invalid!`, description: result.message, variant: "destructive" });
-      } else {
+      if (response.ok) {
         const updatedRoom: Room = result;
-        setRoomData(updatedRoom); 
+        setRoomData(updatedRoom);
         previousPrizeStatusRef.current = updatedRoom.prizeStatus;
 
         const claimStatus = updatedRoom.prizeStatus[prizeType];
-        
+
         let toastMessageAlert = `Your claim for ${prizeType} has been submitted for validation.`;
         if (claimStatus?.claimedBy.includes(currentUser.username)) {
             toastMessageAlert = `You successfully claimed ${prizeType}!`;
@@ -310,7 +301,7 @@ export default function GameRoomPage() {
         if (updatedRoom.isGameOver) {
           toastMessageAlert = `You claimed Full House! Game Over.`
         }
-        
+
         toast({
             title: "Claim Processed!",
             description: toastMessageAlert,
@@ -821,3 +812,5 @@ export default function GameRoomPage() {
     </div>
   );
 }
+
+    
