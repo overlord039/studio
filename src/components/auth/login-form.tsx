@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ArrowLeft } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -58,10 +59,22 @@ export default function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md shadow-xl">
+    <Card className="w-full max-w-md shadow-xl relative">
       <CardHeader>
-        <CardTitle className="text-3xl font-bold">Login</CardTitle>
-        <CardDescription>Access your HousieHub account.</CardDescription>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-4 left-4 h-8 w-8 rounded-full"
+          onClick={() => router.back()}
+          aria-label="Go back"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          <span className="sr-only">Go back</span>
+        </Button>
+        <div className="text-center pt-8">
+            <CardTitle className="text-3xl font-bold">Login</CardTitle>
+            <CardDescription>Access your HousieHub account.</CardDescription>
+        </div>
       </CardHeader>
       <CardContent>
         <Form {...form}>
