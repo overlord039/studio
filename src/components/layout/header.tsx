@@ -329,10 +329,10 @@ export default function Header() {
       return (
         <div className="flex items-center gap-2">
           <Link href="/auth/login" passHref>
-            <Button variant="secondary" size="sm">Login</Button>
+            <Button variant="ghost" size="sm" className="text-white">Login</Button>
           </Link>
           <Link href="/auth/register" passHref>
-            <Button variant="ghost" size="sm">Register</Button>
+            <Button variant="ghost" size="sm" className="text-white">Register</Button>
           </Link>
         </div>
       );
@@ -341,7 +341,7 @@ export default function Header() {
     return (
         <Link href="/profile" passHref>
           <Button variant="ghost" className="relative p-0 h-10 w-10 rounded-full">
-            <Avatar className="h-10 w-10 border-2 border-primary-foreground/50">
+            <Avatar className="h-10 w-10 border-2 border-primary">
               <AvatarImage 
                 src={`https://placehold.co/32x32.png?text=${currentUser.username.substring(0, 2).toUpperCase()}`} 
                 alt={currentUser.username} 
@@ -356,7 +356,7 @@ export default function Header() {
 
   return (
     <header className={cn(
-      "bg-primary text-primary-foreground shadow-md sticky top-0 z-50 transition-transform duration-300 ease-in-out",
+      "sticky top-0 z-50 transition-transform duration-300 ease-in-out",
       isHidden && "-translate-y-full"
     )}>
       <div className="container mx-auto px-4 py-2 flex justify-between items-center">
@@ -367,7 +367,7 @@ export default function Header() {
         <nav className="flex items-center">
           <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80 h-10 w-10">
+              <Button variant="ghost" size="icon" className="text-white h-10 w-10">
                 <Settings className="h-6 w-6" />
                 <span className="sr-only">Settings</span>
               </Button>
