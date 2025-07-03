@@ -366,8 +366,8 @@ export default function Header() {
         <nav className="flex items-center">
           <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-white h-12 w-12 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0">
-                <Settings className="h-8 w-8" />
+              <Button variant="ghost" size="icon" className="text-white h-10 w-10 hover:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0">
+                <Settings className="h-7 w-7" />
                 <span className="sr-only">Settings</span>
               </Button>
             </DialogTrigger>
