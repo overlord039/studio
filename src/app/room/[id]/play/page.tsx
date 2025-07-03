@@ -569,6 +569,9 @@ export default function GameRoomPage() {
   }
 
   const isAutoCalling = roomData.settings.callingMode === 'auto';
+  const ticketClassName = myTickets.length >= 3 
+    ? "w-full max-w-[18rem] text-xs" 
+    : "w-full max-w-sm text-base";
 
   return (
     <div className="container mx-auto p-4 space-y-4">
@@ -805,7 +808,7 @@ export default function GameRoomPage() {
                     calledNumbers={roomData.calledNumbers}
                     markedNumbers={markedNumbers}
                     onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
-                    className="w-full max-w-[18rem] text-xs"
+                    className={ticketClassName}
                   />
                 ))}
               </div>
