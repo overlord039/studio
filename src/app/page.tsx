@@ -58,7 +58,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex-grow flex flex-col items-center space-y-2 p-4 pt-2">
+    <div className="flex-grow flex flex-col items-center space-y-2 p-2">
       {/* Hero Section */}
       <section className="flex justify-center w-full">
          <Image 
@@ -81,19 +81,19 @@ export default function HomePage() {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCreateRoom() }}
           >
-            <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-              <UsersRound className="h-12 w-12 mb-3" />
-              <p className="text-xl font-bold">Create Multiplayer Room</p>
+            <CardContent className="flex flex-col items-center justify-center p-4 text-center">
+              <UsersRound className="h-10 w-10 mb-2" />
+              <p className="text-lg font-bold">Create Multiplayer Room</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-card text-card-foreground p-6 rounded-2xl shadow-lg">
-              <CardHeader className="p-0 mb-4 flex-row items-center justify-center gap-3">
-                <KeyRound className="h-10 w-10 text-accent" />
-                <CardTitle className="text-xl font-bold m-0 p-0">Join Room</CardTitle>
+          <Card className="bg-card text-card-foreground p-4 rounded-2xl shadow-lg">
+              <CardHeader className="p-0 mb-3 flex-row items-center justify-center gap-3">
+                <KeyRound className="h-8 w-8 text-accent" />
+                <CardTitle className="text-lg font-bold m-0 p-0">Join Room</CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <p className="text-sm text-muted-foreground mb-4 text-center">Enter a Room ID to join.</p>
+                <p className="text-sm text-muted-foreground mb-3 text-center">Enter a Room ID to join.</p>
                 <div className="flex w-full items-center space-x-2">
                   <Input
                     type="text"
@@ -120,9 +120,9 @@ export default function HomePage() {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push('/number-caller') }}
           >
-            <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-              <Speaker className="h-12 w-12 mb-3" />
-              <p className="text-xl font-bold">Number Caller</p>
+            <CardContent className="flex flex-col items-center justify-center p-4 text-center">
+              <Speaker className="h-10 w-10 mb-2" />
+              <p className="text-lg font-bold">Number Caller</p>
             </CardContent>
           </Card>
 
@@ -133,9 +133,9 @@ export default function HomePage() {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push('/prize-calculator') }}
           >
-            <CardContent className="flex flex-col items-center justify-center p-6 text-center">
-              <Calculator className="h-12 w-12 mb-3" />
-              <p className="text-xl font-bold">Prize Calculator</p>
+            <CardContent className="flex flex-col items-center justify-center p-4 text-center">
+              <Calculator className="h-10 w-10 mb-2" />
+              <p className="text-lg font-bold">Prize Calculator</p>
             </CardContent>
           </Card>
         </section>
