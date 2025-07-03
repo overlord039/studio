@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
 
 // Mock data - replace with actual data fetching for a logged-in user
 const userStats = {
@@ -60,6 +61,7 @@ export default function ProfilePage() {
     );
   }
 
+  const isGuest = currentUser.email.endsWith('@guest.com');
   const avatarFallback = currentUser.username.substring(0, 2).toUpperCase();
   const joinDateFormatted = new Date(userStats.joinDate).toLocaleDateString('en-GB', {
     day: '2-digit',
@@ -89,6 +91,7 @@ export default function ProfilePage() {
                     </Avatar>
                     <div className="space-y-1">
                         <h1 className="text-3xl sm:text-4xl font-bold">{currentUser.username}</h1>
+                        {isGuest && <Badge variant="secondary">Guest Account</Badge>}
                     </div>
                 </div>
             </div>
