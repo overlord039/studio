@@ -175,7 +175,7 @@ export default function GameRoomPage() {
         const fhClaim = data.prizeStatus[PRIZE_TYPES.FULL_HOUSE];
         let gameOverMsg = "🎉 Game Over!";
         if (fhClaim && fhClaim.claimedBy.length > 0) {
-          const winnerNames = fhClaim.claimedBy.map(winnerId => data.players.find(p => p.id === winnerId)?.name || winnerId).join(' &amp; ');
+          const winnerNames = fhClaim.claimedBy.map(winnerId => data.players.find(p => p.id === winnerId)?.name || winnerId).join(' & ');
           gameOverMsg = `🎉 ${winnerNames} won Full House! Game Over!`;
           if (fhClaim.timestamp) {
             const claimTimestamp = typeof fhClaim.timestamp === 'string' ? new Date(fhClaim.timestamp) : fhClaim.timestamp;
@@ -581,7 +581,21 @@ export default function GameRoomPage() {
             <div className="text-white">Room ID: #{roomId} | Prize Pool: ₹{totalPrizePool.toFixed(2)} | Players: {roomData.players.length}</div>
             <div className="font-semibold text-white">{currentUser.username} ({myTickets.length} {ticketsText(myTickets.length)})</div>
           </div>
-           <div className="flex-shrink-0">
+           <div className="flex-shrink-0 flex items-center gap-2">
+            {isCurrentUserHost && !roomData.settings.isPublic && !roomData.isGameOver && (
+              <div className="flex items-center gap-1.5 p-1 rounded-md border bg-card/80 backdrop-blur-sm">
+                  <Label htmlFor="calling-mode-switch" className="text-xs font-medium text-foreground pl-1 cursor-pointer">
+                      Auto-Call
+                  </Label>
+                  <Switch
+                      id="calling-mode-switch"
+                      checked={isAutoCalling}
+                      onCheckedChange={handleToggleCallingMode}
+                      disabled={isUpdatingMode || roomData.isGameOver}
+                      aria-label="Toggle automatic number calling"
+                  />
+              </div>
+            )}
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" size="icon" aria-label="Game Info &amp; Players">
@@ -592,13 +606,13 @@ export default function GameRoomPage() {
                 <SheetHeader className="text-center border-b pb-2">
                     <SheetTitle className="text-base">Game Info &amp; Players</SheetTitle>
                 </SheetHeader>
-                <div className="py-2 space-y-2 flex-grow overflow-y-auto">
+                <div className="py-2 space-y-4 flex-grow overflow-y-auto">
                     <Card className="bg-secondary/30">
-                        <CardHeader className="pb-2">
+                        <CardHeader className="p-3 pb-2">
                             <CardTitle className="text-sm font-semibold flex items-center"><Award className="mr-2 h-4 w-4 text-primary" />Prize Pool</CardTitle>
                             <p className="text-xs text-muted-foreground">Total: ₹{totalPrizePool.toFixed(2)}</p>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-3 pt-0">
                             {isLoading ? (
                                 <p className="text-xs text-muted-foreground">Loading prize info...</p>
                             ) : (
@@ -619,10 +633,10 @@ export default function GameRoomPage() {
                     </Card>
 
                     <Card className="bg-secondary/30">
-                        <CardHeader className="pb-2">
+                        <CardHeader className="p-3 pb-2">
                             <CardTitle className="text-sm font-semibold flex items-center"><Users className="mr-2 h-4 w-4 text-primary" />Players ({roomData.players.length})</CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-3 pt-0">
                             {isLoading ? (
                                 <p className="text-xs text-muted-foreground">Loading player list...</p>
                             ) : (
@@ -676,29 +690,6 @@ export default function GameRoomPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="space-y-4 lg:col-span-1">
-          
-          {isCurrentUserHost && !roomData.settings.isPublic && !roomData.isGameOver && (
-            <Card>
-              <CardContent className="p-3">
-                  <div className="flex items-center justify-between rounded-md border p-3">
-                      <Label htmlFor="calling-mode-switch" className="flex flex-col cursor-pointer">
-                          <span className="font-semibold">Auto-Call</span>
-                          <span className="text-xs text-muted-foreground">
-                              {isAutoCalling ? "System is calling" : "Paused, call manually"}
-                          </span>
-                      </Label>
-                      <Switch
-                          id="calling-mode-switch"
-                          checked={isAutoCalling}
-                          onCheckedChange={handleToggleCallingMode}
-                          disabled={isUpdatingMode || roomData.isGameOver}
-                          aria-label="Toggle automatic number calling"
-                      />
-                  </div>
-              </CardContent>
-            </Card>
-          )}
-
           <MemoizedCalledNumberDisplay 
             currentNumber={roomData.currentNumber}
             calledNumbers={roomData.calledNumbers}
