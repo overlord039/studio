@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -549,7 +550,7 @@ export default function GameRoomPage() {
                 })}
               </ul>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 mt-6">
+            <div className="flex flex-row gap-4 mt-6">
               <Button onClick={handlePlayAgain} className="w-full" size="lg" disabled={isResetting}>
                 {isResetting ? (
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
