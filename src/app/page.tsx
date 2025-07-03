@@ -58,7 +58,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex-grow flex flex-col items-center justify-center space-y-4 p-4">
+    <div className="flex-grow flex flex-col items-center space-y-4 p-4">
       {/* Hero Section */}
       <section className="flex justify-center w-full">
          <Image 
