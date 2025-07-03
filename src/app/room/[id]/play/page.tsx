@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -551,16 +550,16 @@ export default function GameRoomPage() {
               </ul>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 mt-6">
+              <Button variant="outline" className="w-full" size="lg" onClick={handleLeaveRoom}>
+                <LogOut className="mr-2 h-5 w-5" /> Leave Room
+              </Button>
               <Button onClick={handlePlayAgain} className="w-full" size="lg" disabled={isResetting}>
                 {isResetting ? (
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 ) : (
                   <RotateCcw className="mr-2 h-5 w-5" />
                 )}
-                {isResetting ? "Resetting..." : (isCurrentUserHost ? "Start New Game in Lobby" : "Back to Lobby")}
-              </Button>
-              <Button variant="outline" className="w-full" size="lg" onClick={handleLeaveRoom}>
-                <LogOut className="mr-2 h-5 w-5" /> Leave Room
+                {isResetting ? "Returning to Lobby..." : "To Lobby"}
               </Button>
             </div>
           </CardContent>
@@ -574,7 +573,7 @@ export default function GameRoomPage() {
   return (
     <div className="container mx-auto p-4 space-y-4">
       <Card>
-        <CardContent className="p-2 sm:p-3 flex flex-row justify-between items-center text-sm gap-3">
+        <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
           <div className="flex-grow">
             <div>Room ID: #{roomId} | Prize Pool: ₹{totalPrizePool.toFixed(2)} | Players: {roomData.players.length}</div>
             <div className="font-semibold text-primary">{currentUser.username} ({myTickets.length} {ticketsText(myTickets.length)})</div>
