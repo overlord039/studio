@@ -554,7 +554,7 @@ export default function LobbyPage() {
                 </p>
                 <Button onClick={() => setIsEditingTickets(true)} variant="outline" className="text-xs md:text-sm h-9 md:h-10">
                   <Edit className="mr-2 h-4 w-4" />
-                  Change Tickets
+                  Edit
                 </Button>
               </CardContent>
             </Card>
