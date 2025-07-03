@@ -322,17 +322,17 @@ export default function Header() {
 
   const AuthContent = () => {
     if (loading) {
-      return <Skeleton className="h-10 w-24 rounded-md" />;
+      return <Skeleton className="h-10 w-10 rounded-full" />;
     }
 
     if (!currentUser) {
       return (
         <div className="flex items-center gap-2">
           <Link href="/auth/login" passHref>
-            <Button variant="secondary">Login</Button>
+            <Button variant="secondary" size="sm">Login</Button>
           </Link>
           <Link href="/auth/register" passHref>
-            <Button variant="ghost">Register</Button>
+            <Button variant="ghost" size="sm">Register</Button>
           </Link>
         </div>
       );
@@ -340,8 +340,8 @@ export default function Header() {
     
     return (
         <Link href="/profile" passHref>
-          <Button variant="secondary" className="relative p-0 h-10 w-10 rounded-full border-2 border-black">
-            <Avatar className="h-10 w-10">
+          <Button variant="ghost" className="relative p-0 h-10 w-10 rounded-full">
+            <Avatar className="h-10 w-10 border-2 border-primary-foreground/50">
               <AvatarImage 
                 src={`https://placehold.co/32x32.png?text=${currentUser.username.substring(0, 2).toUpperCase()}`} 
                 alt={currentUser.username} 
@@ -359,17 +359,16 @@ export default function Header() {
       "bg-primary text-primary-foreground shadow-md sticky top-0 z-50 transition-transform duration-300 ease-in-out",
       isHidden && "-translate-y-full"
     )}>
-      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <Link href="/" className="text-2xl font-bold tracking-tight">
-          HousieHub
-        </Link>
-        <nav className="flex items-center space-x-2 md:space-x-3">
+      <div className="container mx-auto px-4 py-2 flex justify-between items-center">
+        <div className="flex items-center">
           <AuthContent />
-
+        </div>
+        
+        <nav className="flex items-center">
           <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
             <DialogTrigger asChild>
               <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80 h-10 w-10">
-                <Settings className="h-7 w-7" />
+                <Settings className="h-6 w-6" />
                 <span className="sr-only">Settings</span>
               </Button>
             </DialogTrigger>
@@ -380,6 +379,3 @@ export default function Header() {
     </header>
   );
 }
-    
-
-    
