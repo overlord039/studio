@@ -549,17 +549,17 @@ export default function GameRoomPage() {
                 })}
               </ul>
             </div>
-            <div className="flex gap-4 mt-6">
+            <div className="flex flex-col sm:flex-row gap-4 mt-6">
               <Button onClick={handlePlayAgain} className="w-full" size="lg" disabled={isResetting}>
                 {isResetting ? (
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 ) : (
                   <RotateCcw className="mr-2 h-5 w-5" />
                 )}
-                {isResetting ? "Returning to Lobby..." : "Start New Game in Lobby"}
+                {isResetting ? "Returning to Lobby..." : "To Lobby"}
               </Button>
-              <Button variant="outline" className="w-full" size="lg" onClick={handleLeaveRoom}>
-                <LogOut className="mr-2 h-5 w-5" /> Leave Room
+              <Button variant="destructive" className="w-full" size="lg" onClick={handleLeaveRoom}>
+                <LogOut className="mr-2 h-5 w-5" /> Leave
               </Button>
             </div>
           </CardContent>
@@ -569,7 +569,7 @@ export default function GameRoomPage() {
   }
 
   const isAutoCalling = roomData.settings.callingMode === 'auto';
-  const ticketClassName = myTickets.length >= 3 
+  const ticketClassName = myTickets.length > 2 
     ? "w-full max-w-[18rem] text-xs" 
     : "w-full max-w-sm text-base";
 
@@ -589,10 +589,10 @@ export default function GameRoomPage() {
                 </Button>
               </SheetTrigger>
               <SheetContent className="flex flex-col bg-card/90 backdrop-blur-sm border-primary/20">
-                <SheetHeader className="text-center border-b pb-4">
+                <SheetHeader className="text-center border-b pb-2">
                     <SheetTitle className="text-base">Game Info &amp; Players</SheetTitle>
                 </SheetHeader>
-                <div className="py-4 space-y-4 flex-grow overflow-y-auto">
+                <div className="py-2 space-y-2 flex-grow overflow-y-auto">
                     <Card className="bg-secondary/30">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-semibold flex items-center"><Award className="mr-2 h-4 w-4 text-primary" />Prize Pool</CardTitle>
@@ -645,7 +645,7 @@ export default function GameRoomPage() {
                     </Card>
 
                 </div>
-                <div className="border-t pt-4">
+                <div className="border-t pt-2">
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="destructive" className="w-full" size="sm">
