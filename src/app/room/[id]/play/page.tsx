@@ -499,7 +499,7 @@ export default function GameRoomPage() {
     }
 
     return (
-      <div className="p-2 md:p-4 space-y-6 flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
+      <div className="flex-grow p-4 flex flex-col items-center justify-center">
         <Card className="w-full max-w-2xl shadow-xl">
           <CardHeader className="text-center">
             <CardTitle className="text-4xl font-bold flex items-center justify-center">
@@ -572,8 +572,8 @@ export default function GameRoomPage() {
   const isAutoCalling = roomData.settings.callingMode === 'auto';
 
   return (
-    <div className="container mx-auto my-4 p-4 space-y-4">
-      <Card className="shadow-md">
+    <div className="container mx-auto p-4 space-y-4">
+      <Card>
         <CardContent className="p-2 sm:p-3 flex flex-row justify-between items-center text-sm gap-3">
           <div className="flex-grow">
             <div>Room ID: #{roomId} | Prize Pool: ₹{totalPrizePool.toFixed(2)} | Players: {roomData.players.length}</div>
