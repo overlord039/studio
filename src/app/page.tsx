@@ -58,9 +58,9 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex-grow flex flex-col items-center space-y-6 p-4">
+    <div className="flex-grow flex flex-col items-center justify-center space-y-4 p-4">
       {/* Hero Section */}
-      <section className="flex justify-center w-full py-4">
+      <section className="flex justify-center w-full">
          <Image 
             src="/applogo.png" 
             alt="HousieHub Logo" 
@@ -72,8 +72,8 @@ export default function HomePage() {
       </section>
 
       {/* Action Buttons */}
-      <div className="w-full max-w-3xl space-y-6">
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="w-full max-w-3xl space-y-4">
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card 
             className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
             onClick={handleCreateRoom}
@@ -112,7 +112,7 @@ export default function HomePage() {
           </Card>
         </section>
         
-        <section className="grid grid-cols-2 gap-6">
+        <section className="grid grid-cols-2 gap-4">
           <Card 
             className="bg-accent text-accent-foreground hover:bg-accent/90 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
             onClick={() => router.push('/number-caller')}
