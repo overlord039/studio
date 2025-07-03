@@ -24,7 +24,7 @@ export default function SplashScreen() {
         setShowSplash(false);
         sessionStorage.setItem('splashShown', 'true');
       }, 500);
-    }, 2500); // Splash screen duration
+    }, 5000); // Splash screen duration
 
     return () => clearTimeout(timer);
   }, []);
