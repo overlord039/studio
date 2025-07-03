@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -551,7 +552,7 @@ export default function GameRoomPage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-4 mt-6">
               <Button variant="outline" className="w-full" size="lg" onClick={handleLeaveRoom}>
-                <LogOut className="mr-2 h-5 w-5" /> Leave Room
+                <LogOut className="mr-2 h-5 w-5" /> Leave
               </Button>
               <Button onClick={handlePlayAgain} className="w-full" size="lg" disabled={isResetting}>
                 {isResetting ? (
@@ -572,7 +573,7 @@ export default function GameRoomPage() {
 
   return (
     <div className="container mx-auto p-4 space-y-4">
-      <Card>
+      <Card className="shadow-none border-none bg-transparent">
         <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
           <div className="flex-grow">
             <div>Room ID: #{roomId} | Prize Pool: ₹{totalPrizePool.toFixed(2)} | Players: {roomData.players.length}</div>
