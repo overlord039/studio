@@ -66,7 +66,7 @@ export default function GameRoomPage() {
   const [gameMessage, setGameMessage] = useState<string | null>(null);
   const [isCallingNextNumber, setIsCallingNextNumber] = useState(false);
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
+  const [isResetting, setIsResetting] = useState(isResetting);
 
   const previousCurrentNumberRef = useRef<number | null>(null);
   const roomDataRef = useRef(roomData);
@@ -590,12 +590,12 @@ export default function GameRoomPage() {
               </SheetTrigger>
               <SheetContent className="flex flex-col bg-card/90 backdrop-blur-sm border-primary/20">
                 <SheetHeader className="text-center border-b pb-4">
-                    <SheetTitle className="text-lg">Game Info &amp; Players</SheetTitle>
+                    <SheetTitle className="text-base">Game Info &amp; Players</SheetTitle>
                 </SheetHeader>
                 <div className="py-4 space-y-4 flex-grow overflow-y-auto">
                     <Card className="bg-secondary/30">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-base font-semibold flex items-center"><Award className="mr-2 h-4 w-4 text-primary" />Prize Pool</CardTitle>
+                            <CardTitle className="text-sm font-semibold flex items-center"><Award className="mr-2 h-4 w-4 text-primary" />Prize Pool</CardTitle>
                             <p className="text-xs text-muted-foreground">Total: ₹{totalPrizePool.toFixed(2)}</p>
                         </CardHeader>
                         <CardContent>
@@ -620,7 +620,7 @@ export default function GameRoomPage() {
 
                     <Card className="bg-secondary/30">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-base font-semibold flex items-center"><Users className="mr-2 h-4 w-4 text-primary" />Players ({roomData.players.length})</CardTitle>
+                            <CardTitle className="text-sm font-semibold flex items-center"><Users className="mr-2 h-4 w-4 text-primary" />Players ({roomData.players.length})</CardTitle>
                         </CardHeader>
                         <CardContent>
                             {isLoading ? (
@@ -830,3 +830,5 @@ export default function GameRoomPage() {
     </div>
   );
 }
+
+    
