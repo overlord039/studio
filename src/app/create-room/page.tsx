@@ -78,8 +78,8 @@ export default function CreateRoomSelectionPage() {
   return (
     <div className="flex flex-col items-center justify-center flex-grow p-4">
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold">Choose Your Game Mode</h1>
-        <p className="text-muted-foreground mt-2 text-base">Select how you want to play Housie.</p>
+        <h1 className="text-2xl font-bold text-destructive-foreground">Choose Your Game Mode</h1>
+        <p className="text-destructive-foreground/80 mt-2 text-base">Select how you want to play Housie.</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-xl">
         {options.map((option) => (
