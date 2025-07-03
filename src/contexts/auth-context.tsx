@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ReactNode } from 'react';
@@ -7,12 +8,12 @@ import { useRouter } from 'next/navigation';
 interface User {
   username: string;
   email: string;
-  // Add other user properties here if needed
+  createdAt: string; // ISO Date String
 }
 
 interface AuthContextType {
   currentUser: User | null;
-  login: (userData: User) => void;
+  login: (userData: { username: string; email: string, createdAt?: string }) => void;
   logout: () => void;
   loading: boolean;
 }
@@ -30,7 +31,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const storedUser = localStorage.getItem('housiehub-user');
       if (storedUser) {
-        setCurrentUser(JSON.parse(storedUser));
+        const user = JSON.parse(storedUser);
+        // For backward compatibility for users already in localStorage
+        if (!user.createdAt) {
+          user.createdAt = new Date().toISOString();
+          localStorage.setItem('housiehub-user', JSON.stringify(user));
+        }
+        setCurrentUser(user);
       }
     } catch (error) {
       console.error("Error reading user from localStorage", error);
@@ -39,9 +46,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  const login = (userData: User) => {
-    setCurrentUser(userData);
-    localStorage.setItem('housiehub-user', JSON.stringify(userData));
+  const login = (userData: { username: string; email: string, createdAt?: string }) => {
+    const userToStore: User = {
+        ...userData,
+        createdAt: userData.createdAt || new Date().toISOString(),
+    };
+    setCurrentUser(userToStore);
+    localStorage.setItem('housiehub-user', JSON.stringify(userToStore));
   };
 
   const logout = () => {

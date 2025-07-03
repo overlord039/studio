@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useRouter } from 'next/navigation';
@@ -11,6 +12,7 @@ import { useState, useEffect } from 'react';
 interface User {
   username: string;
   email: string;
+  createdAt?: string;
 }
 
 export default function LoginSelectionScreen() {

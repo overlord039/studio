@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -10,12 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-
-// Mock data - replace with actual data fetching for a logged-in user
-const userStats = {
-  joinDate: "2024-05-20T12:00:00.000Z",
-};
-
 
 export default function ProfilePage() {
   const { currentUser, loading, logout } = useAuth();
@@ -63,7 +58,7 @@ export default function ProfilePage() {
 
   const isGuest = currentUser.email.endsWith('@guest.com');
   const avatarFallback = currentUser.username.substring(0, 2).toUpperCase();
-  const joinDateFormatted = new Date(userStats.joinDate).toLocaleDateString('en-GB', {
+  const joinDateFormatted = new Date(currentUser.createdAt).toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
     year: 'numeric'
@@ -105,17 +100,19 @@ export default function ProfilePage() {
                         </Link>
                     </div>
                  ) : (
-                    <div className="flex items-center gap-3 text-sm sm:text-base">
-                        <Mail className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                        <span className="text-muted-foreground">Email:</span>
-                        <span className="font-medium break-all">{currentUser.email}</span>
-                    </div>
+                    <>
+                      <div className="flex items-center gap-3 text-sm sm:text-base">
+                          <Mail className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                          <span className="text-muted-foreground">Email:</span>
+                          <span className="font-medium break-all">{currentUser.email}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm sm:text-base">
+                          <Calendar className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                          <span className="text-muted-foreground">Joined:</span>
+                          <span className="font-medium">{joinDateFormatted}</span>
+                      </div>
+                    </>
                  )}
-                <div className="flex items-center gap-3 text-sm sm:text-base">
-                    <Calendar className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                     <span className="text-muted-foreground">Joined:</span>
-                    <span className="font-medium">{joinDateFormatted}</span>
-                </div>
             </CardContent>
             <CardFooter className="bg-card pt-0 p-6">
                 <Button onClick={logout} variant="destructive" className="w-full">
