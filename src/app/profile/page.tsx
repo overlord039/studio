@@ -96,11 +96,21 @@ export default function ProfilePage() {
                 </div>
             </div>
             <CardContent className="p-6 space-y-4 bg-card">
-                 <div className="flex items-center gap-3 text-sm sm:text-base">
-                    <Mail className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                    <span className="text-muted-foreground">Email:</span>
-                    <span className="font-medium break-all">{currentUser.email}</span>
-                </div>
+                 {isGuest ? (
+                   <div className="text-center p-4 bg-secondary/30 rounded-lg">
+                        <p className="font-semibold">You are playing as a guest.</p>
+                        <p className="text-sm text-muted-foreground">Register to save your stats and progress!</p>
+                        <Link href="/auth/register" passHref>
+                            <Button className="mt-4" size="sm">Register Now</Button>
+                        </Link>
+                    </div>
+                 ) : (
+                    <div className="flex items-center gap-3 text-sm sm:text-base">
+                        <Mail className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                        <span className="text-muted-foreground">Email:</span>
+                        <span className="font-medium break-all">{currentUser.email}</span>
+                    </div>
+                 )}
                 <div className="flex items-center gap-3 text-sm sm:text-base">
                     <Calendar className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                      <span className="text-muted-foreground">Joined:</span>
