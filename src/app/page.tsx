@@ -58,7 +58,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex-grow flex flex-col items-center space-y-4 p-4">
+    <div className="flex-grow flex flex-col items-center space-y-2 p-4 pt-2">
       {/* Hero Section */}
       <section className="flex justify-center w-full">
          <Image 
@@ -72,7 +72,7 @@ export default function HomePage() {
       </section>
 
       {/* Action Buttons */}
-      <div className="w-full max-w-3xl space-y-4">
+      <div className="w-full max-w-3xl space-y-2">
         <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card 
             className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"

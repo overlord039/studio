@@ -15,6 +15,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
     // Check for pages that should have a custom layout (no container padding).
     const isSpecialLayoutPage = 
       (pathname?.includes('/room/') && (pathname.endsWith('/play') || pathname.endsWith('/lobby'))) || 
+      pathname === '/' ||
       pathname?.startsWith('/number-caller') ||
       pathname?.startsWith('/create-room');
 
