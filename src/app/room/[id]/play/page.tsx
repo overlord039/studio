@@ -474,7 +474,6 @@ export default function GameRoomPage() {
 
   const totalTicketsInGame = roomData.players.reduce((sum, player) => sum + (player.tickets?.length || 0), 0);
   const totalPrizePool = gameSettings.ticketPrice * totalTicketsInGame;
-  const otherPlayers = roomData.players.filter(p => p.id !== currentUser.username);
   const ticketsText = (count: number) => count === 1 ? 'ticket' : 'tickets';
 
 
@@ -831,3 +830,4 @@ export default function GameRoomPage() {
     </div>
   );
 }
+
