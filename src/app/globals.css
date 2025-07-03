@@ -150,3 +150,69 @@ body {
   background-image: linear-gradient(to right, hsl(var(--primary-foreground) / 0.05) 1px, transparent 1px),
                     linear-gradient(to bottom, hsl(var(--primary-foreground) / 0.05) 1px, transparent 1px);
 }
+
+
+/* Custom Animations for Splash Screen */
+@keyframes scale-in-splash {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-delayed {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dot-animation {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+.animate-splash-entry {
+  animation: scale-in-splash 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.animate-fade-in-delay-1 {
+  opacity: 0;
+  animation: fade-in-delayed 0.6s ease-out 0.5s forwards;
+}
+
+.animate-fade-in-delay-2 {
+  opacity: 0;
+  animation: fade-in-delayed 0.6s ease-out 1s forwards;
+}
+
+.animate-dot-1 {
+  animation: dot-animation 1.5s infinite;
+  animation-delay: 0s;
+}
+.animate-dot-2 {
+  animation: dot-animation 1.5s infinite;
+  animation-delay: 0.2s;
+}
+.animate-dot-3 {
+  animation: dot-animation 1.5s infinite;
+  animation-delay: 0.4s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-splash-entry,
+  .animate-fade-in-delay-1,
+  .animate-fade-in-delay-2,
+  .animate-dot-1,
+  .animate-dot-2,
+  .animate-dot-3 {
+    animation: none;
+    opacity: 1;
+  }
+}

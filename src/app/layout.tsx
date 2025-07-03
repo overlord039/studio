@@ -7,6 +7,7 @@ import { AuthProvider } from '@/contexts/auth-context';
 import PageLayout from '@/components/layout/page-layout';
 import { SoundProvider } from '@/contexts/sound-context';
 import BackgroundMusicPlayer from '@/components/layout/background-music-player';
+import SplashScreen from '@/components/layout/splash-screen';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -31,6 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
+        <SplashScreen />
         <SoundProvider>
           <AuthProvider>
             <ThemeProvider
