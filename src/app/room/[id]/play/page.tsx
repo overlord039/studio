@@ -175,7 +175,7 @@ export default function GameRoomPage() {
         const fhClaim = data.prizeStatus[PRIZE_TYPES.FULL_HOUSE];
         let gameOverMsg = "🎉 Game Over!";
         if (fhClaim && fhClaim.claimedBy.length > 0) {
-          const winnerNames = fhClaim.claimedBy.map(winnerId => data.players.find(p => p.id === winnerId)?.name || winnerId).join(' & ');
+          const winnerNames = fhClaim.claimedBy.map(winnerId => data.players.find(p => p.id === winnerId)?.name || winnerId).join(' &amp; ');
           gameOverMsg = `🎉 ${winnerNames} won Full House! Game Over!`;
           if (fhClaim.timestamp) {
             const claimTimestamp = typeof fhClaim.timestamp === 'string' ? new Date(fhClaim.timestamp) : fhClaim.timestamp;
@@ -549,7 +549,7 @@ export default function GameRoomPage() {
                 })}
               </ul>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 mt-6">
+            <div className="flex gap-4 mt-6">
               <Button onClick={handlePlayAgain} className="w-full" size="lg" disabled={isResetting}>
                 {isResetting ? (
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -584,31 +584,31 @@ export default function GameRoomPage() {
            <div className="flex-shrink-0">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" aria-label="Game Info & Players">
+                <Button variant="outline" size="icon" aria-label="Game Info &amp; Players">
                   <Menu className="h-5 w-5 text-primary" />
                 </Button>
               </SheetTrigger>
               <SheetContent className="flex flex-col bg-card/90 backdrop-blur-sm border-primary/20">
                 <SheetHeader className="text-center border-b pb-4">
-                    <SheetTitle className="text-xl">Game Info & Players</SheetTitle>
+                    <SheetTitle className="text-lg">Game Info &amp; Players</SheetTitle>
                 </SheetHeader>
                 <div className="py-4 space-y-4 flex-grow overflow-y-auto">
                     <Card className="bg-secondary/30">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-lg flex items-center"><Award className="mr-2 h-5 w-5 text-primary" />Prize Pool</CardTitle>
-                            <p className="text-sm text-muted-foreground">Total: ₹{totalPrizePool.toFixed(2)}</p>
+                            <CardTitle className="text-base font-semibold flex items-center"><Award className="mr-2 h-4 w-4 text-primary" />Prize Pool</CardTitle>
+                            <p className="text-xs text-muted-foreground">Total: ₹{totalPrizePool.toFixed(2)}</p>
                         </CardHeader>
                         <CardContent>
                             {isLoading ? (
-                                <p className="text-sm text-muted-foreground">Loading prize info...</p>
+                                <p className="text-xs text-muted-foreground">Loading prize info...</p>
                             ) : (
-                                <ul className="space-y-2 text-sm">
+                                <ul className="space-y-1 text-xs">
                                 {prizesForFormat.map(prize => {
                                     const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
                                     const prizeAmount = (totalPrizePool * percentage) / 100;
                                     return (
-                                    <li key={prize} className="flex justify-between items-center bg-background/50 p-2 rounded-md">
-                                        <span>{prize} <span className="text-xs text-muted-foreground">({percentage}%)</span></span>
+                                    <li key={prize} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
+                                        <span>{prize} <span className="text-muted-foreground">({percentage}%)</span></span>
                                         <span className="font-semibold">₹{prizeAmount.toFixed(2)}</span>
                                     </li>
                                     );
@@ -620,20 +620,20 @@ export default function GameRoomPage() {
 
                     <Card className="bg-secondary/30">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-lg flex items-center"><Users className="mr-2 h-5 w-5 text-primary" />Players ({roomData.players.length})</CardTitle>
+                            <CardTitle className="text-base font-semibold flex items-center"><Users className="mr-2 h-4 w-4 text-primary" />Players ({roomData.players.length})</CardTitle>
                         </CardHeader>
                         <CardContent>
                             {isLoading ? (
-                                <p className="text-sm text-muted-foreground">Loading player list...</p>
+                                <p className="text-xs text-muted-foreground">Loading player list...</p>
                             ) : (
                                 <ScrollArea className="h-40">
-                                    <ul className="space-y-2 text-sm">
+                                    <ul className="space-y-1 text-xs">
                                     {[...roomData.players].sort((a,b) => (a.isHost ? -1 : b.isHost ? 1 : 0)).map((player) => (
-                                        <li key={player.id} className="flex justify-between items-center bg-background/50 p-2 rounded-md">
+                                        <li key={player.id} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
                                         <span className="font-medium">
                                             {player.name}
-                                            {player.isHost && <span className="ml-2 text-xs font-semibold text-primary">(Host)</span>}
-                                            {player.id === currentUser?.username && <span className="ml-2 text-xs text-muted-foreground">(You)</span>}
+                                            {player.isHost && <span className="ml-2 font-semibold text-primary">(Host)</span>}
+                                            {player.id === currentUser?.username && <span className="ml-2 text-muted-foreground">(You)</span>}
                                         </span>
                                         <span className="text-muted-foreground">{player.tickets?.length || 0} {ticketsText(player.tickets?.length || 0)}</span>
                                         </li>
@@ -830,4 +830,3 @@ export default function GameRoomPage() {
     </div>
   );
 }
-
