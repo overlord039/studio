@@ -452,8 +452,8 @@ export default function LobbyPage() {
 
 
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
-      <Card className="shadow-xl">
+    <div className="flex flex-grow flex-col items-center justify-center p-4">
+      <Card className="w-full max-w-2xl shadow-xl">
         <CardHeader className="p-2 md:p-3">
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg md:text-2xl font-bold flex items-center gap-2">
