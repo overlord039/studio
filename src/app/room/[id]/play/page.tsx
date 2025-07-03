@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -576,8 +575,8 @@ export default function GameRoomPage() {
       <Card className="shadow-none border-none bg-transparent">
         <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
           <div className="flex-grow">
-            <div>Room ID: #{roomId} | Prize Pool: ₹{totalPrizePool.toFixed(2)} | Players: {roomData.players.length}</div>
-            <div className="font-semibold text-primary">{currentUser.username} ({myTickets.length} {ticketsText(myTickets.length)})</div>
+            <div className="text-white">Room ID: #{roomId} | Prize Pool: ₹{totalPrizePool.toFixed(2)} | Players: {roomData.players.length}</div>
+            <div className="font-semibold text-white">{currentUser.username} ({myTickets.length} {ticketsText(myTickets.length)})</div>
           </div>
           <div className="flex-shrink-0">
             <Sheet>
@@ -774,7 +773,7 @@ export default function GameRoomPage() {
             )}
             
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Your Tickets ({myTickets.length})</h2>
+              <h2 className="text-xl font-semibold text-white">Your Tickets ({myTickets.length})</h2>
               <Dialog>
                 <DialogTrigger asChild>
                    <Button variant="default" size="sm" className="font-semibold">
