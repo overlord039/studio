@@ -4,10 +4,11 @@ import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertTriangle, Calendar, Mail, LogOut } from "lucide-react";
+import { AlertTriangle, Calendar, Mail, LogOut, X } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useRouter } from 'next/navigation';
 
 // Mock data - replace with actual data fetching for a logged-in user
 const userStats = {
@@ -17,16 +18,17 @@ const userStats = {
 
 export default function ProfilePage() {
   const { currentUser, loading, logout } = useAuth();
+  const router = useRouter();
 
   if (loading) {
     return (
       <div className="animate-fade-in max-w-lg mx-auto">
         <Card className="shadow-xl overflow-hidden">
-          <div className="bg-muted p-8">
+          <div className="bg-muted p-6 sm:p-8">
             <div className="flex flex-col items-center gap-4 text-center">
-              <Skeleton className="h-32 w-32 rounded-full" />
+              <Skeleton className="h-24 w-24 sm:h-32 sm:w-32 rounded-full" />
               <div className="space-y-2">
-                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-7 sm:h-8 w-32 sm:w-48" />
               </div>
             </div>
           </div>
@@ -68,26 +70,36 @@ export default function ProfilePage() {
 
   return (
     <div className="animate-fade-in max-w-lg mx-auto">
-        <Card className="shadow-xl overflow-hidden border-2 border-primary/20">
-            <div className="bg-gradient-to-br from-primary/10 to-secondary/10 p-8">
+        <Card className="shadow-xl overflow-hidden border-2 border-primary/20 relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-8 w-8 rounded-full z-10"
+              onClick={() => router.back()}
+              aria-label="Close profile"
+            >
+              <X className="h-5 w-5" />
+              <span className="sr-only">Close</span>
+            </Button>
+            <div className="bg-gradient-to-br from-primary/10 to-secondary/10 p-6 sm:p-8">
                 <div className="flex flex-col items-center gap-4 text-center">
-                     <Avatar className="h-32 w-32 border-4 border-background shadow-lg">
+                     <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-background shadow-lg">
                         <AvatarImage src={`https://placehold.co/128x128.png?text=${avatarFallback}`} alt={currentUser.username} data-ai-hint="profile avatar"/>
-                        <AvatarFallback className="text-4xl">{avatarFallback}</AvatarFallback>
+                        <AvatarFallback className="text-3xl sm:text-4xl">{avatarFallback}</AvatarFallback>
                     </Avatar>
                     <div className="space-y-1">
-                        <h1 className="text-4xl font-bold">{currentUser.username}</h1>
+                        <h1 className="text-3xl sm:text-4xl font-bold">{currentUser.username}</h1>
                     </div>
                 </div>
             </div>
             <CardContent className="p-6 space-y-4 bg-card">
-                 <div className="flex items-center gap-3 text-base">
-                    <Mail className="h-5 w-5 text-muted-foreground" />
+                 <div className="flex items-center gap-3 text-sm sm:text-base">
+                    <Mail className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     <span className="text-muted-foreground">Email:</span>
-                    <span className="font-medium">{currentUser.email}</span>
+                    <span className="font-medium break-all">{currentUser.email}</span>
                 </div>
-                <div className="flex items-center gap-3 text-base">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                <div className="flex items-center gap-3 text-sm sm:text-base">
+                    <Calendar className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                      <span className="text-muted-foreground">Joined:</span>
                     <span className="font-medium">{joinDateFormatted}</span>
                 </div>
