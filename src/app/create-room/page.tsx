@@ -78,8 +78,8 @@ export default function CreateRoomSelectionPage() {
   return (
     <div className="flex flex-col items-center justify-center flex-grow p-4">
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-destructive-foreground">Choose Your Game Mode</h1>
-        <p className="text-destructive-foreground/80 mt-2 text-base">Select how you want to play Housie.</p>
+        <h1 className="text-2xl font-bold text-white">Choose Your Game Mode</h1>
+        <p className="text-white/80 mt-2 text-base">Select how you want to play Housie.</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-xl">
         {options.map((option) => (
@@ -111,7 +111,7 @@ export default function CreateRoomSelectionPage() {
       </div>
       <div className="mt-8 w-full max-w-xl">
         <Link href="/" passHref>
-          <Button variant="outline">
+          <Button variant="destructive">
             <LogOut className="mr-2 h-4 w-4 rotate-180" />
             Back to Home
           </Button>
