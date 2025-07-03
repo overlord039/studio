@@ -71,6 +71,12 @@ export default function HomePage() {
           />
       </section>
 
+      {currentUser && !loading && (
+        <div className="text-center my-2">
+          <p className="text-xl font-semibold text-white">Welcome, {currentUser.username}!</p>
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="w-full max-w-3xl space-y-2">
         <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
