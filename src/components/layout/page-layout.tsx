@@ -1,3 +1,4 @@
+
 "use client";
 
 import { usePathname } from 'next/navigation';
@@ -6,13 +7,24 @@ import Footer from '@/components/layout/footer';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import type { ReactNode } from 'react';
+import { useAuth } from '@/contexts/auth-context';
+import LoginSelectionScreen from '@/components/auth/login-selection-screen';
 
 export default function PageLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
-    // Only show header and footer on the homepage.
+    const { currentUser, loading } = useAuth();
+
+    // Determine if the login selection should be shown.
+    // It should only show on the root path if the user is not logged in.
+    const showLoginSelection = !currentUser && !loading && pathname === '/';
+
+    if (showLoginSelection) {
+        return <LoginSelectionScreen />;
+    }
+
+    // Existing layout logic
     const showHeaderAndFooter = pathname === '/';
 
-    // Check for pages that should have a custom layout (no container padding).
     const isSpecialLayoutPage = 
       (pathname?.includes('/room/') && (pathname.endsWith('/play') || pathname.endsWith('/lobby'))) || 
       pathname === '/' ||
@@ -21,8 +33,6 @@ export default function PageLayout({ children }: { children: ReactNode }) {
 
     const mainClassName = cn(
         "flex-grow flex flex-col",
-        // For all pages except special layout pages, apply standard container padding.
-        // The special pages will manage their own padding.
         !isSpecialLayoutPage && "container mx-auto px-4 py-8"
     );
 
@@ -37,5 +47,3 @@ export default function PageLayout({ children }: { children: ReactNode }) {
         </>
     );
 }
-
-    
