@@ -574,9 +574,11 @@ export default function GameRoomPage() {
   return (
     <div className="container mx-auto my-4 p-4 border rounded-xl shadow-lg space-y-4">
       <Card className="shadow-md">
-        <CardContent className="p-2 sm:p-3 flex flex-col sm:flex-row justify-between items-center text-sm gap-3">
-          <div className="flex-grow">Room ID: #{roomId} | Prize Pool: ₹{totalPrizePool.toFixed(2)} | Players: {roomData.players.length}</div>
-          <div className="font-semibold text-primary">{currentUser.username} ({myTickets.length} {ticketsText(myTickets.length)})</div>
+        <CardContent className="p-2 sm:p-3 flex flex-row justify-between items-center text-sm gap-3">
+          <div className="flex-grow">
+            <div>Room ID: #{roomId} | Prize Pool: ₹{totalPrizePool.toFixed(2)} | Players: {roomData.players.length}</div>
+            <div className="font-semibold text-primary">{currentUser.username} ({myTickets.length} {ticketsText(myTickets.length)})</div>
+          </div>
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" aria-label="Game Info & Players">
