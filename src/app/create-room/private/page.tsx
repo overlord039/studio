@@ -17,8 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { TICKET_PRICES, PRIZE_FORMATS, MIN_LOBBY_SIZE, MAX_LOBBY_SIZE, DEFAULT_GAME_SETTINGS } from "@/lib/constants";
-import type { TicketPrice, PrizeFormat, Player, Room, GameSettings } from "@/types";
+import { TICKET_PRICES, MIN_LOBBY_SIZE, MAX_LOBBY_SIZE, DEFAULT_GAME_SETTINGS } from "@/lib/constants";
+import type { TicketPrice, Player, Room, GameSettings } from "@/types";
 import { Settings } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
@@ -29,9 +29,6 @@ const createRoomFormSchema = z.object({
     message: "Invalid ticket price.",
   }),
   lobbySize: z.coerce.number().min(MIN_LOBBY_SIZE, `Minimum lobby size is ${MIN_LOBBY_SIZE}.`).max(MAX_LOBBY_SIZE, `Maximum lobby size is ${MAX_LOBBY_SIZE}.`),
-  prizeFormat: z.string().refine(format => PRIZE_FORMATS.includes(format as PrizeFormat), { 
-    message: "Invalid prize format.",
-  }),
   numberOfTicketsPerPlayer: z.coerce.number().min(1, 'Each player must have at least 1 ticket.').max(4, 'Maximum 4 tickets per player.'),
 });
 
@@ -48,7 +45,6 @@ export default function CreatePrivateRoomPage() {
     defaultValues: {
       ticketPrice: DEFAULT_GAME_SETTINGS.ticketPrice,
       lobbySize: DEFAULT_GAME_SETTINGS.lobbySize,
-      prizeFormat: DEFAULT_GAME_SETTINGS.prizeFormat,
       numberOfTicketsPerPlayer: DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer,
     },
   });
@@ -74,7 +70,6 @@ export default function CreatePrivateRoomPage() {
     const roomSettings: Partial<GameSettings> = {
       ticketPrice: values.ticketPrice,
       lobbySize: values.lobbySize,
-      prizeFormat: values.prizeFormat as PrizeFormat,
       numberOfTicketsPerPlayer: values.numberOfTicketsPerPlayer,
       isPublic: false, // Private game
     };
@@ -188,34 +183,6 @@ export default function CreatePrivateRoomPage() {
                       <SelectContent>
                         {[1, 2, 3, 4].map(num => (
                           <SelectItem key={num} value={String(num)}>{num} ticket(s)</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="prizeFormat"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Prize Format</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      disabled={isSubmitting || authLoading}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select prize format" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {PRIZE_FORMATS.map((format) => (
-                          <SelectItem key={format} value={format}>
-                            {format}
-                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
