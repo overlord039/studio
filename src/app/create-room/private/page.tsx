@@ -113,13 +113,13 @@ export default function CreatePrivateRoomPage() {
 
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
-      <Card className="w-full max-w-md shadow-xl bg-card/80 backdrop-blur-sm border-2 border-primary/50">
+      <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
            <div className="flex justify-center mb-4">
             <Settings className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-3xl font-bold text-white">Create Private Game</CardTitle>
-          <CardDescription className="text-white/80">Set up your private game and invite friends!</CardDescription>
+          <CardTitle className="text-3xl font-bold">Create Private Game</CardTitle>
+          <CardDescription>Set up your private game and invite friends!</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -129,7 +129,7 @@ export default function CreatePrivateRoomPage() {
                 name="ticketPrice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Ticket Price (₹)</FormLabel>
+                    <FormLabel>Ticket Price (₹)</FormLabel>
                     <Select 
                         onValueChange={(value) => field.onChange(Number(value))} 
                         defaultValue={String(field.value)}
@@ -155,7 +155,7 @@ export default function CreatePrivateRoomPage() {
                 name="lobbySize"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Lobby Size (Max Players)</FormLabel>
+                    <FormLabel>Lobby Size (Max Players)</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -174,7 +174,7 @@ export default function CreatePrivateRoomPage() {
                 name="numberOfTicketsPerPlayer"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Tickets Per Player (Default)</FormLabel>
+                    <FormLabel>Tickets Per Player (Default)</FormLabel>
                     <Select
                         onValueChange={(value) => field.onChange(Number(value))}
                         defaultValue={String(field.value)}
@@ -200,7 +200,7 @@ export default function CreatePrivateRoomPage() {
                 name="prizeFormat"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Prize Format</FormLabel>
+                    <FormLabel>Prize Format</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}

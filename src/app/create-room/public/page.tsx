@@ -75,7 +75,7 @@ export default function CreatePublicRoomPage() {
       lobbySize: values.lobbySize,
       prizeFormat: values.prizeFormat as PrizeFormat,
       numberOfTicketsPerPlayer: values.numberOfTicketsPerPlayer,
-      isPublic: true,
+      isPublic: true, // Public game
       callingMode: 'auto', // Public games are always auto
     };
 
@@ -95,7 +95,7 @@ export default function CreatePublicRoomPage() {
       
       toast({
         title: "Public Room Created!",
-        description: `Room ID: ${newRoom.id}. Players can join from the home page.`,
+        description: `Room ID: ${newRoom.id}. Players can now join.`,
       });
       router.push(`/room/${newRoom.id}/lobby`);
 
@@ -113,13 +113,13 @@ export default function CreatePublicRoomPage() {
 
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
-      <Card className="w-full max-w-md shadow-xl bg-card/80 backdrop-blur-sm border-2 border-accent/50">
+      <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
            <div className="flex justify-center mb-4">
             <Globe className="h-12 w-12 text-accent" />
           </div>
-          <CardTitle className="text-3xl font-bold text-white">Create Public Game</CardTitle>
-          <CardDescription className="text-white/80">Set up a public game for anyone to join.</CardDescription>
+          <CardTitle className="text-3xl font-bold">Create Public Game</CardTitle>
+          <CardDescription>Set up a public game for anyone to join.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -129,7 +129,7 @@ export default function CreatePublicRoomPage() {
                 name="ticketPrice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Ticket Price (₹)</FormLabel>
+                    <FormLabel>Ticket Price (₹)</FormLabel>
                     <Select 
                         onValueChange={(value) => field.onChange(Number(value))} 
                         defaultValue={String(field.value)}
@@ -155,7 +155,7 @@ export default function CreatePublicRoomPage() {
                 name="lobbySize"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Lobby Size (Max Players)</FormLabel>
+                    <FormLabel>Lobby Size (Max Players)</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -174,7 +174,7 @@ export default function CreatePublicRoomPage() {
                 name="numberOfTicketsPerPlayer"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Tickets Per Player (Default)</FormLabel>
+                    <FormLabel>Tickets Per Player (Default)</FormLabel>
                     <Select
                         onValueChange={(value) => field.onChange(Number(value))}
                         defaultValue={String(field.value)}
@@ -200,11 +200,11 @@ export default function CreatePublicRoomPage() {
                 name="prizeFormat"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Prize Format</FormLabel>
+                    <FormLabel>Prize Format</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
-                      disabled={isSubmitting || authLoading}
+                      disabled={true} // Prize format is fixed for public games
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -223,7 +223,7 @@ export default function CreatePublicRoomPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || authLoading} variant="secondary">
+              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting || authLoading}>
                 {isSubmitting ? "Creating Room..." : "Create Public Room"}
               </Button>
             </form>
