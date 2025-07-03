@@ -216,3 +216,18 @@ body {
     opacity: 1;
   }
 }
+
+/* Custom background images */
+body {
+  background-image: url('/bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+@media (min-width: 768px) {
+  body {
+    background-image: url('/bgpc.png');
+  }
+}
