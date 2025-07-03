@@ -219,7 +219,7 @@ body {
 
 /* Custom background images */
 body {
-  background-image: url('/bgpc2.png');
+  background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/bgpc2.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
