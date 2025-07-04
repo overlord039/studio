@@ -62,7 +62,7 @@ export default function CreatePrivateRoomPage() {
     setIsSubmitting(true);
 
     const hostPlayer: Player = {
-      id: currentUser.username, 
+      id: currentUser.uid, 
       name: currentUser.username,
       email: currentUser.email,
       isHost: true,

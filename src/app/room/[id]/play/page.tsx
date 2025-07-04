@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -87,7 +86,7 @@ export default function GameRoomPage() {
   }, [gameMessage]);
 
   const fetchGameDetails = useCallback(async (isInitialLoad = false) => {
-    if (!roomId || !currentUser?.username) {
+    if (!roomId || !currentUser?.uid) {
       if (isInitialLoad) {
         setError("Room ID or User not available for fetching game details.");
         setIsLoading(false);
@@ -140,7 +139,7 @@ export default function GameRoomPage() {
                       const claimantNames = newlyAddedClaimants
                           .map(id => {
                               const player = data.players.find(p => p.id === id);
-                              if (player?.id === currentUser?.username) return "You";
+                              if (player?.id === currentUser?.uid) return "You";
                               return player?.name || id;
                            })
                           .join(', ');
@@ -157,7 +156,7 @@ export default function GameRoomPage() {
       setRoomData(data);
       previousPrizeStatusRef.current = data.prizeStatus;
 
-      const me = data.players.find(p => p.id === currentUser.username);
+      const me = data.players.find(p => p.id === currentUser.uid);
       if (me && me.tickets) {
         setMyTickets(me.tickets);
       } else if (isInitialLoad && (!me || !me.tickets || me.tickets.length === 0)) {
@@ -222,7 +221,7 @@ export default function GameRoomPage() {
     
     // In manual mode, poll less frequently unless host
     const isManualMode = roomData?.settings.callingMode === 'manual';
-    const isHost = roomData?.host.id === currentUser.username;
+    const isHost = roomData?.host.id === currentUser.uid;
     const pollInterval = isManualMode && !isHost ? 7000 : 3000;
 
     const intervalId = setInterval(() => {
@@ -281,7 +280,7 @@ export default function GameRoomPage() {
       const response = await fetch(`/api/rooms/${roomId}/claim-prize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId: currentUser.username, prizeType, ticketIndex }),
+        body: JSON.stringify({ playerId: currentUser.uid, prizeType, ticketIndex }),
       });
 
       const result = await response.json();
@@ -294,7 +293,7 @@ export default function GameRoomPage() {
         const claimStatus = updatedRoom.prizeStatus[prizeType];
 
         let toastMessageAlert = `Your claim for ${prizeType} has been submitted for validation.`;
-        if (claimStatus?.claimedBy.includes(currentUser.username)) {
+        if (claimStatus?.claimedBy.includes(currentUser.uid)) {
             toastMessageAlert = `You successfully claimed ${prizeType}!`;
         }
 
@@ -337,7 +336,7 @@ export default function GameRoomPage() {
       const response = await fetch(`/api/rooms/${roomId}/call-number`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostId: currentUser.username }),
+        body: JSON.stringify({ hostId: currentUser.uid }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -365,7 +364,7 @@ export default function GameRoomPage() {
         const response = await fetch(`/api/rooms/${roomId}/update-calling-mode`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ hostId: currentUser.username, callingMode: newMode }),
+            body: JSON.stringify({ hostId: currentUser.uid, callingMode: newMode }),
         });
         const data = await response.json();
         if (!response.ok) {
@@ -388,7 +387,7 @@ export default function GameRoomPage() {
     }
   };
 
-  const isCurrentUserHost = roomData?.host.id === currentUser?.username;
+  const isCurrentUserHost = roomData?.host.id === currentUser?.uid;
 
   const handlePlayAgain = async () => {
     if (!currentUser) return;
@@ -399,7 +398,7 @@ export default function GameRoomPage() {
         const response = await fetch(`/api/rooms/${roomId}/reset`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ hostId: currentUser.username }),
+          body: JSON.stringify({ hostId: currentUser.uid }),
         });
         if (!response.ok) {
           const errorData = await response.json();
@@ -429,7 +428,7 @@ export default function GameRoomPage() {
       await fetch(`/api/rooms/${roomId}/leave`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId: currentUser.username }),
+        body: JSON.stringify({ playerId: currentUser.uid }),
       });
       playSound('notification.wav');
       toast({ title: "You have left the room." });
@@ -492,7 +491,7 @@ export default function GameRoomPage() {
     if (currentUser) {
         prizesForFormat.forEach(prize => {
             const claimInfo = roomData.prizeStatus[prize];
-            if (claimInfo && claimInfo.claimedBy.includes(currentUser.username)) {
+            if (claimInfo && claimInfo.claimedBy.includes(currentUser.uid)) {
                 currentUserPrizeNames.push(prize);
                 const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
                 const prizeAmount = (totalPrizePool * percentage) / 100;
@@ -632,7 +631,7 @@ export default function GameRoomPage() {
                                     if (isClaimed) {
                                         const claimantNames = claimInfo.claimedBy.map(id => {
                                             const player = roomData.players.find(p => p.id === id);
-                                            if (player?.id === currentUser?.username) return "You";
+                                            if (player?.id === currentUser?.uid) return "You";
                                             return player?.name || id;
                                         }).join(', ');
                                         claimantText = `Claimed by ${claimantNames}`;
@@ -670,7 +669,7 @@ export default function GameRoomPage() {
                                         <span className="font-medium">
                                             {player.name}
                                             {player.isHost && <span className="ml-2 font-semibold text-primary">(Host)</span>}
-                                            {player.id === currentUser?.username && <span className="ml-2 text-muted-foreground">(You)</span>}
+                                            {player.id === currentUser?.uid && <span className="ml-2 text-muted-foreground">(You)</span>}
                                         </span>
                                         <span className="text-muted-foreground">{player.tickets?.length || 0} {ticketsText(player.tickets?.length || 0)}</span>
                                         </li>

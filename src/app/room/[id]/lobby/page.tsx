@@ -84,7 +84,7 @@ export default function LobbyPage() {
         const joinedPlayers = data.players.filter(p => !oldPlayerIds.has(p.id));
         
         joinedPlayers.forEach(player => {
-            if (currentUser && player.id !== currentUser.username) {
+            if (currentUser && player.id !== currentUser.uid) {
                 playSound('notification.wav');
                 toast({
                     title: "Player Joined",
@@ -95,7 +95,7 @@ export default function LobbyPage() {
       }
       
       if (isInitialLoad) {
-        const userInRoomData = data.players.find(p => p.id === currentUser.username);
+        const userInRoomData = data.players.find(p => p.id === currentUser.uid);
         if (userInRoomData) {
           setSelectedTicketsToBuy(userInRoomData.tickets.length > 0 ? userInRoomData.tickets.length : data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
         } else { 
@@ -103,9 +103,9 @@ export default function LobbyPage() {
         }
       }
       
-      const currentUserIsHostInFetchedData = data.host.id === currentUser?.username;
+      const currentUserIsHostInFetchedData = data.host.id === currentUser?.uid;
       if (data.isGameStarted && previousIsGameStartedRef.current === false && !currentUserIsHostInFetchedData) {
-        const currentPlayerServerData = data.players.find(p => p.id === currentUser.username);
+        const currentPlayerServerData = data.players.find(p => p.id === currentUser.uid);
         const ticketsToTake = currentPlayerServerData?.tickets.length || 0; 
         playSound('gamestarting.wav');
         toast({ title: "Game Started!", description: "Joining the game..." });
@@ -171,7 +171,7 @@ export default function LobbyPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          playerId: currentUser.username, 
+          playerId: currentUser.uid, 
           playerName: currentUser.username,
           playerEmail: currentUser.email,
           ticketsToBuy: selectedTicketsToBuy 
@@ -184,7 +184,7 @@ export default function LobbyPage() {
       playSound('buy.mp3');
       const updatedRoom: Room = await response.json();
       setRoomData(updatedRoom); 
-      const userInUpdatedRoom = updatedRoom.players.find(p => p.id === currentUser.username);
+      const userInUpdatedRoom = updatedRoom.players.find(p => p.id === currentUser.uid);
       const finalTicketCount = userInUpdatedRoom?.tickets.length || selectedTicketsToBuy;
       setSelectedTicketsToBuy(finalTicketCount);
       toast({ title: "Tickets Confirmed!", description: `You now have ${finalTicketCount} ${finalTicketCount === 1 ? 'ticket' : 'tickets'}.` });
@@ -205,7 +205,7 @@ export default function LobbyPage() {
 
     playSound('start.wav');
 
-    const hostPlayerWithTickets = roomData.players.find(p => p.id === currentUser.username && p.isHost && p.tickets.length > 0);
+    const hostPlayerWithTickets = roomData.players.find(p => p.id === currentUser.uid && p.isHost && p.tickets.length > 0);
     if (!hostPlayerWithTickets) {
         toast({ title: "Cannot Start", description: "Host must confirm their tickets before starting.", variant: "destructive"});
         return;
@@ -224,14 +224,14 @@ export default function LobbyPage() {
       const response = await fetch(`/api/rooms/${roomId}/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostId: currentUser.username }),
+        body: JSON.stringify({ hostId: currentUser.uid }),
       });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to start game.");
       }
       const updatedRoom: Room = await response.json();
-      const ticketsToTake = updatedRoom.players.find(p => p.id === currentUser.username)?.tickets.length || 0;
+      const ticketsToTake = updatedRoom.players.find(p => p.id === currentUser.uid)?.tickets.length || 0;
       toast({ title: "Game Starting!", description: `Navigating to game room ${roomId}.` });
       router.push(`/room/${roomId}/play?playerTickets=${ticketsToTake}`);
     } catch (err) {
@@ -251,7 +251,7 @@ export default function LobbyPage() {
       await fetch(`/api/rooms/${roomId}/leave`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId: currentUser.username }),
+        body: JSON.stringify({ playerId: currentUser.uid }),
       });
       toast({ title: "You have left the room." });
     } catch (err) {
@@ -264,7 +264,7 @@ export default function LobbyPage() {
   
   const handleGoToGame = () => {
     if (!roomData || !currentUser) return;
-    const ticketsCount = roomData.players.find(p => p.id === currentUser.username)?.tickets.length || 0;
+    const ticketsCount = roomData.players.find(p => p.id === currentUser.uid)?.tickets.length || 0;
     router.push(`/room/${roomId}/play?playerTickets=${ticketsCount}`);
   };
 
@@ -278,7 +278,7 @@ export default function LobbyPage() {
       const response = await fetch(`/api/rooms/${roomId}/reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostId: currentUser.username }),
+        body: JSON.stringify({ hostId: currentUser.uid }),
       });
 
       if (!response.ok) {
@@ -312,7 +312,7 @@ export default function LobbyPage() {
         const response = await fetch(`/api/rooms/${roomId}/transfer-host`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ hostId: currentUser.username, newHostId }),
+            body: JSON.stringify({ hostId: currentUser.uid, newHostId }),
         });
         if (!response.ok) {
             const errorData = await response.json();
@@ -337,7 +337,7 @@ export default function LobbyPage() {
         const response = await fetch(`/api/rooms/${roomId}/kick-player`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ hostId: currentUser.username, playerIdToKick }),
+            body: JSON.stringify({ hostId: currentUser.uid, playerIdToKick }),
         });
         if (!response.ok) {
             const errorData = await response.json();
@@ -414,8 +414,8 @@ export default function LobbyPage() {
     );
   }
   
-  const currentUserInRoom = roomData?.players.find(p => p.id === currentUser?.username);
-  const isCurrentUserHost = roomData?.host.id === currentUser?.username;
+  const currentUserInRoom = roomData?.players.find(p => p.id === currentUser?.uid);
+  const isCurrentUserHost = roomData?.host.id === currentUser?.uid;
   const doesCurrentUserHaveTickets = !!currentUserInRoom && currentUserInRoom.tickets.length > 0;
 
   if (roomData.isGameStarted && !roomData.isGameOver && !currentUserInRoom) {
@@ -572,7 +572,7 @@ export default function LobbyPage() {
                   <div className="flex flex-col">
                     <div className="flex items-center">
                       <span className="font-medium">{player.name}</span>
-                      {player.id === currentUser?.username && <span className="text-xs text-muted-foreground ml-1.5">(You)</span>}
+                      {player.id === currentUser?.uid && <span className="text-xs text-muted-foreground ml-1.5">(You)</span>}
                       {player.isHost && <span className="text-xs font-semibold text-primary ml-1.5">(Host)</span>}
                     </div>
                     <span className="text-xs text-muted-foreground">
@@ -580,7 +580,7 @@ export default function LobbyPage() {
                     </span>
                   </div>
                   
-                  {isCurrentUserHost && player.id !== currentUser?.username && !roomData.isGameStarted && (
+                  {isCurrentUserHost && player.id !== currentUser?.uid && !roomData.isGameStarted && (
                     <div className="flex items-center gap-1">
                       <AlertDialog>
                         <AlertDialogTrigger asChild>

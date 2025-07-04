@@ -1,4 +1,3 @@
-
 import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid, CallingMode } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { generateImprovedHousieTicket } from '@/lib/housie';
@@ -91,66 +90,67 @@ export function getRoomStore(roomId: string): Room | undefined {
 }
 
 export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; name: string; email: string }, numberOfTickets?: number): Room | { error: string } {
-  const room = rooms.get(roomId);
-  if (!room) {
-    return { error: "Room not found." };
-  }
-
-  // Allow joining/updating tickets only if the game is not actively in progress.
-  if (room.isGameStarted && !room.isGameOver) {
-      const existingPlayer = room.players.find(p => p.email === playerInfo.email); // Check by email
-      if (existingPlayer) {
-           console.log(`Player ${playerInfo.name} reconnected to active game ${roomId}. No changes allowed.`);
-           return room;
-      }
-      return { error: "Game is currently in progress. Cannot join now." };
-  }
-  
-  // Find player by unique email
-  const existingPlayerIndex = room.players.findIndex(p => p.email === playerInfo.email);
-
-  if (existingPlayerIndex !== -1) {
-    const existingPlayer = room.players[existingPlayerIndex];
-    // Check if they are trying to use a username that is now taken by someone else
-    if (existingPlayer.id.toLowerCase() !== playerInfo.id.toLowerCase() && room.players.some(p => p.id.toLowerCase() === playerInfo.id.toLowerCase())) {
-        return { error: `Username "${playerInfo.id}" is already taken in this room.` };
+    const room = rooms.get(roomId);
+    if (!room) {
+        return { error: "Room not found." };
     }
-    existingPlayer.id = playerInfo.id;
-    existingPlayer.name = playerInfo.name;
-    existingPlayer.isHost = playerInfo.id === room.host.id;
 
-    const numTicketsToGenerate = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
+    if (room.isGameStarted && !room.isGameOver) {
+        const existingPlayer = room.players.find(p => p.id === playerInfo.id);
+        if (existingPlayer) {
+            console.log(`Player ${playerInfo.name} (${playerInfo.id}) reconnected to active game ${roomId}. No changes allowed.`);
+            return room;
+        }
+        return { error: "Game is currently in progress. Cannot join now." };
+    }
 
-    if (existingPlayer.tickets.length !== numTicketsToGenerate) {
-        existingPlayer.tickets = Array.from({ length: numTicketsToGenerate }, () => generateImprovedHousieTicket());
-        console.log(`Player ${playerInfo.id} in room ${roomId} updated tickets to ${numTicketsToGenerate}.`);
+    // Find player by unique email first. This handles a user re-joining.
+    const existingPlayerIndex = room.players.findIndex(p => p.email === playerInfo.email);
+
+    if (existingPlayerIndex !== -1) {
+        const existingPlayer = room.players[existingPlayerIndex];
+        
+        // Check if they are trying to use a username that is now taken by *another* player
+        const isUsernameTaken = room.players.some(p => p.email !== playerInfo.email && p.name.toLowerCase() === playerInfo.name.toLowerCase());
+        if (isUsernameTaken) {
+            return { error: `Username "${playerInfo.name}" is already taken in this room.` };
+        }
+        
+        existingPlayer.id = playerInfo.id; // Update UID in case they re-logged in
+        existingPlayer.name = playerInfo.name;
+        existingPlayer.isHost = playerInfo.id === room.host.id;
+
+        const numTicketsToGenerate = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
+
+        if (existingPlayer.tickets.length !== numTicketsToGenerate) {
+            existingPlayer.tickets = Array.from({ length: numTicketsToGenerate }, () => generateImprovedHousieTicket());
+            console.log(`Player ${playerInfo.name} (${playerInfo.id}) in room ${roomId} updated tickets to ${numTicketsToGenerate}.`);
+        } else {
+            console.log(`Player ${playerInfo.name} (${playerInfo.id}) re-confirmed ${numTicketsToGenerate} tickets in room ${roomId}. No changes.`);
+        }
     } else {
-        console.log(`Player ${playerInfo.id} re-confirmed ${numTicketsToGenerate} tickets in room ${roomId}. No changes.`);
+        // New player joining (unique email)
+        const isUsernameTaken = room.players.some(p => p.name.toLowerCase() === playerInfo.name.toLowerCase());
+        if (isUsernameTaken) {
+            return { error: `Username "${playerInfo.name}" is already taken in this room. Please choose another.` };
+        }
+        if (room.players.length >= room.settings.lobbySize) {
+            return { error: "Room is full." };
+        }
+        const numTicketsToGenerate = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
+        const newPlayer: BackendPlayerInRoom = {
+            id: playerInfo.id,
+            name: playerInfo.name,
+            email: playerInfo.email,
+            isHost: playerInfo.id === room.host.id,
+            tickets: Array.from({ length: numTicketsToGenerate }, () => generateImprovedHousieTicket()),
+        };
+        room.players.push(newPlayer);
+        console.log(`New player ${playerInfo.name} (${playerInfo.id}) joined room ${roomId} with ${numTicketsToGenerate} tickets.`);
     }
-  } else {
-    // New player joining (unique email)
-    // Check if username is already taken by another player
-    const isUsernameTaken = room.players.some(p => p.id.toLowerCase() === playerInfo.id.toLowerCase());
-    if(isUsernameTaken) {
-        return { error: `Username "${playerInfo.id}" is already taken in this room. Please choose another.` };
-    }
-    if (room.players.length >= room.settings.lobbySize) {
-      return { error: "Room is full." };
-    }
-    const numTicketsToGenerate = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
-    const newPlayer: BackendPlayerInRoom = {
-      id: playerInfo.id,
-      name: playerInfo.name,
-      email: playerInfo.email,
-      isHost: playerInfo.id === room.host.id,
-      tickets: Array.from({ length: numTicketsToGenerate }, () => generateImprovedHousieTicket()),
-    };
-    room.players.push(newPlayer);
-    console.log(`New player ${playerInfo.name} (${playerInfo.id}) joined room ${roomId} with ${numTicketsToGenerate} tickets.`);
-  }
 
-  rooms.set(roomId, room);
-  return room;
+    rooms.set(roomId, room);
+    return room;
 }
 
 export function startGameInRoomStore(roomId: string, hostId: string): Room | { error: string } {
