@@ -307,6 +307,15 @@ export default function GameRoomPage() {
             description: toastMessageAlert,
             className: (toastMessageAlert.includes("Bogey") || toastMessageAlert.includes("Invalid") || toastMessageAlert.includes("Failed")) ? "bg-destructive" : "bg-green-500 text-white"
         });
+      } else {
+        const errorMessage = result.message || `Failed to claim ${prizeType}.`;
+        if (!errorMessage.toLowerCase().includes('bogey')) {
+            toast({
+                title: `Claim for ${prizeType} Failed`,
+                description: errorMessage,
+                variant: "destructive"
+            });
+        }
       }
     } catch (err) {
       console.error(`Error claiming ${prizeType}:`, err);
@@ -540,7 +549,7 @@ export default function GameRoomPage() {
                 })}
               </ul>
             </div>
-            <div className="flex flex-row gap-4 mt-6">
+            <div className="flex flex-col sm:flex-row gap-4 mt-6">
               <Button onClick={handlePlayAgain} className="flex-1" size="lg" disabled={isResetting}>
                 {isResetting ? (
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -772,7 +781,7 @@ export default function GameRoomPage() {
               <h2 className="text-xl font-semibold text-white">Your Tickets ({myTickets.length})</h2>
               <Dialog>
                 <DialogTrigger asChild>
-                   <Button variant="default" size="sm" className="font-semibold">
+                   <Button variant="default" size="sm" className="font-semibold" onClick={() => playSound('button2.mp3')}>
                     Number Board
                   </Button>
                 </DialogTrigger>
