@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,7 +56,7 @@ export default function CreateRoomSelectionPage() {
   ];
   
   const handleCardClick = (option: GameOption) => {
-    playSound('button2.mp3');
+    playSound('cards.mp3');
     if (option.disabled) {
       toast({
         title: "Coming Soon!",

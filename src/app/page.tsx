@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -24,7 +25,7 @@ export default function HomePage() {
   const [joinRoomId, setJoinRoomId] = useState('');
 
   const handleJoinRoom = () => {
-    playSound('button2.mp3');
+    playSound('cards.mp3');
     if (!currentUser) {
       toast({
         title: "Login Required",
@@ -47,7 +48,7 @@ export default function HomePage() {
   };
 
   const handleCreateRoom = () => {
-    playSound('button2.mp3');
+    playSound('cards.mp3');
     if (!currentUser) {
       toast({
         title: "Login Required",
@@ -61,7 +62,7 @@ export default function HomePage() {
   };
   
   const handleNavigateWithSound = (path: string) => {
-    playSound('button2.mp3');
+    playSound('cards.mp3');
     router.push(path);
   };
 

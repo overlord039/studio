@@ -270,7 +270,7 @@ export default function GameRoomPage() {
   };
 
   const handleClaimPrize = async (prizeType: PrizeType) => {
-    playSound('button2.mp3');
+    playSound('cards.mp3');
     if (!roomData || !currentUser) {
       toast({ title: "Cannot Claim", description: "Room data missing or not logged in.", variant: "destructive" });
       return;
@@ -800,7 +800,7 @@ export default function GameRoomPage() {
               <h2 className="text-xl font-semibold text-white">Your Tickets ({myTickets.length})</h2>
               <Dialog>
                 <DialogTrigger asChild>
-                   <Button variant="default" size="sm" className="font-semibold" onClick={() => playSound('button2.mp3')}>
+                   <Button variant="default" size="sm" className="font-semibold" onClick={() => playSound('cards.mp3')}>
                     Number Board
                   </Button>
                 </DialogTrigger>
