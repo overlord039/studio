@@ -756,18 +756,7 @@ export default function GameRoomPage() {
               <div className="flex flex-wrap gap-2 justify-center">
                 {prizesForFormat.map((prizeType, prizeIdx) => {
                   const claimInfo = roomData.prizeStatus[prizeType];
-                  const hasPlayerClaimedThis = claimInfo?.claimedBy.includes(currentUser.username);
                   const isPrizeClaimedByAnyone = claimInfo && claimInfo.claimedBy.length > 0;
-
-                  let buttonText = prizeType;
-                  if (isPrizeClaimedByAnyone) {
-                    if (hasPlayerClaimedThis) {
-                      buttonText = `You Claimed ${prizeType}`;
-                    } else {
-                      const claimants = claimInfo.claimedBy.map(id => roomData.players.find(p => p.id === id)?.name || id).join(", ");
-                      buttonText = `${prizeType} (Claimed by ${claimants})`;
-                    }
-                  }
                   
                   return (
                     <Button
@@ -775,20 +764,16 @@ export default function GameRoomPage() {
                       onClick={() => handleClaimPrize(prizeType)}
                       disabled={
                         roomData.isGameOver ||
-                        hasPlayerClaimedThis ||
-                        (isPrizeClaimedByAnyone && prizeType !== PRIZE_TYPES.FULL_HOUSE && !claimInfo?.claimedBy.includes(currentUser.username)) || 
-                        (isPrizeClaimedByAnyone && prizeType === PRIZE_TYPES.FULL_HOUSE)
+                        isPrizeClaimedByAnyone
                       }
                       variant={isPrizeClaimedByAnyone ? "secondary" : "default"}
                       className={cn("px-2 py-1 rounded-md text-xs sm:text-sm",
                         !isPrizeClaimedByAnyone && prizeType.includes("Jaldi") ? "bg-green-500 hover:bg-green-600" :
                           !isPrizeClaimedByAnyone && prizeType.includes("Line") ? "bg-yellow-400 hover:bg-yellow-500 text-black" :
-                            !isPrizeClaimedByAnyone && prizeType.includes("Full House") ? "bg-red-500 hover:bg-red-600" : "",
-                        (hasPlayerClaimedThis || (isPrizeClaimedByAnyone && !hasPlayerClaimedThis)) ? "opacity-70" : "",
-                        (roomData.isGameOver || (roomData.prizeStatus[PRIZE_TYPES.FULL_HOUSE]?.claimedBy?.length ?? 0 > 0) && prizeType !== PRIZE_TYPES.FULL_HOUSE) ? "cursor-not-allowed opacity-50" : ""
+                            !isPrizeClaimedByAnyone && prizeType.includes("Full House") ? "bg-red-500 hover:bg-red-600" : ""
                       )}
                     >
-                      {buttonText}
+                      {prizeType}
                     </Button>
                   );
                 })}
