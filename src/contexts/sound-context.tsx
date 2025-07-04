@@ -23,13 +23,17 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // This effect runs only on the client to sync with localStorage
     try {
-      // For SFX: default is ON (muted is false). This is set if localStorage is empty.
+      // For SFX: default is ON (muted is false). We check if a setting is stored.
       const storedSfxMuteState = localStorage.getItem(SFX_MUTED_KEY);
-      setIsSfxMuted(storedSfxMuteState === 'true');
+      if (storedSfxMuteState !== null) {
+        setIsSfxMuted(storedSfxMuteState === 'true');
+      }
 
-      // For BGM: default is ON (enabled is true). This is set if localStorage is empty.
+      // For BGM: default is ON (enabled is true). We check if a setting is stored.
       const storedBgmEnabledState = localStorage.getItem(BGM_ENABLED_KEY);
-      setIsBgmEnabled(storedBgmEnabledState !== 'false');
+      if (storedBgmEnabledState !== null) {
+        setIsBgmEnabled(storedBgmEnabledState === 'true');
+      }
 
     } catch (error) {
       console.error("Could not read sound settings from localStorage", error);
