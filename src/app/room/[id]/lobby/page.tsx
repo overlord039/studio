@@ -203,7 +203,7 @@ export default function LobbyPage() {
       return;
     }
 
-    playSound('gamestarting.wav');
+    playSound('start.wav');
 
     const hostPlayerWithTickets = roomData.players.find(p => p.id === currentUser.username && p.isHost && p.tickets.length > 0);
     if (!hostPlayerWithTickets) {
