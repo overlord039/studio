@@ -3,12 +3,12 @@ export interface Player {
   id: string; // Will typically be derived from username or a unique auth ID
   name: string;
   isHost?: boolean;
-  // ticketsToBuy is a client-side concept for the lobby, actual tickets are on BackendPlayerInRoom
+  email?: string;
 }
 
 export interface BackendPlayerInRoom extends Player {
   tickets: HousieTicketGrid[];
-  // Add any other backend-specific player state here if needed
+  email: string; // Make it mandatory for backend
 }
 
 export type TicketPrice = 5 | 10 | 20 | 25 | 50 | 100;

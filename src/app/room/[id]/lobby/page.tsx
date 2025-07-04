@@ -172,7 +172,8 @@ export default function LobbyPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           playerId: currentUser.username, 
-          playerName: currentUser.username, 
+          playerName: currentUser.username,
+          playerEmail: currentUser.email,
           ticketsToBuy: selectedTicketsToBuy 
         }),
       });

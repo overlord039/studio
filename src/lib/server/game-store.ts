@@ -52,14 +52,16 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
   const gameSettings: GameSettings = { ...DEFAULT_GAME_SETTINGS, ...clientSettings };
 
   const hostPlayerInRoom: BackendPlayerInRoom = {
-    ...host,
+    id: host.id,
+    name: host.name,
+    email: host.email!, // Email is now mandatory from the API
     isHost: true,
     tickets: [], 
   };
 
   const newRoom: Room = {
     id: roomId,
-    host: { id: host.id, name: host.name, isHost: true },
+    host: { id: host.id, name: host.name, email: host.email, isHost: true },
     players: [hostPlayerInRoom],
     settings: gameSettings,
     createdAt: new Date(),
@@ -88,35 +90,37 @@ export function getRoomStore(roomId: string): Room | undefined {
   return room;
 }
 
-export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; name: string }, numberOfTickets?: number): Room | { error: string } {
+export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; name: string; email: string }, numberOfTickets?: number): Room | { error: string } {
   const room = rooms.get(roomId);
   if (!room) {
     return { error: "Room not found." };
   }
 
   // Allow joining/updating tickets only if the game is not actively in progress.
-  // A game is active if it has started but is not over.
   if (room.isGameStarted && !room.isGameOver) {
-      const existingPlayer = room.players.find(p => p.id === playerInfo.id);
-      // Allow re-connection for existing players, but no changes.
+      const existingPlayer = room.players.find(p => p.email === playerInfo.email); // Check by email
       if (existingPlayer) {
-           console.log(`Player ${playerInfo.id} reconnected to active game ${roomId}. No changes allowed.`);
+           console.log(`Player ${playerInfo.name} reconnected to active game ${roomId}. No changes allowed.`);
            return room;
       }
       return { error: "Game is currently in progress. Cannot join now." };
   }
-
-
-  const numTicketsToGenerate = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
-
-  const existingPlayerIndex = room.players.findIndex(p => p.id === playerInfo.id);
+  
+  // Find player by unique email
+  const existingPlayerIndex = room.players.findIndex(p => p.email === playerInfo.email);
 
   if (existingPlayerIndex !== -1) {
     const existingPlayer = room.players[existingPlayerIndex];
+    // Check if they are trying to use a username that is now taken by someone else
+    if (existingPlayer.id.toLowerCase() !== playerInfo.id.toLowerCase() && room.players.some(p => p.id.toLowerCase() === playerInfo.id.toLowerCase())) {
+        return { error: `Username "${playerInfo.id}" is already taken in this room.` };
+    }
+    existingPlayer.id = playerInfo.id;
     existingPlayer.name = playerInfo.name;
     existingPlayer.isHost = playerInfo.id === room.host.id;
 
-    // Regenerate tickets only if the requested count is different.
+    const numTicketsToGenerate = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
+
     if (existingPlayer.tickets.length !== numTicketsToGenerate) {
         existingPlayer.tickets = Array.from({ length: numTicketsToGenerate }, () => generateImprovedHousieTicket());
         console.log(`Player ${playerInfo.id} in room ${roomId} updated tickets to ${numTicketsToGenerate}.`);
@@ -124,13 +128,20 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; n
         console.log(`Player ${playerInfo.id} re-confirmed ${numTicketsToGenerate} tickets in room ${roomId}. No changes.`);
     }
   } else {
-    // New player joining
+    // New player joining (unique email)
+    // Check if username is already taken by another player
+    const isUsernameTaken = room.players.some(p => p.id.toLowerCase() === playerInfo.id.toLowerCase());
+    if(isUsernameTaken) {
+        return { error: `Username "${playerInfo.id}" is already taken in this room. Please choose another.` };
+    }
     if (room.players.length >= room.settings.lobbySize) {
       return { error: "Room is full." };
     }
+    const numTicketsToGenerate = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
     const newPlayer: BackendPlayerInRoom = {
       id: playerInfo.id,
       name: playerInfo.name,
+      email: playerInfo.email,
       isHost: playerInfo.id === room.host.id,
       tickets: Array.from({ length: numTicketsToGenerate }, () => generateImprovedHousieTicket()),
     };
@@ -259,7 +270,7 @@ export function removePlayerFromRoomStore(roomId: string, playerId: string): { s
     // Host migration
     const newHost = room.players[0];
     newHost.isHost = true;
-    room.host = { id: newHost.id, name: newHost.name, isHost: true };
+    room.host = { id: newHost.id, name: newHost.name, email: newHost.email, isHost: true };
     console.log(`Host migration in room ${roomId}: ${newHost.id} is the new host.`);
   }
   
@@ -286,7 +297,7 @@ export function transferHostStore(
   // Swap host status
   currentHost.isHost = false;
   newHost.isHost = true;
-  room.host = { id: newHost.id, name: newHost.name, isHost: true };
+  room.host = { id: newHost.id, name: newHost.name, email: newHost.email, isHost: true };
 
   rooms.set(roomId, room);
   console.log(`Host for room ${roomId} transferred from ${currentHostId} to ${newHostId}.`);
@@ -516,7 +527,7 @@ export function getRoomStateForClient(roomId: string): Omit<Room, 'numberPool'> 
 
     const clientRoomData = {
       id: room.id,
-      host: room.host,
+      host: { id: room.host.id, name: room.host.name, isHost: room.host.isHost },
       players: playersForClient,
       settings: room.settings,
       createdAt: typeof room.createdAt === 'string' ? room.createdAt : new Date(room.createdAt).toISOString(),
@@ -527,7 +538,7 @@ export function getRoomStateForClient(roomId: string): Omit<Room, 'numberPool'> 
       prizeStatus: prizeStatusForClient,
       lastNumberCalledTimestamp: room.lastNumberCalledTimestamp ? (typeof room.lastNumberCalledTimestamp === 'string' ? room.lastNumberCalledTimestamp : new Date(room.lastNumberCalledTimestamp).toISOString()) : undefined,
     };
-    return clientRoomData;
+    return clientRoomData as Omit<Room, 'numberPool'>;
 
   } catch (e) {
     console.error(`Error preparing room data for client for room ${roomId}:`, e);

@@ -7,8 +7,8 @@ export async function POST(request: NextRequest) {
   try {
     const { host, settings } = (await request.json()) as { host: Player; settings?: Partial<GameSettings> };
 
-    if (!host || !host.id || !host.name) {
-      return NextResponse.json({ message: 'Host details are required (id, name)' }, { status: 400 });
+    if (!host || !host.id || !host.name || !host.email) {
+      return NextResponse.json({ message: 'Host details are required (id, name, email)' }, { status: 400 });
     }
     
     const newRoom = createRoomStore(host, settings);
