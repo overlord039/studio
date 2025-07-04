@@ -116,25 +116,21 @@ export function checkWinningCondition(ticket: HousieTicketGrid, calledNumbers: n
   const allNumbersOnTicket = ticket.flat().filter(num => num !== null) as number[];
 
   switch (prizeType) {
-    case "Jaldi 5":
-    case "1st Jaldi 5": 
-    case "2nd Jaldi 5":
+    case "Early 5":
       const markedNumbersOnTicket = allNumbersOnTicket.filter(num => calledNumbers.includes(num));
-      return markedNumbersOnTicket.length >= 5; 
+      return markedNumbersOnTicket.length >= 5;
     
-    case "Top Line":
+    case "First Line":
       const topRowNumbers = getRowNumbers(0);
       return topRowNumbers.length === NUMBERS_PER_ROW && topRowNumbers.every(num => calledNumbers.includes(num));
-    case "Middle Line":
+    case "Second Line":
       const middleRowNumbers = getRowNumbers(1);
       return middleRowNumbers.length === NUMBERS_PER_ROW && middleRowNumbers.every(num => calledNumbers.includes(num));
-    case "Bottom Line":
+    case "Third Line":
       const bottomRowNumbers = getRowNumbers(2);
       return bottomRowNumbers.length === NUMBERS_PER_ROW && bottomRowNumbers.every(num => calledNumbers.includes(num));
     
     case "Full House":
-    case "1st Full House":
-    case "2nd Full House":
       return allNumbersOnTicket.length === TOTAL_NUMBERS_PER_TICKET && allNumbersOnTicket.every(num => calledNumbers.includes(num));
       
     default:

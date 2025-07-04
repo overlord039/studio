@@ -23,10 +23,10 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
 
 export const PRIZE_DEFINITIONS: Record<PrizeFormat, PrizeType[]> = {
   "Format 1": [
-    PRIZE_TYPES.JALDI_5,
-    PRIZE_TYPES.TOP_LINE,
-    PRIZE_TYPES.MIDDLE_LINE,
-    PRIZE_TYPES.BOTTOM_LINE,
+    PRIZE_TYPES.EARLY_5,
+    PRIZE_TYPES.FIRST_LINE,
+    PRIZE_TYPES.SECOND_LINE,
+    PRIZE_TYPES.THIRD_LINE,
     PRIZE_TYPES.FULL_HOUSE,
   ],
 };
@@ -35,10 +35,10 @@ export const PRIZE_DEFINITIONS: Record<PrizeFormat, PrizeType[]> = {
 // This is more for client-side display; backend might handle actual currency if it were real money.
 export const PRIZE_DISTRIBUTION_PERCENTAGES: Record<PrizeFormat, Record<PrizeType, number>> = {
   "Format 1": {
-    [PRIZE_TYPES.JALDI_5]: 10,
-    [PRIZE_TYPES.TOP_LINE]: 20,
-    [PRIZE_TYPES.MIDDLE_LINE]: 20,
-    [PRIZE_TYPES.BOTTOM_LINE]: 20,
+    [PRIZE_TYPES.EARLY_5]: 10,
+    [PRIZE_TYPES.FIRST_LINE]: 20,
+    [PRIZE_TYPES.SECOND_LINE]: 20,
+    [PRIZE_TYPES.THIRD_LINE]: 20,
     [PRIZE_TYPES.FULL_HOUSE]: 30,
   },
 };

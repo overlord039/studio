@@ -25,10 +25,10 @@ export interface GameSettings {
 }
 
 export const PRIZE_TYPES = {
-  JALDI_5: "Jaldi 5",
-  TOP_LINE: "Top Line",
-  MIDDLE_LINE: "Middle Line",
-  BOTTOM_LINE: "Bottom Line",
+  EARLY_5: "Early 5",
+  FIRST_LINE: "First Line",
+  SECOND_LINE: "Second Line",
+  THIRD_LINE: "Third Line",
   FULL_HOUSE: "Full House",
 } as const;
 

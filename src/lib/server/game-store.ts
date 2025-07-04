@@ -411,7 +411,7 @@ export function claimPrizeStore(
     console.log(`Room ${roomId}: Full House claimed by ${playerId}. Game Over.`);
     stopRoomTimer(roomId, "Full House claimed");
 
-    const linePrizesToAutoCheck: PrizeType[] = [PRIZE_TYPES.TOP_LINE, PRIZE_TYPES.MIDDLE_LINE, PRIZE_TYPES.BOTTOM_LINE];
+    const linePrizesToAutoCheck: PrizeType[] = [PRIZE_TYPES.FIRST_LINE, PRIZE_TYPES.SECOND_LINE, PRIZE_TYPES.THIRD_LINE];
     for (const linePrize of linePrizesToAutoCheck) {
       const isLinePrizeClaimed = room.prizeStatus[linePrize]?.claimedBy?.length > 0;
       

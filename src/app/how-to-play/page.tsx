@@ -120,10 +120,10 @@ export default function HowToPlayPage() {
                   <div>
                     <p>HousieHub supports multiple winning patterns:</p>
                     <ul className="list-none mt-2 ml-4 space-y-2">
-                      <li className="flex items-center"><Star className="mr-2 h-4 w-4 text-yellow-500" /><strong>Jaldi 5:</strong> First to mark any 5 numbers.</li>
-                      <li className="flex items-center"><Star className="mr-2 h-4 w-4 text-yellow-500" /><strong>Top Line:</strong> All 5 numbers in the top row.</li>
-                      <li className="flex items-center"><Star className="mr-2 h-4 w-4 text-yellow-500" /><strong>Middle Line:</strong> All 5 numbers in the middle row.</li>
-                      <li className="flex items-center"><Star className="mr-2 h-4 w-4 text-yellow-500" /><strong>Bottom Line:</strong> All 5 numbers in the bottom row.</li>
+                      <li className="flex items-center"><Star className="mr-2 h-4 w-4 text-yellow-500" /><strong>Early 5:</strong> First to mark any 5 numbers.</li>
+                      <li className="flex items-center"><Star className="mr-2 h-4 w-4 text-yellow-500" /><strong>First Line:</strong> All 5 numbers in the top row.</li>
+                      <li className="flex items-center"><Star className="mr-2 h-4 w-4 text-yellow-500" /><strong>Second Line:</strong> All 5 numbers in the middle row.</li>
+                      <li className="flex items-center"><Star className="mr-2 h-4 w-4 text-yellow-500" /><strong>Third Line:</strong> All 5 numbers in the bottom row.</li>
                       <li className="flex items-center"><Trophy className="mr-2 h-4 w-4 text-yellow-500" /><strong>Full House:</strong> All 15 numbers on your ticket.</li>
                     </ul>
                   </div>
@@ -213,5 +213,3 @@ export default function HowToPlayPage() {
     </div>
   );
 }
-
-  

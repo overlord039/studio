@@ -61,10 +61,10 @@ export default function PrizeCalculatorPage() {
       ticketPrice: undefined, // Changed from 10
       ticketsSold: undefined, // Changed from 100
       percentages: {
-        [PRIZE_TYPES.JALDI_5]: defaultPercentages[PRIZE_TYPES.JALDI_5],
-        [PRIZE_TYPES.TOP_LINE]: defaultPercentages[PRIZE_TYPES.TOP_LINE],
-        [PRIZE_TYPES.MIDDLE_LINE]: defaultPercentages[PRIZE_TYPES.MIDDLE_LINE],
-        [PRIZE_TYPES.BOTTOM_LINE]: defaultPercentages[PRIZE_TYPES.BOTTOM_LINE],
+        [PRIZE_TYPES.EARLY_5]: defaultPercentages[PRIZE_TYPES.EARLY_5],
+        [PRIZE_TYPES.FIRST_LINE]: defaultPercentages[PRIZE_TYPES.FIRST_LINE],
+        [PRIZE_TYPES.SECOND_LINE]: defaultPercentages[PRIZE_TYPES.SECOND_LINE],
+        [PRIZE_TYPES.THIRD_LINE]: defaultPercentages[PRIZE_TYPES.THIRD_LINE],
         [PRIZE_TYPES.FULL_HOUSE]: defaultPercentages[PRIZE_TYPES.FULL_HOUSE],
       },
     },
@@ -277,4 +277,3 @@ export default function PrizeCalculatorPage() {
     </div>
   );
 }
-
