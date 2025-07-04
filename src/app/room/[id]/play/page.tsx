@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -553,7 +554,7 @@ export default function GameRoomPage() {
                 })}
               </ul>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 mt-6">
+            <div className="flex flex-row gap-4 mt-6">
               <Button onClick={handlePlayAgain} className="flex-1" size="lg" disabled={isResetting}>
                 {isResetting ? (
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -808,7 +809,7 @@ export default function GameRoomPage() {
 
             {myTickets.length === 0 && !roomData.isGameOver && roomData.isGameStarted && <p className="text-center text-muted-foreground">You are spectating or have no tickets in this game.</p>}
             <ScrollArea className="max-h-[60vh] lg:max-h-none">
-              <div className="flex flex-wrap justify-center gap-4">
+              <div className="flex flex-wrap justify-center gap-4 p-1">
                 {myTickets.map((ticket, index) => (
                   <MemoizedHousieTicket
                     key={index}
