@@ -49,10 +49,10 @@ export default function HousieTicket({ ticketIndex, ticket, calledNumbers, onNum
                   number !== null && 'font-bold text-secondary-foreground cursor-pointer',
 
                   // Style for marked numbers (overrides default and checkerboard)
-                  status === 'called-marked' ? 'bg-green-500 !text-white scale-105 shadow-lg ring-2 ring-white' : '',
+                  status === 'called-marked' ? 'bg-green-500 text-white' : '',
                   
                   // Hover effect for clickable numbers that are not marked
-                  status === 'default' && number !== null && onNumberClick ? 'hover:scale-105 hover:shadow-lg' : ''
+                  status === 'default' && number !== null && onNumberClick ? 'hover:shadow-lg' : ''
                 )}
                 aria-label={number ? `Number ${number}` : "Empty cell"}
                 role={number ? "button" : "cell"}
