@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -86,7 +85,7 @@ export default function LobbyPage() {
         
         joinedPlayers.forEach(player => {
             if (currentUser && player.id !== currentUser.username) {
-                playSound('game notification.wav');
+                playSound('notification.wav');
                 toast({
                     title: "Player Joined",
                     description: `${player.name} has joined the lobby.`
@@ -320,6 +319,7 @@ export default function LobbyPage() {
         }
         const updatedRoom = await response.json();
         setRoomData(updatedRoom);
+        playSound('notification.wav');
         toast({ title: "Host Transferred", description: `${updatedRoom.host.name} is the new host.` });
     } catch (err) {
         console.error("Error transferring host:", err);
@@ -344,6 +344,7 @@ export default function LobbyPage() {
         }
         const updatedRoom = await response.json();
         setRoomData(updatedRoom);
+        playSound('notification.wav');
         toast({ title: "Player Kicked", description: "The player has been removed from the lobby." });
     } catch (err) {
         console.error("Error kicking player:", err);

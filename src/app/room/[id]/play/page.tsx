@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -372,6 +371,7 @@ export default function GameRoomPage() {
             throw new Error(data.message || `Failed to switch to ${newMode} mode.`);
         }
         setRoomData(data);
+        playSound('notification.wav');
         toast({
             title: "Mode Switched",
             description: `Number calling is now ${newMode}.`,
@@ -405,6 +405,7 @@ export default function GameRoomPage() {
           throw new Error(errorData.message || "Failed to reset the game.");
         }
         router.push(`/room/${roomId}/lobby`);
+        playSound('notification.wav');
         toast({ title: "New Game Ready!", description: "The lobby has been reset for all players." });
       } catch (err) {
         console.error("Error resetting game:", err);
@@ -413,6 +414,7 @@ export default function GameRoomPage() {
       }
     } else {
       router.push(`/room/${roomId}/lobby`);
+      playSound('notification.wav');
       toast({ title: "Returning to Lobby", description: "Waiting for host to start a new game." });
     }
   };
@@ -428,6 +430,7 @@ export default function GameRoomPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ playerId: currentUser.username }),
       });
+      playSound('notification.wav');
       toast({ title: "You have left the room." });
     } catch (err) {
       console.error("Error leaving room:", err);
