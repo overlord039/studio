@@ -67,7 +67,6 @@ export default function GameRoomPage() {
   const [isCallingNextNumber, setIsCallingNextNumber] = useState(false);
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
-  const [currentUserClaimedRows, setCurrentUserClaimedRows] = useState(new Set<number>());
 
   const previousCurrentNumberRef = useRef<number | null>(null);
   const roomDataRef = useRef(roomData);
@@ -161,11 +160,6 @@ export default function GameRoomPage() {
       const me = data.players.find(p => p.id === currentUser.username);
       if (me && me.tickets) {
         setMyTickets(me.tickets);
-        const newClaimedRows = new Set<number>();
-        if (data.prizeStatus[PRIZE_TYPES.TOP_LINE]?.claimedBy.includes(currentUser.username)) newClaimedRows.add(0);
-        if (data.prizeStatus[PRIZE_TYPES.MIDDLE_LINE]?.claimedBy.includes(currentUser.username)) newClaimedRows.add(1);
-        if (data.prizeStatus[PRIZE_TYPES.BOTTOM_LINE]?.claimedBy.includes(currentUser.username)) newClaimedRows.add(2);
-        setCurrentUserClaimedRows(newClaimedRows);
       } else if (isInitialLoad && (!me || !me.tickets || me.tickets.length === 0)) {
         const ticketsParam = searchParams.get('playerTickets');
         const numTickets = ticketsParam ? parseInt(ticketsParam, 10) : 0;
@@ -836,7 +830,6 @@ export default function GameRoomPage() {
                     markedNumbers={markedNumbers}
                     onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
                     className={ticketClassName}
-                    claimedRows={currentUserClaimedRows}
                   />
                 ))}
               </div>

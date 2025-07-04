@@ -12,10 +12,9 @@ interface HousieTicketProps {
   onNumberClick?: (number: number, rowIndex: number, colIndex: number) => void;
   markedNumbers?: Set<string>;
   className?: string;
-  claimedRows?: Set<number>; // New prop for strikethrough
 }
 
-export default function HousieTicket({ ticketIndex, ticket, calledNumbers, onNumberClick, markedNumbers, className, claimedRows }: HousieTicketProps) {
+export default function HousieTicket({ ticketIndex, ticket, calledNumbers, onNumberClick, markedNumbers, className }: HousieTicketProps) {
   const cols = ticket[0]?.length || 0;
 
   const getNumberStatus = (num: HousieTicketNumber, r: number, c: number): 'empty' | 'called-marked' | 'default' => {
@@ -33,7 +32,7 @@ export default function HousieTicket({ ticketIndex, ticket, calledNumbers, onNum
   return (
     <div className={cn("border border-primary rounded-lg shadow-md bg-card overflow-hidden flex flex-col", className)}>
       {ticket.map((row, r) => (
-        <div key={`row-${r}`} className={cn("relative grid", `grid-cols-${cols}`)} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+        <div key={`row-${r}`} className={cn("grid", `grid-cols-${cols}`)} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
           {row.map((number, c) => {
             const status = getNumberStatus(number, r, c);
             const cellKey = `${ticketIndex}-${r}-${c}`;
@@ -57,9 +56,6 @@ export default function HousieTicket({ ticketIndex, ticket, calledNumbers, onNum
               </div>
             );
           })}
-          {claimedRows?.has(r) && (
-            <div className="absolute top-1/2 left-0 w-full h-1 bg-destructive/70 -translate-y-1/2 pointer-events-none"></div>
-          )}
         </div>
       ))}
     </div>
