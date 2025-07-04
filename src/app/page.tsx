@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/auth-context';
+import { playSound } from '@/lib/sounds';
 
 export default function HomePage() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function HomePage() {
   const [joinRoomId, setJoinRoomId] = useState('');
 
   const handleJoinRoom = () => {
+    playSound('play button2.mp3');
     if (!currentUser) {
       toast({
         title: "Login Required",
@@ -45,6 +47,7 @@ export default function HomePage() {
   };
 
   const handleCreateRoom = () => {
+    playSound('play button2.mp3');
     if (!currentUser) {
       toast({
         title: "Login Required",
@@ -55,6 +58,11 @@ export default function HomePage() {
       return;
     }
     router.push('/create-room');
+  };
+  
+  const handleNavigateWithSound = (path: string) => {
+    playSound('play button2.mp3');
+    router.push(path);
   };
 
   return (
@@ -121,10 +129,10 @@ export default function HomePage() {
         <section className="grid grid-cols-2 gap-4">
           <Card 
             className="bg-accent text-accent-foreground hover:bg-accent/90 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
-            onClick={() => router.push('/number-caller')}
+            onClick={() => handleNavigateWithSound('/number-caller')}
             role="button"
             tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push('/number-caller') }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithSound('/number-caller') }}
           >
             <CardContent className="flex flex-col items-center justify-center p-4 text-center">
               <Speaker className="h-10 w-10 mb-2" />
@@ -134,10 +142,10 @@ export default function HomePage() {
 
           <Card 
             className="bg-green-600 text-white hover:bg-green-700 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
-            onClick={() => router.push('/prize-calculator')}
+            onClick={() => handleNavigateWithSound('/prize-calculator')}
             role="button"
             tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') router.push('/prize-calculator') }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithSound('/prize-calculator') }}
           >
             <CardContent className="flex flex-col items-center justify-center p-4 text-center">
               <Calculator className="h-10 w-10 mb-2" />
