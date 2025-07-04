@@ -24,7 +24,7 @@ export default function HomePage() {
   const [joinRoomId, setJoinRoomId] = useState('');
 
   const handleJoinRoom = () => {
-    playSound('play button2.mp3');
+    playSound('button2.mp3');
     if (!currentUser) {
       toast({
         title: "Login Required",
@@ -47,7 +47,7 @@ export default function HomePage() {
   };
 
   const handleCreateRoom = () => {
-    playSound('play button2.mp3');
+    playSound('button2.mp3');
     if (!currentUser) {
       toast({
         title: "Login Required",
@@ -61,7 +61,7 @@ export default function HomePage() {
   };
   
   const handleNavigateWithSound = (path: string) => {
-    playSound('play button2.mp3');
+    playSound('button2.mp3');
     router.push(path);
   };
 

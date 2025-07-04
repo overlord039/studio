@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { playSound } from '@/lib/sounds';
 
 type Mode = 'public' | 'private';
 
@@ -54,6 +55,7 @@ export default function CreateRoomSelectionPage() {
   ];
   
   const handleCardClick = (option: GameOption) => {
+    playSound('button2.mp3');
     if (option.disabled) {
       toast({
         title: "Coming Soon!",
