@@ -270,7 +270,6 @@ export default function GameRoomPage() {
   };
 
   const handleClaimPrize = async (prizeType: PrizeType) => {
-    playSound('cards.mp3');
     if (!roomData || !currentUser) {
       toast({ title: "Cannot Claim", description: "Room data missing or not logged in.", variant: "destructive" });
       return;
