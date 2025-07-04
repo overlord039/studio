@@ -17,25 +17,23 @@ interface SoundContextType {
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
 
 export function SoundProvider({ children }: { children: ReactNode }) {
-  const [isSfxMuted, setIsSfxMuted] = useState(true); // Default to muted on server
-  const [isBgmEnabled, setIsBgmEnabled] = useState(false); // Default to disabled on server
+  const [isSfxMuted, setIsSfxMuted] = useState(false); // Default to not muted (SFX on)
+  const [isBgmEnabled, setIsBgmEnabled] = useState(true); // Default to enabled (BGM on)
 
   useEffect(() => {
-    // This effect runs only on the client
+    // This effect runs only on the client to sync with localStorage
     try {
+      // For SFX: default is ON (muted is false). This is set if localStorage is empty.
       const storedSfxMuteState = localStorage.getItem(SFX_MUTED_KEY);
-      // Default to not muted if nothing is stored
       setIsSfxMuted(storedSfxMuteState === 'true');
 
+      // For BGM: default is ON (enabled is true). This is set if localStorage is empty.
       const storedBgmEnabledState = localStorage.getItem(BGM_ENABLED_KEY);
-      // Default to disabled (false) if nothing is stored
-      setIsBgmEnabled(storedBgmEnabledState === 'true');
+      setIsBgmEnabled(storedBgmEnabledState !== 'false');
 
     } catch (error) {
       console.error("Could not read sound settings from localStorage", error);
-      // Sensible defaults on error
-      setIsSfxMuted(false); 
-      setIsBgmEnabled(false);
+      // On error, the component will use the default useState values: SFX on, BGM on.
     }
   }, []);
 
