@@ -309,13 +309,14 @@ export default function GameRoomPage() {
         });
       } else {
         const errorMessage = result.message || `Failed to claim ${prizeType}.`;
-        if (!errorMessage.toLowerCase().includes('bogey')) {
-            toast({
-                title: `Claim for ${prizeType} Failed`,
-                description: errorMessage,
-                variant: "destructive"
-            });
+        if (errorMessage.toLowerCase().includes('bogey')) {
+          playSound('error.wav');
         }
+        toast({
+            title: `Claim for ${prizeType} Failed`,
+            description: errorMessage,
+            variant: "destructive"
+        });
       }
     } catch (err) {
       console.error(`Error claiming ${prizeType}:`, err);
@@ -549,7 +550,7 @@ export default function GameRoomPage() {
                 })}
               </ul>
             </div>
-            <div className="flex flex-row gap-4 mt-6">
+            <div className="flex flex-col sm:flex-row gap-4 mt-6">
               <Button onClick={handlePlayAgain} className="flex-1" size="lg" disabled={isResetting}>
                 {isResetting ? (
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
