@@ -6,60 +6,62 @@ import { cn } from '@/lib/utils';
 import React from 'react';
 
 interface HousieTicketProps {
-  ticketIndex: number; // Added to identify the ticket
+  ticketIndex: number;
   ticket: HousieTicketGrid;
   calledNumbers: number[];
   onNumberClick?: (number: number, rowIndex: number, colIndex: number) => void;
-  markedNumbers?: Set<string>; // Expects "ticketIndex-rowIndex-colIndex" format for marked numbers
+  markedNumbers?: Set<string>;
   className?: string;
+  claimedRows?: Set<number>; // New prop for strikethrough
 }
 
-export default function HousieTicket({ ticketIndex, ticket, calledNumbers, onNumberClick, markedNumbers, className }: HousieTicketProps) {
-  const rows = ticket.length;
+export default function HousieTicket({ ticketIndex, ticket, calledNumbers, onNumberClick, markedNumbers, className, claimedRows }: HousieTicketProps) {
   const cols = ticket[0]?.length || 0;
 
   const getNumberStatus = (num: HousieTicketNumber, r: number, c: number): 'empty' | 'called-marked' | 'default' => {
     if (num === null) return 'empty';
     
     const currentNumberKey = `${ticketIndex}-${r}-${c}`;
-    // markedNumbers comes from parent state, updated when player clicks a *called* number.
-    // So, if isMarkedByPlayer is true, it implies the number was also in calledNumbers at the time of marking.
     const isMarkedByPlayer = markedNumbers?.has(currentNumberKey);
     
     if (isMarkedByPlayer) {
-      return 'called-marked'; // Player has marked this (it must have been a called number)
+      return 'called-marked';
     }
-    return 'default'; // Number is not marked by player (could be called or not-called by system)
+    return 'default';
   };
 
   return (
-    <div className={cn("grid border border-primary rounded-lg shadow-md bg-card overflow-hidden", `grid-cols-${cols}`, className)} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
-      {ticket.map((row, r) =>
-        row.map((number, c) => {
-          const status = getNumberStatus(number, r, c);
-          const cellKey = `${ticketIndex}-${r}-${c}`; // Unique key for React rendering
-          
-          return (
-            <div
-              key={cellKey}
-              onClick={() => number && onNumberClick?.(number, r, c)}
-              className={cn(
-                "aspect-square flex items-center justify-center p-1 text-base font-medium border border-border/50 transition-colors duration-150 ease-in-out",
-                status === 'empty' ? 'bg-muted/30 text-transparent' : 'cursor-pointer', // Make empty cells non-interactive text-wise
-                status === 'called-marked' ? 'bg-green-500 text-white' : '', // Player marked: green, static
-                status === 'default' && number !== null ? 'bg-card text-card-foreground hover:bg-secondary/50' : '', // Default state for un-marked numbers
-                // Apply hover effects only if clickable and not already marked green
-                status === 'default' && number !== null && onNumberClick ? 'hover:scale-105 hover:shadow-lg' : ''
-              )}
-              aria-label={number ? `Number ${number}` : "Empty cell"}
-              role={number ? "button" : "cell"}
-              tabIndex={number && status !== 'empty' ? 0 : -1}
-            >
-              {number !== null ? number : ''}
-            </div>
-          );
-        })
-      )}
+    <div className={cn("border border-primary rounded-lg shadow-md bg-card overflow-hidden flex flex-col", className)}>
+      {ticket.map((row, r) => (
+        <div key={`row-${r}`} className={cn("relative grid", `grid-cols-${cols}`)} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+          {row.map((number, c) => {
+            const status = getNumberStatus(number, r, c);
+            const cellKey = `${ticketIndex}-${r}-${c}`;
+            
+            return (
+              <div
+                key={cellKey}
+                onClick={() => number && onNumberClick?.(number, r, c)}
+                className={cn(
+                  "aspect-square flex items-center justify-center p-1 text-base font-medium border border-border/50 transition-colors duration-150 ease-in-out",
+                  status === 'empty' ? 'bg-muted/30 text-transparent' : 'cursor-pointer',
+                  status === 'called-marked' ? 'bg-green-500 text-white' : '',
+                  status === 'default' && number !== null ? 'bg-card text-card-foreground hover:bg-secondary/50' : '',
+                  status === 'default' && number !== null && onNumberClick ? 'hover:scale-105 hover:shadow-lg' : ''
+                )}
+                aria-label={number ? `Number ${number}` : "Empty cell"}
+                role={number ? "button" : "cell"}
+                tabIndex={number && status !== 'empty' ? 0 : -1}
+              >
+                {number !== null ? number : ''}
+              </div>
+            );
+          })}
+          {claimedRows?.has(r) && (
+            <div className="absolute top-1/2 left-0 w-full h-1 bg-destructive/70 -translate-y-1/2 pointer-events-none"></div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

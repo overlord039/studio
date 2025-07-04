@@ -475,6 +475,19 @@ export default function GameRoomPage() {
   const totalTicketsInGame = roomData.players.reduce((sum, player) => sum + (player.tickets?.length || 0), 0);
   const totalPrizePool = gameSettings.ticketPrice * totalTicketsInGame;
   const ticketsText = (count: number) => count === 1 ? 'ticket' : 'tickets';
+  
+  const currentUserClaimedRows = new Set<number>();
+  if (currentUser) {
+    if (roomData.prizeStatus[PRIZE_TYPES.TOP_LINE]?.claimedBy.includes(currentUser.username)) {
+      currentUserClaimedRows.add(0);
+    }
+    if (roomData.prizeStatus[PRIZE_TYPES.MIDDLE_LINE]?.claimedBy.includes(currentUser.username)) {
+      currentUserClaimedRows.add(1);
+    }
+    if (roomData.prizeStatus[PRIZE_TYPES.BOTTOM_LINE]?.claimedBy.includes(currentUser.username)) {
+      currentUserClaimedRows.add(2);
+    }
+  }
 
 
   if (roomData.isGameOver) {
@@ -811,6 +824,7 @@ export default function GameRoomPage() {
                     markedNumbers={markedNumbers}
                     onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
                     className={ticketClassName}
+                    claimedRows={currentUserClaimedRows}
                   />
                 ))}
               </div>
