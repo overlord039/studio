@@ -67,6 +67,7 @@ export default function GameRoomPage() {
   const [isCallingNextNumber, setIsCallingNextNumber] = useState(false);
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [currentUserClaimedRows, setCurrentUserClaimedRows] = useState(new Set<number>());
 
   const previousCurrentNumberRef = useRef<number | null>(null);
   const roomDataRef = useRef(roomData);
@@ -160,6 +161,11 @@ export default function GameRoomPage() {
       const me = data.players.find(p => p.id === currentUser.username);
       if (me && me.tickets) {
         setMyTickets(me.tickets);
+        const newClaimedRows = new Set<number>();
+        if (data.prizeStatus[PRIZE_TYPES.TOP_LINE]?.claimedBy.includes(currentUser.username)) newClaimedRows.add(0);
+        if (data.prizeStatus[PRIZE_TYPES.MIDDLE_LINE]?.claimedBy.includes(currentUser.username)) newClaimedRows.add(1);
+        if (data.prizeStatus[PRIZE_TYPES.BOTTOM_LINE]?.claimedBy.includes(currentUser.username)) newClaimedRows.add(2);
+        setCurrentUserClaimedRows(newClaimedRows);
       } else if (isInitialLoad && (!me || !me.tickets || me.tickets.length === 0)) {
         const ticketsParam = searchParams.get('playerTickets');
         const numTickets = ticketsParam ? parseInt(ticketsParam, 10) : 0;
@@ -270,6 +276,7 @@ export default function GameRoomPage() {
   };
 
   const handleClaimPrize = async (prizeType: PrizeType) => {
+    playSound('button2.mp3');
     if (!roomData || !currentUser) {
       toast({ title: "Cannot Claim", description: "Room data missing or not logged in.", variant: "destructive" });
       return;
@@ -476,19 +483,6 @@ export default function GameRoomPage() {
   const totalPrizePool = gameSettings.ticketPrice * totalTicketsInGame;
   const ticketsText = (count: number) => count === 1 ? 'ticket' : 'tickets';
   
-  const currentUserClaimedRows = new Set<number>();
-  if (currentUser) {
-    if (roomData.prizeStatus[PRIZE_TYPES.TOP_LINE]?.claimedBy.includes(currentUser.username)) {
-      currentUserClaimedRows.add(0);
-    }
-    if (roomData.prizeStatus[PRIZE_TYPES.MIDDLE_LINE]?.claimedBy.includes(currentUser.username)) {
-      currentUserClaimedRows.add(1);
-    }
-    if (roomData.prizeStatus[PRIZE_TYPES.BOTTOM_LINE]?.claimedBy.includes(currentUser.username)) {
-      currentUserClaimedRows.add(2);
-    }
-  }
-
 
   if (roomData.isGameOver) {
     const formatCurrency = (amount: number) => {
@@ -633,11 +627,29 @@ export default function GameRoomPage() {
                                 {prizesForFormat.map(prize => {
                                     const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
                                     const prizeAmount = (totalPrizePool * percentage) / 100;
+                                    const claimInfo = roomData.prizeStatus[prize as PrizeType];
+                                    const isClaimed = claimInfo && claimInfo.claimedBy.length > 0;
+                                    
+                                    let claimantText = "Unclaimed";
+                                    if (isClaimed) {
+                                        const claimantNames = claimInfo.claimedBy.map(id => {
+                                            const player = roomData.players.find(p => p.id === id);
+                                            if (player?.id === currentUser?.username) return "You";
+                                            return player?.name || id;
+                                        }).join(', ');
+                                        claimantText = `Claimed by ${claimantNames}`;
+                                    }
+
                                     return (
-                                    <li key={prize} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
-                                        <span>{prize} <span className="text-muted-foreground">({percentage}%)</span></span>
-                                        <span className="font-semibold">₹{prizeAmount.toFixed(2)}</span>
-                                    </li>
+                                        <li key={prize} className="flex flex-col bg-background/50 p-1.5 rounded-md">
+                                            <div className="flex justify-between items-center w-full">
+                                                <span>{prize} <span className="text-muted-foreground">({percentage}%)</span></span>
+                                                <span className="font-semibold">₹{prizeAmount.toFixed(2)}</span>
+                                            </div>
+                                            <span className={cn("text-xs text-right w-full", isClaimed ? "text-green-600 font-medium" : "text-muted-foreground/80")}>
+                                                {claimantText}
+                                            </span>
+                                        </li>
                                     );
                                 })}
                                 </ul>
