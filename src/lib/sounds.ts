@@ -19,6 +19,7 @@ export function playSound(soundFile: string) {
     }
     
     const audio = new Audio(`/${soundFile}`);
+    audio.volume = 0.5; // Set volume to 50%
     audio.play().catch(error => {
         // This error is common in browsers that block autoplay.
         // It's not critical, so we'll log it as a warning.
