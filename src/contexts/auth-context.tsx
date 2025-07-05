@@ -90,13 +90,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         router.push('/');
       }).catch((error) => {
         // Handle Errors here.
+        console.error("Error during Google sign-in:", error);
+
         const errorCode = error.code;
         const errorMessage = error.message;
-        // The email of the user's account used.
-        const email = error.customData?.email;
-        // The AuthCredential type that was used.
-        const credential = GoogleAuthProvider.credentialFromError(error);
-        console.error("Error during Google sign-in:", { errorCode, errorMessage, email, credential });
+
         toast({
           title: "Sign-in Error",
           description: errorMessage || "Could not sign in with Google. Please try again.",
