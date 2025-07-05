@@ -11,14 +11,15 @@ import {
   onAuthStateChanged, 
   signInAnonymously, 
   linkWithPopup,
-  signInWithCredential,
   deleteUser
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
-import { doc, getDoc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { UserStats, PrizeType } from '@/types';
 import { PRIZE_TYPES } from '@/types';
+import { Loader2 } from 'lucide-react';
+import LoginSelectionScreen from '@/components/auth/login-selection-screen';
 
 
 // Simplified user object to store in context
@@ -209,44 +210,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const linkGoogleAccount = async () => {
     if (!auth || !auth.currentUser) {
-      toast({ title: "Error", description: "No user is currently signed in to link.", variant: "destructive" });
-      return;
+        toast({ title: "Error", description: "No user is currently signed in to link.", variant: "destructive" });
+        return;
     }
-    
+
     if (!auth.currentUser.isAnonymous) {
-      toast({ title: "Already Linked", description: "This account is not a guest account." });
-      return;
+        toast({ title: "Already Linked", description: "This account is not a guest account." });
+        return;
     }
-    
+
     const provider = new GoogleAuthProvider();
-    
     try {
-      const result = await linkWithPopup(auth.currentUser, provider);
-      toast({
-        title: "Account Linked Successfully!",
-        description: `Your guest account is now linked to ${result.user.email}.`,
-      });
+        await linkWithPopup(auth.currentUser, provider);
+        // Success is handled by onAuthStateChanged which will update the user's state
     } catch (error: any) {
-      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-        toast({
-          title: "Linking Cancelled",
-          description: "You closed the sign-in window.",
-        });
-      } else if (error.code === 'auth/credential-already-in-use') {
-        toast({
-          title: "Account Already Exists",
-          description: "This Google account is already associated with another user. Please sign out and sign in with Google directly.",
-          variant: "destructive",
-          duration: 7000
-        });
-      } else {
-        console.error("Full error from linkWithPopup:", error);
-        toast({
-          title: "Linking Error",
-          description: error.message || "An unexpected error occurred during linking.",
-          variant: "destructive",
-        });
-      }
+        if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+            toast({
+                title: "Linking Cancelled",
+                description: "You closed the sign-in window.",
+            });
+        } else if (error.code === 'auth/credential-already-in-use') {
+            toast({
+                title: "Account Already Exists",
+                description: "This Google account is already in use. Please sign out and sign in with Google directly to access that account.",
+                variant: "destructive",
+                duration: 7000,
+            });
+        } else {
+            console.error("Error linking account:", error);
+            toast({
+                title: "Error Linking Account",
+                description: error.message || "An unexpected error occurred.",
+                variant: "destructive",
+            });
+        }
     }
   };
 
@@ -301,9 +298,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const value = { currentUser, userStats, updateUserStats, loginWithGoogle, loginAsGuest, linkGoogleAccount, logout, deleteAccount, loading };
+
   return (
-    <AuthContext.Provider value={{ currentUser, userStats, updateUserStats, loginWithGoogle, loginAsGuest, linkGoogleAccount, logout, deleteAccount, loading }}>
-        {children}
+    <AuthContext.Provider value={value}>
+      {loading ? (
+        <div className="flex h-screen w-screen items-center justify-center bg-background">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      ) : !currentUser ? (
+        <LoginSelectionScreen />
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 }

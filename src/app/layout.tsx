@@ -34,17 +34,17 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
         <SplashScreen />
         <SoundProvider>
-          <AuthProvider>
             <ThemeProvider
               attribute="class"
               defaultTheme="system"
               enableSystem
               disableTransitionOnChange
             >
+            <AuthProvider>
               <PageLayout>{children}</PageLayout>
               <BackgroundMusicPlayer />
+            </AuthProvider>
             </ThemeProvider>
-          </AuthProvider>
         </SoundProvider>
       </body>
     </html>
