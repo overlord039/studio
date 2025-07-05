@@ -127,8 +127,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
     }
     const provider = new GoogleAuthProvider();
-    provider.addScope('profile');
-    provider.addScope('email');
 
     signInWithPopup(auth, provider)
       .then((result) => {
@@ -136,9 +134,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("Signed in user:", user);
         router.push('/');
       }).catch((error) => {
-        const errorCode = error.code || 'UNKNOWN';
-        const errorMessage = error.message || 'An unknown error occurred.';
-        console.error("Error during Google sign-in:", { errorCode, errorMessage });
+        console.error("Full error object during Google sign-in:", error);
+        
+        let errorCode = "UNKNOWN_ERROR";
+        let errorMessage = "An unexpected error occurred. Please try again.";
+
+        if (error && typeof error === 'object' && 'code' in error && 'message' in error) {
+            errorCode = String((error as any).code);
+            errorMessage = String((error as any).message);
+        }
+
+        if (errorCode === 'auth/popup-closed-by-user' || errorCode === 'auth/cancelled-popup-request') {
+            toast({
+                title: "Sign-in Cancelled",
+                description: "The sign-in window was closed.",
+            });
+            return;
+        }
+
         toast({
           title: "Sign-in Error",
           description: `[${errorCode}] ${errorMessage}`,
@@ -159,9 +172,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         router.push('/');
       })
       .catch((error) => {
-        const errorCode = error.code || 'UNKNOWN';
-        const errorMessage = error.message || 'An unknown error occurred.';
-        console.error("Error during guest sign-in:", { errorCode, errorMessage });
+        console.error("Full error object during Guest sign-in:", error);
+
+        let errorCode = "UNKNOWN_ERROR";
+        let errorMessage = "An unexpected error occurred. Please try again.";
+
+        if (error && typeof error === 'object' && 'code' in error && 'message' in error) {
+            errorCode = String((error as any).code);
+            errorMessage = String((error as any).message);
+        }
+
         toast({
           title: "Guest Sign-in Error",
           description: `[${errorCode}] ${errorMessage}`,
@@ -191,13 +211,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         // onAuthStateChanged will update the user state automatically.
       }).catch((error) => {
-        console.error("Error linking account:", error);
-        const errorCode = error.code;
-        const errorMessage = error.message;
+        console.error("Full error object during account linking:", error);
+
+        let errorCode = "UNKNOWN_ERROR";
+        let errorMessage = "An unexpected error occurred. Please try again.";
+        let credential = null;
+
+        if (error && typeof error === 'object' && 'code' in error && 'message' in error) {
+            errorCode = String((error as any).code);
+            errorMessage = String((error as any).message);
+            if(errorCode === 'auth/credential-already-in-use') {
+                try {
+                    credential = GoogleAuthProvider.credentialFromError(error);
+                } catch(e) {
+                    console.error("Could not extract credential from error", e);
+                }
+            }
+        }
 
         if (errorCode === 'auth/credential-already-in-use') {
-          const credential = GoogleAuthProvider.credentialFromError(error);
-          
           if (!credential) {
             toast({
               title: "Sign-in Error",
