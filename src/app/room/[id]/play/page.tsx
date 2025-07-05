@@ -23,6 +23,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import LiveNumberBoard from '@/components/game/live-number-board';
 import { playSound } from '@/lib/sounds';
+import { db } from '@/lib/firebase/config';
+import { doc, increment, updateDoc } from 'firebase/firestore';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,6 +69,7 @@ export default function GameRoomPage() {
   const [isCallingNextNumber, setIsCallingNextNumber] = useState(false);
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [statsUpdated, setStatsUpdated] = useState(false);
 
   const previousCurrentNumberRef = useRef<number | null>(null);
   const roomDataRef = useRef(roomData);
@@ -207,6 +210,50 @@ export default function GameRoomPage() {
     }
   }, [roomId, currentUser, searchParams, toast]);
 
+  // Effect to update player stats when game is over
+  useEffect(() => {
+    const updateMyStats = async () => {
+        if (!roomData || !currentUser || currentUser.isGuest || !db || !roomData.isGameOver) {
+            return;
+        }
+
+        const myPlayerInfo = roomData.players.find(p => p.id === currentUser.uid);
+        if (!myPlayerInfo) return; // Not a player in this room
+
+        console.log(`Game over detected for ${currentUser.displayName}. Updating stats...`);
+
+        const playerDocRef = doc(db, "users", currentUser.uid);
+        const statsUpdate: { [key: string]: any } = {
+            matchesPlayed: increment(1)
+        };
+
+        for (const prizeType in roomData.prizeStatus) {
+            const prizeInfo = roomData.prizeStatus[prizeType as PrizeType];
+            if (prizeInfo && prizeInfo.claimedBy.includes(currentUser.uid)) {
+                statsUpdate[`prizesWon.${prizeType}`] = increment(1);
+            }
+        }
+
+        try {
+            await updateDoc(playerDocRef, statsUpdate);
+            console.log(`Successfully updated stats for ${currentUser.displayName}.`);
+            setStatsUpdated(true); // Mark as updated to prevent re-runs
+        } catch (error) {
+            console.error("Failed to update stats:", error);
+            // Optionally, show a toast to the user
+            toast({
+                title: "Stats Sync Error",
+                description: "Could not save your game stats. They will be out of sync.",
+                variant: "destructive"
+            });
+        }
+    };
+
+    if (roomData?.isGameOver && !statsUpdated) {
+        updateMyStats();
+    }
+}, [roomData, currentUser, db, statsUpdated, toast]);
+
   useEffect(() => {
     if (currentUser && roomId && !authLoading) {
       fetchGameDetails(true);
@@ -311,10 +358,7 @@ export default function GameRoomPage() {
         const errorMessage = result.message || `Failed to claim ${prizeType}.`;
         if (errorMessage.toLowerCase().includes('bogey')) {
           playSound('error.wav');
-          // A bogey claim is a common user error, so we provide feedback with a sound
-          // but avoid showing a disruptive toast notification.
         } else {
-          // For other types of errors (e.g., server issues, game already over), show a toast.
           toast({
               title: `Claim for ${prizeType} Failed`,
               description: errorMessage,

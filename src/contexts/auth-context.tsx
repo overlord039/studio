@@ -13,9 +13,13 @@ import {
   linkWithPopup,
   signInWithCredential
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase/config';
+import { auth, db } from '@/lib/firebase/config';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import type { UserStats, PrizeType } from '@/types';
+import { PRIZE_TYPES } from '@/types';
+
 
 // Simplified user object to store in context
 export interface User {
@@ -24,6 +28,7 @@ export interface User {
   email: string | null;
   isGuest: boolean;
   createdAt: string;
+  stats: UserStats;
 }
 
 interface AuthContextType {
@@ -43,15 +48,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
-  const firebaseConfigured = !!auth;
+  const firebaseConfigured = !!auth && !!db;
 
   useEffect(() => {
-    if (!auth) {
+    if (!auth || !db) {
       setLoading(false);
       return; // No auth object, so don't subscribe.
     }
-    const unsubscribe = onAuthStateChanged(auth, (user: FirebaseUser | null) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
       if (user) {
+        const isGuest = user.isAnonymous;
+        let userStats: UserStats;
+
+        if (isGuest) {
+            // For guests, use default, non-persistent stats
+            userStats = {
+                matchesPlayed: 0,
+                prizesWon: Object.values(PRIZE_TYPES).reduce((acc, prize) => {
+                    acc[prize] = 0;
+                    return acc;
+                }, {} as Record<PrizeType, number>),
+            };
+        } else {
+            // For registered users, fetch or create from Firestore
+            const userDocRef = doc(db, "users", user.uid);
+            const userDocSnap = await getDoc(userDocRef);
+
+            if (userDocSnap.exists()) {
+                userStats = userDocSnap.data() as UserStats;
+            } else {
+                // Create a new stats document for the registered user
+                userStats = {
+                    matchesPlayed: 0,
+                    prizesWon: Object.values(PRIZE_TYPES).reduce((acc, prize) => {
+                        acc[prize] = 0;
+                        return acc;
+                    }, {} as Record<PrizeType, number>),
+                };
+                await setDoc(userDocRef, userStats);
+            }
+        }
+        
         // User is signed in.
         const userToStore: User = {
           uid: user.uid,
@@ -59,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: user.email,
           isGuest: user.isAnonymous,
           createdAt: user.metadata.creationTime || new Date().toISOString(),
+          stats: userStats,
         };
         setCurrentUser(userToStore);
       } else {
@@ -93,18 +131,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     signInWithPopup(auth, provider)
       .then((result) => {
-        // This gives you a Google Access Token. You can use it to access the Google API.
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        const token = credential?.accessToken;
-        // The signed-in user info.
         const user = result.user;
-        console.log("Signed in user:", user, "with token:", token);
-        // onAuthStateChanged will handle setting the user, but we can still redirect here
+        console.log("Signed in user:", user);
         router.push('/');
       }).catch((error) => {
-        // Handle Errors here more safely.
         console.error("Google Sign-In Error (Raw):", error);
-
         const errorCode = error.code || 'UNKNOWN';
         const errorMessage = error.message || 'An unknown error occurred.';
         
@@ -182,12 +213,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             description: "Switching to your existing Google account.",
           });
           
-          // Sign out the current anonymous user
           signOut(auth).then(() => {
-            // Sign in with the credential of the existing user account.
             signInWithCredential(auth, credential)
               .then((result) => {
-                // User is signed in. onAuthStateChanged will handle the rest.
                 console.log("Successfully switched to existing account:", result.user.uid);
                 router.push('/');
               })

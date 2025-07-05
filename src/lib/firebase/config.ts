@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp, type FirebaseOptions, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -18,21 +19,25 @@ const firebaseConfigIsValid =
 
 let app: FirebaseApp | null;
 let auth: Auth | null;
+let db: Firestore | null;
 
 if (firebaseConfigIsValid) {
   // Initialize Firebase
   try {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
+    db = getFirestore(app);
   } catch (error) {
     console.error("Firebase initialization error:", error);
     app = null;
     auth = null;
+    db = null;
   }
 } else {
     console.warn("Firebase configuration is missing or incomplete in your .env file. Firebase services will be disabled. Make sure all NEXT_PUBLIC_FIREBASE_* variables are set.");
     app = null;
     auth = null;
+    db = null;
 }
 
-export { app, auth };
+export { app, auth, db };

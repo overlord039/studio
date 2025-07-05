@@ -3,14 +3,15 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertTriangle, Calendar, Mail, LogOut, X, Fingerprint, Gamepad2 } from "lucide-react";
+import { AlertTriangle, Calendar, Mail, LogOut, X, Fingerprint, Gamepad2, Award } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+import type { PrizeType } from '@/types';
 
 export default function ProfilePage() {
   const { currentUser, loading, logout, linkGoogleAccount } = useAuth();
@@ -65,6 +66,10 @@ export default function ProfilePage() {
       month: 'short',
       year: 'numeric'
     }).replace(/ /g, '-');
+    
+    const prizesWonArray = currentUser.stats?.prizesWon 
+      ? Object.entries(currentUser.stats.prizesWon).filter(([_, count]) => count > 0)
+      : [];
 
 
     return (
@@ -119,8 +124,30 @@ export default function ProfilePage() {
                          <div className="flex items-center gap-3 text-sm sm:text-base">
                             <Gamepad2 className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                             <span className="text-muted-foreground">Matches Played:</span>
-                            <span className="font-medium">0</span>
+                            <span className="font-medium">{currentUser.stats?.matchesPlayed ?? 0}</span>
                         </div>
+                        
+                        <Card className="bg-secondary/30 mt-4">
+                          <CardHeader className="p-3">
+                            <CardTitle className="text-base font-semibold flex items-center">
+                              <Award className="mr-2 h-4 w-4 text-primary" />Prizes Won
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-3 pt-0 text-sm">
+                            {prizesWonArray.length > 0 ? (
+                              <ul className="space-y-1">
+                                {prizesWonArray.map(([prize, count]) => (
+                                  <li key={prize} className="flex justify-between">
+                                    <span className="text-muted-foreground">{prize}:</span>
+                                    <span className="font-medium">{count}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-muted-foreground text-center">No prizes won yet. Keep playing!</p>
+                            )}
+                          </CardContent>
+                        </Card>
                       </>
                    )}
               </CardContent>

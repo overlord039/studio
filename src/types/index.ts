@@ -1,10 +1,16 @@
 
 
+export interface UserStats {
+  matchesPlayed: number;
+  prizesWon: Record<PrizeType, number>;
+}
+
 export interface Player {
   id: string; // Will typically be derived from username or a unique auth ID
   name: string;
   isHost?: boolean;
   email?: string | null;
+  stats?: UserStats;
 }
 
 export interface BackendPlayerInRoom extends Player {
