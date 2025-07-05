@@ -78,6 +78,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
     }
     const provider = new GoogleAuthProvider();
+    // Optional: Add scopes to request additional user data from Google.
+    // provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
+    
+    // Optional: Add custom parameters to the sign-in request.
+    // provider.setCustomParameters({
+    //   'login_hint': 'user@example.com'
+    // });
+
     signInWithPopup(auth, provider)
       .then((result) => {
         // This gives you a Google Access Token. You can use it to access the Google API.
@@ -90,10 +98,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         router.push('/');
       }).catch((error) => {
         // Handle Errors here.
-        console.error("Error during Google sign-in:", error);
-
         const errorCode = error.code;
         const errorMessage = error.message;
+        // The email of the user's account used.
+        const email = error.customData?.email;
+        // The AuthCredential type that was used.
+        const credential = GoogleAuthProvider.credentialFromError(error);
+        
+        console.error("Error during Google sign-in:", { errorCode, errorMessage, email, credential });
 
         toast({
           title: "Sign-in Error",
