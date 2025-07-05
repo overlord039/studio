@@ -16,7 +16,7 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   );
 
 export default function LoginSelectionScreen() {
-  const { loginWithGoogle, loginAsGuest, firebaseConfigured } = useAuth();
+  const { loginWithGoogle, loginAsGuest } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState<null | 'google' | 'guest'>(null);
 
   const handleGoogleSignIn = async () => {
@@ -32,6 +32,11 @@ export default function LoginSelectionScreen() {
     await loginAsGuest();
     setIsSigningIn(null);
   };
+  
+  const firebaseConfigured = 
+      process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
+      process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN &&
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
   if (!firebaseConfigured) {
     return (

@@ -16,7 +16,6 @@ import {
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
 import { doc, getDoc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
-import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { UserStats, PrizeType } from '@/types';
 import { PRIZE_TYPES } from '@/types';
@@ -42,7 +41,6 @@ interface AuthContextType {
   logout: () => void;
   deleteAccount: () => Promise<void>;
   loading: boolean;
-  firebaseConfigured: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -211,8 +209,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const linkGoogleAccount = async () => {
     if (!auth || !auth.currentUser) {
-      toast({ title: "Error", description: "No user is currently signed in to link.", variant: "destructive" });
-      return;
+        toast({ title: "Error", description: "No user is currently signed in to link.", variant: "destructive" });
+        return;
     }
     
     if (!auth.currentUser.isAnonymous) {
@@ -280,7 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 });
             }
         } else if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-            toast({
+             toast({
               title: "Linking Cancelled",
               description: "You closed the sign-in window.",
             });
@@ -347,8 +345,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, userStats, updateUserStats, loginWithGoogle, loginAsGuest, linkGoogleAccount, logout, deleteAccount, loading, firebaseConfigured }}>
-      {children}
+    <AuthContext.Provider value={{ currentUser, userStats, updateUserStats, loginWithGoogle, loginAsGuest, linkGoogleAccount, logout, deleteAccount, loading }}>
+        {children}
     </AuthContext.Provider>
   );
 }

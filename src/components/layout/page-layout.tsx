@@ -25,9 +25,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
     }
 
     // Show the login selection screen on any page if the user is not logged in.
-    const showLoginSelection = !currentUser;
-
-    if (showLoginSelection) {
+    if (!currentUser) {
         return <LoginSelectionScreen />;
     }
 
