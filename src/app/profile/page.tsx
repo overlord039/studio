@@ -1,10 +1,11 @@
+
 "use client";
 
 import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertTriangle, Calendar, Mail, LogOut, X } from "lucide-react";
+import { AlertTriangle, Calendar, Mail, LogOut, X, Fingerprint, Gamepad2 } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -101,6 +102,11 @@ export default function ProfilePage() {
                    ) : (
                       <>
                         <div className="flex items-center gap-3 text-sm sm:text-base">
+                            <Fingerprint className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">User ID:</span>
+                            <span className="font-medium break-all">{currentUser.uid}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm sm:text-base">
                             <Mail className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                             <span className="text-muted-foreground">Email:</span>
                             <span className="font-medium break-all">{currentUser.email || 'No email provided'}</span>
@@ -109,6 +115,11 @@ export default function ProfilePage() {
                             <Calendar className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                             <span className="text-muted-foreground">Joined:</span>
                             <span className="font-medium">{joinDateFormatted}</span>
+                        </div>
+                         <div className="flex items-center gap-3 text-sm sm:text-base">
+                            <Gamepad2 className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">Matches Played:</span>
+                            <span className="font-medium">0</span>
                         </div>
                       </>
                    )}
