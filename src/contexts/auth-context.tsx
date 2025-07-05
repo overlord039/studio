@@ -133,26 +133,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const user = result.user;
       console.log("Signed in user:", user);
       router.push('/');
-    } catch (error) {
+    } catch (error: any) {
         console.error("Full error object during Google sign-in:", error);
         
-        let errorCode = "UNKNOWN_ERROR";
-        let errorMessage = "An unexpected error occurred. Please try again.";
-
-        if (error && typeof error === 'object' && 'code' in error && 'message' in error) {
-            errorCode = String((error as any).code);
-            errorMessage = String((error as any).message);
-        }
-
-        if (errorCode === 'auth/popup-closed-by-user' || errorCode === 'auth/cancelled-popup-request') {
+        // This is a common, non-critical error when the user closes the popup.
+        if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
             toast({
                 title: "Sign-in Cancelled",
                 description: "The sign-in window was closed.",
             });
         } else {
+            // For all other errors, show a generic message.
             toast({
               title: "Sign-in Error",
-              description: `[${errorCode}] ${errorMessage}`,
+              description: error.message || "An unexpected error occurred. Please try again.",
               variant: "destructive"
             });
         }
@@ -165,24 +159,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
     }
     try {
-        const result = await signInAnonymously(auth);
-        const user = result.user;
-        console.log("Signed in as guest:", user.uid);
+        await signInAnonymously(auth);
         router.push('/');
-    } catch (error) {
+    } catch (error: any) {
         console.error("Full error object during Guest sign-in:", error);
-
-        let errorCode = "UNKNOWN_ERROR";
-        let errorMessage = "An unexpected error occurred. Please try again.";
-
-        if (error && typeof error === 'object' && 'code' in error && 'message' in error) {
-            errorCode = String((error as any).code);
-            errorMessage = String((error as any).message);
-        }
-
         toast({
           title: "Guest Sign-in Error",
-          description: `[${errorCode}] ${errorMessage}`,
+          description: error.message || "An unexpected error occurred.",
           variant: "destructive"
         });
     }
@@ -208,62 +191,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: "You've successfully upgraded your account with Google.",
         });
         // onAuthStateChanged will update the user state automatically.
-      } catch (error) {
+      } catch (error: any) {
         console.error("Full error object during account linking:", error);
 
-        let errorCode = "UNKNOWN_ERROR";
-        let errorMessage = "An unexpected error occurred. Please try again.";
-        let credential = null;
+        const errorCode = error.code;
 
-        if (error && typeof error === 'object' && 'code' in error && 'message' in error) {
-            errorCode = String((error as any).code);
-            errorMessage = String((error as any).message);
-            if(errorCode === 'auth/credential-already-in-use') {
-                try {
-                    credential = GoogleAuthProvider.credentialFromError(error);
-                } catch(e) {
-                    console.error("Could not extract credential from error", e);
-                }
-            }
-        }
-        
         if (errorCode === 'auth/popup-closed-by-user' || errorCode === 'auth/cancelled-popup-request') {
             toast({
                 title: "Linking Cancelled",
                 description: "The account linking window was closed.",
             });
         } else if (errorCode === 'auth/credential-already-in-use') {
-          if (!credential) {
             toast({
-              title: "Sign-in Error",
-              description: "Could not retrieve credentials. Please try signing in directly.",
-              variant: "destructive",
+              title: "Account Exists",
+              description: "This Google account is already in use. Switching to existing account.",
             });
-            return;
-          }
-
-          toast({
-            title: "Account Exists",
-            description: "Switching to your existing Google account.",
-          });
-          
-          try {
-            await signOut(auth);
-            const signInResult = await signInWithCredential(auth, credential);
-            console.log("Successfully switched to existing account:", signInResult.user.uid);
-            router.push('/');
-          } catch(signInError) {
-              console.error("Error signing in with existing credential:", signInError);
-              toast({
-                title: "Sign-in Failed",
-                description: "Could not switch to your existing account. Please try logging in again.",
-                variant: "destructive",
-              });
-          }
+            try {
+              const credential = GoogleAuthProvider.credentialFromError(error);
+              if (credential) {
+                await signOut(auth);
+                await signInWithCredential(auth, credential);
+                router.push('/');
+              } else {
+                 throw new Error("Could not extract credential.");
+              }
+            } catch (signInError: any) {
+                console.error("Error signing in with existing credential:", signInError);
+                toast({
+                  title: "Sign-in Failed",
+                  description: "Could not switch to your existing account. Please try logging in again.",
+                  variant: "destructive",
+                });
+            }
         } else {
           toast({
             title: "Link Error",
-            description: `[${errorCode}] ${errorMessage}`,
+            description: error.message || "An unknown error occurred.",
             variant: "destructive",
           });
         }
