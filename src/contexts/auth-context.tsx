@@ -227,38 +227,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
         const result = await linkWithPopup(guestUser, provider);
         const linkedUser = result.user;
-        const linkedUserDocRef = doc(db, "users", linkedUser.uid);
         
-        const batch = writeBatch(db);
-        
-        // Write the new user document with the guest's stats
-        batch.set(linkedUserDocRef, {
-            uid: linkedUser.uid,
-            email: linkedUser.email,
-            displayName: linkedUser.displayName,
-            createdAt: linkedUser.metadata.creationTime,
-            stats: guestStats || { matchesPlayed: 0, prizesWon: {}} // Use guest stats or default
-        });
+        try {
+            if (!db) throw new Error("Database not available");
+            const linkedUserDocRef = doc(db, "users", linkedUser.uid);
+            const batch = writeBatch(db);
+            
+            batch.set(linkedUserDocRef, {
+                uid: linkedUser.uid,
+                email: linkedUser.email,
+                displayName: linkedUser.displayName,
+                createdAt: linkedUser.metadata.creationTime,
+                stats: guestStats || { matchesPlayed: 0, prizesWon: {}}
+            }, { merge: true });
 
-        await batch.commit();
+            await batch.commit();
 
-        toast({
-          title: "Account Linked!",
-          description: "You've successfully upgraded your guest account.",
-        });
-        // onAuthStateChanged will handle the UI update
+            toast({
+              title: "Account Linked!",
+              description: "You've successfully upgraded your guest account.",
+            });
+        } catch (dbError) {
+            console.error("Database error after linking:", dbError);
+            toast({
+                title: "Account Linked, Data Error",
+                description: "Your account is linked, but we couldn't transfer your guest stats.",
+                variant: "destructive"
+            });
+        }
+
     } catch (error: any) {
         if (error.code === 'auth/credential-already-in-use') {
             toast({
               title: "Account Exists",
-              description: "This Google account is already in use. Switching to existing account.",
+              description: "This Google account is already in use. We will now sign you into that account. Your guest progress will not be transferred.",
+              duration: 5000,
             });
             try {
               const credential = GoogleAuthProvider.credentialFromError(error);
               if (credential) {
                 await signOut(auth);
                 await signInWithCredential(auth, credential);
-                 // onAuthStateChanged will handle the rest
               } else {
                  throw new Error("Could not extract credential on conflict.");
               }
@@ -271,8 +280,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 });
             }
         } else if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-            // User closed the popup. This is not an error, so we can ignore it.
-            console.log("Account linking popup closed by user.");
+            toast({
+              title: "Linking Cancelled",
+              description: "You closed the sign-in window.",
+            });
         } else {
             console.error("Error linking account:", error);
             toast({
@@ -308,15 +319,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userToDelete = auth.currentUser;
 
     try {
-      // 1. Delete Firestore document
       const userDocRef = doc(db, "users", userToDelete.uid);
       await deleteDoc(userDocRef);
-
-      // 2. Delete Firebase Auth user
+      
       await deleteUser(userToDelete);
       
       toast({ title: "Account Deleted", description: "Your account and all associated data have been permanently deleted." });
-      // onAuthStateChanged will handle setting currentUser to null
       
     } catch (error: any) {
       if (error.code === 'auth/requires-recent-login') {
