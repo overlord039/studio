@@ -278,9 +278,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 });
             }
         } else if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-             toast({
-              title: "Linking Cancelled",
-              description: "You closed the sign-in window.",
+            toast({
+                title: "Sign-in Window Closed",
+                description: "The sign-in window was closed before completion. If this happened automatically, please check your Firebase project's domain authorizations.",
+                duration: 7000,
             });
         } else {
             console.error("Error linking account:", error);
