@@ -97,19 +97,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // onAuthStateChanged will handle setting the user, but we can still redirect here
         router.push('/');
       }).catch((error) => {
-        // Handle Errors here.
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        // The email of the user's account used.
-        const email = error.customData?.email;
-        // The AuthCredential type that was used.
-        const credential = GoogleAuthProvider.credentialFromError(error);
-        
-        console.error("Error during Google sign-in:", { errorCode, errorMessage, email, credential });
+        // Handle Errors here more safely.
+        console.error("Google Sign-In Error (Raw):", error);
 
+        const errorCode = error.code || 'UNKNOWN';
+        const errorMessage = error.message || 'An unknown error occurred.';
+        
         toast({
           title: "Sign-in Error",
-          description: errorMessage || "Could not sign in with Google. Please try again.",
+          description: `[${errorCode}] ${errorMessage}`,
           variant: "destructive"
         });
       });
