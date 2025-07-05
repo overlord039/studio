@@ -15,7 +15,7 @@ import {
   signInWithCredential
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, increment } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { UserStats, PrizeType } from '@/types';
@@ -58,11 +58,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const unsubscribe = onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
       if (user) {
-        const isGuest = user.isAnonymous;
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
         let userStats: UserStats;
 
-        if (isGuest) {
-            // For guests, use default, non-persistent stats
+        if (userDocSnap.exists()) {
+            const docData = userDocSnap.data();
+            userStats = docData.stats as UserStats;
+             if (!userStats.prizesWon) {
+                userStats.prizesWon = Object.values(PRIZE_TYPES).reduce((acc, prize) => {
+                    acc[prize] = 0;
+                    return acc;
+                }, {} as Record<PrizeType, number>);
+            }
+        } else {
+            // Create a new stats document for the registered user
             userStats = {
                 matchesPlayed: 0,
                 prizesWon: Object.values(PRIZE_TYPES).reduce((acc, prize) => {
@@ -70,23 +80,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     return acc;
                 }, {} as Record<PrizeType, number>),
             };
-        } else {
-            // For registered users, fetch or create from Firestore
-            const userDocRef = doc(db, "users", user.uid);
-            const userDocSnap = await getDoc(userDocRef);
-
-            if (userDocSnap.exists()) {
-                userStats = userDocSnap.data() as UserStats;
-            } else {
-                // Create a new stats document for the registered user
-                userStats = {
-                    matchesPlayed: 0,
-                    prizesWon: Object.values(PRIZE_TYPES).reduce((acc, prize) => {
-                        acc[prize] = 0;
-                        return acc;
-                    }, {} as Record<PrizeType, number>),
-                };
-                await setDoc(userDocRef, userStats);
+            // Do not write guest stats to DB
+            if (!user.isAnonymous) {
+                await setDoc(userDocRef, { stats: userStats });
             }
         }
         
@@ -125,10 +121,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
     }
     const provider = new GoogleAuthProvider();
-    provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
-    provider.setCustomParameters({
-      'login_hint': 'user@example.com'
-    });
 
     signInWithPopup(auth, provider)
       .then((result) => {
@@ -155,8 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signInAnonymously(auth)
       .then((result) => {
         const user = result.user;
-        const guestName = `Guest#${user.uid.substring(0,5)}`;
-        console.log("Signed in as guest:", result.user);
+        console.log("Signed in as guest:", user.uid);
         router.push('/');
       })
       .catch((error) => {
