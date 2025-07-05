@@ -121,19 +121,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }
 
-  const loginWithGoogle = () => {
+  const loginWithGoogle = async () => {
     if (!auth) {
         showFirebaseNotConfiguredToast();
         return;
     }
     const provider = new GoogleAuthProvider();
 
-    signInWithPopup(auth, provider)
-      .then((result) => {
-        const user = result.user;
-        console.log("Signed in user:", user);
-        router.push('/');
-      }).catch((error) => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      console.log("Signed in user:", user);
+      router.push('/');
+    } catch (error) {
         console.error("Full error object during Google sign-in:", error);
         
         let errorCode = "UNKNOWN_ERROR";
@@ -149,29 +149,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 title: "Sign-in Cancelled",
                 description: "The sign-in window was closed.",
             });
-            return;
+        } else {
+            toast({
+              title: "Sign-in Error",
+              description: `[${errorCode}] ${errorMessage}`,
+              variant: "destructive"
+            });
         }
-
-        toast({
-          title: "Sign-in Error",
-          description: `[${errorCode}] ${errorMessage}`,
-          variant: "destructive"
-        });
-      });
+    }
   };
 
-  const loginAsGuest = () => {
+  const loginAsGuest = async () => {
      if (!auth) {
         showFirebaseNotConfiguredToast();
         return;
     }
-    signInAnonymously(auth)
-      .then((result) => {
+    try {
+        const result = await signInAnonymously(auth);
         const user = result.user;
         console.log("Signed in as guest:", user.uid);
         router.push('/');
-      })
-      .catch((error) => {
+    } catch (error) {
         console.error("Full error object during Guest sign-in:", error);
 
         let errorCode = "UNKNOWN_ERROR";
@@ -187,10 +185,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: `[${errorCode}] ${errorMessage}`,
           variant: "destructive"
         });
-      });
+    }
   };
   
-  const linkGoogleAccount = () => {
+  const linkGoogleAccount = async () => {
     if (!auth || !auth.currentUser) {
       toast({
         title: "Error",
@@ -201,8 +199,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const provider = new GoogleAuthProvider();
-    linkWithPopup(auth.currentUser, provider)
-      .then((result) => {
+    try {
+        const result = await linkWithPopup(auth.currentUser, provider);
         const user = result.user;
         console.log("Account linked successfully", user);
         toast({
@@ -210,7 +208,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: "You've successfully upgraded your account with Google.",
         });
         // onAuthStateChanged will update the user state automatically.
-      }).catch((error) => {
+      } catch (error) {
         console.error("Full error object during account linking:", error);
 
         let errorCode = "UNKNOWN_ERROR";
@@ -228,8 +226,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
             }
         }
-
-        if (errorCode === 'auth/credential-already-in-use') {
+        
+        if (errorCode === 'auth/popup-closed-by-user' || errorCode === 'auth/cancelled-popup-request') {
+            toast({
+                title: "Linking Cancelled",
+                description: "The account linking window was closed.",
+            });
+        } else if (errorCode === 'auth/credential-already-in-use') {
           if (!credential) {
             toast({
               title: "Sign-in Error",
@@ -244,21 +247,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             description: "Switching to your existing Google account.",
           });
           
-          signOut(auth).then(() => {
-            signInWithCredential(auth, credential)
-              .then((result) => {
-                console.log("Successfully switched to existing account:", result.user.uid);
-                router.push('/');
-              })
-              .catch((signInError) => {
-                console.error("Error signing in with existing credential:", signInError);
-                toast({
-                  title: "Sign-in Failed",
-                  description: "Could not switch to your existing account. Please try logging in again.",
-                  variant: "destructive",
-                });
+          try {
+            await signOut(auth);
+            const signInResult = await signInWithCredential(auth, credential);
+            console.log("Successfully switched to existing account:", signInResult.user.uid);
+            router.push('/');
+          } catch(signInError) {
+              console.error("Error signing in with existing credential:", signInError);
+              toast({
+                title: "Sign-in Failed",
+                description: "Could not switch to your existing account. Please try logging in again.",
+                variant: "destructive",
               });
-          });
+          }
         } else {
           toast({
             title: "Link Error",
@@ -266,7 +267,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             variant: "destructive",
           });
         }
-      });
+    }
   };
 
 
