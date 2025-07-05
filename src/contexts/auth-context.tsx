@@ -93,27 +93,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        setLoading(true);
         if (firebaseUser) {
-            // User is signed in (session restored). Fetch their full profile from DB.
-            const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
-            if (userDoc.exists()) {
-                setCurrentUser(userDoc.data() as User);
-            } else if (!firebaseUser.isAnonymous) {
-                // This can happen if user signed up but doc creation failed.
-                console.warn(`User ${firebaseUser.uid} authenticated but has no document. Recreating...`);
-                const appUser = await createUserProfileInDB(firebaseUser);
-                setCurrentUser(appUser);
-            } else {
-                 // Guest user session restored
-                 const guestUser: User = {
-                    uid: firebaseUser.uid,
-                    displayName: `Guest#${firebaseUser.uid.substring(0, 5)}`,
-                    email: null,
-                    isGuest: true,
-                    createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-                    stats: createDefaultStats(),
-                };
-                setCurrentUser(guestUser);
+            try {
+                // User is signed in (session restored). Fetch their full profile from DB.
+                const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+                if (userDoc.exists()) {
+                    setCurrentUser(userDoc.data() as User);
+                } else if (!firebaseUser.isAnonymous) {
+                    // This can happen if user signed up but doc creation failed.
+                    console.warn(`User ${firebaseUser.uid} authenticated but has no document. Recreating...`);
+                    const appUser = await createUserProfileInDB(firebaseUser);
+                    setCurrentUser(appUser);
+                } else {
+                     // Guest user session restored
+                     const guestUser: User = {
+                        uid: firebaseUser.uid,
+                        displayName: `Guest#${firebaseUser.uid.substring(0, 5)}`,
+                        email: null,
+                        isGuest: true,
+                        createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+                        stats: createDefaultStats(),
+                    };
+                    setCurrentUser(guestUser);
+                }
+            } catch (error) {
+                console.error("Authentication error during user sync:", error);
+                toast({
+                    title: "Authentication Error",
+                    description: "Could not sync your user data. Please try logging in again.",
+                    variant: "destructive"
+                });
+                await signOut(auth); // Sign out to prevent broken state
+                setCurrentUser(null);
             }
         } else {
             setCurrentUser(null);
@@ -122,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [firebaseConfigured]);
+  }, [firebaseConfigured, toast]);
 
   const updateUserStats = async (newStats: Partial<UserStats>) => {
     if (!currentUser || !db || currentUser.isGuest) return;
@@ -244,7 +256,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const linkGoogleAccount = async () => {
-    if (!auth?.currentUser?.isAnonymous) {
+    if (!auth?.currentUser?.isAnonymous || !db) {
       toast({ title: "Not a Guest", description: "This account is already permanent." });
       return;
     }
