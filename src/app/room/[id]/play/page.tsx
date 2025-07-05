@@ -311,12 +311,16 @@ export default function GameRoomPage() {
         const errorMessage = result.message || `Failed to claim ${prizeType}.`;
         if (errorMessage.toLowerCase().includes('bogey')) {
           playSound('error.wav');
+          // A bogey claim is a common user error, so we provide feedback with a sound
+          // but avoid showing a disruptive toast notification.
+        } else {
+          // For other types of errors (e.g., server issues, game already over), show a toast.
+          toast({
+              title: `Claim for ${prizeType} Failed`,
+              description: errorMessage,
+              variant: "destructive"
+          });
         }
-        toast({
-            title: `Claim for ${prizeType} Failed`,
-            description: errorMessage,
-            variant: "destructive"
-        });
       }
     } catch (err) {
       console.error(`Error claiming ${prizeType}:`, err);
