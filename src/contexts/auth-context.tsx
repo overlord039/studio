@@ -209,88 +209,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const linkGoogleAccount = async () => {
     if (!auth || !auth.currentUser) {
-        toast({ title: "Error", description: "No user is currently signed in to link.", variant: "destructive" });
-        return;
+      toast({ title: "Error", description: "No user is currently signed in to link.", variant: "destructive" });
+      return;
     }
     
     if (!auth.currentUser.isAnonymous) {
-        toast({ title: "Already Linked", description: "This account is not a guest account.", variant: "destructive"});
-        return;
+      toast({ title: "Already Linked", description: "This account is not a guest account." });
+      return;
     }
-
+    
     const provider = new GoogleAuthProvider();
-    const guestUser = auth.currentUser;
-    const guestStats = await fetchUserDocument(guestUser.uid);
-
+    
     try {
-        const result = await linkWithPopup(guestUser, provider);
-        const linkedUser = result.user;
-        
-        try {
-            if (!db) throw new Error("Database not available");
-            const linkedUserDocRef = doc(db, "users", linkedUser.uid);
-            const batch = writeBatch(db);
-            
-            batch.set(linkedUserDocRef, {
-                uid: linkedUser.uid,
-                email: linkedUser.email,
-                displayName: linkedUser.displayName,
-                createdAt: linkedUser.metadata.creationTime,
-                stats: guestStats || { matchesPlayed: 0, prizesWon: {}}
-            }, { merge: true });
-
-            await batch.commit();
-
-            toast({
-              title: "Account Linked!",
-              description: "You've successfully upgraded your guest account.",
-            });
-        } catch (dbError) {
-            console.error("Database error after linking:", dbError);
-            toast({
-                title: "Account Linked, Data Error",
-                description: "Your account is linked, but we couldn't transfer your guest stats.",
-                variant: "destructive"
-            });
-        }
-
+      const result = await linkWithPopup(auth.currentUser, provider);
+      toast({
+        title: "Account Linked Successfully!",
+        description: `Your guest account is now linked to ${result.user.email}.`,
+      });
     } catch (error: any) {
-        if (error.code === 'auth/credential-already-in-use') {
-            toast({
-              title: "Account Exists",
-              description: "This Google account is already in use. We will now sign you into that account. Your guest progress will not be transferred.",
-              duration: 5000,
-            });
-            try {
-              const credential = GoogleAuthProvider.credentialFromError(error);
-              if (credential) {
-                await signOut(auth);
-                await signInWithCredential(auth, credential);
-              } else {
-                 throw new Error("Could not extract credential on conflict.");
-              }
-            } catch (signInError: any) {
-                console.error("Error signing in with existing credential:", signInError);
-                toast({
-                  title: "Sign-in Failed",
-                  description: "Could not switch to your existing account. Please try logging in again.",
-                  variant: "destructive",
-                });
-            }
-        } else if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-            toast({
-                title: "Sign-in Window Closed",
-                description: "The sign-in window was closed before completion. If this happened automatically, please check your Firebase project's domain authorizations.",
-                duration: 7000,
-            });
-        } else {
-            console.error("Error linking account:", error);
-            toast({
-              title: "Link Error",
-              description: error.message || "An unknown error occurred.",
-              variant: "destructive",
-            });
-        }
+      // Log the full error for debugging, but don't always show a toast
+      console.error("Full error from linkWithPopup:", error);
+
+      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+        // This is a common case, so we don't show a scary error toast.
+        // It could be intentional or a configuration issue. We just log it.
+        console.log("Linking was cancelled by the user or a configuration issue.");
+      } else if (error.code === 'auth/credential-already-in-use') {
+        toast({
+          title: "Account Already Exists",
+          description: "This Google account is already associated with another user. Please sign out and sign in with Google directly.",
+          variant: "destructive",
+          duration: 7000
+        });
+      } else {
+        toast({
+          title: "Linking Error",
+          description: error.message || "An unexpected error occurred during linking.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
