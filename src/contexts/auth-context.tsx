@@ -4,7 +4,15 @@ import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User as FirebaseUser } from 'firebase/auth';
-import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, signInAnonymously, linkWithPopup } from 'firebase/auth';
+import { 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged, 
+  signInAnonymously, 
+  linkWithPopup,
+  signInWithCredential
+} from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -78,10 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
     }
     const provider = new GoogleAuthProvider();
-    // Optional: Add scopes to request additional user data from Google.
     provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
-    
-    // Optional: Add custom parameters to the sign-in request.
     provider.setCustomParameters({
       'login_hint': 'user@example.com'
     });
@@ -161,10 +166,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const errorMessage = error.message;
 
         if (errorCode === 'auth/credential-already-in-use') {
+          const credential = GoogleAuthProvider.credentialFromError(error);
+          
+          if (!credential) {
+            toast({
+              title: "Sign-in Error",
+              description: "Could not retrieve credentials. Please try signing in directly.",
+              variant: "destructive",
+            });
+            return;
+          }
+
           toast({
             title: "Account Exists",
-            description: "This Google account is already used by another user.",
-            variant: "destructive",
+            description: "Switching to your existing Google account.",
+          });
+          
+          // Sign out the current anonymous user
+          signOut(auth).then(() => {
+            // Sign in with the credential of the existing user account.
+            signInWithCredential(auth, credential)
+              .then((result) => {
+                // User is signed in. onAuthStateChanged will handle the rest.
+                console.log("Successfully switched to existing account:", result.user.uid);
+                router.push('/');
+              })
+              .catch((signInError) => {
+                console.error("Error signing in with existing credential:", signInError);
+                toast({
+                  title: "Sign-in Failed",
+                  description: "Could not switch to your existing account. Please try logging in again.",
+                  variant: "destructive",
+                });
+              });
           });
         } else {
           toast({
