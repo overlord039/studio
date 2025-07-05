@@ -8,7 +8,6 @@ import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/auth-context';
 import { useState } from 'react';
 import { Loader2, AlertTriangle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -19,46 +18,19 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function LoginSelectionScreen() {
   const { loginWithGoogle, loginAsGuest, firebaseConfigured } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState<null | 'google' | 'guest'>(null);
-  const { toast } = useToast();
 
   const handleGoogleSignIn = async () => {
     if (isSigningIn) return;
     setIsSigningIn('google');
-    try {
-      await loginWithGoogle();
-      // On successful sign-in, onAuthStateChanged will handle the UI update.
-    } catch (error: any) {
-      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-        toast({
-            title: "Sign-in Cancelled",
-            description: "The sign-in window was closed.",
-        });
-      } else {
-        toast({
-          title: "Sign-in Error",
-          description: error.message || "An unexpected error occurred. Please try again.",
-          variant: "destructive"
-        });
-      }
-    } finally {
-      setIsSigningIn(null);
-    }
+    await loginWithGoogle();
+    setIsSigningIn(null);
   };
 
   const handleGuestSignIn = async () => {
     if (isSigningIn) return;
     setIsSigningIn('guest');
-    try {
-        await loginAsGuest();
-    } catch (error: any) {
-        toast({
-          title: "Guest Sign-in Error",
-          description: error.message || "An unexpected error occurred.",
-          variant: "destructive"
-        });
-    } finally {
-        setIsSigningIn(null);
-    }
+    await loginAsGuest();
+    setIsSigningIn(null);
   };
 
   if (!firebaseConfigured) {

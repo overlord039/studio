@@ -12,34 +12,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import type { PrizeType } from '@/types';
-import { useToast } from '@/hooks/use-toast';
 
 export default function ProfilePage() {
   const { currentUser, loading, logout, linkGoogleAccount } = useAuth();
   const router = useRouter();
-  const { toast } = useToast();
 
   const handleLinkAccount = async () => {
-    try {
-      await linkGoogleAccount();
-      toast({
-          title: "Account Linked!",
-          description: "You've successfully upgraded your account with Google.",
-      });
-    } catch (error: any) {
-        if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-            toast({
-                title: "Linking Cancelled",
-                description: "The account linking window was closed.",
-            });
-        } else if (error.code !== 'auth/credential-already-in-use') { // This case is handled in context
-            toast({
-              title: "Link Error",
-              description: error.message || "An unknown error occurred.",
-              variant: "destructive",
-            });
-        }
-    }
+    // The context now handles all outcomes, including toasts for errors or success.
+    await linkGoogleAccount();
   };
 
   const renderContent = () => {

@@ -121,31 +121,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithGoogle = async () => {
     if (!auth) {
-        showFirebaseNotConfiguredToast();
-        throw new Error("Firebase not configured");
+      showFirebaseNotConfiguredToast();
+      return;
     }
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
-    // onAuthStateChanged will handle the rest
+    try {
+      await signInWithPopup(auth, provider);
+      // Success is handled by onAuthStateChanged
+    } catch (error: any) {
+      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+        toast({
+          title: "Sign-in Cancelled",
+          description: "The sign-in window was closed.",
+        });
+      } else {
+        console.error("Error during Google sign-in:", error);
+        toast({
+          title: "Sign-in Error",
+          description: error.message || "An unexpected error occurred. Please try again.",
+          variant: "destructive"
+        });
+      }
+    }
   };
 
   const loginAsGuest = async () => {
-     if (!auth) {
-        showFirebaseNotConfiguredToast();
-        throw new Error("Firebase not configured");
+    if (!auth) {
+      showFirebaseNotConfiguredToast();
+      return;
     }
-    await signInAnonymously(auth);
-    // onAuthStateChanged will handle the rest
+    try {
+      await signInAnonymously(auth);
+      // Success is handled by onAuthStateChanged
+    } catch (error: any) {
+      console.error("Error during guest sign-in:", error);
+      toast({
+        title: "Guest Sign-in Error",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive"
+      });
+    }
   };
-  
+
   const linkGoogleAccount = async () => {
     if (!auth || !auth.currentUser) {
-      throw new Error("No user is currently signed in to link.");
+      toast({ title: "Error", description: "No user is currently signed in to link.", variant: "destructive" });
+      return;
     }
 
     const provider = new GoogleAuthProvider();
     try {
         await linkWithPopup(auth.currentUser, provider);
+        toast({
+          title: "Account Linked!",
+          description: "You've successfully upgraded your account with Google.",
+        });
         // onAuthStateChanged will update the user state automatically.
     } catch (error: any) {
         if (error.code === 'auth/credential-already-in-use') {
@@ -169,16 +199,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   description: "Could not switch to your existing account. Please try logging in again.",
                   variant: "destructive",
                 });
-                // Re-throw to be caught by the component
-                throw signInError;
             }
+        } else if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+            toast({
+                title: "Linking Cancelled",
+                description: "The account linking window was closed.",
+            });
         } else {
-            // Re-throw other errors for the component to handle (e.g., popup closed)
-            throw error;
+            console.error("Error linking account:", error);
+            toast({
+              title: "Link Error",
+              description: error.message || "An unknown error occurred.",
+              variant: "destructive",
+            });
         }
     }
   };
-
 
   const logout = () => {
      if (!auth) {
