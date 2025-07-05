@@ -5,7 +5,8 @@ import type { ReactNode } from 'react';
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { 
-  GoogleAuthProvider, 
+  GoogleAuthProvider,
+  FacebookAuthProvider, 
   signInWithPopup,
   signInWithCredential,
   signOut, 
@@ -38,6 +39,7 @@ interface AuthContextType {
   userStats: UserStats | null;
   updateUserStats: (newStats: Partial<UserStats>) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
+  loginWithFacebook: () => Promise<void>;
   loginAsGuest: () => Promise<void>;
   linkGoogleAccount: () => Promise<void>;
   logout: () => Promise<void>;
@@ -144,8 +146,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setLoading(true);
 
-    // Initialize the provider without any extra scopes like 'contacts.readonly'.
-    // This ensures we only ask for basic, non-sensitive profile information.
     const provider = new GoogleAuthProvider();
     
     try {
@@ -176,6 +176,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginWithFacebook = async () => {
+    if (!auth || !db) {
+      showFirebaseNotConfiguredToast();
+      return;
+    }
+    setLoading(true);
+    const provider = new FacebookAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const firebaseUser = result.user;
+
+      const userDocRef = doc(db, "users", firebaseUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      let appUser: User;
+      if (userDocSnap.exists()) {
+        appUser = userDocSnap.data() as User;
+      } else {
+        appUser = await createUserProfileInDB(firebaseUser);
+      }
+      
+      setCurrentUser(appUser);
+    } catch (error: any) {
+      if (error.code === 'auth/popup-closed-by-user') {
+        toast({ title: "Sign-in Cancelled", description: "You closed the sign-in window." });
+      } else if (error.code === 'auth/account-exists-with-different-credential') {
+        toast({
+          title: "Account Exists",
+          description: "An account with this email already exists using a different sign-in method.",
+          variant: "destructive",
+          duration: 7000,
+        });
+      } else {
+        console.error("Facebook Sign-In Error:", error);
+        toast({ title: "Sign-In Failed", description: error.message, variant: "destructive" });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loginAsGuest = async () => {
     if (!auth) {
       showFirebaseNotConfiguredToast();
@@ -198,7 +239,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("Guest Sign-In Error:", error);
         toast({ title: "Guest Sign-in Failed", description: error.message, variant: "destructive" });
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -208,14 +249,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     setLoading(true);
-    // Initialize with no extra scopes.
     const provider = new GoogleAuthProvider();
     const guestUser = auth.currentUser;
 
     try {
       const result = await linkWithPopup(guestUser, provider);
-      // After linking, the guest account is now a permanent Google account.
-      // We must create its profile in the database.
       const permanentUser = await createUserProfileInDB(result.user);
       setCurrentUser(permanentUser);
 
@@ -226,12 +264,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     } catch (error: any) {
       if (error.code === 'auth/credential-already-in-use') {
-         // This Google account is already a user. We must switch to it.
          toast({ title: "Account Exists", description: "Switching to your existing Google account. Guest progress will not be transferred.", duration: 5000 });
          const credential = GoogleAuthProvider.credentialFromError(error);
          if (credential) {
-            await signOut(auth); // Sign out of the guest account first
-            await signInWithCredential(auth, credential); // Then sign in with the existing Google account
+            await signOut(auth);
+            await signInWithCredential(auth, credential);
          }
       } else if (error.code === 'auth/popup-closed-by-user') {
           toast({ title: "Linking Cancelled", description: "You closed the sign-in window." });
@@ -290,7 +327,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       currentUser, 
       userStats: currentUser?.stats || null, 
       updateUserStats, 
-      loginWithGoogle, 
+      loginWithGoogle,
+      loginWithFacebook, 
       loginAsGuest, 
       linkGoogleAccount, 
       logout, 
