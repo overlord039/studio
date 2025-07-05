@@ -34,15 +34,16 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
-            <CardContent className="p-6 space-y-4">
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-5 w-5 rounded-full" />
-                <Skeleton className="h-5 w-32" />
-              </div>
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-5 w-5 rounded-full" />
-                <Skeleton className="h-5 w-40" />
-              </div>
+            <CardContent className="p-6 space-y-6">
+                <div className="space-y-1">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Skeleton className="h-8 w-full" />
+                </div>
+                 <div className="space-y-1">
+                    <Skeleton className="h-4 w-1/4" />
+                    <Skeleton className="h-8 w-full" />
+                </div>
+                <Skeleton className="h-24 w-full" />
             </CardContent>
           </Card>
         </div>
@@ -97,7 +98,7 @@ export default function ProfilePage() {
                       </div>
                   </div>
               </div>
-              <CardContent className="p-6 space-y-4 bg-card">
+              <CardContent className="p-6 space-y-6 bg-card">
                    {currentUser.isGuest ? (
                      <div className="text-center p-4 bg-secondary/30 rounded-lg">
                           <p className="font-semibold">You are playing as a guest.</p>
@@ -105,50 +106,52 @@ export default function ProfilePage() {
                           <Button className="mt-4" size="sm" onClick={handleLinkAccount}>Sign in with Google</Button>
                       </div>
                    ) : (
-                      <>
-                        <div className="flex items-center gap-3 text-sm sm:text-base">
-                            <Fingerprint className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                            <span className="text-muted-foreground">User ID:</span>
-                            <span className="font-medium break-all">{currentUser.uid}</span>
+                      <div className="space-y-6">
+                        <div>
+                          <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">Account Details</h3>
+                          <dl className="mt-2 divide-y divide-border">
+                            <div className="py-3 flex justify-between items-center text-sm font-medium">
+                              <dt className="text-muted-foreground flex items-center gap-2"><Fingerprint className="h-4 w-4" /> User ID</dt>
+                              <dd className="text-foreground break-all text-right">{currentUser.uid}</dd>
+                            </div>
+                             <div className="py-3 flex justify-between items-center text-sm font-medium">
+                              <dt className="text-muted-foreground flex items-center gap-2"><Mail className="h-4 w-4" /> Email</dt>
+                              <dd className="text-foreground break-all text-right">{currentUser.email || 'No email provided'}</dd>
+                            </div>
+                             <div className="py-3 flex justify-between items-center text-sm font-medium">
+                              <dt className="text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4" /> Joined</dt>
+                              <dd className="text-foreground">{joinDateFormatted}</dd>
+                            </div>
+                          </dl>
                         </div>
-                        <div className="flex items-center gap-3 text-sm sm:text-base">
-                            <Mail className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                            <span className="text-muted-foreground">Email:</span>
-                            <span className="font-medium break-all">{currentUser.email || 'No email provided'}</span>
+
+                        <div>
+                            <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">Statistics</h3>
+                             <Card className="bg-secondary/30 mt-2">
+                                <CardContent className="p-4 space-y-3">
+                                  <div className="flex justify-between items-center text-sm">
+                                      <div className="flex items-center gap-2 text-muted-foreground"><Gamepad2 className="h-4 w-4" /> Matches Played</div>
+                                      <span className="font-bold text-lg">{currentUser.stats?.matchesPlayed ?? 0}</span>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2 text-muted-foreground text-sm"><Award className="h-4 w-4" /> Prizes Won</div>
+                                     {prizesWonArray.length > 0 ? (
+                                      <ul className="space-y-1 pl-6 text-sm">
+                                        {prizesWonArray.map(([prize, count]) => (
+                                          <li key={prize} className="flex justify-between">
+                                            <span className="text-muted-foreground">{prize}:</span>
+                                            <span className="font-medium">{count}</span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <p className="text-muted-foreground text-sm text-center pt-2">No prizes won yet. Keep playing!</p>
+                                    )}
+                                  </div>
+                                </CardContent>
+                             </Card>
                         </div>
-                        <div className="flex items-center gap-3 text-sm sm:text-base">
-                            <Calendar className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                            <span className="text-muted-foreground">Joined:</span>
-                            <span className="font-medium">{joinDateFormatted}</span>
-                        </div>
-                         <div className="flex items-center gap-3 text-sm sm:text-base">
-                            <Gamepad2 className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                            <span className="text-muted-foreground">Matches Played:</span>
-                            <span className="font-medium">{currentUser.stats?.matchesPlayed ?? 0}</span>
-                        </div>
-                        
-                        <Card className="bg-secondary/30 mt-4">
-                          <CardHeader className="p-3">
-                            <CardTitle className="text-base font-semibold flex items-center">
-                              <Award className="mr-2 h-4 w-4 text-primary" />Prizes Won
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className="p-3 pt-0 text-sm">
-                            {prizesWonArray.length > 0 ? (
-                              <ul className="space-y-1">
-                                {prizesWonArray.map(([prize, count]) => (
-                                  <li key={prize} className="flex justify-between">
-                                    <span className="text-muted-foreground">{prize}:</span>
-                                    <span className="font-medium">{count}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="text-muted-foreground text-center">No prizes won yet. Keep playing!</p>
-                            )}
-                          </CardContent>
-                        </Card>
-                      </>
+                      </div>
                    )}
               </CardContent>
               <CardFooter className="bg-card pt-0 p-6">
