@@ -11,10 +11,11 @@ import {
   onAuthStateChanged, 
   signInAnonymously, 
   linkWithPopup,
-  deleteUser
+  deleteUser,
+  updateProfile
 } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
-import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { UserStats, PrizeType } from '@/types';
 import { PRIZE_TYPES } from '@/types';
@@ -165,28 +166,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const loginWithGoogle = async () => {
+    // 1. Ensure Firebase is configured and available.
     if (!auth) {
-      showFirebaseNotConfiguredToast();
+      toast({
+        title: "Authentication Not Available",
+        description: "Firebase is not configured. Please check your setup.",
+        variant: "destructive",
+      });
       return;
     }
+
+    // 2. Create a new Google Auth provider. This does not request extra permissions.
     const provider = new GoogleAuthProvider();
+
+    // 3. Attempt to sign in with a pop-up.
     try {
       await signInWithPopup(auth, provider);
-      // onAuthStateChanged handles success
+      // If successful, the `onAuthStateChanged` listener will handle creating the user session.
+      // No further action is needed here.
     } catch (error: any) {
+      // 4. Handle potential errors gracefully.
+      
+      // If the user intentionally closes the pop-up, we don't treat it as an error.
       if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-        toast({
-          title: "Sign-in Cancelled",
-          description: "You closed the sign-in window before completion.",
-        });
-      } else {
-        console.error("Error during Google sign-in:", error);
-        toast({
-          title: "Sign-in Error",
-          description: error.message || "An unexpected error occurred. Please try again.",
-          variant: "destructive"
-        });
+        console.log("Sign-in cancelled by user."); // Log for debugging, but don't show an error toast.
+        return;
       }
+      
+      // For any other error, we inform the user.
+      console.error("Google Sign-In Error:", error);
+      toast({
+        title: "Sign-In Failed",
+        description: "An unexpected error occurred during sign-in. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -209,41 +222,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const linkGoogleAccount = async () => {
-    if (!auth || !auth.currentUser) {
-        toast({ title: "Error", description: "No user is currently signed in to link.", variant: "destructive" });
-        return;
+    // 1. Ensure a guest user is signed in.
+    if (!auth?.currentUser?.isAnonymous) {
+      toast({ 
+        title: "Not a Guest", 
+        description: "This account is already permanent.",
+      });
+      return;
     }
 
-    if (!auth.currentUser.isAnonymous) {
-        toast({ title: "Already Linked", description: "This account is not a guest account." });
-        return;
-    }
-
+    // 2. Create a new Google Auth provider.
     const provider = new GoogleAuthProvider();
+    const guestUser = auth.currentUser;
+
+    // 3. Attempt to link the guest account with the Google account via a pop-up.
     try {
-        await linkWithPopup(auth.currentUser, provider);
-        // Success is handled by onAuthStateChanged which will update the user's state
+      const result = await linkWithPopup(guestUser, provider);
+      const linkedUser = result.user;
+      
+      // Since the UID doesn't change on link, we just need to update the user's document
+      // to reflect their new, permanent status (name and email).
+      if (db) {
+        const userDocRef = doc(db, "users", linkedUser.uid);
+        await updateDoc(userDocRef, {
+            email: linkedUser.email,
+            displayName: linkedUser.displayName,
+        });
+      }
+      
+      toast({
+        title: "Account Linked!",
+        description: "Your progress is now saved to your Google account.",
+      });
+      // The onAuthStateChanged listener will handle updating the local user state.
+
     } catch (error: any) {
-        if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-            toast({
-                title: "Linking Cancelled",
-                description: "You closed the sign-in window.",
-            });
-        } else if (error.code === 'auth/credential-already-in-use') {
-            toast({
-                title: "Account Already Exists",
-                description: "This Google account is already in use. Please sign out and sign in with Google directly to access that account.",
-                variant: "destructive",
-                duration: 7000,
-            });
-        } else {
-            console.error("Error linking account:", error);
-            toast({
-                title: "Error Linking Account",
-                description: error.message || "An unexpected error occurred.",
-                variant: "destructive",
-            });
-        }
+      // 4. Handle potential errors gracefully.
+      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+        console.log("Account linking cancelled by user.");
+        return;
+      }
+
+      if (error.code === 'auth/credential-already-in-use') {
+        toast({
+          title: "Account Already Exists",
+          description: "This Google account is already linked to another profile. Sign out and sign in with Google to use that account.",
+          variant: "destructive",
+          duration: 8000
+        });
+        return;
+      }
+      
+      console.error("Account Linking Error:", error);
+      toast({
+        title: "Linking Failed",
+        description: "An unexpected error occurred. If the pop-up closes automatically, check your Firebase domain authorizations.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -303,13 +338,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={value}>
       {loading ? (
-        <div className="flex h-screen w-screen items-center justify-center bg-background">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
-      ) : !currentUser ? (
-        <LoginSelectionScreen />
-      ) : (
+      ) : currentUser ? (
         children
+      ) : (
+        <LoginSelectionScreen />
       )}
     </AuthContext.Provider>
   );
