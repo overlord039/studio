@@ -5,7 +5,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangle, Edit, RotateCcw, Crown, UserX } from "lucide-react";
 import type { Room, GameSettings, PrizeType, BackendPlayerInRoom } from "@/types";
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE } from "@/lib/constants";
@@ -33,7 +33,6 @@ export default function LobbyPage() {
   const params = useParams();
   const roomId = (params as { id: string }).id;
   const { currentUser, loading: authLoading } = useAuth();
-  const searchParams = useSearchParams(); 
 
   const [roomData, setRoomData] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);

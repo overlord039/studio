@@ -53,6 +53,7 @@ const MemoizedCalledNumberDisplay = React.memo(CalledNumberDisplay);
 export default function GameRoomPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const playerTicketsParam = searchParams.get('playerTickets');
   const params = useParams();
   const roomId = (params as { id: string }).id;
   const { toast } = useToast();
@@ -164,8 +165,7 @@ export default function GameRoomPage() {
       if (me && me.tickets) {
         setMyTickets(me.tickets);
       } else if (isInitialLoad && (!me || !me.tickets || me.tickets.length === 0)) {
-        const ticketsParam = searchParams.get('playerTickets');
-        const numTickets = ticketsParam ? parseInt(ticketsParam, 10) : 0;
+        const numTickets = playerTicketsParam ? parseInt(playerTicketsParam, 10) : 0;
         if (numTickets === 0 && data.isGameStarted && !data.isGameOver) {
           if (!roomDataRef.current || !roomDataRef.current.isGameOver) { 
             setGameMessage(prev => prev && prev.includes("Game Over!") ? prev : "You are spectating. You don't have tickets in this game.");
@@ -208,7 +208,7 @@ export default function GameRoomPage() {
         setIsLoading(false);
       }
     }
-  }, [roomId, currentUser, searchParams, toast]);
+  }, [roomId, currentUser, playerTicketsParam, toast]);
 
   // Effect to update player stats when game is over
   useEffect(() => {
