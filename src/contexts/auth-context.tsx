@@ -64,13 +64,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (userDocSnap.exists()) {
             const docData = userDocSnap.data();
-            userStats = docData.stats as UserStats;
-             if (!userStats.prizesWon) {
-                userStats.prizesWon = Object.values(PRIZE_TYPES).reduce((acc, prize) => {
-                    acc[prize] = 0;
-                    return acc;
-                }, {} as Record<PrizeType, number>);
-            }
+            const existingStats = docData.stats || {}; // Handle missing stats field safely
+            
+            userStats = {
+                matchesPlayed: existingStats.matchesPlayed || 0,
+                prizesWon: existingStats.prizesWon || {},
+            };
+
+            // Ensure all prize types are initialized in the stats object
+            Object.values(PRIZE_TYPES).forEach(prize => {
+                if (userStats.prizesWon[prize] === undefined) {
+                    userStats.prizesWon[prize] = 0;
+                }
+            });
         } else {
             // Create a new stats document for the registered user
             userStats = {
@@ -121,6 +127,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
     }
     const provider = new GoogleAuthProvider();
+    provider.addScope('profile');
+    provider.addScope('email');
 
     signInWithPopup(auth, provider)
       .then((result) => {
