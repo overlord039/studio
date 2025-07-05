@@ -55,61 +55,76 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return; // No auth object, so don't subscribe.
     }
     const unsubscribe = onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
-      if (user) {
-        const userDocRef = doc(db, "users", user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        let userStats: UserStats;
+      try {
+        if (user) {
+          const userDocRef = doc(db, "users", user.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          let userStats: UserStats;
 
-        if (userDocSnap.exists()) {
-            const docData = userDocSnap.data();
-            const existingStats = docData.stats || {}; // Handle missing stats field safely
-            
-            userStats = {
-                matchesPlayed: existingStats.matchesPlayed || 0,
-                prizesWon: existingStats.prizesWon || {},
-            };
+          if (userDocSnap.exists()) {
+              const docData = userDocSnap.data();
+              const existingStats = docData.stats || {}; // Handle missing stats field safely
+              
+              userStats = {
+                  matchesPlayed: existingStats.matchesPlayed || 0,
+                  prizesWon: existingStats.prizesWon || {},
+              };
 
-            // Ensure all prize types are initialized in the stats object
-            Object.values(PRIZE_TYPES).forEach(prize => {
-                if (userStats.prizesWon[prize] === undefined) {
-                    userStats.prizesWon[prize] = 0;
-                }
-            });
+              // Ensure all prize types are initialized in the stats object
+              Object.values(PRIZE_TYPES).forEach(prize => {
+                  if (userStats.prizesWon[prize] === undefined) {
+                      userStats.prizesWon[prize] = 0;
+                  }
+              });
+          } else {
+              // Create a new stats document for the registered user
+              userStats = {
+                  matchesPlayed: 0,
+                  prizesWon: Object.values(PRIZE_TYPES).reduce((acc, prize) => {
+                      acc[prize] = 0;
+                      return acc;
+                  }, {} as Record<PrizeType, number>),
+              };
+              // Do not write guest stats to DB
+              if (!user.isAnonymous) {
+                  await setDoc(userDocRef, { stats: userStats });
+              }
+          }
+          
+          // User is signed in.
+          const userToStore: User = {
+            uid: user.uid,
+            displayName: user.displayName || (user.isAnonymous ? `Guest#${user.uid.substring(0, 5)}` : 'Unnamed User'),
+            email: user.email,
+            isGuest: user.isAnonymous,
+            createdAt: user.metadata.creationTime || new Date().toISOString(),
+            stats: userStats,
+          };
+          setCurrentUser(userToStore);
         } else {
-            // Create a new stats document for the registered user
-            userStats = {
-                matchesPlayed: 0,
-                prizesWon: Object.values(PRIZE_TYPES).reduce((acc, prize) => {
-                    acc[prize] = 0;
-                    return acc;
-                }, {} as Record<PrizeType, number>),
-            };
-            // Do not write guest stats to DB
-            if (!user.isAnonymous) {
-                await setDoc(userDocRef, { stats: userStats });
-            }
+          // User is signed out.
+          setCurrentUser(null);
         }
-        
-        // User is signed in.
-        const userToStore: User = {
-          uid: user.uid,
-          displayName: user.displayName || (user.isAnonymous ? `Guest#${user.uid.substring(0, 5)}` : 'Unnamed User'),
-          email: user.email,
-          isGuest: user.isAnonymous,
-          createdAt: user.metadata.creationTime || new Date().toISOString(),
-          stats: userStats,
-        };
-        setCurrentUser(userToStore);
-      } else {
-        // User is signed out.
+      } catch (error) {
+        console.error("Error during auth state change handling:", error);
+        toast({
+          title: "Authentication Error",
+          description: "There was a problem loading your user data. Please try logging in again.",
+          variant: "destructive"
+        });
+        // If we can't load their data, we shouldn't leave them in a logged-in but broken state.
+        if (auth) {
+          await signOut(auth);
+        }
         setCurrentUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [firebaseConfigured]);
+  }, [firebaseConfigured, toast]);
 
   const showFirebaseNotConfiguredToast = () => {
     toast({
