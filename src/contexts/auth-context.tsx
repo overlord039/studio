@@ -3,7 +3,6 @@
 
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { 
   GoogleAuthProvider, 
@@ -34,9 +33,9 @@ export interface User {
 
 interface AuthContextType {
   currentUser: User | null;
-  loginWithGoogle: () => void;
-  loginAsGuest: () => void;
-  linkGoogleAccount: () => void;
+  loginWithGoogle: () => Promise<void>;
+  loginAsGuest: () => Promise<void>;
+  linkGoogleAccount: () => Promise<void>;
   logout: () => void;
   loading: boolean;
   firebaseConfigured: boolean;
@@ -47,7 +46,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
   const { toast } = useToast();
   const firebaseConfigured = !!auth && !!db;
 
@@ -124,84 +122,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithGoogle = async () => {
     if (!auth) {
         showFirebaseNotConfiguredToast();
-        return;
+        throw new Error("Firebase not configured");
     }
     const provider = new GoogleAuthProvider();
-
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      console.log("Signed in user:", user);
-      router.push('/');
-    } catch (error: any) {
-        console.error("Full error object during Google sign-in:", error);
-        
-        // This is a common, non-critical error when the user closes the popup.
-        if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-            toast({
-                title: "Sign-in Cancelled",
-                description: "The sign-in window was closed.",
-            });
-        } else {
-            // For all other errors, show a generic message.
-            toast({
-              title: "Sign-in Error",
-              description: error.message || "An unexpected error occurred. Please try again.",
-              variant: "destructive"
-            });
-        }
-    }
+    await signInWithPopup(auth, provider);
+    // onAuthStateChanged will handle the rest
   };
 
   const loginAsGuest = async () => {
      if (!auth) {
         showFirebaseNotConfiguredToast();
-        return;
+        throw new Error("Firebase not configured");
     }
-    try {
-        await signInAnonymously(auth);
-        router.push('/');
-    } catch (error: any) {
-        console.error("Full error object during Guest sign-in:", error);
-        toast({
-          title: "Guest Sign-in Error",
-          description: error.message || "An unexpected error occurred.",
-          variant: "destructive"
-        });
-    }
+    await signInAnonymously(auth);
+    // onAuthStateChanged will handle the rest
   };
   
   const linkGoogleAccount = async () => {
     if (!auth || !auth.currentUser) {
-      toast({
-        title: "Error",
-        description: "No user is currently signed in to link.",
-        variant: "destructive",
-      });
-      return;
+      throw new Error("No user is currently signed in to link.");
     }
 
     const provider = new GoogleAuthProvider();
     try {
-        const result = await linkWithPopup(auth.currentUser, provider);
-        const user = result.user;
-        console.log("Account linked successfully", user);
-        toast({
-          title: "Account Linked!",
-          description: "You've successfully upgraded your account with Google.",
-        });
+        await linkWithPopup(auth.currentUser, provider);
         // onAuthStateChanged will update the user state automatically.
-      } catch (error: any) {
-        console.error("Full error object during account linking:", error);
-
-        const errorCode = error.code;
-
-        if (errorCode === 'auth/popup-closed-by-user' || errorCode === 'auth/cancelled-popup-request') {
-            toast({
-                title: "Linking Cancelled",
-                description: "The account linking window was closed.",
-            });
-        } else if (errorCode === 'auth/credential-already-in-use') {
+    } catch (error: any) {
+        if (error.code === 'auth/credential-already-in-use') {
             toast({
               title: "Account Exists",
               description: "This Google account is already in use. Switching to existing account.",
@@ -211,9 +158,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (credential) {
                 await signOut(auth);
                 await signInWithCredential(auth, credential);
-                router.push('/');
+                 // onAuthStateChanged will handle the rest
               } else {
-                 throw new Error("Could not extract credential.");
+                 throw new Error("Could not extract credential on conflict.");
               }
             } catch (signInError: any) {
                 console.error("Error signing in with existing credential:", signInError);
@@ -222,13 +169,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   description: "Could not switch to your existing account. Please try logging in again.",
                   variant: "destructive",
                 });
+                // Re-throw to be caught by the component
+                throw signInError;
             }
         } else {
-          toast({
-            title: "Link Error",
-            description: error.message || "An unknown error occurred.",
-            variant: "destructive",
-          });
+            // Re-throw other errors for the component to handle (e.g., popup closed)
+            throw error;
         }
     }
   };
@@ -239,10 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         showFirebaseNotConfiguredToast();
         return;
     }
-    signOut(auth).then(() => {
-      // Sign-out successful.
-      router.push('/');
-    }).catch((error) => {
+    signOut(auth).catch((error) => {
       // An error happened.
       console.error("Error signing out:", error);
       toast({
