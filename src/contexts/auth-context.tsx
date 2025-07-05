@@ -227,13 +227,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: `Your guest account is now linked to ${result.user.email}.`,
       });
     } catch (error: any) {
-      // Log the full error for debugging, but don't always show a toast
-      console.error("Full error from linkWithPopup:", error);
-
       if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-        // This is a common case, so we don't show a scary error toast.
-        // It could be intentional or a configuration issue. We just log it.
-        console.log("Linking was cancelled by the user or a configuration issue.");
+        toast({
+          title: "Linking Cancelled",
+          description: "You closed the sign-in window.",
+        });
       } else if (error.code === 'auth/credential-already-in-use') {
         toast({
           title: "Account Already Exists",
@@ -242,6 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           duration: 7000
         });
       } else {
+        console.error("Full error from linkWithPopup:", error);
         toast({
           title: "Linking Error",
           description: error.message || "An unexpected error occurred during linking.",
