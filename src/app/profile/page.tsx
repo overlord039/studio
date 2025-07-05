@@ -59,7 +59,7 @@ export default function ProfilePage() {
       );
     }
 
-    const displayName = currentUser.displayName || (currentUser.isGuest ? 'Guest' : 'Anonymous');
+    const displayName = currentUser.displayName || 'Guest';
     const avatarFallback = displayName.substring(0, 2).toUpperCase();
     const joinDateFormatted = new Date(currentUser.createdAt).toLocaleDateString('en-GB', {
       day: '2-digit',

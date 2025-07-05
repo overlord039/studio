@@ -63,7 +63,7 @@ export default function CreatePrivateRoomPage() {
 
     const hostPlayer: Player = {
       id: currentUser.uid, 
-      name: currentUser.displayName || `Guest#${currentUser.uid.substring(0,4)}`,
+      name: currentUser.displayName || 'Guest',
       email: currentUser.email,
       isHost: true,
     };

@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // User is signed in.
         const userToStore: User = {
           uid: user.uid,
-          displayName: user.displayName,
+          displayName: user.displayName || (user.isAnonymous ? `Guest#${user.uid.substring(0, 5)}` : 'Unnamed User'),
           email: user.email,
           isGuest: user.isAnonymous,
           createdAt: user.metadata.creationTime || new Date().toISOString(),
@@ -79,12 +79,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const provider = new GoogleAuthProvider();
     // Optional: Add scopes to request additional user data from Google.
-    // provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
+    provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
     
     // Optional: Add custom parameters to the sign-in request.
-    // provider.setCustomParameters({
-    //   'login_hint': 'user@example.com'
-    // });
+    provider.setCustomParameters({
+      'login_hint': 'user@example.com'
+    });
 
     signInWithPopup(auth, provider)
       .then((result) => {
@@ -122,12 +122,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         router.push('/');
       })
       .catch((error) => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
+        const errorCode = error.code || 'UNKNOWN';
+        const errorMessage = error.message || 'An unknown error occurred.';
+        
         console.error("Error during guest sign-in:", { errorCode, errorMessage });
+        
         toast({
           title: "Guest Sign-in Error",
-          description: errorMessage || "Could not sign in as a guest. Please try again.",
+          description: `[${errorCode}] ${errorMessage}`,
           variant: "destructive"
         });
       });

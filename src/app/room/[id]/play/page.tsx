@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -513,7 +514,7 @@ export default function GameRoomPage() {
           <CardContent className="space-y-4">
              {currentUserWinnings > 0 && (
                 <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
-                    <p className="text-lg font-semibold">Congratulations, {currentUser.username}!</p>
+                    <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
                     <p className="text-2xl font-bold text-green-700 dark:text-green-300">You won a total of {formatCurrency(currentUserWinnings)}!</p>
                     <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
                 </div>
@@ -583,7 +584,7 @@ export default function GameRoomPage() {
         <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
           <div className="flex-grow">
             <div className="text-white">Room ID: #{roomId} | Prize Pool: ₹{totalPrizePool.toFixed(2)} | Players: {roomData.players.length}</div>
-            <div className="font-semibold text-white">{currentUser.username} ({myTickets.length} {ticketsText(myTickets.length)})</div>
+            <div className="font-semibold text-white">{currentUser.displayName} ({myTickets.length} {ticketsText(myTickets.length)})</div>
           </div>
            <div className="flex-shrink-0 flex items-center gap-2">
             {isCurrentUserHost && !roomData.settings.isPublic && !roomData.isGameOver && (

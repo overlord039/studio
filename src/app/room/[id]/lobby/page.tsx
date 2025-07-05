@@ -171,7 +171,7 @@ export default function LobbyPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           playerId: currentUser.uid, 
-          playerName: currentUser.displayName || `Guest#${currentUser.uid.substring(0,4)}`,
+          playerName: currentUser.displayName || 'Guest',
           playerEmail: currentUser.email,
           ticketsToBuy: selectedTicketsToBuy 
         }),
