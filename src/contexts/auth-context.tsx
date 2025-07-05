@@ -47,22 +47,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-  const firebaseConfigured = !!auth && !!db;
-
-  const updateUserStats = async (newStats: Partial<UserStats>) => {
-    if (!currentUser || !db) return;
-    const userDocRef = doc(db, "users", currentUser.uid);
-    await setDoc(userDocRef, { stats: newStats }, { merge: true });
-    // No need to fetch, just update local state for immediate UI response
-    setUserStats(prevStats => ({ ...prevStats!, ...newStats })); 
-  };
-  
-  const fetchUserDocument = async (uid: string): Promise<UserStats | null> => {
+const fetchUserDocument = async (uid: string): Promise<UserStats | null> => {
     if (!db) return null;
     const userDocRef = doc(db, "users", uid);
     const userDocSnap = await getDoc(userDocRef);
@@ -84,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   };
 
-  const createUserDocument = async (user: FirebaseUser): Promise<UserStats> => {
+const createUserDocument = async (user: FirebaseUser): Promise<UserStats> => {
     if (!db) throw new Error("Database not configured.");
     const userDocRef = doc(db, "users", user.uid);
     
@@ -108,48 +93,80 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return defaultStats;
-  };
+};
 
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const firebaseConfigured = !!auth && !!db;
+
+  const updateUserStats = async (newStats: Partial<UserStats>) => {
+    if (!currentUser || !db) return;
+    const userDocRef = doc(db, "users", currentUser.uid);
+    await setDoc(userDocRef, { stats: newStats }, { merge: true });
+    // No need to fetch, just update local state for immediate UI response
+    setUserStats(prevStats => ({ ...prevStats!, ...newStats })); 
+  };
+  
   useEffect(() => {
     if (!firebaseConfigured) {
       setLoading(false);
       return;
     }
-    
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      try {
-        if (user) {
-          let stats = await fetchUserDocument(user.uid);
-          if (!stats) {
-            stats = await createUserDocument(user);
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setLoading(true);
+      if (user) {
+        // Immediately set a local version of the user to log them in.
+        const defaultStats: UserStats = {
+          matchesPlayed: 0,
+          prizesWon: Object.values(PRIZE_TYPES).reduce((acc, prize) => {
+            acc[prize] = 0;
+            return acc;
+          }, {} as Record<PrizeType, number>),
+        };
+
+        const localUser: User = {
+          uid: user.uid,
+          displayName: user.displayName || (user.isAnonymous ? `Guest#${user.uid.substring(0, 5)}` : 'Unnamed User'),
+          email: user.email,
+          isGuest: user.isAnonymous,
+          createdAt: user.metadata.creationTime || new Date().toISOString(),
+          stats: defaultStats,
+        };
+        
+        setCurrentUser(localUser);
+        setUserStats(defaultStats);
+        setLoading(false); // Render the app immediately
+
+        // In the background, sync with Firestore without blocking the UI
+        (async () => {
+          try {
+            let stats = await fetchUserDocument(user.uid);
+            if (!stats) {
+              stats = await createUserDocument(user);
+            }
+            // If successful, update the user state with persisted data
+            setCurrentUser(prev => prev ? { ...prev, stats: stats! } : null);
+            setUserStats(stats);
+          } catch (dbError) {
+            console.error("Firestore sync error after login:", dbError);
+            toast({
+              title: "Sync Warning",
+              description: "You are logged in, but we couldn't load your saved progress.",
+              variant: "destructive"
+            });
+            // Importantly, we DO NOT sign the user out.
           }
-          
-          setCurrentUser({
-            uid: user.uid,
-            displayName: user.displayName || (user.isAnonymous ? `Guest#${user.uid.substring(0, 5)}` : 'Unnamed User'),
-            email: user.email,
-            isGuest: user.isAnonymous,
-            createdAt: user.metadata.creationTime || new Date().toISOString(),
-            stats: stats,
-          });
-           setUserStats(stats);
-        } else {
-          setCurrentUser(null);
-          setUserStats(null);
-        }
-      } catch (error) {
-        console.error("Error during auth state change handling:", error);
-        toast({
-          title: "Authentication Error",
-          description: "There was a problem loading your user data. Please try logging in again.",
-          variant: "destructive"
-        });
-        if (auth) {
-          await signOut(auth);
-        }
+        })();
+
+      } else {
+        // No user is signed in
         setCurrentUser(null);
         setUserStats(null);
-      } finally {
         setLoading(false);
       }
     });
@@ -166,34 +183,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const loginWithGoogle = async () => {
-    // 1. Ensure Firebase is configured and available.
     if (!auth) {
-      toast({
-        title: "Authentication Not Available",
-        description: "Firebase is not configured. Please check your setup.",
-        variant: "destructive",
-      });
+      showFirebaseNotConfiguredToast();
       return;
     }
 
-    // 2. Create a new Google Auth provider. This does not request extra permissions.
     const provider = new GoogleAuthProvider();
-
-    // 3. Attempt to sign in with a pop-up.
     try {
       await signInWithPopup(auth, provider);
-      // If successful, the `onAuthStateChanged` listener will handle creating the user session.
-      // No further action is needed here.
+      // onAuthStateChanged will handle the rest.
     } catch (error: any) {
-      // 4. Handle potential errors gracefully.
-      
-      // If the user intentionally closes the pop-up, we don't treat it as an error.
       if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-        console.log("Sign-in cancelled by user."); // Log for debugging, but don't show an error toast.
+        console.log("Sign-in cancelled by user.");
+        toast({ title: "Sign-in Cancelled" });
         return;
       }
-      
-      // For any other error, we inform the user.
       console.error("Google Sign-In Error:", error);
       toast({
         title: "Sign-In Failed",
@@ -222,7 +226,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const linkGoogleAccount = async () => {
-    // 1. Ensure a guest user is signed in.
     if (!auth?.currentUser?.isAnonymous) {
       toast({ 
         title: "Not a Guest", 
@@ -231,17 +234,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // 2. Create a new Google Auth provider.
     const provider = new GoogleAuthProvider();
     const guestUser = auth.currentUser;
 
-    // 3. Attempt to link the guest account with the Google account via a pop-up.
     try {
       const result = await linkWithPopup(guestUser, provider);
       const linkedUser = result.user;
       
-      // Since the UID doesn't change on link, we just need to update the user's document
-      // to reflect their new, permanent status (name and email).
       if (db) {
         const userDocRef = doc(db, "users", linkedUser.uid);
         await updateDoc(userDocRef, {
@@ -254,19 +253,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Account Linked!",
         description: "Your progress is now saved to your Google account.",
       });
-      // The onAuthStateChanged listener will handle updating the local user state.
 
     } catch (error: any) {
-      // 4. Handle potential errors gracefully.
       if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-        console.log("Account linking cancelled by user.");
+        toast({ 
+          title: "Linking Cancelled", 
+          description: "You closed the sign-in window.",
+        });
         return;
       }
 
       if (error.code === 'auth/credential-already-in-use') {
         toast({
           title: "Account Already Exists",
-          description: "This Google account is already linked to another profile. Sign out and sign in with Google to use that account.",
+          description: "This Google account is already linked to another profile. Please sign out and sign in with Google directly.",
           variant: "destructive",
           duration: 8000
         });
