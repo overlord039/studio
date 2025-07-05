@@ -28,7 +28,7 @@ export interface GameSettings {
 export const PRIZE_TYPES = {
   EARLY_5: "Early 5",
   FIRST_LINE: "First Line",
-  SECOND_LINE: "Second Line,
+  SECOND_LINE: "Second Line",
   THIRD_LINE: "Third Line",
   FULL_HOUSE: "Full House",
 } as const;
