@@ -2,11 +2,12 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import React, from 'react';
+import React, { useState, useEffect, useContext, createContext } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { 
   GoogleAuthProvider, 
-  signInWithPopup, 
+  signInWithPopup,
+  signInWithCredential,
   signOut, 
   onAuthStateChanged, 
   signInAnonymously, 
@@ -18,8 +19,8 @@ import { doc, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { UserStats, PrizeType } from '@/types';
 import { PRIZE_TYPES } from '@/types';
-import { Loader2 } from 'lucide-react';
 import LoginSelectionScreen from '@/components/auth/login-selection-screen';
+import { Loader2 } from 'lucide-react';
 
 
 // Simplified user object to store in context
@@ -44,101 +45,90 @@ interface AuthContextType {
   loading: boolean;
 }
 
-const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const fetchUserDocument = async (uid: string): Promise<UserStats | null> => {
-    if (!db) return null;
-    const userDocRef = doc(db, "users", uid);
-    const userDocSnap = await getDoc(userDocRef);
-
-    if (userDocSnap.exists()) {
-        const docData = userDocSnap.data();
-        const existingStats = docData.stats || {};
-        const stats: UserStats = {
-            matchesPlayed: existingStats.matchesPlayed || 0,
-            prizesWon: existingStats.prizesWon || {},
-        };
-        Object.values(PRIZE_TYPES).forEach(prize => {
-            if (stats.prizesWon[prize] === undefined) {
-                stats.prizesWon[prize] = 0;
-            }
-        });
-        return stats;
-    }
-    return null;
-  };
-
-const createUserDocument = async (user: FirebaseUser): Promise<UserStats> => {
-    if (!db) throw new Error("Database not configured.");
-    const userDocRef = doc(db, "users", user.uid);
-    
-    const defaultStats: UserStats = {
-      matchesPlayed: 0,
-      prizesWon: Object.values(PRIZE_TYPES).reduce((acc, prize) => {
-        acc[prize] = 0;
-        return acc;
-      }, {} as Record<PrizeType, number>),
+const createDefaultStats = (): UserStats => {
+    return {
+        matchesPlayed: 0,
+        prizesWon: Object.values(PRIZE_TYPES).reduce((acc, prize) => {
+            acc[prize] = 0;
+            return acc;
+        }, {} as Record<PrizeType, number>),
     };
-    
-    // Only write to DB for non-guest users
-    if (!user.isAnonymous) {
-      await setDoc(userDocRef, { 
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          createdAt: user.metadata.creationTime,
-          stats: defaultStats 
-      }, { merge: true });
-    }
-
-    return defaultStats;
 };
 
+const createUserProfileInDB = async (firebaseUser: FirebaseUser): Promise<User> => {
+      if (!db) throw new Error("Database not configured.");
+      
+      const appUser: User = {
+        uid: firebaseUser.uid,
+        displayName: firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`,
+        email: firebaseUser.email,
+        isGuest: firebaseUser.isAnonymous,
+        createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+        stats: createDefaultStats(),
+      };
+      
+      // Only write to DB for non-guest users
+      if (!firebaseUser.isAnonymous) {
+        const userDocRef = doc(db, "users", firebaseUser.uid);
+        await setDoc(userDocRef, appUser);
+      }
+
+      return appUser;
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
-  const [userStats, setUserStats] = React.useState<UserStats | null>(null);
-  const [loading, setLoading] = React.useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const firebaseConfigured = !!auth && !!db;
 
-  const updateUserStats = async (newStats: Partial<UserStats>) => {
-    if (!currentUser || !db || currentUser.isGuest) return;
-    const userDocRef = doc(db, "users", currentUser.uid);
-    await updateDoc(userDocRef, { stats: newStats });
-    setUserStats(prevStats => ({ ...prevStats!, ...newStats })); 
-  };
-  
-  React.useEffect(() => {
+  useEffect(() => {
     if (!firebaseConfigured) {
-      setLoading(false);
-      return;
+        setLoading(false);
+        return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        // This listener now primarily handles session persistence on page refresh
-        const stats = await fetchUserDocument(user.uid);
-        const appUser: User = {
-          uid: user.uid,
-          displayName: user.displayName || (user.isAnonymous ? `Guest#${user.uid.substring(0, 5)}` : 'Unnamed User'),
-          email: user.email,
-          isGuest: user.isAnonymous,
-          createdAt: user.metadata.creationTime || new Date().toISOString(),
-          stats: stats || { matchesPlayed: 0, prizesWon: {} as Record<PrizeType, number> },
-        };
-        setCurrentUser(appUser);
-        setUserStats(appUser.stats);
-      } else {
-        setCurrentUser(null);
-        setUserStats(null);
-      }
-      setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        if (firebaseUser) {
+            // User is signed in (session restored). Fetch their full profile from DB.
+            const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+            if (userDoc.exists()) {
+                setCurrentUser(userDoc.data() as User);
+            } else if (!firebaseUser.isAnonymous) {
+                // This can happen if user signed up but doc creation failed.
+                console.warn(`User ${firebaseUser.uid} authenticated but has no document. Recreating...`);
+                const appUser = await createUserProfileInDB(firebaseUser);
+                setCurrentUser(appUser);
+            } else {
+                 // Guest user session restored
+                 const guestUser: User = {
+                    uid: firebaseUser.uid,
+                    displayName: `Guest#${firebaseUser.uid.substring(0, 5)}`,
+                    email: null,
+                    isGuest: true,
+                    createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+                    stats: createDefaultStats(),
+                };
+                setCurrentUser(guestUser);
+            }
+        } else {
+            setCurrentUser(null);
+        }
+        setLoading(false);
     });
 
     return () => unsubscribe();
   }, [firebaseConfigured]);
 
+  const updateUserStats = async (newStats: Partial<UserStats>) => {
+    if (!currentUser || !db || currentUser.isGuest) return;
+    const userDocRef = doc(db, "users", currentUser.uid);
+    await updateDoc(userDocRef, { stats: newStats });
+    setCurrentUser(prevUser => prevUser ? { ...prevUser, stats: { ...prevUser.stats, ...newStats } } : null);
+  };
+  
   const showFirebaseNotConfiguredToast = () => {
     toast({
         title: "Firebase Not Configured",
@@ -148,43 +138,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const loginWithGoogle = async () => {
-    if (!auth) {
+    if (!auth || !db) {
       showFirebaseNotConfiguredToast();
       return;
     }
     setLoading(true);
-    const provider = new GoogleAuthProvider();
 
+    // Initialize the provider without any extra scopes like 'contacts.readonly'.
+    // This ensures we only ask for basic, non-sensitive profile information.
+    const provider = new GoogleAuthProvider();
+    
     try {
       const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+      const firebaseUser = result.user;
 
-      let stats = await fetchUserDocument(user.uid);
-      if (!stats) {
-        stats = await createUserDocument(user);
-      }
+      const userDocRef = doc(db, "users", firebaseUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
 
-      const appUser: User = {
-        uid: user.uid,
-        displayName: user.displayName,
-        email: user.email,
-        isGuest: user.isAnonymous,
-        createdAt: user.metadata.creationTime || new Date().toISOString(),
-        stats: stats,
-      };
-
-      setCurrentUser(appUser);
-      setUserStats(stats);
-    } catch (error: any) {
-      if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
-        console.error("Google Sign-In Error:", error);
-        toast({
-          title: "Sign-In Failed",
-          description: error.message || "An unexpected error occurred.",
-          variant: "destructive",
-        });
+      let appUser: User;
+      if (userDocSnap.exists()) {
+        appUser = userDocSnap.data() as User;
       } else {
-        toast({ title: "Sign-in Cancelled" });
+        appUser = await createUserProfileInDB(firebaseUser);
+      }
+      
+      setCurrentUser(appUser);
+      
+    } catch (error: any) {
+      if (error.code === 'auth/popup-closed-by-user') {
+        toast({ title: "Sign-in Cancelled", description: "You closed the sign-in window." });
+      } else {
+        console.error("Google Sign-In Error:", error);
+        toast({ title: "Sign-In Failed", description: error.message, variant: "destructive" });
       }
     } finally {
       setLoading(false);
@@ -198,36 +183,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setLoading(true);
     try {
-      const result = await signInAnonymously(auth);
-      const user = result.user;
-
-      const defaultStats: UserStats = {
-        matchesPlayed: 0,
-        prizesWon: Object.values(PRIZE_TYPES).reduce((acc, prize) => {
-          acc[prize] = 0;
-          return acc;
-        }, {} as Record<PrizeType, number>),
-      };
-      
-      const guestUser: User = {
-        uid: user.uid,
-        displayName: `Guest#${user.uid.substring(0, 5)}`,
-        email: null,
-        isGuest: true,
-        createdAt: user.metadata.creationTime || new Date().toISOString(),
-        stats: defaultStats,
-      };
-      setCurrentUser(guestUser);
-      setUserStats(defaultStats);
+        const result = await signInAnonymously(auth);
+        const firebaseUser = result.user;
+        const guestUser: User = {
+            uid: firebaseUser.uid,
+            displayName: `Guest#${firebaseUser.uid.substring(0, 5)}`,
+            email: null,
+            isGuest: true,
+            createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+            stats: createDefaultStats(),
+        };
+        setCurrentUser(guestUser);
     } catch (error: any) {
-      console.error("Error during guest sign-in:", error);
-      toast({
-        title: "Guest Sign-in Error",
-        description: error.message || "An unexpected error occurred.",
-        variant: "destructive"
-      });
+        console.error("Guest Sign-In Error:", error);
+        toast({ title: "Guest Sign-in Failed", description: error.message, variant: "destructive" });
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 
@@ -237,27 +208,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     setLoading(true);
+    // Initialize with no extra scopes.
     const provider = new GoogleAuthProvider();
     const guestUser = auth.currentUser;
 
     try {
       const result = await linkWithPopup(guestUser, provider);
-      const linkedUser = result.user;
-      
-      // Since the user was a guest, create their document now.
-      const stats = await createUserDocument(linkedUser);
+      // After linking, the guest account is now a permanent Google account.
+      // We must create its profile in the database.
+      const permanentUser = await createUserProfileInDB(result.user);
+      setCurrentUser(permanentUser);
 
-      const appUser: User = {
-        uid: linkedUser.uid,
-        displayName: linkedUser.displayName,
-        email: linkedUser.email,
-        isGuest: false,
-        createdAt: linkedUser.metadata.creationTime || new Date().toISOString(),
-        stats: stats,
-      };
-      setCurrentUser(appUser);
-      setUserStats(stats);
-      
       toast({
         title: "Account Linked!",
         description: "Your guest account is now saved to Google.",
@@ -265,13 +226,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     } catch (error: any) {
       if (error.code === 'auth/credential-already-in-use') {
-         toast({ title: "Account Exists", description: "That Google account is already in use. Please log out and sign in with Google directly.", variant: 'destructive'});
-         await signOut(auth);
-      } else if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
-        console.error("Account Linking Error:", error);
-        toast({ title: "Linking Failed", description: "An unexpected error occurred. If the pop-up closes automatically, check your Firebase domain authorizations.", variant: "destructive" });
+         // This Google account is already a user. We must switch to it.
+         toast({ title: "Account Exists", description: "Switching to your existing Google account. Guest progress will not be transferred.", duration: 5000 });
+         const credential = GoogleAuthProvider.credentialFromError(error);
+         if (credential) {
+            await signOut(auth); // Sign out of the guest account first
+            await signInWithCredential(auth, credential); // Then sign in with the existing Google account
+         }
+      } else if (error.code === 'auth/popup-closed-by-user') {
+          toast({ title: "Linking Cancelled", description: "You closed the sign-in window." });
       } else {
-        toast({ title: "Linking Cancelled" });
+        console.error("Account Linking Error:", error);
+        toast({ title: "Linking Failed", description: error.message, variant: "destructive" });
       }
     } finally {
       setLoading(false);
@@ -286,14 +252,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
         await signOut(auth);
         setCurrentUser(null);
-        setUserStats(null);
     } catch(error) {
       console.error("Error signing out:", error);
-      toast({
-        title: "Logout Error",
-        description: "An error occurred during sign out.",
-        variant: "destructive"
-      });
+      toast({ title: "Logout Error", description: "An error occurred during sign out.", variant: "destructive" });
     }
   };
   
@@ -317,24 +278,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
     } catch (error: any) {
       if (error.code === 'auth/requires-recent-login') {
-        toast({
-          title: "Action Required",
-          description: "For security, please sign in again before deleting your account.",
-          variant: "destructive",
-          duration: 5000
-        });
+        toast({ title: "Action Required", description: "For security, please sign in again before deleting your account.", variant: "destructive", duration: 5000 });
       } else {
         console.error("Error deleting account:", error);
-        toast({
-          title: "Deletion Error",
-          description: error.message || "An unexpected error occurred.",
-          variant: "destructive"
-        });
+        toast({ title: "Deletion Error", description: error.message || "An unexpected error occurred.", variant: "destructive" });
       }
     }
   };
 
-  const value = { currentUser, userStats, updateUserStats, loginWithGoogle, loginAsGuest, linkGoogleAccount, logout, deleteAccount, loading };
+  const value = { 
+      currentUser, 
+      userStats: currentUser?.stats || null, 
+      updateUserStats, 
+      loginWithGoogle, 
+      loginAsGuest, 
+      linkGoogleAccount, 
+      logout, 
+      deleteAccount, 
+      loading 
+  };
 
   return (
     <AuthContext.Provider value={value}>
@@ -352,7 +314,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth() {
-  const context = React.useContext(AuthContext);
+  const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
