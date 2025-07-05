@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from 'next/link';
@@ -29,10 +30,9 @@ export default function HomePage() {
     if (!currentUser) {
       toast({
         title: "Login Required",
-        description: "Please log in to join a room.",
+        description: "Please sign in to join a room.",
         variant: "destructive",
       });
-      router.push('/auth/login');
       return;
     }
     const trimmedRoomId = joinRoomId.trim();
@@ -52,10 +52,9 @@ export default function HomePage() {
     if (!currentUser) {
       toast({
         title: "Login Required",
-        description: "Please log in to create a room.",
+        description: "Please sign in to create a room.",
         variant: "destructive",
       });
-      router.push('/create-room');
       return;
     }
     router.push('/create-room');
@@ -82,7 +81,7 @@ export default function HomePage() {
 
       {currentUser && !loading && (
         <div className="text-center my-2">
-          <p className="text-xl font-semibold text-white">Welcome, {currentUser.username}!</p>
+          <p className="text-xl font-semibold text-white">Welcome, {currentUser.displayName || 'Guest'}!</p>
         </div>
       )}
 

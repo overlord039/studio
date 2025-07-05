@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -172,7 +173,7 @@ const SettingsModal = () => {
                                   <AlertDialogHeader>
                                       <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                      This action cannot be undone. This will permanently delete your account and remove your data from our servers.
+                                      This action cannot be undone. This will permanently delete your account and remove your data from our servers. This is not implemented in this mock application.
                                       </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
@@ -190,8 +191,8 @@ const SettingsModal = () => {
                           <h3 className="text-xl font-semibold">Social Accounts</h3>
                           <p className="text-muted-foreground">Connect your accounts for a seamless HousieHub experience with friends.</p>
                           <div className="space-y-3">
-                          <Button className="w-full bg-white text-black hover:bg-gray-200 shadow-sm"><GoogleIcon className="mr-2 h-5 w-5 fill-current" /> Continue with Google</Button>
-                          <Button className="w-full bg-[#1877F2] text-white hover:bg-[#166fe5] shadow-sm"><Facebook className="mr-2 h-5 w-5" /> Login with Facebook</Button>
+                          <Button className="w-full bg-white text-black hover:bg-gray-200 shadow-sm" disabled><GoogleIcon className="mr-2 h-5 w-5 fill-current" /> Continue with Google</Button>
+                          <Button className="w-full bg-[#1877F2] text-white hover:bg-[#166fe5] shadow-sm" disabled><Facebook className="mr-2 h-5 w-5" /> Login with Facebook</Button>
                           <Button variant="secondary" className="w-full" onClick={handleShare}><Share2 className="mr-2 h-5 w-5" /> Share Website</Button>
                           </div>
                       </div>
@@ -325,28 +326,22 @@ export default function Header() {
     }
 
     if (!currentUser) {
-      return (
-        <div className="flex items-center gap-2">
-          <Link href="/auth/login" passHref>
-            <Button variant="ghost" size="sm" className="text-white">Login</Button>
-          </Link>
-          <Link href="/auth/register" passHref>
-            <Button variant="ghost" size="sm" className="text-white">Register</Button>
-          </Link>
-        </div>
-      );
+      return null;
     }
+    
+    const displayName = currentUser.displayName || 'G';
+    const avatarFallback = currentUser.isGuest ? 'G' : displayName.substring(0, 2).toUpperCase();
     
     return (
         <Link href="/profile" passHref>
           <Button variant="ghost" className="relative p-0 h-10 w-10 rounded-full">
             <Avatar className="h-10 w-10 border-2 border-primary">
               <AvatarImage 
-                src={`https://placehold.co/32x32.png?text=${currentUser.username.substring(0, 2).toUpperCase()}`} 
-                alt={currentUser.username} 
+                src={`https://placehold.co/32x32.png?text=${avatarFallback}`} 
+                alt={displayName} 
                 data-ai-hint="profile avatar"
               />
-              <AvatarFallback>{currentUser.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarFallback>{avatarFallback}</AvatarFallback>
             </Avatar>
           </Button>
         </Link>

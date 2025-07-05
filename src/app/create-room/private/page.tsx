@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -53,17 +54,16 @@ export default function CreatePrivateRoomPage() {
     if (!currentUser) {
       toast({
         title: "Login Required",
-        description: "Please log in to create a room.",
+        description: "Please sign in to create a room.",
         variant: "destructive",
       });
-      router.push('/auth/login');
       return;
     }
     setIsSubmitting(true);
 
     const hostPlayer: Player = {
       id: currentUser.uid, 
-      name: currentUser.username,
+      name: currentUser.displayName || `Guest#${currentUser.uid.substring(0,4)}`,
       email: currentUser.email,
       isHost: true,
     };

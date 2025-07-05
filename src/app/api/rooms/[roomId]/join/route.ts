@@ -1,4 +1,5 @@
 
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { addPlayerToRoomStore, getRoomStateForClient } from '@/lib/server/game-store';
 import type { Player } from '@/types';
@@ -11,14 +12,13 @@ export async function POST(
   const { roomId } = params; 
 
   try {
-    // Client should send player ID (e.g. username from auth) and name
-    const { playerId, playerName, playerEmail, ticketsToBuy } = (await request.json()) as { playerId: string; playerName: string; playerEmail: string; ticketsToBuy?: number };
+    const { playerId, playerName, playerEmail, ticketsToBuy } = (await request.json()) as { playerId: string; playerName: string; playerEmail: string | null; ticketsToBuy?: number };
 
     if (!roomId) {
       return NextResponse.json({ message: 'Room ID is required' }, { status: 400 });
     }
-    if (!playerId || !playerName || !playerEmail) {
-      return NextResponse.json({ message: 'Player ID, name, and email are required' }, { status: 400 });
+    if (!playerId || !playerName) {
+      return NextResponse.json({ message: 'Player ID and name are required' }, { status: 400 });
     }
 
     const numTickets = typeof ticketsToBuy === 'number' && ticketsToBuy > 0 ? ticketsToBuy : DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER;

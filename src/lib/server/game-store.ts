@@ -1,3 +1,4 @@
+
 import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid, CallingMode } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { generateImprovedHousieTicket } from '@/lib/housie';
@@ -53,7 +54,7 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
   const hostPlayerInRoom: BackendPlayerInRoom = {
     id: host.id,
     name: host.name,
-    email: host.email!, // Email is now mandatory from the API
+    email: host.email || `${host.id}@housiehub.guest`, // Fallback email
     isHost: true,
     tickets: [], 
   };
@@ -89,7 +90,7 @@ export function getRoomStore(roomId: string): Room | undefined {
   return room;
 }
 
-export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; name: string; email: string }, numberOfTickets?: number): Room | { error: string } {
+export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; name: string; email: string | null }, numberOfTickets?: number): Room | { error: string } {
     const room = rooms.get(roomId);
     if (!room) {
         return { error: "Room not found." };
@@ -103,22 +104,25 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; n
         }
         return { error: "Game is currently in progress. Cannot join now." };
     }
-
-    // Find player by unique email first. This handles a user re-joining.
-    const existingPlayerIndex = room.players.findIndex(p => p.email === playerInfo.email);
+    
+    const normalizedPlayerName = playerInfo.name.trim().toLowerCase();
+    // Find player by unique ID first.
+    const existingPlayerIndex = room.players.findIndex(p => p.id === playerInfo.id);
 
     if (existingPlayerIndex !== -1) {
         const existingPlayer = room.players[existingPlayerIndex];
         
         // Check if they are trying to use a username that is now taken by *another* player
-        const isUsernameTaken = room.players.some(p => p.email !== playerInfo.email && p.name.toLowerCase() === playerInfo.name.toLowerCase());
+        const isUsernameTaken = room.players.some(p => p.id !== playerInfo.id && p.name.toLowerCase() === normalizedPlayerName);
         if (isUsernameTaken) {
-            return { error: `Username "${playerInfo.name}" is already taken in this room.` };
+            return { error: `Display name "${playerInfo.name}" is already taken in this room.` };
         }
         
-        existingPlayer.id = playerInfo.id; // Update UID in case they re-logged in
         existingPlayer.name = playerInfo.name;
         existingPlayer.isHost = playerInfo.id === room.host.id;
+        if (playerInfo.email) {
+            existingPlayer.email = playerInfo.email;
+        }
 
         const numTicketsToGenerate = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
 
@@ -129,10 +133,10 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; n
             console.log(`Player ${playerInfo.name} (${playerInfo.id}) re-confirmed ${numTicketsToGenerate} tickets in room ${roomId}. No changes.`);
         }
     } else {
-        // New player joining (unique email)
-        const isUsernameTaken = room.players.some(p => p.name.toLowerCase() === playerInfo.name.toLowerCase());
+        // New player joining
+        const isUsernameTaken = room.players.some(p => p.name.toLowerCase() === normalizedPlayerName);
         if (isUsernameTaken) {
-            return { error: `Username "${playerInfo.name}" is already taken in this room. Please choose another.` };
+            return { error: `Display name "${playerInfo.name}" is already taken. Please choose another.` };
         }
         if (room.players.length >= room.settings.lobbySize) {
             return { error: "Room is full." };
@@ -141,7 +145,7 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; n
         const newPlayer: BackendPlayerInRoom = {
             id: playerInfo.id,
             name: playerInfo.name,
-            email: playerInfo.email,
+            email: playerInfo.email || `${playerInfo.id}@housiehub.guest`, // Fallback email
             isHost: playerInfo.id === room.host.id,
             tickets: Array.from({ length: numTicketsToGenerate }, () => generateImprovedHousieTicket()),
         };
@@ -274,7 +278,9 @@ export function removePlayerFromRoomStore(roomId: string, playerId: string): { s
     console.log(`Host migration in room ${roomId}: ${newHost.id} is the new host.`);
   }
   
-  rooms.set(roomId, room);
+  if(room.players.length > 0) {
+    rooms.set(roomId, room);
+  }
   return { success: true };
 }
 

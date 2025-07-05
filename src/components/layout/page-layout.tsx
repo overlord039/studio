@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { usePathname } from 'next/navigation';
@@ -14,15 +15,13 @@ export default function PageLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     const { currentUser, loading } = useAuth();
 
-    // Determine if the login selection should be shown.
-    // It should only show on the root path if the user is not logged in.
-    const showLoginSelection = !currentUser && !loading && pathname === '/';
+    // Show the login selection screen on any page if the user is not logged in and auth state is resolved.
+    const showLoginSelection = !currentUser && !loading;
 
     if (showLoginSelection) {
         return <LoginSelectionScreen />;
     }
 
-    // Existing layout logic
     const showHeaderAndFooter = pathname === '/';
 
     const isSpecialLayoutPage = 

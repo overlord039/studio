@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -53,7 +54,7 @@ export default function LobbyPage() {
     if (!roomId || !currentUser) {
         if (isInitialLoad) {
             setIsLoading(false);
-            if (!currentUser && !authLoading) setError("Please log in to access the lobby.");
+            if (!currentUser && !authLoading) setError("Please sign in to access the lobby.");
         }
         return;
     }
@@ -143,13 +144,11 @@ export default function LobbyPage() {
         });
     } else if (!authLoading && !currentUser) {
         setIsLoading(false);
-        setError("Please log in to access the lobby.");
+        setError("Please sign in to access the lobby.");
     }
   }, [currentUser, roomId, authLoading, fetchRoomDetails]);
 
   useEffect(() => {
-    // Poll if the game is not actively running (i.e., it's pre-game or post-game).
-    // Stop polling only if the game is in progress, as the user will be on the /play page.
     if (!roomId || !currentUser || (roomData?.isGameStarted && !roomData.isGameOver) || isLoading) {
       return;
     }
@@ -172,7 +171,7 @@ export default function LobbyPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           playerId: currentUser.uid, 
-          playerName: currentUser.username,
+          playerName: currentUser.displayName || `Guest#${currentUser.uid.substring(0,4)}`,
           playerEmail: currentUser.email,
           ticketsToBuy: selectedTicketsToBuy 
         }),
@@ -355,22 +354,9 @@ export default function LobbyPage() {
 
 
   let gameSettings: GameSettings | null = null;
-  const ticketPriceParam = searchParams.get('ticketPrice');
-  const lobbySizeParam = searchParams.get('lobbySize');
-  const prizeFormatParam = searchParams.get('prizeFormat');
-  const numTicketsPerPlayerParam = searchParams.get('numberOfTicketsPerPlayer');
-
   if (roomData?.settings) {
     gameSettings = roomData.settings;
-  } else if (!isLoading && !roomData && !error) { 
-    gameSettings = {
-        ticketPrice: (ticketPriceParam && !isNaN(parseInt(ticketPriceParam)) ? parseInt(ticketPriceParam) : DEFAULT_GAME_SETTINGS.ticketPrice) as GameSettings['ticketPrice'],
-        lobbySize: (lobbySizeParam && !isNaN(parseInt(lobbySizeParam)) ? parseInt(lobbySizeParam) : DEFAULT_GAME_SETTINGS.lobbySize),
-        prizeFormat: (prizeFormatParam || DEFAULT_GAME_SETTINGS.prizeFormat) as GameSettings['prizeFormat'],
-        numberOfTicketsPerPlayer: (numTicketsPerPlayerParam && !isNaN(parseInt(numTicketsPerPlayerParam)) ? parseInt(numTicketsPerPlayerParam) : DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer),
-    };
   }
-
 
   if (isLoading || authLoading) {
     return (
@@ -392,25 +378,14 @@ export default function LobbyPage() {
     );
   }
   
-  if (!currentUser && !authLoading) { 
-     return (
+  if (!currentUser || !roomData || !gameSettings) {
+    return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
         <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
-        <h2 className="text-2xl font-semibold mb-2">Access Denied</h2>
-        <p className="text-muted-foreground mb-6">Please log in to access the lobby.</p>
-        <Button onClick={() => router.push('/auth/login')} size="lg">Login</Button>
+        <h2 className="text-2xl font-semibold mb-2">Room Data Unavailable</h2>
+        <p className="text-muted-foreground mb-6">Could not load room details. Please try again or ensure you are signed in.</p>
+        <Button onClick={() => router.push('/')} size="lg">Go to Homepage</Button>
       </div>
-    );
-  }
-
-  if (!roomData || !gameSettings) { 
-    return (
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
-            <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
-            <h2 className="text-2xl font-semibold mb-2">Room Not Found or Settings Unavailable</h2>
-            <p className="text-muted-foreground mb-6">The room you are looking for does not exist, has expired, or settings could not be loaded.</p>
-            <Button onClick={() => router.push('/')} size="lg">Go to Homepage</Button>
-        </div>
     );
   }
   

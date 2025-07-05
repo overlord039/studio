@@ -1,14 +1,15 @@
 
+
 export interface Player {
   id: string; // Will typically be derived from username or a unique auth ID
   name: string;
   isHost?: boolean;
-  email?: string;
+  email?: string | null;
 }
 
 export interface BackendPlayerInRoom extends Player {
   tickets: HousieTicketGrid[];
-  email: string; // Make it mandatory for backend
+  email: string; // Make it mandatory for backend (will have a fallback)
 }
 
 export type TicketPrice = 5 | 10 | 20 | 25 | 50 | 100;
@@ -27,7 +28,7 @@ export interface GameSettings {
 export const PRIZE_TYPES = {
   EARLY_5: "Early 5",
   FIRST_LINE: "First Line",
-  SECOND_LINE: "Second Line",
+  SECOND_LINE: "Second Line,
   THIRD_LINE: "Third Line",
   FULL_HOUSE: "Full House",
 } as const;

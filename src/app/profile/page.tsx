@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -12,8 +13,13 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 
 export default function ProfilePage() {
-  const { currentUser, loading, logout } = useAuth();
+  const { currentUser, loading, logout, loginWithGoogle } = useAuth();
   const router = useRouter();
+
+  const handleRegister = async () => {
+    await logout(); // Logs out the anonymous user
+    await loginWithGoogle(); // Starts Google sign-in
+  };
 
   const renderContent = () => {
     if (loading) {
@@ -48,16 +54,13 @@ export default function ProfilePage() {
         <div className="text-center">
           <AlertTriangle className="h-16 w-16 text-destructive mb-4 mx-auto" />
           <h2 className="text-2xl font-semibold mb-2">Access Denied</h2>
-          <p className="text-muted-foreground mb-6">Please log in to view your profile.</p>
-          <Link href="/auth/login" passHref>
-            <Button size="lg">Login</Button>
-          </Link>
+          <p className="text-muted-foreground mb-6">Please sign in to view your profile.</p>
         </div>
       );
     }
 
-    const isGuest = currentUser.email.endsWith('@guest.com');
-    const avatarFallback = currentUser.username.substring(0, 2).toUpperCase();
+    const displayName = currentUser.displayName || (currentUser.isGuest ? 'Guest' : 'Anonymous');
+    const avatarFallback = displayName.substring(0, 2).toUpperCase();
     const joinDateFormatted = new Date(currentUser.createdAt).toLocaleDateString('en-GB', {
       day: '2-digit',
       month: 'short',
@@ -81,30 +84,28 @@ export default function ProfilePage() {
               <div className="bg-gradient-to-br from-primary/10 to-secondary/10 p-6 sm:p-8">
                   <div className="flex flex-col items-center gap-4 text-center">
                        <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-background shadow-lg">
-                          <AvatarImage src={`https://placehold.co/128x128.png?text=${avatarFallback}`} alt={currentUser.username} data-ai-hint="profile avatar"/>
+                          <AvatarImage src={`https://placehold.co/128x128.png?text=${avatarFallback}`} alt={displayName} data-ai-hint="profile avatar"/>
                           <AvatarFallback className="text-3xl sm:text-4xl">{avatarFallback}</AvatarFallback>
                       </Avatar>
                       <div className="space-y-1">
-                          <h1 className="text-3xl sm:text-4xl font-bold">{currentUser.username}</h1>
-                          {isGuest && <Badge variant="secondary">Guest Account</Badge>}
+                          <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
+                          {currentUser.isGuest && <Badge variant="secondary">Guest Account</Badge>}
                       </div>
                   </div>
               </div>
               <CardContent className="p-6 space-y-4 bg-card">
-                   {isGuest ? (
+                   {currentUser.isGuest ? (
                      <div className="text-center p-4 bg-secondary/30 rounded-lg">
                           <p className="font-semibold">You are playing as a guest.</p>
-                          <p className="text-sm text-muted-foreground">Register to save your stats and progress!</p>
-                          <Link href="/auth/register" passHref>
-                              <Button className="mt-4" size="sm">Register Now</Button>
-                          </Link>
+                          <p className="text-sm text-muted-foreground">Sign in to save your stats and progress!</p>
+                          <Button className="mt-4" size="sm" onClick={handleRegister}>Sign in with Google</Button>
                       </div>
                    ) : (
                       <>
                         <div className="flex items-center gap-3 text-sm sm:text-base">
                             <Mail className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                             <span className="text-muted-foreground">Email:</span>
-                            <span className="font-medium break-all">{currentUser.email}</span>
+                            <span className="font-medium break-all">{currentUser.email || 'No email provided'}</span>
                         </div>
                         <div className="flex items-center gap-3 text-sm sm:text-base">
                             <Calendar className="h-5 w-5 text-muted-foreground flex-shrink-0" />
