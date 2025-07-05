@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -13,12 +12,11 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 
 export default function ProfilePage() {
-  const { currentUser, loading, logout, loginWithGoogle } = useAuth();
+  const { currentUser, loading, logout, linkGoogleAccount } = useAuth();
   const router = useRouter();
 
-  const handleRegister = async () => {
-    await logout(); // Logs out the anonymous user
-    await loginWithGoogle(); // Starts Google sign-in
+  const handleLinkAccount = () => {
+    linkGoogleAccount();
   };
 
   const renderContent = () => {
@@ -98,7 +96,7 @@ export default function ProfilePage() {
                      <div className="text-center p-4 bg-secondary/30 rounded-lg">
                           <p className="font-semibold">You are playing as a guest.</p>
                           <p className="text-sm text-muted-foreground">Sign in to save your stats and progress!</p>
-                          <Button className="mt-4" size="sm" onClick={handleRegister}>Sign in with Google</Button>
+                          <Button className="mt-4" size="sm" onClick={handleLinkAccount}>Sign in with Google</Button>
                       </div>
                    ) : (
                       <>

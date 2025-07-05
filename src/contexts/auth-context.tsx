@@ -1,11 +1,10 @@
-
 "use client";
 
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { User as FirebaseUser } from 'firebase/auth';
-import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, signInAnonymously, linkWithPopup } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +22,7 @@ interface AuthContextType {
   currentUser: User | null;
   loginWithGoogle: () => void;
   loginAsGuest: () => void;
+  linkGoogleAccount: () => void;
   logout: () => void;
   loading: boolean;
   firebaseConfigured: boolean;
@@ -134,6 +134,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
       });
   };
+  
+  const linkGoogleAccount = () => {
+    if (!auth || !auth.currentUser) {
+      toast({
+        title: "Error",
+        description: "No user is currently signed in to link.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const provider = new GoogleAuthProvider();
+    linkWithPopup(auth.currentUser, provider)
+      .then((result) => {
+        const user = result.user;
+        console.log("Account linked successfully", user);
+        toast({
+          title: "Account Linked!",
+          description: "You've successfully upgraded your account with Google.",
+        });
+        // onAuthStateChanged will update the user state automatically.
+      }).catch((error) => {
+        console.error("Error linking account:", error);
+        const errorCode = error.code;
+        const errorMessage = error.message;
+
+        if (errorCode === 'auth/credential-already-in-use') {
+          toast({
+            title: "Account Exists",
+            description: "This Google account is already used by another user.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Link Error",
+            description: `[${errorCode}] ${errorMessage}`,
+            variant: "destructive",
+          });
+        }
+      });
+  };
 
 
   const logout = () => {
@@ -164,7 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ currentUser, loginWithGoogle, loginAsGuest, logout, loading, firebaseConfigured }}>
+    <AuthContext.Provider value={{ currentUser, loginWithGoogle, loginAsGuest, linkGoogleAccount, logout, loading, firebaseConfigured }}>
       {children}
     </AuthContext.Provider>
   );
