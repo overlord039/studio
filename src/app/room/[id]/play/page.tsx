@@ -224,13 +224,13 @@ export default function GameRoomPage() {
 
         const playerDocRef = doc(db, "users", currentUser.uid);
         const statsUpdate: { [key: string]: any } = {
-            matchesPlayed: increment(1)
+            'stats.matchesPlayed': increment(1)
         };
 
         for (const prizeType in roomData.prizeStatus) {
             const prizeInfo = roomData.prizeStatus[prizeType as PrizeType];
             if (prizeInfo && prizeInfo.claimedBy.includes(currentUser.uid)) {
-                statsUpdate[`prizesWon.${prizeType}`] = increment(1);
+                statsUpdate[`stats.prizesWon.${prizeType}`] = increment(1);
             }
         }
 

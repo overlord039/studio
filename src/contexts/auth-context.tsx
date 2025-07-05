@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ReactNode } from 'react';
@@ -135,10 +136,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("Signed in user:", user);
         router.push('/');
       }).catch((error) => {
-        console.error("Google Sign-In Error (Raw):", error);
         const errorCode = error.code || 'UNKNOWN';
         const errorMessage = error.message || 'An unknown error occurred.';
-        
+        console.error("Error during Google sign-in:", { errorCode, errorMessage });
         toast({
           title: "Sign-in Error",
           description: `[${errorCode}] ${errorMessage}`,
@@ -154,15 +154,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     signInAnonymously(auth)
       .then((result) => {
+        const user = result.user;
+        const guestName = `Guest#${user.uid.substring(0,5)}`;
         console.log("Signed in as guest:", result.user);
         router.push('/');
       })
       .catch((error) => {
         const errorCode = error.code || 'UNKNOWN';
         const errorMessage = error.message || 'An unknown error occurred.';
-        
         console.error("Error during guest sign-in:", { errorCode, errorMessage });
-        
         toast({
           title: "Guest Sign-in Error",
           description: `[${errorCode}] ${errorMessage}`,
