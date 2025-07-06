@@ -2,7 +2,8 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import React, { useState, useEffect, useContext, createContext } from 'react';
+import React, { useState, useEffect, useContext, createContext, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { 
   signOut, 
@@ -117,17 +118,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isSigningIn, setIsSigningIn] = useState<null | 'guest' | 'google' | 'email'>(null);
   const { toast } = useToast();
+  const router = useRouter();
   const firebaseConfigured = !!auth && !!db;
   const [statsUpdated, setStatsUpdated] = useState(false);
 
-  useEffect(() => {
-    if (!firebaseConfigured) {
-        setLoading(false);
-        return;
-    }
-    
-    // Handle the case where the user lands on the page with a sign-in link
-    const handleEmailLinkSignIn = async () => {
+  const handleEmailLinkSignIn = useCallback(async () => {
       if (auth && isSignInWithEmailLink(auth, window.location.href)) {
         let email = window.localStorage.getItem('emailForSignIn');
         if (!email) {
@@ -144,11 +139,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsSigningIn('email');
         try {
           if (auth.currentUser && auth.currentUser.isAnonymous) {
-            // LINKING FLOW
             const guestUser = auth.currentUser;
             const credential = EmailAuthProvider.credentialWithLink(email, window.location.href);
             await linkWithCredential(guestUser, credential);
-
             const userDocRef = doc(db, "users", guestUser.uid);
             await updateDoc(userDocRef, {
                 email: email,
@@ -156,20 +149,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 displayName: guestUser.displayName || email.split('@')[0],
             });
             toast({ title: "Account Linked!", description: "Your guest progress is now saved to your email." });
-
           } else {
-             // REGULAR SIGN-IN FLOW
             await signInWithEmailLink(auth, email, window.location.href);
           }
           window.localStorage.removeItem('emailForSignIn');
-          window.history.replaceState({}, document.title, '/');
+          window.history.replaceState({}, document.title, '/'); // Clean URL after sign-in
+          router.push('/');
         } catch (error: any) {
           toast({ title: "Link/Sign-in Failed", description: error.message, variant: "destructive" });
         } finally {
           setIsSigningIn(null);
         }
       }
-    };
+    }, [router, toast]);
+
+  useEffect(() => {
+    if (!firebaseConfigured) {
+        setLoading(false);
+        return;
+    }
     
     if (!auth?.currentUser) {
       handleEmailLinkSignIn();
@@ -179,27 +177,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const authUnsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
         if (userDocUnsubscribe) {
-            userDocUnsubscribe(); // Stop listening to the old user's doc
+            userDocUnsubscribe();
         }
         
-        setStatsUpdated(false); // Reset stats tracking for new user
+        setStatsUpdated(false);
 
         if (firebaseUser) {
             const userDocRef = doc(db, "users", firebaseUser.uid);
             
-            // Listen for real-time updates to the user document
             userDocUnsubscribe = onSnapshot(userDocRef, async (docSnap) => {
                 if (docSnap.exists()) {
                     const newUser = docSnap.data() as User;
                     setCurrentUser(prevUser => {
-                        // Prevent re-render if user data is identical
                         if (areUsersEqual(prevUser, newUser)) {
                             return prevUser;
                         }
                         return newUser;
                     });
                 } else {
-                    // This logic runs if the user exists in Auth but not Firestore.
                     const newUserProfile: User = {
                         uid: firebaseUser.uid,
                         displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || `User#${firebaseUser.uid.substring(0,5)}`,
@@ -232,7 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             userDocUnsubscribe();
         }
     };
-  }, [firebaseConfigured, toast]);
+  }, [firebaseConfigured, toast, handleEmailLinkSignIn]);
 
   const updateUserStats = async (newStats: Partial<UserStats>) => {
     if (!currentUser || !db || currentUser.isGuest) return;
@@ -280,6 +275,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setCurrentUser(userProfile);
       toast({ title: "Signed In Successfully", description: `Welcome back, ${userProfile.displayName}!` });
+      router.push('/');
     } catch (error: any) {
       if (error.code === 'auth/account-exists-with-different-credential') {
         toast({ title: "Account Exists", description: "An account with this email already exists. Please sign in with the original method.", variant: "destructive" });
@@ -299,7 +295,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setIsSigningIn('email');
     const actionCodeSettings = {
-        url: window.location.origin,
+        url: `${window.location.origin}/`,
         handleCodeInApp: true,
     };
     try {
@@ -327,7 +323,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setIsSigningIn('email');
     const actionCodeSettings = {
-        url: `${window.location.origin}/profile`, // Send them back to the same page (profile)
+        url: `${window.location.origin}/profile`, // Send them back to the profile page
         handleCodeInApp: true,
     };
     try {
@@ -376,6 +372,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCurrentUser(newUserProfile);
 
       toast({ title: "Account Linked!", description: "Your guest progress has been saved to your Google account." });
+      router.push('/');
 
     } catch (error: any) {
       if (error.code === 'auth/credential-already-in-use') {
@@ -423,6 +420,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             stats: createDefaultStats(),
         };
         setCurrentUser(guestUser);
+        router.push('/');
     } catch (error: any) {
         console.error("Guest Sign-In Error:", error);
         toast({ title: "Guest Sign-in Failed", description: error.message, variant: "destructive" });

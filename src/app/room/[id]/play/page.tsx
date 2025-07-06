@@ -85,19 +85,17 @@ export default function GameRoomPage() {
     if (gameMessage) {
       const timer = setTimeout(() => {
         setGameMessage(null);
-      }, 3000); // Disappear after 3 seconds
+      }, 3000);
 
       return () => clearTimeout(timer);
     }
   }, [gameMessage]);
 
   useEffect(() => {
-    // We only want to play the sound on the transition from not-over to over.
     if (roomData?.isGameOver && !gameOverSoundPlayedRef.current) {
       playSound('gameover.wav');
       gameOverSoundPlayedRef.current = true;
     }
-    // If the game is NOT over (e.g. new game starts in same room), reset the flag.
     if (roomData && !roomData.isGameOver) {
         gameOverSoundPlayedRef.current = false;
     }
@@ -194,7 +192,7 @@ export default function GameRoomPage() {
         } else if (data.calledNumbers.length === NUMBERS_RANGE_MAX) {
           gameOverMsg = "All numbers called. No Full House winner.";
         }
-        setGameMessage(prev => (!prev || !prev.includes("Game Over!")) ? gameOverMsg : prev);
+        setGameMessage(gameOverMsg);
       }
 
     } catch (err) {
@@ -227,8 +225,6 @@ export default function GameRoomPage() {
         const myPlayerInfo = roomData.players.find(p => p.id === currentUser.uid);
         if (!myPlayerInfo) return; // Not a player in this room
 
-        console.log(`Game over detected for ${currentUser.displayName}. Updating stats...`);
-
         const playerDocRef = doc(db, "users", currentUser.uid);
         const statsUpdate: { [key: string]: any } = {
             'stats.matchesPlayed': increment(1)
@@ -247,7 +243,6 @@ export default function GameRoomPage() {
             setStatsUpdated(true); // Mark as updated to prevent re-runs
         } catch (error) {
             console.error("Failed to update stats:", error);
-            // Optionally, show a toast to the user
             toast({
                 title: "Stats Sync Error",
                 description: "Could not save your game stats. They will be out of sync.",
@@ -274,7 +269,6 @@ export default function GameRoomPage() {
   useEffect(() => {
     if (!roomId || !currentUser || roomData?.isGameOver || isLoading) return;
     
-    // In manual mode, poll less frequently unless host
     const isManualMode = roomData?.settings.callingMode === 'manual';
     const isHost = roomData?.host.id === currentUser.uid;
     const pollInterval = isManualMode && !isHost ? 7000 : 3000;
@@ -365,13 +359,12 @@ export default function GameRoomPage() {
         const errorMessage = result.message || `Failed to claim ${prizeType}.`;
         if (errorMessage.toLowerCase().includes('bogey')) {
           playSound('error.wav');
-        } else {
-          toast({
-              title: `Claim for ${prizeType} Failed`,
-              description: errorMessage,
-              variant: "destructive"
-          });
         }
+        toast({
+            title: `Claim for ${prizeType} Failed`,
+            description: errorMessage,
+            variant: "destructive"
+        });
       }
     } catch (err) {
       console.error(`Error claiming ${prizeType}:`, err);
@@ -558,7 +551,7 @@ export default function GameRoomPage() {
             <CardTitle className="text-4xl font-bold flex items-center justify-center">
               <PartyPopper className="mr-3 h-10 w-10 text-primary" /> Game Over!
             </CardTitle>
-            <p className="text-lg mt-2 whitespace-pre-line">{gameMessage}</p>
+            {gameMessage && <p className="text-lg mt-2 whitespace-pre-line">{gameMessage}</p>}
           </CardHeader>
           <CardContent className="space-y-4">
              {currentUserWinnings > 0 && (
@@ -774,8 +767,8 @@ export default function GameRoomPage() {
                 disabled={isCallingNextNumber || roomData.isGameOver}
                 className="w-full"
             >
-                <Zap className="mr-2 h-4 w-4" />
-                {isCallingNextNumber ? 'Calling...' : 'Call Next Number'}
+              {isCallingNextNumber ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+              {isCallingNextNumber ? 'Calling...' : 'Call Next Number'}
             </Button>
           )}
         </div>
