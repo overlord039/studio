@@ -307,6 +307,20 @@ const FeedbackForm = () => {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (currentUser && !currentUser.isGuest) {
+      const matchesPlayed = currentUser.stats?.matchesPlayed || 0;
+      const hasBeenPrompted = localStorage.getItem('feedbackPromptedAfter3Games');
+      const hasEverSubmitted = localStorage.getItem('feedbackSubmitted');
+
+      if (matchesPlayed >= 3 && !hasBeenPrompted && !hasEverSubmitted) {
+        setOpen(true);
+        localStorage.setItem('feedbackPromptedAfter3Games', 'true');
+      }
+    }
+  }, [currentUser]);
+
+
   const ratingLabels: { [key: number]: string } = {
     1: 'Poor',
     2: 'Fair',
@@ -352,6 +366,7 @@ const FeedbackForm = () => {
         title: "Thank You!",
         description: "Your feedback has been submitted successfully.",
       });
+      localStorage.setItem('feedbackSubmitted', 'true');
       setOpen(false);
       setRating(0);
       setFeedback('');
@@ -533,3 +548,5 @@ export default function Header() {
     </header>
   );
 }
+
+    
