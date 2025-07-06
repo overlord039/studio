@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { type FormEvent } from 'react';
@@ -97,7 +96,7 @@ export default function ProfilePage() {
                 variant="ghost"
                 size="icon"
                 className="absolute top-2 right-2 h-8 w-8 rounded-full z-10"
-                onClick={() => router.back()}
+                onClick={() => router.push('/')}
                 aria-label="Close profile"
               >
                 <X className="h-5 w-5" />
