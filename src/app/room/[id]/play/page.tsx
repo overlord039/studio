@@ -85,7 +85,7 @@ export default function GameRoomPage() {
     if (gameMessage) {
       const timer = setTimeout(() => {
         setGameMessage(null);
-      }, 4000); // Disappear after 4 seconds
+      }, 3000); // Disappear after 3 seconds
 
       return () => clearTimeout(timer);
     }
