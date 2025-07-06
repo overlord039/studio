@@ -35,7 +35,7 @@ export default function CompliancePage() {
             <p>If you believe any content or conduct on our platform violates our policies or the law, please report it to our support team for review.</p>
         </CardContent>
         <CardFooter>
-          <Button onClick={() => router.back()}>
+          <Button onClick={() => router.push('/?settings=open&tab=about')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>

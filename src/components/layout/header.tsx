@@ -18,11 +18,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Skeleton } from '@/components/ui/skeleton';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
 
-const SettingsModal = () => {
-  const [activeTab, setActiveTab] = useState('general');
+const SettingsModal = ({ activeTab, setActiveTab }: { activeTab: string; setActiveTab: (tab: string) => void; }) => {
   const { theme, setTheme } = useTheme();
   const { isSfxMuted, toggleSfxMute, isBgmEnabled, toggleBgm } = useSound();
   const { logout } = useAuth();
@@ -299,7 +298,27 @@ export default function Header() {
   const { currentUser, loading } = useAuth();
   const [isHidden, setIsHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('general');
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const settingsParam = searchParams.get('settings');
+    const tabParam = searchParams.get('tab');
+
+    if (settingsParam === 'open') {
+      setIsSettingsOpen(true);
+      if (tabParam) {
+        setActiveTab(tabParam);
+      }
+    } else {
+      setIsSettingsOpen(false);
+    }
+  }, [searchParams]);
 
   const controlNavbar = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -367,7 +386,7 @@ export default function Header() {
                 <span className="sr-only">Settings</span>
               </Button>
             </DialogTrigger>
-            <SettingsModal />
+            <SettingsModal activeTab={activeTab} setActiveTab={setActiveTab} />
           </Dialog>
         </nav>
       </div>

@@ -35,7 +35,7 @@ export default function FairPlayPage() {
             <p>The use of bots, scripts, or any form of automation to play the game or gain an unfair advantage is strictly prohibited. Players found to be in violation of this policy will have their accounts suspended.</p>
         </CardContent>
         <CardFooter>
-          <Button onClick={() => router.back()}>
+          <Button onClick={() => router.push('/?settings=open&tab=about')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>

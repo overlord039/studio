@@ -66,7 +66,7 @@ export default function UserAgreementPage() {
 
         </CardContent>
         <CardFooter>
-          <Button onClick={() => router.back()}>
+          <Button onClick={() => router.push('/?settings=open&tab=about')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
