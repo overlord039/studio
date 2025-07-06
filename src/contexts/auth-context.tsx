@@ -18,13 +18,14 @@ import {
   EmailAuthProvider,
   linkWithCredential,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, deleteDoc, updateDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, updateDoc, onSnapshot, type Unsubscribe, increment } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 import { useToast } from '@/hooks/use-toast';
 import type { User, UserStats, PrizeType } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import LoginSelectionScreen from '@/components/auth/login-selection-screen';
 import { Loader2 } from 'lucide-react';
+import { ToastAction } from '@/components/ui/toast';
 
 export interface User {
   uid: string;
@@ -74,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isSigningIn, setIsSigningIn] = useState<null | 'guest' | 'google' | 'email'>(null);
   const { toast } = useToast();
   const firebaseConfigured = !!auth && !!db;
+  const [statsUpdated, setStatsUpdated] = useState(false);
 
   useEffect(() => {
     if (!firebaseConfigured) {
@@ -136,6 +138,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (userDocUnsubscribe) {
             userDocUnsubscribe(); // Stop listening to the old user's doc
         }
+        
+        setStatsUpdated(false); // Reset stats tracking for new user
 
         if (firebaseUser) {
             const userDocRef = doc(db, "users", firebaseUser.uid);
@@ -325,7 +329,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     } catch (error: any) {
       if (error.code === 'auth/credential-already-in-use') {
-        toast({ title: "Account Exists", description: "This Google account is already linked to another HousieHub profile.", variant: "destructive" });
+        const handleSwitchAccount = async () => {
+            await logout();
+            await loginWithGoogle();
+        };
+
+        toast({
+            title: "Account Already Exists",
+            description: "That Google account is already in use. Switch to that account? Your guest progress will be lost.",
+            variant: "destructive",
+            duration: 10000,
+            action: (
+                <ToastAction altText="Switch to existing account" onClick={handleSwitchAccount}>
+                    Switch
+                </ToastAction>
+            ),
+        });
       } else if (error.code !== 'auth/popup-closed-by-user') {
         console.error("Google Account Linking Error:", error);
         toast({ title: "Link Failed", description: error.message, variant: "destructive" });
