@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useSound } from '@/contexts/sound-context';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -114,13 +114,13 @@ const SettingsModal = ({ activeTab, setActiveTab }: { activeTab: string; setActi
 
   return (
     <DialogContent className="max-h-[85vh] w-[90vw] md:max-w-4xl md:h-[80vh] flex flex-col p-0 overflow-hidden rounded-lg">
-        <header className="bg-primary text-primary-foreground text-center p-4 relative flex-shrink-0">
-            <h2 className="text-2xl font-bold tracking-wider">SETTINGS</h2>
+        <DialogHeader className="bg-primary text-primary-foreground text-center p-4 relative flex-shrink-0">
+            <DialogTitle className="text-2xl font-bold tracking-wider">SETTINGS</DialogTitle>
              <DialogClose className="absolute right-4 top-1/2 -translate-y-1/2 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
                 <X className="h-7 w-7" />
                 <span className="sr-only">Close</span>
             </DialogClose>
-        </header>
+        </DialogHeader>
 
         <div className="flex flex-col md:flex-row flex-grow min-h-0">
             <aside className="hidden md:block w-1/4 bg-card p-4 border-r border-border">
