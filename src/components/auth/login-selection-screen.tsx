@@ -1,12 +1,14 @@
 
 "use client";
 
+import React, { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/auth-context';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, Mail } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -15,7 +17,8 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   );
 
 export default function LoginSelectionScreen() {
-  const { loginWithGoogle, loginAsGuest, isSigningIn } = useAuth();
+  const { loginWithGoogle, loginAsGuest, loginWithEmailLink, isSigningIn } = useAuth();
+  const [email, setEmail] = useState('');
   
   const firebaseConfigured = 
       process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
@@ -27,16 +30,15 @@ export default function LoginSelectionScreen() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-cover bg-center" style={{ backgroundImage: "url('/bgpc2.png')" }}>
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
             <Card className="w-full max-w-sm text-center animate-fade-in-up bg-destructive border-white/20 relative">
-                 <CardHeader>
-                    <CardTitle className="flex items-center justify-center text-destructive-foreground">
-                        <AlertTriangle className="mr-2 h-6 w-6"/> Configuration Error
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6 pt-0 text-destructive-foreground">
-                    <p>
+                 <CardContent className="p-6">
+                    <div className="flex items-center justify-center text-destructive-foreground mb-2">
+                        <AlertTriangle className="mr-2 h-6 w-6"/>
+                        <h2 className="text-xl font-bold">Configuration Error</h2>
+                    </div>
+                    <p className="text-destructive-foreground">
                         Firebase API keys are missing.
                     </p>
-                    <p className="text-sm mt-2">
+                    <p className="text-sm mt-2 text-destructive-foreground/90">
                         Please add your project credentials to the <strong>.env</strong> file to enable authentication.
                     </p>
                 </CardContent>
@@ -46,6 +48,13 @@ export default function LoginSelectionScreen() {
   }
 
   const anySignInInProgress = !!isSigningIn;
+
+  const handleEmailSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (email) {
+      loginWithEmailLink(email);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-cover bg-center" style={{ backgroundImage: "url('/bgpc2.png')" }}>
@@ -60,6 +69,25 @@ export default function LoginSelectionScreen() {
               <GoogleIcon className="mr-2 h-5 w-5 fill-current" />
               {isSigningIn === 'google' ? "Signing in..." : "Sign in with Google"}
             </Button>
+            
+            <form onSubmit={handleEmailSubmit} className="space-y-3 pt-3">
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input 
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={anySignInInProgress}
+                    required
+                    className="bg-black/20 border-white/30 text-white placeholder:text-gray-400 focus:border-primary pl-10"
+                />
+              </div>
+              <Button type="submit" variant="secondary" size="lg" className="w-full" disabled={anySignInInProgress || !email}>
+                  {isSigningIn === 'email' && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+                  {isSigningIn === 'email' ? 'Sending link...' : 'Sign in with Email Link'}
+              </Button>
+            </form>
 
             <div className="relative">
                 <Separator className="my-4" />

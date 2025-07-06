@@ -12,6 +12,9 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   linkWithPopup,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
@@ -35,12 +38,13 @@ interface AuthContextType {
   userStats: UserStats | null;
   updateUserStats: (newStats: Partial<UserStats>) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
+  loginWithEmailLink: (email: string) => Promise<void>;
   linkGoogleAccount: () => Promise<void>;
   loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   loading: boolean;
-  isSigningIn: null | 'guest' | 'google';
+  isSigningIn: null | 'guest' | 'google' | 'email';
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -64,7 +68,7 @@ const writeUserProfileToDB = async (appUser: User): Promise<void> => {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isSigningIn, setIsSigningIn] = useState<null | 'guest' | 'google'>(null);
+  const [isSigningIn, setIsSigningIn] = useState<null | 'guest' | 'google' | 'email'>(null);
   const { toast } = useToast();
   const firebaseConfigured = !!auth && !!db;
 
@@ -72,6 +76,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!firebaseConfigured) {
         setLoading(false);
         return;
+    }
+    
+    // Handle the case where the user lands on the page with a sign-in link
+    const handleEmailLinkSignIn = async () => {
+      if (auth && isSignInWithEmailLink(auth, window.location.href)) {
+        let email = window.localStorage.getItem('emailForSignIn');
+        if (!email) {
+          toast({
+            title: "Sign-in link error",
+            description: "Please use the sign-in link on the same device and browser you used to request it.",
+            variant: "destructive",
+            duration: 7000,
+          });
+          window.history.replaceState({}, document.title, window.location.pathname);
+          return;
+        }
+
+        setIsSigningIn('email');
+        try {
+          await signInWithEmailLink(auth, email, window.location.href);
+          window.localStorage.removeItem('emailForSignIn');
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (error: any) {
+          toast({ title: "Sign-in Failed", description: error.message, variant: "destructive" });
+        } finally {
+          setIsSigningIn(null);
+        }
+      }
+    };
+    
+    if (!auth?.currentUser) {
+      handleEmailLinkSignIn();
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -81,30 +117,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             if (userDoc.exists()) {
                 setCurrentUser(userDoc.data() as User);
-            } else if (!firebaseUser.isAnonymous) {
-                // This case handles a user who is logged in via Firebase but not in our DB yet.
-                // This can happen if they signed up but the DB write failed.
+            } else {
                 const newUserProfile: User = {
                     uid: firebaseUser.uid,
-                    displayName: firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`,
+                    displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || `User#${firebaseUser.uid.substring(0,5)}`,
                     email: firebaseUser.email,
-                    isGuest: false,
+                    isGuest: firebaseUser.isAnonymous,
                     createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
                     stats: createDefaultStats(),
                 };
-                await writeUserProfileToDB(newUserProfile);
+                if (!newUserProfile.isGuest) {
+                  await writeUserProfileToDB(newUserProfile);
+                }
                 setCurrentUser(newUserProfile);
-            } else {
-                 const guestUser: User = {
-                    uid: firebaseUser.uid,
-                    displayName: `Guest#${firebaseUser.uid.substring(0, 5)}`,
-                    email: null,
-                    isGuest: true,
-                    createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-                    stats: createDefaultStats(),
-                };
-                // For guests, we don't write to DB, just set in-memory state.
-                setCurrentUser(guestUser);
             }
         } else {
             setCurrentUser(null);
@@ -113,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [firebaseConfigured]);
+  }, [firebaseConfigured, toast]);
 
   const updateUserStats = async (newStats: Partial<UserStats>) => {
     if (!currentUser || !db || currentUser.isGuest) return;
@@ -162,12 +187,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCurrentUser(userProfile);
       toast({ title: "Signed In Successfully", description: `Welcome back, ${userProfile.displayName}!` });
     } catch (error: any) {
-      if (error.code !== 'auth/popup-closed-by-user') {
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        toast({ title: "Account Exists", description: "An account with this email already exists. Please sign in with the original method.", variant: "destructive" });
+      } else if (error.code !== 'auth/popup-closed-by-user') {
         console.error("Google Sign-In Error:", error);
         toast({ title: "Google Sign-in Failed", description: error.message, variant: "destructive" });
-      } else {
-        toast({ title: "Sign-in Cancelled", description: "You cancelled the Google sign-in process." });
       }
+    } finally {
+      setIsSigningIn(null);
+    }
+  };
+
+  const loginWithEmailLink = async (email: string) => {
+    if (!auth) {
+      showFirebaseNotConfiguredToast();
+      return;
+    }
+    setIsSigningIn('email');
+    const actionCodeSettings = {
+        url: window.location.origin,
+        handleCodeInApp: true,
+    };
+    try {
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      window.localStorage.setItem('emailForSignIn', email);
+      toast({
+        title: "Check your email",
+        description: `A sign-in link has been sent to ${email}.`,
+        duration: 7000,
+      });
+    } catch (error: any) {
+      console.error("Error sending email link:", error);
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setIsSigningIn(null);
     }
@@ -194,12 +245,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: firebaseUser.email,
         isGuest: false,
         createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-        stats: guestStats, // Carry over guest stats
+        stats: guestStats,
       };
 
       await writeUserProfileToDB(newUserProfile);
-      // The onAuthStateChanged listener will handle setting the new user state
-      // but we can set it here for a faster UI update.
       setCurrentUser(newUserProfile);
 
       toast({ title: "Account Linked!", description: "Your guest progress has been saved to your Google account." });
@@ -210,8 +259,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else if (error.code !== 'auth/popup-closed-by-user') {
         console.error("Google Account Linking Error:", error);
         toast({ title: "Link Failed", description: error.message, variant: "destructive" });
-      } else {
-        toast({ title: "Link Cancelled", description: "You cancelled the linking process." });
       }
     } finally {
       setIsSigningIn(null);
@@ -287,7 +334,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       userStats: currentUser?.stats || null, 
       updateUserStats, 
       loginWithGoogle,
-      linkGoogleAccount,
+      loginWithEmailLink,
+      linkGoogleAccount, 
       loginAsGuest, 
       logout, 
       deleteAccount, 
