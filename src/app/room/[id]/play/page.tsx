@@ -190,10 +190,6 @@ export default function GameRoomPage() {
         if (fhClaim && fhClaim.claimedBy.length > 0) {
           const winnerNames = fhClaim.claimedBy.map(winnerId => data.players.find(p => p.id === winnerId)?.name || winnerId).join(' & ');
           gameOverMsg = `🎉 ${winnerNames} won Full House! Game Over!`;
-          if (fhClaim.timestamp) {
-            const claimTimestamp = typeof fhClaim.timestamp === 'string' ? new Date(fhClaim.timestamp) : fhClaim.timestamp;
-            gameOverMsg += ` at ${claimTimestamp.toLocaleTimeString()}`;
-          }
         } else if (data.calledNumbers.length === NUMBERS_RANGE_MAX) {
           gameOverMsg = "All numbers called. No Full House winner.";
         }
