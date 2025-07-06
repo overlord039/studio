@@ -14,16 +14,14 @@ import {
   linkWithPopup,
   deleteUser,
 } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase/config';
 import { doc, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase/config';
 import { useToast } from '@/hooks/use-toast';
-import type { UserStats, PrizeType } from '@/types';
+import type { User, UserStats, PrizeType } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import LoginSelectionScreen from '@/components/auth/login-selection-screen';
 import { Loader2 } from 'lucide-react';
 
-
-// Simplified user object to store in context
 export interface User {
   uid: string;
   displayName: string | null;
@@ -57,25 +55,10 @@ const createDefaultStats = (): UserStats => {
     };
 };
 
-const createUserProfileInDB = async (firebaseUser: FirebaseUser): Promise<User> => {
-      if (!db) throw new Error("Database not configured.");
-      
-      const appUser: User = {
-        uid: firebaseUser.uid,
-        displayName: firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`,
-        email: firebaseUser.email,
-        isGuest: firebaseUser.isAnonymous,
-        createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-        stats: createDefaultStats(),
-      };
-      
-      // Only write to DB for non-guest users
-      if (!firebaseUser.isAnonymous) {
-        const userDocRef = doc(db, "users", firebaseUser.uid);
-        await setDoc(userDocRef, appUser);
-      }
-
-      return appUser;
+const writeUserProfileToDB = async (appUser: User): Promise<void> => {
+    if (!db || appUser.isGuest) return; 
+    const userDocRef = doc(db, "users", appUser.uid);
+    await setDoc(userDocRef, appUser, { merge: true });
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -91,39 +74,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        setLoading(true);
         if (firebaseUser) {
-            try {
-                // User is signed in (session restored). Fetch their full profile from DB.
-                const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
-                if (userDoc.exists()) {
-                    setCurrentUser(userDoc.data() as User);
-                } else if (!firebaseUser.isAnonymous) {
-                    // This can happen if user signed up but doc creation failed.
-                    console.warn(`User ${firebaseUser.uid} authenticated but has no document. Recreating...`);
-                    const appUser = await createUserProfileInDB(firebaseUser);
-                    setCurrentUser(appUser);
-                } else {
-                     // Guest user session restored
-                     const guestUser: User = {
-                        uid: firebaseUser.uid,
-                        displayName: `Guest#${firebaseUser.uid.substring(0, 5)}`,
-                        email: null,
-                        isGuest: true,
-                        createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-                        stats: createDefaultStats(),
-                    };
-                    setCurrentUser(guestUser);
-                }
-            } catch (error) {
-                console.error("Authentication error during user sync:", error);
-                toast({
-                    title: "Authentication Error",
-                    description: "Could not sync your user data. Please try logging in again.",
-                    variant: "destructive"
-                });
-                await signOut(auth); // Sign out to prevent broken state
-                setCurrentUser(null);
+            const userDocRef = doc(db, "users", firebaseUser.uid);
+            const userDoc = await getDoc(userDocRef);
+
+            if (userDoc.exists()) {
+                setCurrentUser(userDoc.data() as User);
+            } else if (!firebaseUser.isAnonymous) {
+                const newUserProfile: User = {
+                    uid: firebaseUser.uid,
+                    displayName: firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`,
+                    email: firebaseUser.email,
+                    isGuest: false,
+                    createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+                    stats: createDefaultStats(),
+                };
+                await writeUserProfileToDB(newUserProfile);
+                setCurrentUser(newUserProfile);
+            } else {
+                 const guestUser: User = {
+                    uid: firebaseUser.uid,
+                    displayName: `Guest#${firebaseUser.uid.substring(0, 5)}`,
+                    email: null,
+                    isGuest: true,
+                    createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+                    stats: createDefaultStats(),
+                };
+                setCurrentUser(guestUser);
             }
         } else {
             setCurrentUser(null);
@@ -132,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [firebaseConfigured, toast]);
+  }, [firebaseConfigured]);
 
   const updateUserStats = async (newStats: Partial<UserStats>) => {
     if (!currentUser || !db || currentUser.isGuest) return;
@@ -155,7 +132,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     setLoading(true);
-
     const provider = new GoogleAuthProvider();
     
     try {
@@ -163,16 +139,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const firebaseUser = result.user;
 
       const userDocRef = doc(db, "users", firebaseUser.uid);
-      const userDocSnap = await getDoc(userDocRef);
+      const userDoc = await getDoc(userDocRef);
 
       let appUser: User;
-      if (userDocSnap.exists()) {
-        appUser = userDocSnap.data() as User;
+      if (userDoc.exists()) {
+        appUser = userDoc.data() as User;
       } else {
-        appUser = await createUserProfileInDB(firebaseUser);
+        const newUserProfile: User = {
+            uid: firebaseUser.uid,
+            displayName: firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`,
+            email: firebaseUser.email,
+            isGuest: false,
+            createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+            stats: createDefaultStats(),
+        };
+        await writeUserProfileToDB(newUserProfile);
+        appUser = newUserProfile;
       }
-      
       setCurrentUser(appUser);
+      setLoading(false);
       
     } catch (error: any) {
       if (error.code === 'auth/popup-closed-by-user') {
@@ -181,7 +166,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("Google Sign-In Error:", error);
         toast({ title: "Sign-In Failed", description: error.message, variant: "destructive" });
       }
-    } finally {
       setLoading(false);
     }
   };
@@ -219,34 +203,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setLoading(true);
     const provider = new GoogleAuthProvider();
-    const guestUser = auth.currentUser;
+    const guestFirebaseUser = auth.currentUser;
+    const oldGuestProfile = currentUser; 
 
     try {
-      const result = await linkWithPopup(guestUser, provider);
-      const permanentUser = await createUserProfileInDB(result.user);
-      setCurrentUser(permanentUser);
+      const result = await linkWithPopup(guestFirebaseUser, provider);
+      const permanentFirebaseUser = result.user;
+
+      const newUserProfile: User = {
+        uid: permanentFirebaseUser.uid,
+        displayName: permanentFirebaseUser.displayName || `User#${permanentFirebaseUser.uid.substring(0,5)}`,
+        email: permanentFirebaseUser.email,
+        isGuest: false,
+        createdAt: permanentFirebaseUser.metadata.creationTime || new Date().toISOString(),
+        stats: oldGuestProfile?.stats || createDefaultStats(),
+      };
+
+      await writeUserProfileToDB(newUserProfile);
+      setCurrentUser(newUserProfile);
 
       toast({
         title: "Account Linked!",
-        description: "Your guest account is now saved to Google.",
+        description: "Your guest stats have been saved to your Google account.",
       });
 
     } catch (error: any) {
       if (error.code === 'auth/credential-already-in-use') {
-         toast({ title: "Account Exists", description: "Switching to your existing Google account. Guest progress will not be transferred.", duration: 5000 });
-         const credential = GoogleAuthProvider.credentialFromError(error);
-         if (credential) {
-            await signOut(auth);
-            await signInWithCredential(auth, credential);
-         }
+         toast({ title: "Account Exists", description: "That Google account is already in use. Please sign out and sign in with Google directly.", duration: 5000, variant: "destructive" });
       } else if (error.code === 'auth/popup-closed-by-user') {
-          toast({ title: "Linking Cancelled", description: "You closed the sign-in window." });
+          toast({ title: "Linking Cancelled" });
       } else {
         console.error("Account Linking Error:", error);
         toast({ title: "Linking Failed", description: error.message, variant: "destructive" });
       }
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 
@@ -255,13 +246,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         showFirebaseNotConfiguredToast();
         return;
     }
-    try {
-        await signOut(auth);
-        setCurrentUser(null);
-    } catch(error) {
-      console.error("Error signing out:", error);
-      toast({ title: "Logout Error", description: "An error occurred during sign out.", variant: "destructive" });
-    }
+    await signOut(auth);
+    setCurrentUser(null);
   };
   
   const deleteAccount = async () => {
