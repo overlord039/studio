@@ -31,7 +31,8 @@ export default function LobbyPage() {
   const { toast } = useToast();
   const router = useRouter();
   const params = useParams();
-  const roomId = (params as { id: string }).id;
+  const roomIdParam = params.id;
+  const roomId = Array.isArray(roomIdParam) ? roomIdParam[0] ?? '' : roomIdParam ?? '';
   const { currentUser, loading: authLoading } = useAuth();
 
   const [roomData, setRoomData] = useState<Room | null>(null);

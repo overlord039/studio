@@ -55,7 +55,8 @@ export default function GameRoomPage() {
   const searchParams = useSearchParams();
   const playerTicketsParam = searchParams.get('playerTickets');
   const params = useParams();
-  const roomId = (params as { id: string }).id;
+  const roomIdParam = params.id;
+  const roomId = Array.isArray(roomIdParam) ? roomIdParam[0] ?? '' : roomIdParam ?? '';
   const { toast } = useToast();
   const { currentUser, loading: authLoading } = useAuth();
   const { isSfxMuted, toggleSfxMute } = useSound();
