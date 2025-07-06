@@ -1,7 +1,13 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LifeBuoy, Mail, MessageSquare } from "lucide-react";
+"use client";
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { LifeBuoy, Mail, MessageSquare, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function SupportPage() {
+  const router = useRouter();
+
   return (
     <div className="space-y-8">
       <Card className="shadow-xl">
@@ -30,6 +36,12 @@ export default function SupportPage() {
             </p>
           </div>
         </CardContent>
+        <CardFooter>
+          <Button onClick={() => router.back()}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        </CardFooter>
       </Card>
     </div>
   );

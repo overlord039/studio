@@ -1,8 +1,13 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText } from "lucide-react";
+"use client";
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FileText, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function UserAgreementPage() {
   const supportEmail = "support@housiehub.com";
+  const router = useRouter();
   
   return (
     <div className="space-y-8">
@@ -60,6 +65,12 @@ export default function UserAgreementPage() {
           <p>For questions, reach out at: <a href={`mailto:${supportEmail}`} className="text-primary hover:underline">{supportEmail}</a></p>
 
         </CardContent>
+        <CardFooter>
+          <Button onClick={() => router.back()}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        </CardFooter>
       </Card>
     </div>
   );

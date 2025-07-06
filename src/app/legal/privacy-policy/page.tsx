@@ -1,7 +1,13 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck } from "lucide-react";
+"use client";
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ShieldCheck, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function PrivacyPolicyPage() {
+  const router = useRouter();
+
   return (
     <div className="space-y-8">
       <Card className="shadow-xl">
@@ -31,6 +37,12 @@ export default function PrivacyPolicyPage() {
             <h3 className="text-xl font-semibold text-foreground pt-4">5. Your Choices</h3>
             <p>You may update your account information at any time. You can also request deletion of your account by contacting our support team.</p>
         </CardContent>
+        <CardFooter>
+          <Button onClick={() => router.back()}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        </CardFooter>
       </Card>
     </div>
   );

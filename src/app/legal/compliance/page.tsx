@@ -1,7 +1,13 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookCheck } from "lucide-react";
+"use client";
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { BookCheck, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function CompliancePage() {
+  const router = useRouter();
+
   return (
     <div className="space-y-8">
       <Card className="shadow-xl">
@@ -28,6 +34,12 @@ export default function CompliancePage() {
             <h3 className="text-xl font-semibold text-foreground pt-4">4. Reporting Violations</h3>
             <p>If you believe any content or conduct on our platform violates our policies or the law, please report it to our support team for review.</p>
         </CardContent>
+        <CardFooter>
+          <Button onClick={() => router.back()}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        </CardFooter>
       </Card>
     </div>
   );
