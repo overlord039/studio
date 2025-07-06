@@ -70,6 +70,42 @@ const writeUserProfileToDB = async (appUser: User): Promise<void> => {
     await setDoc(userDocRef, appUser, { merge: true });
 };
 
+// Helper to deeply compare two user objects to prevent unnecessary re-renders
+function areUsersEqual(userA: User | null, userB: User | null): boolean {
+    if (!userA || !userB) return userA === userB;
+
+    // Fast checks for primitive values
+    if (
+        userA.uid !== userB.uid ||
+        userA.displayName !== userB.displayName ||
+        userA.email !== userB.email ||
+        userA.isGuest !== userB.isGuest ||
+        userA.createdAt !== userB.createdAt
+    ) {
+        return false;
+    }
+
+    // Compare stats object
+    const statsA = userA.stats;
+    const statsB = userB.stats;
+    if (statsA?.matchesPlayed !== statsB?.matchesPlayed) return false;
+    
+    const prizesA = statsA?.prizesWon;
+    const prizesB = statsB?.prizesWon;
+    if (!prizesA || !prizesB) return prizesA === prizesB;
+
+    const prizeKeys = Object.keys(prizesA);
+    if (prizeKeys.length !== Object.keys(prizesB).length) return false;
+
+    for (const key of prizeKeys) {
+        if (prizesA[key as PrizeType] !== prizesB[key as PrizeType]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -144,7 +180,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             userDocUnsubscribe = onSnapshot(userDocRef, async (docSnap) => {
                 if (docSnap.exists()) {
-                    setCurrentUser(docSnap.data() as User);
+                    const newUser = docSnap.data() as User;
+                    setCurrentUser(prevUser => {
+                        if (areUsersEqual(prevUser, newUser)) {
+                            return prevUser;
+                        }
+                        return newUser;
+                    });
                 } else {
                     const newUserProfile: User = {
                         uid: firebaseUser.uid,
