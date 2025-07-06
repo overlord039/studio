@@ -16,7 +16,7 @@ import {
   isSignInWithEmailLink,
   signInWithEmailLink,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, updateDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 import { useToast } from '@/hooks/use-toast';
 import type { User, UserStats, PrizeType } from '@/types';
@@ -110,34 +110,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       handleEmailLinkSignIn();
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    let userDocUnsubscribe: Unsubscribe | undefined;
+
+    const authUnsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        if (userDocUnsubscribe) {
+            userDocUnsubscribe(); // Stop listening to the old user's doc
+        }
+
         if (firebaseUser) {
             const userDocRef = doc(db, "users", firebaseUser.uid);
-            const userDoc = await getDoc(userDocRef);
-
-            if (userDoc.exists()) {
-                setCurrentUser(userDoc.data() as User);
-            } else {
-                const newUserProfile: User = {
-                    uid: firebaseUser.uid,
-                    displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || `User#${firebaseUser.uid.substring(0,5)}`,
-                    email: firebaseUser.email,
-                    isGuest: firebaseUser.isAnonymous,
-                    createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-                    stats: createDefaultStats(),
-                };
-                if (!newUserProfile.isGuest) {
-                  await writeUserProfileToDB(newUserProfile);
+            
+            // Listen for real-time updates to the user document
+            userDocUnsubscribe = onSnapshot(userDocRef, async (docSnap) => {
+                if (docSnap.exists()) {
+                    setCurrentUser(docSnap.data() as User);
+                } else {
+                    // This logic runs if the user exists in Auth but not Firestore.
+                    const newUserProfile: User = {
+                        uid: firebaseUser.uid,
+                        displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || `User#${firebaseUser.uid.substring(0,5)}`,
+                        email: firebaseUser.email,
+                        isGuest: firebaseUser.isAnonymous,
+                        createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+                        stats: createDefaultStats(),
+                    };
+                    if (!newUserProfile.isGuest) {
+                      await writeUserProfileToDB(newUserProfile);
+                    }
+                    setCurrentUser(newUserProfile);
                 }
-                setCurrentUser(newUserProfile);
-            }
+                setLoading(false);
+            }, (error) => {
+                console.error("Error listening to user document:", error);
+                toast({ title: "Error", description: "Could not load user profile.", variant: "destructive" });
+                setLoading(false);
+            });
+
         } else {
             setCurrentUser(null);
+            setLoading(false);
         }
-        setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+        authUnsubscribe();
+        if (userDocUnsubscribe) {
+            userDocUnsubscribe();
+        }
+    };
   }, [firebaseConfigured, toast]);
 
   const updateUserStats = async (newStats: Partial<UserStats>) => {

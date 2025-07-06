@@ -252,7 +252,7 @@ export default function GameRoomPage() {
     if (roomData?.isGameOver && !statsUpdated) {
         updateMyStats();
     }
-}, [roomData, currentUser, db, statsUpdated, toast]);
+}, [roomData, currentUser, statsUpdated, toast]);
 
   useEffect(() => {
     if (currentUser && roomId && !authLoading) {
