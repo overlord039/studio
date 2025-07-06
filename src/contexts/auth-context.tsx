@@ -15,6 +15,8 @@ import {
   sendSignInLinkToEmail,
   isSignInWithEmailLink,
   signInWithEmailLink,
+  EmailAuthProvider,
+  linkWithCredential,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, deleteDoc, updateDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
@@ -40,6 +42,7 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<void>;
   loginWithEmailLink: (email: string) => Promise<boolean>;
   linkGoogleAccount: () => Promise<void>;
+  linkWithEmailLink: (email: string) => Promise<boolean>;
   loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -95,11 +98,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setIsSigningIn('email');
         try {
-          await signInWithEmailLink(auth, email, window.location.href);
+          if (auth.currentUser && auth.currentUser.isAnonymous) {
+            // LINKING FLOW
+            const guestUser = auth.currentUser;
+            const credential = EmailAuthProvider.credentialWithLink(email, window.location.href);
+            await linkWithCredential(guestUser, credential);
+
+            const userDocRef = doc(db, "users", guestUser.uid);
+            await updateDoc(userDocRef, {
+                email: email,
+                isGuest: false,
+                displayName: guestUser.displayName || email.split('@')[0],
+            });
+            toast({ title: "Account Linked!", description: "Your guest progress is now saved to your email." });
+
+          } else {
+             // REGULAR SIGN-IN FLOW
+            await signInWithEmailLink(auth, email, window.location.href);
+          }
           window.localStorage.removeItem('emailForSignIn');
           window.history.replaceState({}, document.title, window.location.pathname);
         } catch (error: any) {
-          toast({ title: "Sign-in Failed", description: error.message, variant: "destructive" });
+          toast({ title: "Link/Sign-in Failed", description: error.message, variant: "destructive" });
         } finally {
           setIsSigningIn(null);
         }
@@ -246,6 +266,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const linkWithEmailLink = async (email: string): Promise<boolean> => {
+    if (!auth?.currentUser?.isAnonymous) {
+      toast({ title: "Error", description: "Only guest accounts can be linked.", variant: "destructive" });
+      return false;
+    }
+    setIsSigningIn('email');
+    const actionCodeSettings = {
+        url: window.location.href, // Send them back to the same page (profile)
+        handleCodeInApp: true,
+    };
+    try {
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      window.localStorage.setItem('emailForSignIn', email);
+      toast({
+        title: "Check your email",
+        description: `A verification link has been sent to ${email}.`,
+        duration: 7000,
+      });
+      return true;
+    } catch (error: any) {
+      console.error("Error sending email link for linking:", error);
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return false;
+    } finally {
+      setIsSigningIn(null);
+    }
+  };
+
   const linkGoogleAccount = async () => {
     if (!auth?.currentUser?.isAnonymous || !db) {
       toast({ title: "Error", description: "You must be signed in as a guest to link an account.", variant: "destructive" });
@@ -358,6 +406,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loginWithGoogle,
       loginWithEmailLink,
       linkGoogleAccount, 
+      linkWithEmailLink,
       loginAsGuest, 
       logout, 
       deleteAccount, 

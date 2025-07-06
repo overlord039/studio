@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { type FormEvent } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import type { PrizeType } from '@/types';
+import { Input } from '@/components/ui/input';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -20,8 +21,22 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export default function ProfilePage() {
-  const { currentUser, loading, logout, linkGoogleAccount, isSigningIn } = useAuth();
+  const { currentUser, loading, logout, linkGoogleAccount, isSigningIn, linkWithEmailLink } = useAuth();
   const router = useRouter();
+
+  const [emailForLink, setEmailForLink] = React.useState('');
+  const [linkSent, setLinkSent] = React.useState(false);
+
+  const handleLinkEmailSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (emailForLink && !linkSent) {
+      const success = await linkWithEmailLink(emailForLink);
+      if (success) {
+        setLinkSent(true);
+      }
+    }
+  };
+
 
   const renderContent = () => {
     if (loading) {
@@ -103,19 +118,46 @@ export default function ProfilePage() {
               <CardContent className="p-6 space-y-6 bg-card">
                    {currentUser.isGuest ? (
                      <div className="text-center p-4 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg border border-yellow-500/30">
-                          <p className="font-semibold">You are playing as a guest.</p>
-                          <p className="text-sm text-muted-foreground mb-3">
-                              Link your Google account to save your stats and play on any device.
-                          </p>
-                          <Button
-                              onClick={linkGoogleAccount}
-                              disabled={isSigningIn === 'google'}
-                              className="bg-white text-black hover:bg-gray-200"
-                          >
-                              {isSigningIn === 'google' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                              <GoogleIcon className="mr-2 h-4 w-4" /> Link Google Account
-                          </Button>
-                      </div>
+                        <p className="font-semibold">You are playing as a guest.</p>
+                        <p className="text-sm text-muted-foreground mb-3">
+                            Link your account to save your stats and play on any device.
+                        </p>
+                        <div className="space-y-3">
+                            <Button
+                                onClick={linkGoogleAccount}
+                                disabled={!!isSigningIn}
+                                className="bg-white text-black hover:bg-gray-200 w-full"
+                            >
+                                {isSigningIn === 'google' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
+                                Link Google Account
+                            </Button>
+
+                            <div className="relative flex items-center justify-center my-2">
+                                <div className="flex-grow border-t border-yellow-400/50"></div>
+                                <span className="flex-shrink mx-2 text-xs text-muted-foreground">OR</span>
+                                <div className="flex-grow border-t border-yellow-400/50"></div>
+                            </div>
+                            
+                            <form onSubmit={handleLinkEmailSubmit} className="space-y-2">
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        type="email"
+                                        placeholder="Enter your email"
+                                        value={emailForLink}
+                                        onChange={(e) => setEmailForLink(e.target.value)}
+                                        disabled={!!isSigningIn || linkSent}
+                                        required
+                                        className="bg-background/50 border-input pl-9 text-sm h-10"
+                                    />
+                                </div>
+                                <Button type="submit" variant="secondary" className="w-full" disabled={!!isSigningIn || !emailForLink || linkSent}>
+                                    {isSigningIn === 'email' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {linkSent ? 'Link Sent! Check your inbox.' : 'Link with Email'}
+                                </Button>
+                            </form>
+                        </div>
+                    </div>
                    ) : (
                       <div className="space-y-6">
                         <div>
