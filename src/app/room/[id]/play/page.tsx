@@ -76,6 +76,7 @@ export default function GameRoomPage() {
   const previousCurrentNumberRef = useRef<number | null>(null);
   const roomDataRef = useRef(roomData);
   const previousPrizeStatusRef = useRef<Room['prizeStatus'] | null>(null);
+  const gameOverSoundPlayedRef = useRef(false);
 
   useEffect(() => {
     roomDataRef.current = roomData;
@@ -90,6 +91,18 @@ export default function GameRoomPage() {
       return () => clearTimeout(timer);
     }
   }, [gameMessage]);
+
+  useEffect(() => {
+    // We only want to play the sound on the transition from not-over to over.
+    if (roomData?.isGameOver && !gameOverSoundPlayedRef.current) {
+      playSound('gameover.wav');
+      gameOverSoundPlayedRef.current = true;
+    }
+    // If the game is NOT over (e.g. new game starts in same room), reset the flag.
+    if (roomData && !roomData.isGameOver) {
+        gameOverSoundPlayedRef.current = false;
+    }
+  }, [roomData?.isGameOver]);
 
   const fetchGameDetails = useCallback(async (isInitialLoad = false) => {
     if (!roomId || !currentUser?.uid) {
@@ -120,10 +133,6 @@ export default function GameRoomPage() {
         return;
       }
       const data: Room = await response.json();
-      
-      if (data.isGameOver && !roomDataRef.current?.isGameOver) {
-        playSound('game over.wav');
-      }
       
       const oldPrizeStatus = previousPrizeStatusRef.current;
       const newPrizeStatus = data.prizeStatus;
