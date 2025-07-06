@@ -18,9 +18,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PRIZE_DISTRIBUTION_PERCENTAGES, PRIZE_DEFINITIONS, DEFAULT_GAME_SETTINGS } from "@/lib/constants";
 import type { PrizeType } from "@/types";
 import { PRIZE_TYPES } from "@/types";
-import { Calculator, Ticket, Users, Percent, Gift, IndianRupee, AlertTriangle, Settings2, EyeOff } from "lucide-react";
+import { Calculator, Ticket, Users, Percent, Gift, IndianRupee, AlertTriangle, Settings2, EyeOff, Speaker, Home } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 const prizeCategories = PRIZE_DEFINITIONS[DEFAULT_GAME_SETTINGS.prizeFormat];
 const defaultPercentages = PRIZE_DISTRIBUTION_PERCENTAGES[DEFAULT_GAME_SETTINGS.prizeFormat];
@@ -270,6 +271,18 @@ export default function PrizeCalculatorPage() {
                   ))}
                 </CardContent>
               </Card>
+              <div className="flex justify-center gap-4 mt-6">
+                <Link href="/number-caller" passHref>
+                  <Button>
+                    <Speaker className="mr-2 h-4 w-4" /> Go to Number Caller
+                  </Button>
+                </Link>
+                <Link href="/" passHref>
+                  <Button variant="outline">
+                    <Home className="mr-2 h-4 w-4" /> Leave
+                  </Button>
+                </Link>
+              </div>
             </div>
           )}
         </CardContent>
