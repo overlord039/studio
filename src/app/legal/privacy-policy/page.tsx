@@ -7,35 +7,60 @@ import { useRouter } from "next/navigation";
 
 export default function PrivacyPolicyPage() {
   const router = useRouter();
+  const supportEmail = "support@housiehub.com";
 
   return (
     <div className="space-y-8">
       <Card className="shadow-xl">
         <CardHeader>
           <CardTitle className="text-3xl font-bold flex items-center">
-            <ShieldCheck className="mr-3 h-8 w-8 text-primary" /> Privacy Policy
+            <ShieldCheck className="mr-3 h-8 w-8 text-primary" /> HousieHub Privacy Policy
           </CardTitle>
           <CardDescription>
-            Last Updated: May 24, 2024
+            Effective Date: July 6, 2025
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-muted-foreground">
-            <p>Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your information.</p>
+            <p>HousieHub (“we”, “our”, “us”) respects your privacy. This Privacy Policy explains how we collect, use, and protect your information when you use our app and services.</p>
+
+            <h3 className="text-xl font-semibold text-foreground pt-4">Information We Collect</h3>
+            <ul className="list-disc list-inside space-y-1">
+                <li><strong>Account Information:</strong> Username, email address (optional if login used), and gameplay data.</li>
+                <li><strong>Usage Data:</strong> Information about how you use the app for analytics and improvements.</li>
+                <li><strong>Device Information:</strong> Device type, operating system, and crash logs to improve app performance.</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold text-foreground pt-4">How We Use Your Information</h3>
+            <ul className="list-disc list-inside space-y-1">
+                <li>To provide and maintain the HousieHub app and its features.</li>
+                <li>To improve gameplay experience and add new features.</li>
+                <li>To communicate with you about updates or promotions (optional, with your consent).</li>
+                <li>For security and fraud prevention.</li>
+            </ul>
+
+            <h3 className="text-xl font-semibold text-foreground pt-4">Sharing Your Information</h3>
+            <p>We do not sell your personal information. We may share data with service providers who help us operate our app (analytics, hosting) under strict confidentiality.</p>
+
+            <h3 className="text-xl font-semibold text-foreground pt-4">Data Security</h3>
+            <p>We implement industry-standard measures to protect your data. However, no method of transmission over the internet is 100% secure.</p>
+
+            <h3 className="text-xl font-semibold text-foreground pt-4">Your Choices</h3>
+            <ul className="list-disc list-inside space-y-1">
+                <li>You can request deletion of your account data at any time by contacting us at <a href={`mailto:${supportEmail}`} className="text-primary hover:underline">{supportEmail}</a>.</li>
+                <li>You can opt out of promotional notifications in your app settings.</li>
+            </ul>
             
-            <h3 className="text-xl font-semibold text-foreground pt-4">1. Information We Collect</h3>
-            <p>We collect information you provide directly to us, such as when you create an account (username, email). We also collect information automatically as you use our services, such as game activity and device information. We do not collect real names or payment information.</p>
+            <h3 className="text-xl font-semibold text-foreground pt-4">Changes to This Policy</h3>
+            <p>We may update this Privacy Policy, and the updated version will be posted here with a new effective date.</p>
 
-            <h3 className="text-xl font-semibold text-foreground pt-4">2. How We Use Information</h3>
-            <p>We use the information we collect to operate and improve our services, personalize your experience, and communicate with you. Your username is visible to other players in game rooms.</p>
-
-            <h3 className="text-xl font-semibold text-foreground pt-4">3. Information Sharing</h3>
-            <p>We do not sell your personal information. We may share information with third-party service providers who perform services on our behalf, such as hosting and analytics. Your username and in-game actions are public within the context of the game you are playing.</p>
-
-            <h3 className="text-xl font-semibold text-foreground pt-4">4. Data Security</h3>
-            <p>We take reasonable measures to protect your information from unauthorized access, use, or disclosure. However, no internet-based service is 100% secure.</p>
-            
-            <h3 className="text-xl font-semibold text-foreground pt-4">5. Your Choices</h3>
-            <p>You may update your account information at any time. You can also request deletion of your account by contacting our support team.</p>
+            <h3 className="text-xl font-semibold text-foreground pt-4">Contact Us</h3>
+            <div>
+              <p>If you have questions about this Privacy Policy, contact us at:</p>
+              <p className="font-medium">
+                📧 <a href={`mailto:${supportEmail}`} className="text-primary hover:underline">{supportEmail}</a>
+              </p>
+              <p className="font-medium">📍 HousieHub, India</p>
+            </div>
         </CardContent>
         <CardFooter>
           <Button onClick={() => router.back()}>
