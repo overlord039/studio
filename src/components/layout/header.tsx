@@ -20,6 +20,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Textarea } from '@/components/ui/textarea';
+import { db } from '@/lib/firebase/config';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 
 const SettingsModal = ({ activeTab, setActiveTab }: { activeTab: string; setActiveTab: (tab: string) => void; }) => {
@@ -313,8 +315,16 @@ const FeedbackForm = () => {
     5: 'Excellent!',
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentUser) {
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to submit feedback.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (rating === 0 && feedback.trim() === '') {
       toast({
         title: "Feedback Required",
@@ -325,18 +335,36 @@ const FeedbackForm = () => {
     }
 
     setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Feedback submitted:', { rating, feedback, userId: currentUser?.uid });
+    try {
+      if (!db) {
+        throw new Error("Database not configured");
+      }
+      const feedbackCollectionRef = collection(db, "feedback");
+      await addDoc(feedbackCollectionRef, {
+        userId: currentUser.uid,
+        userName: currentUser.displayName || 'Guest',
+        rating,
+        feedback: feedback.trim(),
+        createdAt: serverTimestamp(),
+      });
+
       toast({
         title: "Thank You!",
         description: "Your feedback has been submitted successfully.",
       });
-      setIsSubmitting(false);
+      setOpen(false);
       setRating(0);
       setFeedback('');
-      setOpen(false);
-    }, 1000);
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      toast({
+        title: "Submission Failed",
+        description: "Could not submit your feedback. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -505,4 +533,3 @@ export default function Header() {
     </header>
   );
 }
-
