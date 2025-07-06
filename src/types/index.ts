@@ -41,8 +41,13 @@ export const PRIZE_TYPES = {
 
 export type PrizeType = typeof PRIZE_TYPES[keyof typeof PRIZE_TYPES];
 
+export interface PrizeClaimant {
+  id: string;
+  name: string;
+}
+
 export interface PrizeClaim {
-  claimedBy: string[]; // Array of player IDs who claimed this
+  claimedBy: PrizeClaimant[]; 
   timestamp?: Date | string;
 }
 

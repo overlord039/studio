@@ -388,7 +388,7 @@ export function claimPrizeStore(
     return { error: "Game is over. No more claims except potentially Full House if it's the last one." };
   }
   
-  if (room.prizeStatus[prizeType]?.claimedBy.includes(playerId)) {
+  if (room.prizeStatus[prizeType]?.claimedBy.some(c => c.id === playerId)) {
     return { error: `You have already claimed ${prizeType}.` };
   }
 
@@ -421,7 +421,7 @@ export function claimPrizeStore(
   } else if (!room.prizeStatus[prizeType]!.timestamp) { 
     room.prizeStatus[prizeType]!.timestamp = new Date();
   }
-  room.prizeStatus[prizeType]!.claimedBy.push(playerId);
+  room.prizeStatus[prizeType]!.claimedBy.push({ id: player.id, name: player.name });
 
   if (prizeType === PRIZE_TYPES.FULL_HOUSE && winningTicket) {
     room.isGameOver = true;
@@ -438,7 +438,7 @@ export function claimPrizeStore(
             room.prizeStatus[linePrize] = { claimedBy: [], timestamp: new Date() };
           }
           
-          room.prizeStatus[linePrize]!.claimedBy.push(playerId);
+          room.prizeStatus[linePrize]!.claimedBy.push({ id: player.id, name: player.name });
           
           if (room.prizeStatus[prizeType]?.timestamp) {
              room.prizeStatus[linePrize]!.timestamp = room.prizeStatus[prizeType]!.timestamp;

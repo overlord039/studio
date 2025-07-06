@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import HousieTicket from '@/components/game/housie-ticket';
 import CalledNumberDisplay from '@/components/game/called-number-display';
-import type { HousieTicketGrid, PrizeType, Room, GameSettings, CallingMode } from '@/types';
+import type { HousieTicketGrid, PrizeType, Room, GameSettings, CallingMode, PrizeClaimant } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -146,15 +146,15 @@ export default function GameRoomPage() {
               const oldClaimants = oldClaim?.claimedBy ?? [];
 
               if (newClaimants.length > oldClaimants.length) {
-                  const newlyAddedClaimants = newClaimants.filter(id => !oldClaimants.includes(id));
-                  
+                  const oldClaimantIds = new Set(oldClaimants.map(c => c.id));
+                  const newlyAddedClaimants = newClaimants.filter(c => !oldClaimantIds.has(c.id));
+
                   if (newlyAddedClaimants.length > 0) {
                       playSound('win.wav');
                       const claimantNames = newlyAddedClaimants
-                          .map(id => {
-                              const player = data.players.find(p => p.id === id);
-                              if (player?.id === currentUser?.uid) return "You";
-                              return player?.name || id;
+                          .map(claimant => {
+                              if (claimant.id === currentUser?.uid) return "You";
+                              return claimant.name || claimant.id;
                            })
                           .join(', ');
                       
@@ -189,7 +189,7 @@ export default function GameRoomPage() {
         const fhClaim = data.prizeStatus[PRIZE_TYPES.FULL_HOUSE];
         let gameOverMsg = "🎉 Game Over!";
         if (fhClaim && fhClaim.claimedBy.length > 0) {
-          const winnerNames = fhClaim.claimedBy.map(winnerId => data.players.find(p => p.id === winnerId)?.name || winnerId).join(' & ');
+          const winnerNames = fhClaim.claimedBy.map(c => c.name).join(' & ');
           gameOverMsg = `🎉 ${winnerNames} won Full House! Game Over!`;
         } else if (data.calledNumbers.length === NUMBERS_RANGE_MAX) {
           gameOverMsg = "All numbers called. No Full House winner.";
@@ -236,7 +236,7 @@ export default function GameRoomPage() {
 
         for (const prizeType in roomData.prizeStatus) {
             const prizeInfo = roomData.prizeStatus[prizeType as PrizeType];
-            if (prizeInfo && prizeInfo.claimedBy.includes(currentUser.uid)) {
+            if (prizeInfo && prizeInfo.claimedBy.some(c => c.id === currentUser.uid)) {
                 statsUpdate[`stats.prizesWon.${prizeType}`] = increment(1);
             }
         }
@@ -348,7 +348,7 @@ export default function GameRoomPage() {
         const claimStatus = updatedRoom.prizeStatus[prizeType];
 
         let toastMessageAlert = `Your claim for ${prizeType} has been submitted for validation.`;
-        if (claimStatus?.claimedBy.includes(currentUser.uid)) {
+        if (claimStatus?.claimedBy.some(c => c.id === currentUser.uid)) {
             toastMessageAlert = `You successfully claimed ${prizeType}!`;
         }
 
@@ -541,7 +541,7 @@ export default function GameRoomPage() {
     if (currentUser) {
         prizesForFormat.forEach(prize => {
             const claimInfo = roomData.prizeStatus[prize];
-            if (claimInfo && claimInfo.claimedBy.includes(currentUser.uid)) {
+            if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
                 currentUserPrizeNames.push(prize);
                 const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
                 const prizeAmount = (totalPrizePool * percentage) / 100;
@@ -585,7 +585,7 @@ export default function GameRoomPage() {
 
                   let prizeStatusText = "Not Claimed";
                   if (claimInfo && claimInfo.claimedBy.length > 0) {
-                    const winnerNames = claimInfo.claimedBy.map(id => roomData.players.find(p => p.id === id)?.name || id).join(', ');
+                    const winnerNames = claimInfo.claimedBy.map(c => c.name).join(', ');
                     prizeStatusText = `Claimed by ${winnerNames}`;
                   }
                   
@@ -679,10 +679,9 @@ export default function GameRoomPage() {
                                     
                                     let claimantText = "Unclaimed";
                                     if (isClaimed) {
-                                        const claimantNames = claimInfo.claimedBy.map(id => {
-                                            const player = roomData.players.find(p => p.id === id);
-                                            if (player?.id === currentUser?.uid) return "You";
-                                            return player?.name || id;
+                                        const claimantNames = claimInfo.claimedBy.map(c => {
+                                            if (c.id === currentUser?.uid) return "You";
+                                            return c.name || c.id;
                                         }).join(', ');
                                         claimantText = `Claimed by ${claimantNames}`;
                                     }
