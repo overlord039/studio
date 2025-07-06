@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertTriangle, Calendar, Mail, LogOut, X, Fingerprint, Gamepad2, Award } from "lucide-react";
+import { AlertTriangle, Calendar, Mail, LogOut, X, Fingerprint, Gamepad2, Award, Loader2 } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,8 +13,14 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import type { PrizeType } from '@/types';
 
+const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.854 3.187-1.782 4.133-1.147 1.147-2.933 2.4-5.11 2.4-4.333 0-7.84-3.52-7.84-7.84s3.507-7.84 7.84-7.84c2.44 0 4.007 1.013 4.907 1.947l2.6-2.6C18.067.733 15.447 0 12.48 0 5.867 0 .333 5.393.333 12s5.534 12 12.147 12c3.553 0 6.227-1.173 8.24-3.253 2.133-2.133 2.84-5.24 2.84-7.667 0-.76-.053-1.467-.173-2.133H12.48z" />
+    </svg>
+);
+
 export default function ProfilePage() {
-  const { currentUser, loading, logout } = useAuth();
+  const { currentUser, loading, logout, linkGoogleAccount, isSigningIn } = useAuth();
   const router = useRouter();
 
   const renderContent = () => {
@@ -96,9 +102,19 @@ export default function ProfilePage() {
               </div>
               <CardContent className="p-6 space-y-6 bg-card">
                    {currentUser.isGuest ? (
-                     <div className="text-center p-4 bg-secondary/30 rounded-lg">
+                     <div className="text-center p-4 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg border border-yellow-500/30">
                           <p className="font-semibold">You are playing as a guest.</p>
-                          <p className="text-sm text-muted-foreground">Your stats and progress will be lost when you log out.</p>
+                          <p className="text-sm text-muted-foreground mb-3">
+                              Link your Google account to save your stats and play on any device.
+                          </p>
+                          <Button
+                              onClick={linkGoogleAccount}
+                              disabled={isSigningIn === 'google'}
+                              className="bg-white text-black hover:bg-gray-200"
+                          >
+                              {isSigningIn === 'google' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                              <GoogleIcon className="mr-2 h-4 w-4" /> Link Google Account
+                          </Button>
                       </div>
                    ) : (
                       <div className="space-y-6">

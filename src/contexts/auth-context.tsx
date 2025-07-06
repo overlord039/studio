@@ -9,6 +9,9 @@ import {
   onAuthStateChanged, 
   signInAnonymously, 
   deleteUser,
+  GoogleAuthProvider,
+  signInWithPopup,
+  linkWithPopup,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
@@ -31,11 +34,13 @@ interface AuthContextType {
   currentUser: User | null;
   userStats: UserStats | null;
   updateUserStats: (newStats: Partial<UserStats>) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  linkGoogleAccount: () => Promise<void>;
   loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   loading: boolean;
-  isSigningIn: null | 'guest';
+  isSigningIn: null | 'guest' | 'google';
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -59,7 +64,7 @@ const writeUserProfileToDB = async (appUser: User): Promise<void> => {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isSigningIn, setIsSigningIn] = useState<null | 'guest'>(null);
+  const [isSigningIn, setIsSigningIn] = useState<null | 'guest' | 'google'>(null);
   const { toast } = useToast();
   const firebaseConfigured = !!auth && !!db;
 
@@ -124,6 +129,95 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         variant: "destructive"
     });
   }
+
+  const loginWithGoogle = async () => {
+    if (!auth || !db) {
+      showFirebaseNotConfiguredToast();
+      return;
+    }
+    setIsSigningIn('google');
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      const result = await signInWithPopup(auth, provider);
+      
+      const firebaseUser = result.user;
+      const userDocRef = doc(db, "users", firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      let userProfile: User;
+      if (userDoc.exists()) {
+        userProfile = userDoc.data() as User;
+      } else {
+        userProfile = {
+          uid: firebaseUser.uid,
+          displayName: firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`,
+          email: firebaseUser.email,
+          isGuest: false,
+          createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+          stats: createDefaultStats(),
+        };
+        await writeUserProfileToDB(userProfile);
+      }
+      setCurrentUser(userProfile);
+      toast({ title: "Signed In Successfully", description: `Welcome back, ${userProfile.displayName}!` });
+    } catch (error: any) {
+      if (error.code !== 'auth/popup-closed-by-user') {
+        console.error("Google Sign-In Error:", error);
+        toast({ title: "Google Sign-in Failed", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Sign-in Cancelled", description: "You cancelled the Google sign-in process." });
+      }
+    } finally {
+      setIsSigningIn(null);
+    }
+  };
+
+  const linkGoogleAccount = async () => {
+    if (!auth?.currentUser?.isAnonymous || !db) {
+      toast({ title: "Error", description: "You must be signed in as a guest to link an account.", variant: "destructive" });
+      return;
+    }
+    const guestUser = auth.currentUser;
+    setIsSigningIn('google');
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      const result = await linkWithPopup(guestUser, provider);
+      
+      const firebaseUser = result.user;
+      const guestStats = currentUser?.stats || createDefaultStats();
+      
+      const newUserProfile: User = {
+        uid: firebaseUser.uid,
+        displayName: firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`,
+        email: firebaseUser.email,
+        isGuest: false,
+        createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+        stats: guestStats, // Carry over guest stats
+      };
+
+      await writeUserProfileToDB(newUserProfile);
+      // The onAuthStateChanged listener will handle setting the new user state
+      // but we can set it here for a faster UI update.
+      setCurrentUser(newUserProfile);
+
+      toast({ title: "Account Linked!", description: "Your guest progress has been saved to your Google account." });
+
+    } catch (error: any) {
+      if (error.code === 'auth/credential-already-in-use') {
+        toast({ title: "Account Exists", description: "This Google account is already linked to another HousieHub profile.", variant: "destructive" });
+      } else if (error.code !== 'auth/popup-closed-by-user') {
+        console.error("Google Account Linking Error:", error);
+        toast({ title: "Link Failed", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Link Cancelled", description: "You cancelled the linking process." });
+      }
+    } finally {
+      setIsSigningIn(null);
+    }
+  };
+
 
   const loginAsGuest = async () => {
     if (!auth) {
@@ -192,6 +286,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       currentUser, 
       userStats: currentUser?.stats || null, 
       updateUserStats, 
+      loginWithGoogle,
+      linkGoogleAccount,
       loginAsGuest, 
       logout, 
       deleteAccount, 
