@@ -13,6 +13,8 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import type { PrizeType } from '@/types';
 import { Input } from '@/components/ui/input';
+import { PRIZE_DEFINITIONS, DEFAULT_GAME_SETTINGS } from '@/lib/constants';
+
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -85,9 +87,14 @@ export default function ProfilePage() {
       year: 'numeric'
     }).replace(/ /g, '-');
     
-    const prizesWonArray = currentUser.stats?.prizesWon 
-      ? Object.entries(currentUser.stats.prizesWon).filter(([_, count]) => count > 0)
-      : [];
+    const prizesWon = currentUser.stats?.prizesWon;
+    const orderedPrizeTypes = PRIZE_DEFINITIONS[DEFAULT_GAME_SETTINGS.prizeFormat];
+
+    const prizesWonArray = prizesWon
+        ? orderedPrizeTypes
+            .map(prize => [prize, prizesWon[prize] ?? 0] as [string, number])
+            .filter(([_, count]) => count > 0)
+        : [];
 
 
     return (

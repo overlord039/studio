@@ -87,16 +87,23 @@ function areUsersEqual(userA: User | null, userB: User | null): boolean {
     // Compare stats object
     const statsA = userA.stats;
     const statsB = userB.stats;
-    if (statsA?.matchesPlayed !== statsB?.matchesPlayed) return false;
+
+    // If both are null/undefined, they are equal. If one is but not the other, not equal.
+    if (!statsA || !statsB) return statsA === statsB;
     
-    const prizesA = statsA?.prizesWon;
-    const prizesB = statsB?.prizesWon;
+    if (statsA.matchesPlayed !== statsB.matchesPlayed) return false;
+    
+    const prizesA = statsA.prizesWon;
+    const prizesB = statsB.prizesWon;
+
     if (!prizesA || !prizesB) return prizesA === prizesB;
 
-    const prizeKeys = Object.keys(prizesA);
-    if (prizeKeys.length !== Object.keys(prizesB).length) return false;
+    const prizeKeysA = Object.keys(prizesA);
+    const prizeKeysB = Object.keys(prizesB);
 
-    for (const key of prizeKeys) {
+    if (prizeKeysA.length !== prizeKeysB.length) return false;
+
+    for (const key of prizeKeysA) {
         if (prizesA[key as PrizeType] !== prizesB[key as PrizeType]) {
             return false;
         }
