@@ -15,7 +15,7 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   );
 
 export default function LoginSelectionScreen() {
-  const { loginWithGoogle, loginAsGuest, isSigningIn } = useAuth();
+  const { loginAsGuest, isSigningIn } = useAuth();
   
   const firebaseConfigured = 
       process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
@@ -55,21 +55,11 @@ export default function LoginSelectionScreen() {
           <h1 className="text-2xl font-bold text-white">Welcome to HousieHub</h1>
           
           <div className="space-y-3 pt-4">
-            <Button className="w-full bg-white text-black hover:bg-gray-200 shadow-sm" size="lg" onClick={loginWithGoogle} disabled={anySignInInProgress}>
-              {isSigningIn === 'google' ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <GoogleIcon className="mr-2 h-5 w-5 fill-current" />}
-              {isSigningIn === 'google' ? "Redirecting..." : "Sign in with Google"}
+            <Button variant="default" size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={loginAsGuest} disabled={anySignInInProgress}>
+              {isSigningIn === 'guest' && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+              {isSigningIn === 'guest' ? "Entering..." : "Play as Guest"}
             </Button>
           </div>
-
-          <div className="relative py-2">
-            <Separator className="bg-white/20" />
-            <span className="absolute left-1/2 -translate-x-1/2 -top-0.5 bg-black/50 px-2 text-xs text-gray-300">OR</span>
-          </div>
-
-          <Button variant="default" size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={loginAsGuest} disabled={anySignInInProgress}>
-            {isSigningIn === 'guest' && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-            {isSigningIn === 'guest' ? "Entering..." : "Play as Guest"}
-          </Button>
           
           <p className="text-xs text-gray-300 px-4 pt-4">
             By continuing, you agree to our{' '}

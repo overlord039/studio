@@ -5,12 +5,9 @@ import type { ReactNode } from 'react';
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { 
-  GoogleAuthProvider,
-  signInWithPopup,
   signOut, 
   onAuthStateChanged, 
   signInAnonymously, 
-  linkWithPopup,
   deleteUser,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
@@ -34,13 +31,11 @@ interface AuthContextType {
   currentUser: User | null;
   userStats: UserStats | null;
   updateUserStats: (newStats: Partial<UserStats>) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
   loginAsGuest: () => Promise<void>;
-  linkGoogleAccount: () => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   loading: boolean;
-  isSigningIn: null | 'google' | 'guest';
+  isSigningIn: null | 'guest';
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -64,7 +59,7 @@ const writeUserProfileToDB = async (appUser: User): Promise<void> => {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isSigningIn, setIsSigningIn] = useState<null | 'google' | 'guest'>(null);
+  const [isSigningIn, setIsSigningIn] = useState<null | 'guest'>(null);
   const { toast } = useToast();
   const firebaseConfigured = !!auth && !!db;
 
@@ -130,51 +125,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }
 
-  const loginWithGoogle = async () => {
-    if (!auth || !db) {
-      showFirebaseNotConfiguredToast();
-      return;
-    }
-    setIsSigningIn('google');
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const firebaseUser = result.user;
-
-      const userDocRef = doc(db, "users", firebaseUser.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      let appUser: User;
-      if (userDoc.exists()) {
-        appUser = userDoc.data() as User;
-      } else {
-        const newUserProfile: User = {
-            uid: firebaseUser.uid,
-            displayName: firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`,
-            email: firebaseUser.email,
-            isGuest: false,
-            createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-            stats: createDefaultStats(),
-        };
-        await writeUserProfileToDB(newUserProfile);
-        appUser = newUserProfile;
-      }
-      setCurrentUser(appUser);
-      
-    } catch (error: any) {
-      if (error.code === 'auth/popup-closed-by-user') {
-        toast({ title: "Sign-in Cancelled", description: "You closed the sign-in window." });
-      } else {
-        console.error("Google Sign-In Error:", error);
-        toast({ title: "Sign-In Failed", description: error.message, variant: "destructive" });
-      }
-    } finally {
-      setIsSigningIn(null);
-    }
-  };
-
   const loginAsGuest = async () => {
     if (!auth) {
       showFirebaseNotConfiguredToast();
@@ -198,51 +148,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast({ title: "Guest Sign-in Failed", description: error.message, variant: "destructive" });
     } finally {
       setIsSigningIn(null);
-    }
-  };
-
-  const linkGoogleAccount = async () => {
-    if (!auth?.currentUser?.isAnonymous || !db) {
-      toast({ title: "Not a Guest", description: "This account is already permanent." });
-      return;
-    }
-    setIsSigningIn('google');
-    const provider = new GoogleAuthProvider();
-    const guestFirebaseUser = auth.currentUser;
-    const oldGuestProfile = currentUser; 
-
-    try {
-      const result = await linkWithPopup(guestFirebaseUser, provider);
-      const permanentFirebaseUser = result.user;
-
-      const newUserProfile: User = {
-        uid: permanentFirebaseUser.uid,
-        displayName: permanentFirebaseUser.displayName || `User#${permanentFirebaseUser.uid.substring(0,5)}`,
-        email: permanentFirebaseUser.email,
-        isGuest: false,
-        createdAt: permanentFirebaseUser.metadata.creationTime || new Date().toISOString(),
-        stats: oldGuestProfile?.stats || createDefaultStats(),
-      };
-
-      await writeUserProfileToDB(newUserProfile);
-      // The onAuthStateChanged listener will handle setting the new user state automatically
-      
-      toast({
-        title: "Account Linked!",
-        description: "Your guest stats have been saved to your Google account.",
-      });
-
-    } catch (error: any) {
-      if (error.code === 'auth/credential-already-in-use') {
-         toast({ title: "Account Exists", description: "That Google account is already in use. Please sign out and sign in with Google directly.", duration: 5000, variant: "destructive" });
-      } else if (error.code === 'auth/popup-closed-by-user') {
-          toast({ title: "Linking Cancelled" });
-      } else {
-        console.error("Account Linking Error:", error);
-        toast({ title: "Linking Failed", description: error.message, variant: "destructive" });
-      }
-    } finally {
-        setIsSigningIn(null);
     }
   };
 
@@ -287,9 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       currentUser, 
       userStats: currentUser?.stats || null, 
       updateUserStats, 
-      loginWithGoogle,
       loginAsGuest, 
-      linkGoogleAccount, 
       logout, 
       deleteAccount, 
       loading,

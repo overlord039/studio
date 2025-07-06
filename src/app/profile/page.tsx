@@ -14,13 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import type { PrizeType } from '@/types';
 
 export default function ProfilePage() {
-  const { currentUser, loading, logout, linkGoogleAccount } = useAuth();
+  const { currentUser, loading, logout } = useAuth();
   const router = useRouter();
-
-  const handleLinkAccount = async () => {
-    // The context now handles all outcomes, including toasts for errors or success.
-    await linkGoogleAccount();
-  };
 
   const renderContent = () => {
     if (loading) {
@@ -103,8 +98,7 @@ export default function ProfilePage() {
                    {currentUser.isGuest ? (
                      <div className="text-center p-4 bg-secondary/30 rounded-lg">
                           <p className="font-semibold">You are playing as a guest.</p>
-                          <p className="text-sm text-muted-foreground">Sign in to save your stats and progress!</p>
-                          <Button className="mt-4" size="sm" onClick={handleLinkAccount}>Sign in with Google</Button>
+                          <p className="text-sm text-muted-foreground">Your stats and progress will be lost when you log out.</p>
                       </div>
                    ) : (
                       <div className="space-y-6">
