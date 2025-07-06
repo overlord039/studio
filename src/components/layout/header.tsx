@@ -267,12 +267,13 @@ const SettingsModal = () => {
                                   {[
                                       { name: 'Support', href: '/legal/support' },
                                       { name: 'User Agreement', href: '/legal/user-agreement' },
+                                      { name: 'Terms of Service', href: '/legal/user-agreement' },
                                       { name: 'Compliance', href: '/legal/compliance' },
                                       { name: 'Fair Play', href: '/legal/fair-play' },
                                       { name: 'Privacy Policy', href: '/legal/privacy-policy' },
                                       { name: 'Privacy Settings', href: '/legal/privacy-settings' },
                                   ].map(link => (
-                                      <DialogClose asChild key={link.href}>
+                                      <DialogClose asChild key={link.name}>
                                           <Link
                                               href={link.href}
                                               className="text-sm font-medium underline hover:text-primary"
