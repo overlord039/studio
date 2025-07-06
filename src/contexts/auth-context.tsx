@@ -7,7 +7,6 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { 
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithCredential,
   signOut, 
   onAuthStateChanged, 
   signInAnonymously, 
@@ -41,6 +40,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   loading: boolean;
+  isSigningIn: null | 'google' | 'guest';
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -64,6 +64,7 @@ const writeUserProfileToDB = async (appUser: User): Promise<void> => {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSigningIn, setIsSigningIn] = useState<null | 'google' | 'guest'>(null);
   const { toast } = useToast();
   const firebaseConfigured = !!auth && !!db;
 
@@ -81,6 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (userDoc.exists()) {
                 setCurrentUser(userDoc.data() as User);
             } else if (!firebaseUser.isAnonymous) {
+                // This case handles a user who is logged in via Firebase but not in our DB yet.
+                // This can happen if they signed up but the DB write failed.
                 const newUserProfile: User = {
                     uid: firebaseUser.uid,
                     displayName: firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`,
@@ -100,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
                     stats: createDefaultStats(),
                 };
+                // For guests, we don't write to DB, just set in-memory state.
                 setCurrentUser(guestUser);
             }
         } else {
@@ -131,8 +135,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       showFirebaseNotConfiguredToast();
       return;
     }
-    setLoading(true);
+    setIsSigningIn('google');
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
       const result = await signInWithPopup(auth, provider);
@@ -157,7 +162,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         appUser = newUserProfile;
       }
       setCurrentUser(appUser);
-      setLoading(false);
       
     } catch (error: any) {
       if (error.code === 'auth/popup-closed-by-user') {
@@ -166,7 +170,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("Google Sign-In Error:", error);
         toast({ title: "Sign-In Failed", description: error.message, variant: "destructive" });
       }
-      setLoading(false);
+    } finally {
+      setIsSigningIn(null);
     }
   };
 
@@ -175,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       showFirebaseNotConfiguredToast();
       return;
     }
-    setLoading(true);
+    setIsSigningIn('guest');
     try {
         const result = await signInAnonymously(auth);
         const firebaseUser = result.user;
@@ -192,7 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("Guest Sign-In Error:", error);
         toast({ title: "Guest Sign-in Failed", description: error.message, variant: "destructive" });
     } finally {
-      setLoading(false);
+      setIsSigningIn(null);
     }
   };
 
@@ -201,7 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({ title: "Not a Guest", description: "This account is already permanent." });
       return;
     }
-    setLoading(true);
+    setIsSigningIn('google');
     const provider = new GoogleAuthProvider();
     const guestFirebaseUser = auth.currentUser;
     const oldGuestProfile = currentUser; 
@@ -220,8 +225,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
 
       await writeUserProfileToDB(newUserProfile);
-      setCurrentUser(newUserProfile);
-
+      // The onAuthStateChanged listener will handle setting the new user state automatically
+      
       toast({
         title: "Account Linked!",
         description: "Your guest stats have been saved to your Google account.",
@@ -237,7 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast({ title: "Linking Failed", description: error.message, variant: "destructive" });
       }
     } finally {
-        setLoading(false);
+        setIsSigningIn(null);
     }
   };
 
@@ -287,7 +292,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       linkGoogleAccount, 
       logout, 
       deleteAccount, 
-      loading 
+      loading,
+      isSigningIn
   };
 
   return (

@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/auth-context';
-import { useState } from 'react';
 import { Loader2, AlertTriangle } from 'lucide-react';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -16,22 +15,7 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   );
 
 export default function LoginSelectionScreen() {
-  const { loginWithGoogle, loginAsGuest, loading } = useAuth();
-  const [isSigningIn, setIsSigningIn] = useState<null | 'google' | 'guest'>(null);
-
-  const handleGoogleSignIn = async () => {
-    if (loading || isSigningIn) return;
-    setIsSigningIn('google');
-    await loginWithGoogle();
-    setIsSigningIn(null);
-  };
-  
-  const handleGuestSignIn = async () => {
-    if (loading || isSigningIn) return;
-    setIsSigningIn('guest');
-    await loginAsGuest();
-    setIsSigningIn(null);
-  };
+  const { loginWithGoogle, loginAsGuest, isSigningIn } = useAuth();
   
   const firebaseConfigured = 
       process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
@@ -61,7 +45,7 @@ export default function LoginSelectionScreen() {
       );
   }
 
-  const anySignInInProgress = loading || !!isSigningIn;
+  const anySignInInProgress = !!isSigningIn;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-cover bg-center" style={{ backgroundImage: "url('/bgpc2.png')" }}>
@@ -71,7 +55,7 @@ export default function LoginSelectionScreen() {
           <h1 className="text-2xl font-bold text-white">Welcome to HousieHub</h1>
           
           <div className="space-y-3 pt-4">
-            <Button className="w-full bg-white text-black hover:bg-gray-200 shadow-sm" size="lg" onClick={handleGoogleSignIn} disabled={anySignInInProgress}>
+            <Button className="w-full bg-white text-black hover:bg-gray-200 shadow-sm" size="lg" onClick={loginWithGoogle} disabled={anySignInInProgress}>
               {isSigningIn === 'google' ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <GoogleIcon className="mr-2 h-5 w-5 fill-current" />}
               {isSigningIn === 'google' ? "Redirecting..." : "Sign in with Google"}
             </Button>
@@ -82,7 +66,7 @@ export default function LoginSelectionScreen() {
             <span className="absolute left-1/2 -translate-x-1/2 -top-0.5 bg-black/50 px-2 text-xs text-gray-300">OR</span>
           </div>
 
-          <Button variant="default" size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={handleGuestSignIn} disabled={anySignInInProgress}>
+          <Button variant="default" size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={loginAsGuest} disabled={anySignInInProgress}>
             {isSigningIn === 'guest' && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
             {isSigningIn === 'guest' ? "Entering..." : "Play as Guest"}
           </Button>
