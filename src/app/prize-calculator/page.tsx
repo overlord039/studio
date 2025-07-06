@@ -59,8 +59,8 @@ export default function PrizeCalculatorPage() {
   const form = useForm<PrizeCalculatorFormValues>({
     resolver: zodResolver(prizeCalculatorFormSchema),
     defaultValues: {
-      ticketPrice: undefined, // Changed from 10
-      ticketsSold: undefined, // Changed from 100
+      ticketPrice: '' as any,
+      ticketsSold: '' as any,
       percentages: {
         [PRIZE_TYPES.EARLY_5]: defaultPercentages[PRIZE_TYPES.EARLY_5],
         [PRIZE_TYPES.FIRST_LINE]: defaultPercentages[PRIZE_TYPES.FIRST_LINE],

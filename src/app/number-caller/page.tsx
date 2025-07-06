@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -98,68 +99,57 @@ export default function NumberCallerPage() {
   return (
     <div className="container mx-auto p-4 space-y-3 md:space-y-4 border rounded-xl shadow-lg">
       <Card className="shadow-xl bg-gradient-to-br from-primary via-purple-600 to-accent text-primary-foreground">
-        <CardHeader className="flex flex-row items-center gap-4 py-3 md:py-4 px-4 md:px-6">
-          <Speaker className="h-8 w-8 md:h-10 md:w-10 flex-shrink-0" />
-          <div className="flex flex-col">
-            <CardTitle className="text-2xl md:text-3xl font-extrabold tracking-tight">Housie Number Caller</CardTitle>
-            <CardDescription className="text-primary-foreground/80 text-sm md:text-base">
-              Manually or automatically call numbers.
-            </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between gap-4 py-3 md:py-4 px-4 md:px-6">
+           <div className="flex items-center gap-4">
+            <Speaker className="h-8 w-8 md:h-10 md:w-10 flex-shrink-0" />
+            <div className="flex flex-col">
+              <CardTitle className="text-xl md:text-2xl font-extrabold tracking-tight">Housie Number Caller</CardTitle>
+              <CardDescription className="text-primary-foreground/80 text-sm md:text-base">
+                Manually or automatically call numbers.
+              </CardDescription>
+            </div>
+          </div>
+           <div className="flex items-center space-x-2">
+              <Label htmlFor="auto-call-switch" className="font-semibold hidden sm:block">Auto-Call</Label>
+               <Switch
+                  id="auto-call-switch"
+                  checked={isAutoCalling}
+                  onCheckedChange={handleToggleAutoCall}
+                  aria-label="Toggle automatic number calling"
+              />
           </div>
         </CardHeader>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-        <Card className="md:col-span-1 shadow-lg">
-          <CardContent className="p-4">
-             <div className="flex items-center justify-between rounded-md border p-3">
-                <Label htmlFor="calling-mode-switch" className="flex flex-col cursor-pointer">
-                    <span className="font-semibold">Auto-Call</span>
-                    <span className="text-xs text-muted-foreground">
-                        {isAutoCalling ? "System is calling" : "Paused, call manually"}
-                    </span>
-                </Label>
-                <Switch
-                    id="calling-mode-switch"
-                    checked={isAutoCalling}
-                    onCheckedChange={handleToggleAutoCall}
-                    disabled={false}
-                    aria-label="Toggle automatic number calling"
-                />
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="md:col-span-2 space-y-3">
-           <CalledNumberDisplay 
+      <div className="space-y-3">
+          <CalledNumberDisplay 
             currentNumber={currentNumber}
             calledNumbers={calledNumbers}
             isMuted={isSfxMuted}
             onToggleMute={toggleSfxMute}
           />
-           {!isAutoCalling && (
-              <Button onClick={callNextNumber} disabled={availableNumbers.length === 0} className="w-full">
-                <Zap className="mr-2 h-4 w-4" /> Next Number
-              </Button>
-            )}
-          
-          <LiveNumberBoard 
-            calledNumbers={sortedCalledNumbers}
-            currentNumber={currentNumber}
-            isMinimized={false}
-            onToggleMinimize={() => {}}
-            remainingCount={NUMBERS_RANGE_MAX - sortedCalledNumbers.length}
-            calledCount={sortedCalledNumbers.length}
-          />
+          {!isAutoCalling && (
+            <Button onClick={callNextNumber} disabled={availableNumbers.length === 0} className="w-full">
+              <Zap className="mr-2 h-4 w-4" /> Next Number
+            </Button>
+          )}
+        
+        <LiveNumberBoard 
+          calledNumbers={sortedCalledNumbers}
+          currentNumber={currentNumber}
+          isMinimized={false}
+          onToggleMinimize={() => {}}
+          remainingCount={NUMBERS_RANGE_MAX - sortedCalledNumbers.length}
+          calledCount={sortedCalledNumbers.length}
+        />
 
-          <div className="flex w-full gap-2 pt-2">
-            <Button onClick={() => router.push('/')} variant="destructive" className="flex-1">
-                <Home className="mr-2 h-4 w-4" /> Back to Home
-            </Button>
-            <Button onClick={resetGame} variant="outline" className="flex-1">
-                <RotateCcw className="mr-2 h-4 w-4" /> Reset
-            </Button>
-          </div>
+        <div className="flex w-full gap-2 pt-2">
+          <Button onClick={() => router.push('/')} variant="destructive" className="flex-1">
+              <Home className="mr-2 h-4 w-4" /> Back to Home
+          </Button>
+          <Button onClick={resetGame} variant="outline" className="flex-1">
+              <RotateCcw className="mr-2 h-4 w-4" /> Reset
+          </Button>
         </div>
       </div>
     </div>
