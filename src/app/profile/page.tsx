@@ -104,12 +104,13 @@ export default function ProfilePage() {
                 <span className="sr-only">Close</span>
               </Button>
               <div className="bg-gradient-to-br from-primary/10 to-secondary/10 p-6 sm:p-8">
-                  <div className="flex flex-col items-center gap-4 text-center">
+                  <div className="flex flex-col items-center gap-2 text-center">
+                       <div className="text-xs text-muted-foreground font-mono bg-background/50 px-2 py-1 rounded-full mb-2">ID: {currentUser.uid}</div>
                        <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-background shadow-lg">
                           <AvatarImage src={`https://placehold.co/128x128.png?text=${avatarFallback}`} alt={displayName} data-ai-hint="profile avatar"/>
                           <AvatarFallback className="text-3xl sm:text-4xl">{avatarFallback}</AvatarFallback>
                       </Avatar>
-                      <div className="space-y-1">
+                      <div className="space-y-1 mt-2">
                           <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
                           {currentUser.isGuest && <Badge variant="secondary">Guest Account</Badge>}
                       </div>
@@ -148,7 +149,7 @@ export default function ProfilePage() {
                                         onChange={(e) => setEmailForLink(e.target.value)}
                                         disabled={!!isSigningIn || linkSent}
                                         required
-                                        className="bg-background/50 border-input pl-9 text-sm h-10"
+                                        className="bg-background/50 border-input pl-9 text-sm h-10 focus:ring-2 focus:ring-ring"
                                     />
                                 </div>
                                 <Button type="submit" variant="secondary" className="w-full" disabled={!!isSigningIn || !emailForLink || linkSent}>
@@ -163,10 +164,6 @@ export default function ProfilePage() {
                         <div>
                           <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">Account Details</h3>
                           <dl className="mt-2 divide-y divide-border">
-                            <div className="py-3 flex justify-between items-center text-sm font-medium">
-                              <dt className="text-muted-foreground flex items-center gap-2"><Fingerprint className="h-4 w-4" /> User ID</dt>
-                              <dd className="text-foreground break-all text-right">{currentUser.uid}</dd>
-                            </div>
                              <div className="py-3 flex justify-between items-center text-sm font-medium">
                               <dt className="text-muted-foreground flex items-center gap-2"><Mail className="h-4 w-4" /> Email</dt>
                               <dd className="text-foreground break-all text-right">{currentUser.email || 'No email provided'}</dd>
