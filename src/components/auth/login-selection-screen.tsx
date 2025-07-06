@@ -19,6 +19,7 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function LoginSelectionScreen() {
   const { loginWithGoogle, loginAsGuest, loginWithEmailLink, isSigningIn } = useAuth();
   const [email, setEmail] = useState('');
+  const [linkSent, setLinkSent] = useState(false);
   
   const firebaseConfigured = 
       process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
@@ -49,10 +50,13 @@ export default function LoginSelectionScreen() {
 
   const anySignInInProgress = !!isSigningIn;
 
-  const handleEmailSubmit = (e: FormEvent) => {
+  const handleEmailSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (email) {
-      loginWithEmailLink(email);
+    if (email && !linkSent) {
+      const success = await loginWithEmailLink(email);
+      if (success) {
+        setLinkSent(true);
+      }
     }
   };
 
@@ -78,14 +82,18 @@ export default function LoginSelectionScreen() {
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    disabled={anySignInInProgress}
+                    disabled={anySignInInProgress || linkSent}
                     required
                     className="bg-black/20 border-white/30 text-white placeholder:text-gray-400 focus:border-primary pl-10"
                 />
               </div>
-              <Button type="submit" variant="secondary" size="lg" className="w-full" disabled={anySignInInProgress || !email}>
+              <Button type="submit" variant="secondary" size="lg" className="w-full" disabled={anySignInInProgress || !email || linkSent}>
                   {isSigningIn === 'email' && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-                  {isSigningIn === 'email' ? 'Sending link...' : 'Sign in with Email Link'}
+                  {isSigningIn === 'email' 
+                    ? 'Sending link...' 
+                    : linkSent 
+                      ? 'Link Sent! Check your inbox.'
+                      : 'Sign in with Email Link'}
               </Button>
             </form>
 

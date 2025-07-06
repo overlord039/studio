@@ -38,7 +38,7 @@ interface AuthContextType {
   userStats: UserStats | null;
   updateUserStats: (newStats: Partial<UserStats>) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
-  loginWithEmailLink: (email: string) => Promise<void>;
+  loginWithEmailLink: (email: string) => Promise<boolean>;
   linkGoogleAccount: () => Promise<void>;
   loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
@@ -198,10 +198,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const loginWithEmailLink = async (email: string) => {
+  const loginWithEmailLink = async (email: string): Promise<boolean> => {
     if (!auth) {
       showFirebaseNotConfiguredToast();
-      return;
+      return false;
     }
     setIsSigningIn('email');
     const actionCodeSettings = {
@@ -216,9 +216,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: `A sign-in link has been sent to ${email}.`,
         duration: 7000,
       });
+      return true;
     } catch (error: any) {
       console.error("Error sending email link:", error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
+      return false;
     } finally {
       setIsSigningIn(null);
     }
