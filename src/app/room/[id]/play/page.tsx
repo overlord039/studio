@@ -55,8 +55,7 @@ export default function GameRoomPage() {
   const searchParams = useSearchParams();
   const playerTicketsParam = searchParams.get('playerTickets');
   const params = useParams();
-  const roomIdParam = params.id;
-  const roomId = Array.isArray(roomIdParam) ? roomIdParam[0] ?? '' : roomIdParam ?? '';
+  const roomId = Array.isArray(params.id) ? params.id[0] ?? '' : params.id ?? '';
   const { toast } = useToast();
   const { currentUser, loading: authLoading } = useAuth();
   const { isSfxMuted, toggleSfxMute } = useSound();
@@ -159,8 +158,10 @@ export default function GameRoomPage() {
                            })
                           .join(', ');
                       
-                      const message = `🔔 ${claimantNames} claimed ${prize}!`;
-                      setGameMessage(message);
+                      toast({
+                        title: "Game Update!",
+                        description: `🔔 ${claimantNames} claimed ${prize}!`
+                      });
                       
                       break; 
                   }
@@ -178,7 +179,7 @@ export default function GameRoomPage() {
         const numTickets = playerTicketsParam ? parseInt(playerTicketsParam, 10) : 0;
         if (numTickets === 0 && data.isGameStarted && !data.isGameOver) {
           if (!roomDataRef.current || !roomDataRef.current.isGameOver) { 
-            setGameMessage(prev => prev && prev.includes("Game Over!") ? prev : "You are spectating. You don't have tickets in this game.");
+            toast({ title: 'Spectating', description: "You don't have any tickets for this game." });
           }
         }
         setMyTickets([]);
@@ -374,12 +375,6 @@ export default function GameRoomPage() {
       }
     } catch (err) {
       console.error(`Error claiming ${prizeType}:`, err);
-      setGameMessage(prev => {
-        if (roomDataRef.current && !roomDataRef.current.isGameOver) {
-            return (!prev || !prev.includes("Game Over!")) ? `Network error claiming ${prizeType}.` : prev;
-        }
-        return prev;
-      });
       toast({ title: "Network Error", description: `Could not claim ${prizeType}.`, variant: "destructive" });
     }
   };
@@ -788,29 +783,6 @@ export default function GameRoomPage() {
 
         <div className="lg:col-span-2">
           <div className="max-w-7xl mx-auto space-y-4">
-            {gameMessage && (
-              <Alert
-                variant={gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") || gameMessage.includes("Error") ? "destructive" : "default"}
-                className={cn(
-                  "pr-10",
-                  ((gameMessage.includes("claimed") || gameMessage.includes("won") || gameMessage.toLocaleLowerCase().includes("game over"))) && !gameMessage.includes("Bogey") && !gameMessage.includes("not valid") ? "bg-green-100 dark:bg-green-900 border-green-500" : ""
-                )}
-              >
-                {gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") || gameMessage.includes("Error") ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                <AlertTitle>{gameMessage.includes("Bogey") || gameMessage.includes("not valid") || gameMessage.includes("Failed") || gameMessage.includes("Error") ? "Update" : (gameMessage.includes("claimed") || gameMessage.includes("won") || gameMessage.toLocaleLowerCase().includes("game over") ? "Game Update!" : "Game Message")}</AlertTitle>
-                <AlertDescription>{gameMessage}</AlertDescription>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 h-6 w-6"
-                    onClick={() => setGameMessage(null)}
-                    aria-label="Close message"
-                  >
-                    <X className="h-4 w-4" />
-                </Button>
-              </Alert>
-            )}
-
             {myTickets.length > 0 && !roomData.isGameOver && (
               <div className="flex flex-wrap gap-2 justify-center">
                 {prizesForFormat.map((prizeType, prizeIdx) => {
