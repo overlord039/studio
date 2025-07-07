@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -66,7 +65,6 @@ export default function GameRoomPage() {
 
   const [myTickets, setMyTickets] = useState<HousieTicketGrid[]>([]);
   const [markedNumbers, setMarkedNumbers] = useState<Set<string>>(new Set());
-  const [gameMessage, setGameMessage] = useState<string | null>(null);
   const [isCallingNextNumber, setIsCallingNextNumber] = useState(false);
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -80,16 +78,6 @@ export default function GameRoomPage() {
   useEffect(() => {
     roomDataRef.current = roomData;
   }, [roomData]);
-
-  useEffect(() => {
-    if (gameMessage) {
-      const timer = setTimeout(() => {
-        setGameMessage(null);
-      }, 3000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [gameMessage]);
 
   useEffect(() => {
     if (roomData?.isGameOver && !gameOverSoundPlayedRef.current) {
@@ -181,18 +169,6 @@ export default function GameRoomPage() {
           }
         }
         setMyTickets([]);
-      }
-
-      if (data.isGameOver) {
-        const fhClaim = data.prizeStatus[PRIZE_TYPES.FULL_HOUSE];
-        let gameOverMsg = "🎉 Game Over!";
-        if (fhClaim && fhClaim.claimedBy.length > 0) {
-          const winnerNames = fhClaim.claimedBy.map(c => c.name).join(' & ');
-          gameOverMsg = `🎉 ${winnerNames} won Full House! Game Over!`;
-        } else if (data.calledNumbers.length === NUMBERS_RANGE_MAX) {
-          gameOverMsg = "All numbers called. No Full House winner.";
-        }
-        setGameMessage(gameOverMsg);
       }
 
     } catch (err) {
@@ -551,7 +527,6 @@ export default function GameRoomPage() {
             <CardTitle className="text-4xl font-bold flex items-center justify-center">
               <PartyPopper className="mr-3 h-10 w-10 text-primary" /> Game Over!
             </CardTitle>
-            {gameMessage && <p className="text-lg mt-2 whitespace-pre-line">{gameMessage}</p>}
           </CardHeader>
           <CardContent className="space-y-4">
              {currentUserWinnings > 0 && (
