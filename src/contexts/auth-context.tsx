@@ -187,7 +187,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             userDocUnsubscribe = onSnapshot(userDocRef, async (docSnap) => {
                 if (docSnap.exists()) {
-                    const newUser = docSnap.data() as User;
+                    const firestoreData = docSnap.data();
+                    // Create a plain JS object from Firestore data to ensure consistent shape and types
+                    const newUser: User = {
+                        uid: firestoreData.uid,
+                        displayName: firestoreData.displayName,
+                        email: firestoreData.email,
+                        isGuest: firestoreData.isGuest,
+                        // Convert Firestore Timestamp to ISO string for reliable comparison
+                        createdAt: firestoreData.createdAt?.toDate ? firestoreData.createdAt.toDate().toISOString() : firestoreData.createdAt,
+                        // Ensure stats object is always present to prevent comparison errors
+                        stats: firestoreData.stats || createDefaultStats(),
+                    };
+
                     setCurrentUser(prevUser => {
                         if (areUsersEqual(prevUser, newUser)) {
                             return prevUser;
