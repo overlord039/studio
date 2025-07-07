@@ -1,9 +1,11 @@
+
 "use client";
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import React, { useState, useEffect } from 'react';
 
 interface CalledNumberDisplayProps {
   currentNumber: number | null;
@@ -13,7 +15,17 @@ interface CalledNumberDisplayProps {
 }
 
 export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMuted, onToggleMute }: CalledNumberDisplayProps) {
-    // Get the last 3 numbers from the list, *excluding* the current one.
+  const [animationKey, setAnimationKey] = useState(0);
+
+  // This effect runs whenever a new number is called.
+  // By changing the key, we force React to re-render the animated elements, thus re-triggering the animation.
+  useEffect(() => {
+    if (currentNumber !== null) {
+      setAnimationKey(key => key + 1);
+    }
+  }, [currentNumber]);
+
+  // Get the last 3 numbers from the list, *excluding* the current one.
   const recentThree = calledNumbers.filter(n => n !== currentNumber).slice(-3).reverse();
   
   // Pad for consistent layout
@@ -23,7 +35,7 @@ export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMu
   }
 
   return (
-    <Card className="shadow-lg bg-primary text-primary-foreground">
+    <Card className="shadow-lg bg-primary text-primary-foreground overflow-hidden">
       <CardContent className="p-4 flex items-end justify-center gap-6">
         {/* Main Number Section */}
         <div className="flex flex-col items-center text-center">
@@ -38,25 +50,21 @@ export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMu
             >
               {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
             </Button>
-            {currentNumber !== null ? (
-                <div className="flex items-center justify-center size-20 bg-card text-card-foreground rounded-full border-4 border-primary-foreground/50 shadow-lg">
-                    <span className="text-4xl font-extrabold">{currentNumber}</span>
-                </div>
-            ) : (
-                <div className="flex items-center justify-center size-20 bg-card/50 text-card-foreground/70 rounded-full border-4 border-dashed border-primary-foreground/20">
-                    <span className="text-4xl font-bold">-</span>
-                </div>
-            )}
+            {/* Animate the main number */}
+            <div key={`current-${animationKey}`} className={cn("flex items-center justify-center size-20 rounded-full border-4 shadow-lg", currentNumber !== null ? "bg-card text-card-foreground border-primary-foreground/50 animate-scale-in-pop" : "bg-card/50 text-card-foreground/70 border-dashed border-primary-foreground/20")}>
+              <span className="text-4xl font-extrabold">{currentNumber ?? '-'}</span>
+            </div>
           </div>
         </div>
 
         {/* Recent Numbers Section */}
         <div className="flex flex-col items-center">
           <p className="text-xs uppercase tracking-wider mb-2">Recent</p>
-          <div className="flex items-end gap-2">
+          {/* Animate the recent numbers container */}
+          <div key={`recent-${animationKey}`} className="flex items-end gap-2 animate-slide-in-recent">
             {displayNumbers.map((num, index) => (
               <div
-                key={num !== null ? `recent-${num}` : `empty-${index}`}
+                key={num !== null ? `recent-${num}-${index}` : `empty-${index}`}
                 className={cn(
                   "flex size-10 items-center justify-center rounded-full border-2 text-base font-bold",
                   num !== null ? "bg-card text-card-foreground opacity-80 border-primary" : "border-dashed bg-muted/50 border-primary-foreground/30",
