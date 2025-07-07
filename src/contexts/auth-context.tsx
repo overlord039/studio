@@ -70,7 +70,7 @@ const writeUserProfileToDB = async (appUser: User): Promise<void> => {
     await setDoc(userDocRef, appUser, { merge: true });
 };
 
-// Helper to deeply compare two user objects to prevent unnecessary re-renders
+// A more robust comparison function to prevent infinite loops
 function areUsersEqual(a: User | null, b: User | null): boolean {
   if (!a || !b) return a === b;
 
@@ -80,7 +80,7 @@ function areUsersEqual(a: User | null, b: User | null): boolean {
     a.displayName !== b.displayName ||
     a.email !== b.email ||
     a.isGuest !== b.isGuest ||
-    a.createdAt !== b.createdAt // Relies on createdAt being a consistent string
+    a.createdAt !== b.createdAt
   ) {
     return false;
   }
@@ -88,31 +88,23 @@ function areUsersEqual(a: User | null, b: User | null): boolean {
   // Compare stats object
   const statsA = a.stats;
   const statsB = b.stats;
-  if (!statsA && !statsB) return true; // Both are null/undefined
-  if (!statsA || !statsB) return false; // One is null/undefined, the other isn't
+  if (!statsA && !statsB) return true;
+  if (!statsA || !statsB) return false;
 
   if (statsA.matchesPlayed !== statsB.matchesPlayed) return false;
 
   const prizesA = statsA.prizesWon;
   const prizesB = b.stats.prizesWon;
-  if (!prizesA && !prizesB) return true; // Both are null/undefined
-  if (!prizesA || !prizesB) return false; // One is null/undefined
+  if (!prizesA && !prizesB) return true;
+  if (!prizesA || !prizesB) return false;
 
-  // Compare prize objects by iterating over a defined set of keys to avoid order issues
   const allPrizeTypes = Object.values(PRIZE_TYPES);
-
-  // Ensure both prize objects have the same set of keys as the canonical list
-  if (Object.keys(prizesA).length !== allPrizeTypes.length || Object.keys(prizesB).length !== allPrizeTypes.length) {
-    return false;
-  }
-
   for (const prizeType of allPrizeTypes) {
     if ((prizesA[prizeType] || 0) !== (prizesB[prizeType] || 0)) {
       return false;
     }
   }
 
-  // If all checks pass, the objects are considered equal
   return true;
 }
 
@@ -514,5 +506,3 @@ export function useAuth() {
   }
   return context;
 }
-
-    

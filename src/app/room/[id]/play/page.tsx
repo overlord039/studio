@@ -223,7 +223,7 @@ export default function GameRoomPage() {
         }
 
         const myPlayerInfo = roomData.players.find(p => p.id === currentUser.uid);
-        if (!myPlayerInfo) return; // Not a player in this room
+        if (!myPlayerInfo) return;
 
         const playerDocRef = doc(db, "users", currentUser.uid);
         const statsUpdate: { [key: string]: any } = {
@@ -240,7 +240,7 @@ export default function GameRoomPage() {
         try {
             await updateDoc(playerDocRef, statsUpdate);
             console.log(`Successfully updated stats for ${currentUser.displayName}.`);
-            setStatsUpdated(true); // Mark as updated to prevent re-runs
+            setStatsUpdated(true);
         } catch (error) {
             console.error("Failed to update stats:", error);
             toast({
@@ -254,7 +254,7 @@ export default function GameRoomPage() {
     if (roomData?.isGameOver && !statsUpdated) {
         updateMyStats();
     }
-}, [roomData, currentUser, statsUpdated, toast]);
+  }, [roomData, currentUser, statsUpdated, toast]);
 
   useEffect(() => {
     if (currentUser && roomId && !authLoading) {

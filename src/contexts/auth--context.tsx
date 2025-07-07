@@ -1,500 +1,848 @@
-
 "use client";
 
-import type { ReactNode } from 'react';
-import React, { useState, useEffect, useContext, createContext, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import type { User as FirebaseUser } from 'firebase/auth';
-import { 
-  signOut, 
-  onAuthStateChanged, 
-  signInAnonymously, 
-  deleteUser,
-  GoogleAuthProvider,
-  signInWithPopup,
-  linkWithPopup,
-  sendSignInLinkToEmail,
-  isSignInWithEmailLink,
-  signInWithEmailLink,
-  EmailAuthProvider,
-  linkWithCredential,
-} from 'firebase/auth';
-import { doc, getDoc, setDoc, deleteDoc, updateDoc, onSnapshot, type Unsubscribe, increment } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase/config';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import type { User, UserStats, PrizeType } from '@/types';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import HousieTicket from '@/components/game/housie-ticket';
+import CalledNumberDisplay from '@/components/game/called-number-display';
+import type { HousieTicketGrid, PrizeType, Room, GameSettings, CallingMode, PrizeClaimant } from '@/types';
 import { PRIZE_TYPES } from '@/types';
-import LoginSelectionScreen from '@/components/auth/login-selection-screen';
-import { Loader2 } from 'lucide-react';
-import { ToastAction } from '@/components/ui/toast';
+import { announceCalledNumber } from '@/ai/flows/announce-called-number';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause, Menu } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/auth-context';
+import { useSound } from '@/contexts/sound-context';
+import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, NUMBERS_RANGE_MAX } from '@/lib/constants';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import LiveNumberBoard from '@/components/game/live-number-board';
+import { playSound } from '@/lib/sounds';
+import { db } from '@/lib/firebase/config';
+import { doc, increment, updateDoc } from 'firebase/firestore';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
-export interface User {
-  uid: string;
-  displayName: string | null;
-  email: string | null;
-  isGuest: boolean;
-  createdAt: string;
-  stats: UserStats;
-}
 
-interface AuthContextType {
-  currentUser: User | null;
-  userStats: UserStats | null;
-  updateUserStats: (newStats: Partial<UserStats>) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  loginWithEmailLink: (email: string) => Promise<boolean>;
-  linkGoogleAccount: () => Promise<void>;
-  linkWithEmailLink: (email: string) => Promise<boolean>;
-  loginAsGuest: () => Promise<void>;
-  logout: () => Promise<void>;
-  deleteAccount: () => Promise<void>;
-  loading: boolean;
-  isSigningIn: null | 'guest' | 'google' | 'email';
-}
+const MemoizedHousieTicket = React.memo(HousieTicket);
+const MemoizedLiveNumberBoard = React.memo(LiveNumberBoard);
+const MemoizedCalledNumberDisplay = React.memo(CalledNumberDisplay);
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const createDefaultStats = (): UserStats => {
-    return {
-        matchesPlayed: 0,
-        prizesWon: Object.values(PRIZE_TYPES).reduce((acc, prize) => {
-            acc[prize] = 0;
-            return acc;
-        }, {} as Record<PrizeType, number>),
-    };
-};
-
-const writeUserProfileToDB = async (appUser: User): Promise<void> => {
-    if (!db || appUser.isGuest) return; 
-    const userDocRef = doc(db, "users", appUser.uid);
-    await setDoc(userDocRef, appUser, { merge: true });
-};
-
-// Helper to deeply compare two user objects to prevent unnecessary re-renders
-function areUsersEqual(userA: User | null, userB: User | null): boolean {
-    if (!userA || !userB) return userA === userB;
-
-    // Fast checks for primitive values
-    if (
-        userA.uid !== userB.uid ||
-        userA.displayName !== userB.displayName ||
-        userA.email !== userB.email ||
-        userA.isGuest !== userB.isGuest ||
-        userA.createdAt !== userB.createdAt
-    ) {
-        return false;
-    }
-
-    // Compare stats object
-    const statsA = userA.stats;
-    const statsB = userB.stats;
-    if (statsA?.matchesPlayed !== statsB?.matchesPlayed) return false;
-    
-    const prizesA = statsA?.prizesWon;
-    const prizesB = statsB?.prizesWon;
-    if (!prizesA || !prizesB) return prizesA === prizesB;
-
-    const prizeKeys = Object.keys(prizesA);
-    if (prizeKeys.length !== Object.keys(prizesB).length) return false;
-
-    for (const key of prizeKeys) {
-        if (prizesA[key as PrizeType] !== prizesB[key as PrizeType]) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isSigningIn, setIsSigningIn] = useState<null | 'guest' | 'google' | 'email'>(null);
-  const { toast } = useToast();
+export default function GameRoomPage() {
   const router = useRouter();
-  const firebaseConfigured = !!auth && !!db;
+  const searchParams = useSearchParams();
+  const playerTicketsParam = searchParams.get('playerTickets');
+  const params = useParams();
+  const roomId = Array.isArray(params.id) ? params.id[0] ?? '' : params.id ?? '';
+  const { toast } = useToast();
+  const { currentUser, loading: authLoading } = useAuth();
+  const { isSfxMuted, toggleSfxMute } = useSound();
+
+  const [roomData, setRoomData] = useState<Room | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [myTickets, setMyTickets] = useState<HousieTicketGrid[]>([]);
+  const [markedNumbers, setMarkedNumbers] = useState<Set<string>>(new Set());
+  const [gameMessage, setGameMessage] = useState<string | null>(null);
+  const [isCallingNextNumber, setIsCallingNextNumber] = useState(false);
+  const [isUpdatingMode, setIsUpdatingMode] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [statsUpdated, setStatsUpdated] = useState(false);
 
-  const handleEmailLinkSignIn = useCallback(async () => {
-      if (auth && isSignInWithEmailLink(auth, window.location.href)) {
-        let email = window.localStorage.getItem('emailForSignIn');
-        if (!email) {
-          toast({
-            title: "Sign-in link error",
-            description: "Please use the sign-in link on the same device and browser you used to request it.",
-            variant: "destructive",
-            duration: 7000,
-          });
-          window.history.replaceState({}, document.title, window.location.pathname);
-          return;
-        }
-
-        setIsSigningIn('email');
-        try {
-          if (auth.currentUser && auth.currentUser.isAnonymous) {
-            const guestUser = auth.currentUser;
-            const credential = EmailAuthProvider.credentialWithLink(email, window.location.href);
-            await linkWithCredential(guestUser, credential);
-            const userDocRef = doc(db, "users", guestUser.uid);
-            await updateDoc(userDocRef, {
-                email: email,
-                isGuest: false,
-                displayName: guestUser.displayName || email.split('@')[0],
-            });
-            toast({ title: "Account Linked!", description: "Your guest progress is now saved to your email." });
-          } else {
-            await signInWithEmailLink(auth, email, window.location.href);
-          }
-          window.localStorage.removeItem('emailForSignIn');
-          window.history.replaceState({}, document.title, window.location.pathname);
-          router.push('/');
-        } catch (error: any) {
-          toast({ title: "Link/Sign-in Failed", description: error.message, variant: "destructive" });
-        } finally {
-          setIsSigningIn(null);
-        }
-      }
-    }, [router, toast]);
+  const previousCurrentNumberRef = useRef<number | null>(null);
+  const roomDataRef = useRef(roomData);
+  const previousPrizeStatusRef = useRef<Room['prizeStatus'] | null>(null);
+  const gameOverSoundPlayedRef = useRef(false);
 
   useEffect(() => {
-    if (!firebaseConfigured) {
-        setLoading(false);
+    roomDataRef.current = roomData;
+  }, [roomData]);
+
+  useEffect(() => {
+    if (gameMessage) {
+      const timer = setTimeout(() => {
+        setGameMessage(null);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [gameMessage]);
+
+  useEffect(() => {
+    if (roomData?.isGameOver && !gameOverSoundPlayedRef.current) {
+      playSound('gameover.wav');
+      gameOverSoundPlayedRef.current = true;
+    }
+    if (roomData && !roomData.isGameOver) {
+        gameOverSoundPlayedRef.current = false;
+    }
+  }, [roomData?.isGameOver]);
+
+  const fetchGameDetails = useCallback(async (isInitialLoad = false) => {
+    if (!roomId || !currentUser?.uid) {
+      if (isInitialLoad) {
+        setError("Room ID or User not available for fetching game details.");
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    if (isInitialLoad) {
+      setIsLoading(true);
+      setError(null);
+    }
+
+    try {
+      const response = await fetch(`/api/rooms/${roomId}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: `Failed to parse error response. Status: ${response.status}` }));
+        if (response.status === 404) {
+          setError("Room not found. It might have expired or never existed.");
+          if (isInitialLoad) setRoomData(null);
+        } else {
+          setError(errorData.message || `Failed to fetch room details: ${response.statusText}`);
+          if (isInitialLoad) setRoomData(null);
+        }
+        if (isInitialLoad) setIsLoading(false);
         return;
+      }
+      const data: Room = await response.json();
+      
+      const oldPrizeStatus = previousPrizeStatusRef.current;
+      const newPrizeStatus = data.prizeStatus;
+
+      if (oldPrizeStatus && newPrizeStatus && !data.isGameOver) {
+          const prizes = Object.keys(newPrizeStatus) as PrizeType[];
+          for (const prize of prizes) {
+              const newClaim = newPrizeStatus[prize];
+              const oldClaim = oldPrizeStatus[prize];
+              
+              const newClaimants = newClaim?.claimedBy ?? [];
+              const oldClaimants = oldClaim?.claimedBy ?? [];
+
+              if (newClaimants.length > oldClaimants.length) {
+                  const oldClaimantIds = new Set(oldClaimants.map(c => c.id));
+                  const newlyAddedClaimants = newClaimants.filter(c => !oldClaimantIds.has(c.id));
+
+                  if (newlyAddedClaimants.length > 0) {
+                      playSound('win.wav');
+                      const claimantNames = newlyAddedClaimants
+                          .map(claimant => {
+                              if (claimant.id === currentUser?.uid) return "You";
+                              return claimant.name || claimant.id;
+                           })
+                          .join(', ');
+                      
+                      toast({
+                        title: "Game Update!",
+                        description: `🔔 ${claimantNames} claimed ${prize}!`
+                      });
+                      
+                      break; 
+                  }
+              }
+          }
+      }
+      
+      setRoomData(data);
+      previousPrizeStatusRef.current = data.prizeStatus;
+
+      const me = data.players.find(p => p.id === currentUser.uid);
+      if (me && me.tickets) {
+        setMyTickets(me.tickets);
+      } else if (isInitialLoad && (!me || !me.tickets || me.tickets.length === 0)) {
+        const numTickets = playerTicketsParam ? parseInt(playerTicketsParam, 10) : 0;
+        if (numTickets === 0 && data.isGameStarted && !data.isGameOver) {
+          if (!roomDataRef.current || !roomDataRef.current.isGameOver) { 
+            toast({ title: 'Spectating', description: "You don't have any tickets for this game." });
+          }
+        }
+        setMyTickets([]);
+      }
+
+      if (data.isGameOver) {
+        const fhClaim = data.prizeStatus[PRIZE_TYPES.FULL_HOUSE];
+        let gameOverMsg = "🎉 Game Over!";
+        if (fhClaim && fhClaim.claimedBy.length > 0) {
+          const winnerNames = fhClaim.claimedBy.map(c => c.name).join(' & ');
+          gameOverMsg = `🎉 ${winnerNames} won Full House! Game Over!`;
+        } else if (data.calledNumbers.length === NUMBERS_RANGE_MAX) {
+          gameOverMsg = "All numbers called. No Full House winner.";
+        }
+        setGameMessage(gameOverMsg);
+      }
+
+    } catch (err) {
+      console.error("Error fetching game details:", err);
+      if (isInitialLoad || !roomDataRef.current) {
+        setError(`Failed to fetch game details: ${(err as Error).message}`);
+        if (isInitialLoad) setRoomData(null);
+      } else if (roomDataRef.current && !roomDataRef.current.isGameOver) {
+        toast({
+          title: "Game Update Failed",
+          description: "Could not fetch latest game details. Retrying...",
+          variant: "destructive",
+          duration: 2000,
+        });
+      }
+    } finally {
+      if (isInitialLoad) {
+        setIsLoading(false);
+      }
+    }
+  }, [roomId, currentUser, playerTicketsParam, toast]);
+
+  // Effect to update player stats when game is over
+  useEffect(() => {
+    const updateMyStats = async () => {
+        if (!roomData || !currentUser || currentUser.isGuest || !db || !roomData.isGameOver) {
+            return;
+        }
+
+        const myPlayerInfo = roomData.players.find(p => p.id === currentUser.uid);
+        if (!myPlayerInfo) return;
+
+        const playerDocRef = doc(db, "users", currentUser.uid);
+        const statsUpdate: { [key: string]: any } = {
+            'stats.matchesPlayed': increment(1)
+        };
+
+        for (const prizeType in roomData.prizeStatus) {
+            const prizeInfo = roomData.prizeStatus[prizeType as PrizeType];
+            if (prizeInfo && prizeInfo.claimedBy.some(c => c.id === currentUser.uid)) {
+                statsUpdate[`stats.prizesWon.${prizeType}`] = increment(1);
+            }
+        }
+
+        try {
+            await updateDoc(playerDocRef, statsUpdate);
+            console.log(`Successfully updated stats for ${currentUser.displayName}.`);
+            setStatsUpdated(true);
+        } catch (error) {
+            console.error("Failed to update stats:", error);
+            toast({
+                title: "Stats Sync Error",
+                description: "Could not save your game stats. They will be out of sync.",
+                variant: "destructive"
+            });
+        }
+    };
+
+    if (roomData?.isGameOver && !statsUpdated) {
+        updateMyStats();
+    }
+  }, [roomData, currentUser, statsUpdated, toast]);
+
+  useEffect(() => {
+    if (currentUser && roomId && !authLoading) {
+      fetchGameDetails(true);
+    } else if (!authLoading && !currentUser) {
+      setIsLoading(false);
+      setError("Please log in to play or spectate.");
+    }
+  }, [currentUser, roomId, authLoading, fetchGameDetails]);
+
+  // Polling for game updates
+  useEffect(() => {
+    if (!roomId || !currentUser || roomData?.isGameOver || isLoading) return;
+    
+    const isManualMode = roomData?.settings.callingMode === 'manual';
+    const isHost = roomData?.host.id === currentUser.uid;
+    const pollInterval = isManualMode && !isHost ? 7000 : 3000;
+
+    const intervalId = setInterval(() => {
+      if (!document.hidden) { 
+        fetchGameDetails(false);
+      }
+    }, pollInterval); 
+    return () => clearInterval(intervalId);
+  }, [roomId, currentUser, roomData?.isGameOver, roomData?.settings.callingMode, roomData?.host.id, isLoading, fetchGameDetails]);
+
+
+  // Announce new numbers
+  useEffect(() => {
+    if (roomData && roomData.currentNumber !== null && roomData.currentNumber !== previousCurrentNumberRef.current) {
+      if (!isSfxMuted && typeof window !== 'undefined' && window.speechSynthesis) {
+        const utterance = new SpeechSynthesisUtterance(String(roomData.currentNumber));
+        window.speechSynthesis.speak(utterance);
+        
+        announceCalledNumber({ number: roomData.currentNumber })
+          .then(() => console.log(`AI flow 'announceCalledNumber' invoked for: ${roomData.currentNumber}`))
+          .catch(err => console.error("Error invoking announceCalledNumber AI flow:", err));
+      }
+      previousCurrentNumberRef.current = roomData.currentNumber;
+    }
+  }, [roomData?.currentNumber, isSfxMuted]);
+
+
+  const handleNumberClick = (ticketIndex: number, numberValue: number, rowIndex: number, colIndex: number) => {
+    if (!roomData || roomData.isGameOver || myTickets.length === 0) return;
+    const key = `${ticketIndex}-${rowIndex}-${colIndex}`;
+
+    if (markedNumbers.has(key)) {
+      return; 
+    }
+
+    if (!roomData.calledNumbers.includes(numberValue)) {
+      return;
+    }
+    playSound('marking number.wav');
+    setMarkedNumbers(prev => {
+      const newMarked = new Set(prev);
+      newMarked.add(key);
+      return newMarked;
+    });
+  };
+
+  const handleClaimPrize = async (prizeType: PrizeType) => {
+    if (!roomData || !currentUser) {
+      toast({ title: "Cannot Claim", description: "Room data missing or not logged in.", variant: "destructive" });
+      return;
     }
     
-    if (!auth?.currentUser) {
-      handleEmailLinkSignIn();
-    }
+    const ticketIndex = 0;
 
-    let userDocUnsubscribe: Unsubscribe | undefined;
-
-    const authUnsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        if (userDocUnsubscribe) {
-            userDocUnsubscribe();
-        }
-        
-        setStatsUpdated(false);
-
-        if (firebaseUser) {
-            const userDocRef = doc(db, "users", firebaseUser.uid);
-            
-            userDocUnsubscribe = onSnapshot(userDocRef, async (docSnap) => {
-                if (docSnap.exists()) {
-                    const newUser = docSnap.data() as User;
-                    setCurrentUser(prevUser => {
-                        if (areUsersEqual(prevUser, newUser)) {
-                            return prevUser;
-                        }
-                        return newUser;
-                    });
-                } else {
-                    const newUserProfile: User = {
-                        uid: firebaseUser.uid,
-                        displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || `User#${firebaseUser.uid.substring(0,5)}`,
-                        email: firebaseUser.email,
-                        isGuest: firebaseUser.isAnonymous,
-                        createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-                        stats: createDefaultStats(),
-                    };
-                    if (!newUserProfile.isGuest) {
-                      await writeUserProfileToDB(newUserProfile);
-                    }
-                    setCurrentUser(newUserProfile);
-                }
-                setLoading(false);
-            }, (error) => {
-                console.error("Error listening to user document:", error);
-                toast({ title: "Error", description: "Could not load user profile.", variant: "destructive" });
-                setLoading(false);
-            });
-
-        } else {
-            setCurrentUser(null);
-            setLoading(false);
-        }
-    });
-
-    return () => {
-        authUnsubscribe();
-        if (userDocUnsubscribe) {
-            userDocUnsubscribe();
-        }
-    };
-  }, [firebaseConfigured, toast, handleEmailLinkSignIn]);
-
-  const updateUserStats = async (newStats: Partial<UserStats>) => {
-    if (!currentUser || !db || currentUser.isGuest) return;
-    const userDocRef = doc(db, "users", currentUser.uid);
-    await updateDoc(userDocRef, { stats: newStats });
-    setCurrentUser(prevUser => prevUser ? { ...prevUser, stats: { ...prevUser.stats, ...newStats } } : null);
-  };
-  
-  const showFirebaseNotConfiguredToast = () => {
-    toast({
-        title: "Firebase Not Configured",
-        description: "Please add your Firebase credentials to the .env file to enable this feature.",
-        variant: "destructive"
-    });
-  }
-
-  const loginWithGoogle = async () => {
-    if (!auth || !db) {
-      showFirebaseNotConfiguredToast();
-      return;
-    }
-    setIsSigningIn('google');
     try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      const result = await signInWithPopup(auth, provider);
-      
-      const firebaseUser = result.user;
-      const userDocRef = doc(db, "users", firebaseUser.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      let userProfile: User;
-      if (userDoc.exists()) {
-        userProfile = userDoc.data() as User;
-      } else {
-        userProfile = {
-          uid: firebaseUser.uid,
-          displayName: firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`,
-          email: firebaseUser.email,
-          isGuest: false,
-          createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-          stats: createDefaultStats(),
-        };
-        await writeUserProfileToDB(userProfile);
-      }
-      setCurrentUser(userProfile);
-      toast({ title: "Signed In Successfully", description: `Welcome back, ${userProfile.displayName}!` });
-      router.push('/');
-    } catch (error: any) {
-      if (error.code === 'auth/account-exists-with-different-credential') {
-        toast({ title: "Account Exists", description: "An account with this email already exists. Please sign in with the original method.", variant: "destructive" });
-      } else if (error.code !== 'auth/popup-closed-by-user') {
-        console.error("Google Sign-In Error:", error);
-        toast({ title: "Google Sign-in Failed", description: error.message, variant: "destructive" });
-      }
-    } finally {
-      setIsSigningIn(null);
-    }
-  };
-
-  const loginWithEmailLink = async (email: string): Promise<boolean> => {
-    if (!auth) {
-      showFirebaseNotConfiguredToast();
-      return false;
-    }
-    setIsSigningIn('email');
-    const actionCodeSettings = {
-        url: window.location.origin,
-        handleCodeInApp: true,
-    };
-    try {
-      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-      window.localStorage.setItem('emailForSignIn', email);
-      toast({
-        title: "Check your email",
-        description: `A sign-in link has been sent to ${email}.`,
-        duration: 7000,
+      const response = await fetch(`/api/rooms/${roomId}/claim-prize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId: currentUser.uid, prizeType, ticketIndex }),
       });
-      return true;
-    } catch (error: any) {
-      console.error("Error sending email link:", error);
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-      return false;
-    } finally {
-      setIsSigningIn(null);
-    }
-  };
 
-  const linkWithEmailLink = async (email: string): Promise<boolean> => {
-    if (!auth?.currentUser?.isAnonymous) {
-      toast({ title: "Error", description: "Only guest accounts can be linked.", variant: "destructive" });
-      return false;
-    }
-    setIsSigningIn('email');
-    const actionCodeSettings = {
-        url: window.location.href,
-        handleCodeInApp: true,
-    };
-    try {
-      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-      window.localStorage.setItem('emailForSignIn', email);
-      toast({
-        title: "Check your email",
-        description: `A verification link has been sent to ${email}.`,
-        duration: 7000,
-      });
-      return true;
-    } catch (error: any) {
-      console.error("Error sending email link for linking:", error);
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-      return false;
-    } finally {
-      setIsSigningIn(null);
-    }
-  };
+      const result = await response.json();
 
-  const linkGoogleAccount = async () => {
-    if (!auth?.currentUser?.isAnonymous || !db) {
-      toast({ title: "Error", description: "You must be signed in as a guest to link an account.", variant: "destructive" });
-      return;
-    }
-    const guestUser = auth.currentUser;
-    setIsSigningIn('google');
-    try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      const result = await linkWithPopup(guestUser, provider);
-      
-      const firebaseUser = result.user;
-      const guestStats = currentUser?.stats || createDefaultStats();
-      
-      const newUserProfile: User = {
-        uid: firebaseUser.uid,
-        displayName: firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`,
-        email: firebaseUser.email,
-        isGuest: false,
-        createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-        stats: guestStats,
-      };
+      if (response.ok) {
+        const updatedRoom: Room = result;
+        setRoomData(updatedRoom);
+        previousPrizeStatusRef.current = updatedRoom.prizeStatus;
 
-      await writeUserProfileToDB(newUserProfile);
-      setCurrentUser(newUserProfile);
+        const claimStatus = updatedRoom.prizeStatus[prizeType];
 
-      toast({ title: "Account Linked!", description: "Your guest progress has been saved to your Google account." });
-      router.push('/');
+        let toastMessageAlert = `Your claim for ${prizeType} has been submitted for validation.`;
+        if (claimStatus?.claimedBy.some(c => c.id === currentUser.uid)) {
+            toastMessageAlert = `You successfully claimed ${prizeType}!`;
+        }
 
-    } catch (error: any) {
-      if (error.code === 'auth/credential-already-in-use') {
-        const handleSwitchAccount = async () => {
-            await logout();
-            await loginWithGoogle();
-        };
+        if (updatedRoom.isGameOver) {
+          toastMessageAlert = `You claimed Full House! Game Over.`
+        }
 
         toast({
-            title: "Account Already Exists",
-            description: "That Google account is already in use. Switch to that account? Your guest progress will be lost.",
-            variant: "destructive",
-            duration: 10000,
-            action: (
-                <ToastAction altText="Switch to existing account" onClick={handleSwitchAccount}>
-                    Switch
-                </ToastAction>
-            ),
+            title: "Claim Processed!",
+            description: toastMessageAlert,
+            className: (toastMessageAlert.includes("Bogey") || toastMessageAlert.includes("Invalid") || toastMessageAlert.includes("Failed")) ? "bg-destructive" : "bg-green-500 text-white"
         });
-      } else if (error.code !== 'auth/popup-closed-by-user') {
-        console.error("Google Account Linking Error:", error);
-        toast({ title: "Link Failed", description: error.message, variant: "destructive" });
+      } else {
+        const errorMessage = result.message || `Failed to claim ${prizeType}.`;
+        if (errorMessage.toLowerCase().includes('bogey')) {
+          playSound('error.wav');
+        }
+        toast({
+            title: `Claim for ${prizeType} Failed`,
+            description: errorMessage,
+            variant: "destructive"
+        });
       }
-    } finally {
-      setIsSigningIn(null);
+    } catch (err) {
+      console.error(`Error claiming ${prizeType}:`, err);
+      toast({ title: "Network Error", description: `Could not claim ${prizeType}.`, variant: "destructive" });
     }
   };
 
+  const handleCallNextNumber = async () => {
+    if (!currentUser || !roomData) return;
+    setIsCallingNextNumber(true);
+    try {
+      const response = await fetch(`/api/rooms/${roomId}/call-number`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hostId: currentUser.uid }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to call next number.');
+      }
+      setRoomData(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsCallingNextNumber(false);
+    }
+  };
 
-  const loginAsGuest = async () => {
-    if (!auth) {
-      showFirebaseNotConfiguredToast();
+  const handleToggleCallingMode = async () => {
+    if (!currentUser || !isCurrentUserHost || !roomData || roomData.isGameOver || roomData.settings.isPublic) return;
+
+    setIsUpdatingMode(true);
+    const newMode = roomData.settings.callingMode === 'auto' ? 'manual' : 'auto';
+
+    try {
+        const response = await fetch(`/api/rooms/${roomId}/update-calling-mode`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hostId: currentUser.uid, callingMode: newMode }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || `Failed to switch to ${newMode} mode.`);
+        }
+        setRoomData(data);
+        playSound('notification.wav');
+        toast({
+            title: "Mode Switched",
+            description: `Number calling is now ${newMode}.`,
+        });
+    } catch (error) {
+        toast({
+            title: "Error Switching Mode",
+            description: (error as Error).message,
+            variant: "destructive",
+        });
+    } finally {
+        setIsUpdatingMode(false);
+    }
+  };
+
+  const isCurrentUserHost = roomData?.host.id === currentUser?.uid;
+
+  const handlePlayAgain = async () => {
+    if (!currentUser) return;
+    
+    if (isCurrentUserHost) {
+      setIsResetting(true);
+      try {
+        const response = await fetch(`/api/rooms/${roomId}/reset`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hostId: currentUser.uid }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to reset the game.");
+        }
+        router.push(`/room/${roomId}/lobby`);
+        playSound('notification.wav');
+        toast({ title: "New Game Ready!", description: "The lobby has been reset for all players." });
+      } catch (err) {
+        console.error("Error resetting game:", err);
+        toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
+        setIsResetting(false);
+      }
+    } else {
+      router.push(`/room/${roomId}/lobby`);
+      playSound('notification.wav');
+      toast({ title: "Returning to Lobby", description: "Waiting for host to start a new game." });
+    }
+  };
+
+  const handleLeaveRoom = async () => {
+    if (!currentUser) {
+      router.push('/');
       return;
     }
-    setIsSigningIn('guest');
     try {
-        const result = await signInAnonymously(auth);
-        const firebaseUser = result.user;
-        const guestUser: User = {
-            uid: firebaseUser.uid,
-            displayName: `Guest#${firebaseUser.uid.substring(0, 5)}`,
-            email: null,
-            isGuest: true,
-            createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-            stats: createDefaultStats(),
-        };
-        setCurrentUser(guestUser);
-        router.push('/');
-    } catch (error: any) {
-        console.error("Guest Sign-In Error:", error);
-        toast({ title: "Guest Sign-in Failed", description: error.message, variant: "destructive" });
+      await fetch(`/api/rooms/${roomId}/leave`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId: currentUser.uid }),
+      });
+      playSound('notification.wav');
+      toast({ title: "You have left the room." });
+    } catch (err) {
+      console.error("Error leaving room:", err);
+      toast({ title: "Error", description: "Could not leave the room cleanly. Redirecting anyway.", variant: "destructive" });
     } finally {
-      setIsSigningIn(null);
+      router.push('/');
     }
   };
 
-  const logout = async () => {
-     if (!auth) {
-        showFirebaseNotConfiguredToast();
-        return;
-    }
-    await signOut(auth);
-    setCurrentUser(null);
-  };
+  if (isLoading || authLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="ml-4 text-xl">Loading Game...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
+        <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
+        <h2 className="text-2xl font-semibold mb-2">Error Loading Game</h2>
+        <p className="text-muted-foreground mb-6">{error}</p>
+        <Button onClick={() => router.push('/')} size="lg">Go to Homepage</Button>
+      </div>
+    );
+  }
+
+  if (!roomData || !currentUser) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
+        <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
+        <h2 className="text-2xl font-semibold mb-2">Room Data Unavailable</h2>
+        <p className="text-muted-foreground mb-6">Could not load room details. Please try again or ensure you are logged in.</p>
+        <Button onClick={() => router.push('/')} size="lg">Go to Homepage</Button>
+      </div>
+    );
+  }
+
+  const gameSettings: GameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
+  const currentPrizeFormat = gameSettings.prizeFormat;
+  const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
+  const prizeDistributionPercentages = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat] || {};
+
+  const totalTicketsInGame = roomData.players.reduce((sum, player) => sum + (player.tickets?.length || 0), 0);
+  const totalPrizePool = gameSettings.ticketPrice * totalTicketsInGame;
+  const ticketsText = (count: number) => count === 1 ? 'ticket' : 'tickets';
   
-  const deleteAccount = async () => {
-    if (!auth || !db || !auth.currentUser) {
-        toast({ title: "Error", description: "No user is currently signed in to delete.", variant: "destructive"});
-        return;
-    }
-    
-    const userToDelete = auth.currentUser;
 
-    try {
-      if (!userToDelete.isAnonymous) {
-        const userDocRef = doc(db, "users", userToDelete.uid);
-        await deleteDoc(userDocRef);
-      }
-      
-      await deleteUser(userToDelete);
-      
-      toast({ title: "Account Deleted", description: "Your account and all associated data have been permanently deleted." });
-      
-    } catch (error: any) {
-      if (error.code === 'auth/requires-recent-login') {
-        toast({ title: "Action Required", description: "For security, please sign in again before deleting your account.", variant: "destructive", duration: 5000 });
-      } else {
-        console.error("Error deleting account:", error);
-        toast({ title: "Deletion Error", description: error.message || "An unexpected error occurred.", variant: "destructive" });
-      }
-    }
-  };
+  if (roomData.isGameOver) {
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+    };
 
-  const value = { 
-      currentUser, 
-      userStats: currentUser?.stats || null, 
-      updateUserStats, 
-      loginWithGoogle,
-      loginWithEmailLink,
-      linkGoogleAccount, 
-      linkWithEmailLink,
-      loginAsGuest, 
-      logout, 
-      deleteAccount, 
-      loading,
-      isSigningIn
-  };
+    let currentUserWinnings = 0;
+    const currentUserPrizeNames: PrizeType[] = [];
+    if (currentUser) {
+        prizesForFormat.forEach(prize => {
+            const claimInfo = roomData.prizeStatus[prize];
+            if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
+                currentUserPrizeNames.push(prize);
+                const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
+                const prizeAmount = (totalPrizePool * percentage) / 100;
+                const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
+                currentUserWinnings += prizePerWinner;
+            }
+        });
+    }
+
+    return (
+      <div className="flex-grow p-4 flex flex-col items-center justify-center">
+        <Card className="w-full max-w-2xl shadow-xl">
+          <CardHeader className="text-center">
+            <CardTitle className="text-4xl font-bold flex items-center justify-center">
+              <PartyPopper className="mr-3 h-10 w-10 text-primary" /> Game Over!
+            </CardTitle>
+            {gameMessage && <p className="text-lg mt-2 whitespace-pre-line">{gameMessage}</p>}
+          </CardHeader>
+          <CardContent className="space-y-4">
+             {currentUserWinnings > 0 && (
+                <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
+                    <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
+                    <p className="text-2xl font-bold text-green-700 dark:text-green-300">You won a total of {formatCurrency(currentUserWinnings)}!</p>
+                    <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
+                </div>
+            )}
+            <h3 className="text-xl font-semibold text-center mb-2 flex items-center justify-center">
+                <Award className="mr-2 h-5 w-5 text-accent"/>
+                Final Prize Summary
+            </h3>
+            <div className="border rounded-md p-3">
+               <div className="flex justify-between items-center text-lg font-bold mb-2 pb-2 border-b">
+                <span>Total Prize Pool:</span>
+                <span>{formatCurrency(totalPrizePool)}</span>
+            </div>
+              <ul className="space-y-2">
+                {prizesForFormat.map(prize => {
+                  const claimInfo = roomData.prizeStatus[prize];
+                  const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
+                  const prizeAmount = (totalPrizePool * percentage) / 100;
+
+                  let prizeStatusText = "Not Claimed";
+                  if (claimInfo && claimInfo.claimedBy.length > 0) {
+                    const winnerNames = claimInfo.claimedBy.map(c => c.name).join(', ');
+                    prizeStatusText = `Claimed by ${winnerNames}`;
+                  }
+                  
+                  return (
+                     <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
+                        <div className="flex flex-col">
+                            <span className="font-medium">{prize}</span>
+                            <span className="text-xs text-muted-foreground">{formatCurrency(prizeAmount)} ({percentage}%)</span>
+                        </div>
+                        <span className={cn("font-semibold text-right", claimInfo && claimInfo.claimedBy.length > 0 ? "text-green-600" : "text-muted-foreground")}>
+                            {prizeStatusText}
+                        </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+            <div className="flex flex-row gap-4 mt-6">
+              <Button onClick={handlePlayAgain} className="flex-1" size="lg" disabled={isResetting}>
+                {isResetting ? (
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                ) : (
+                  <RotateCcw className="mr-2 h-5 w-5" />
+                )}
+                {isResetting ? "Returning to Lobby..." : "To Lobby"}
+              </Button>
+              <Button variant="destructive" className="flex-1" size="lg" onClick={handleLeaveRoom}>
+                <LogOut className="mr-2 h-5 w-5" /> Leave
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const isAutoCalling = roomData.settings.callingMode === 'auto';
+  const ticketClassName = myTickets.length > 2 
+    ? "w-full max-w-[18rem] text-xs" 
+    : "w-full max-w-sm text-base";
 
   return (
-    <AuthContext.Provider value={value}>
-      {loading ? (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+    <div className="container mx-auto p-4 space-y-4">
+      <Card className="shadow-none border-none bg-transparent">
+        <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
+          <div className="flex-grow">
+            <div className="text-white">Room ID: #{roomId} | Prize Pool: ₹{totalPrizePool.toFixed(2)} | Players: {roomData.players.length}</div>
+            <div className="font-semibold text-white">{currentUser.displayName} ({myTickets.length} {ticketsText(myTickets.length)})</div>
+          </div>
+           <div className="flex-shrink-0 flex items-center gap-2">
+            {isCurrentUserHost && !roomData.settings.isPublic && !roomData.isGameOver && (
+              <div className="flex items-center gap-1.5 p-1 rounded-md border bg-card/80 backdrop-blur-sm">
+                  <Label htmlFor="calling-mode-switch" className="text-xs font-medium text-foreground pl-1 cursor-pointer">
+                      Auto-Call
+                  </Label>
+                  <Switch
+                      id="calling-mode-switch"
+                      checked={isAutoCalling}
+                      onCheckedChange={handleToggleCallingMode}
+                      disabled={isUpdatingMode || roomData.isGameOver}
+                      aria-label="Toggle automatic number calling"
+                  />
+              </div>
+            )}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" aria-label="Game Info &amp; Players">
+                  <Menu className="h-5 w-5 text-primary" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="flex flex-col bg-card/90 backdrop-blur-sm border-primary/20">
+                <SheetHeader className="text-center border-b pb-2">
+                    <SheetTitle className="text-base">Game Info &amp; Players</SheetTitle>
+                </SheetHeader>
+                <div className="py-2 space-y-4 flex-grow overflow-y-auto">
+                    <Card className="bg-secondary/30">
+                        <CardHeader className="p-3 pb-2">
+                            <CardTitle className="text-sm font-semibold flex items-center"><Award className="mr-2 h-4 w-4 text-primary" />Prize Pool</CardTitle>
+                            <p className="text-xs text-muted-foreground">Total: ₹{totalPrizePool.toFixed(2)}</p>
+                        </CardHeader>
+                        <CardContent className="p-3 pt-0">
+                            {isLoading ? (
+                                <p className="text-xs text-muted-foreground">Loading prize info...</p>
+                            ) : (
+                                <ul className="space-y-1 text-xs">
+                                {prizesForFormat.map(prize => {
+                                    const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
+                                    const prizeAmount = (totalPrizePool * percentage) / 100;
+                                    const claimInfo = roomData.prizeStatus[prize as PrizeType];
+                                    const isClaimed = claimInfo && claimInfo.claimedBy.length > 0;
+                                    
+                                    let claimantText = "Unclaimed";
+                                    if (isClaimed) {
+                                        const claimantNames = claimInfo.claimedBy.map(c => {
+                                            if (c.id === currentUser?.uid) return "You";
+                                            return c.name || c.id;
+                                        }).join(', ');
+                                        claimantText = `Claimed by ${claimantNames}`;
+                                    }
+
+                                    return (
+                                        <li key={prize} className="flex flex-col bg-background/50 p-1.5 rounded-md">
+                                            <div className="flex justify-between items-center w-full">
+                                                <span>{prize} <span className="text-muted-foreground">({percentage}%)</span></span>
+                                                <span className="font-semibold">₹{prizeAmount.toFixed(2)}</span>
+                                            </div>
+                                            <span className={cn("text-xs text-right w-full", isClaimed ? "text-green-600 font-medium" : "text-muted-foreground/80")}>
+                                                {claimantText}
+                                            </span>
+                                        </li>
+                                    );
+                                })}
+                                </ul>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card className="bg-secondary/30">
+                        <CardHeader className="p-3 pb-2">
+                            <CardTitle className="text-sm font-semibold flex items-center"><Users className="mr-2 h-4 w-4 text-primary" />Players ({roomData.players.length})</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-3 pt-0">
+                            {isLoading ? (
+                                <p className="text-xs text-muted-foreground">Loading player list...</p>
+                            ) : (
+                                <ScrollArea className="h-40">
+                                    <ul className="space-y-1 text-xs">
+                                    {[...roomData.players].sort((a,b) => (a.isHost ? -1 : b.isHost ? 1 : 0)).map((player) => (
+                                        <li key={player.id} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
+                                        <span className="font-medium">
+                                            {player.name}
+                                            {player.isHost && <span className="ml-2 font-semibold text-primary">(Host)</span>}
+                                            {player.id === currentUser?.uid && <span className="ml-2 text-muted-foreground">(You)</span>}
+                                        </span>
+                                        <span className="text-muted-foreground">{player.tickets?.length || 0} {ticketsText(player.tickets?.length || 0)}</span>
+                                        </li>
+                                    ))}
+                                    </ul>
+                                </ScrollArea>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                </div>
+                <div className="border-t pt-2">
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" className="w-full" size="sm">
+                                <LogOut className="mr-2 h-4 w-4" /> Leave Game
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure you want to leave the game?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will remove you from the current game session. If you are the host, a new host will be assigned.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Stay</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleLeaveRoom} className={buttonVariants({ variant: "destructive" })}>
+                                    Leave
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="space-y-4 lg:col-span-1">
+          <MemoizedCalledNumberDisplay 
+            currentNumber={roomData.currentNumber}
+            calledNumbers={roomData.calledNumbers}
+            isMuted={isSfxMuted}
+            onToggleMute={toggleSfxMute}
+          />
+
+          {isCurrentUserHost && !isAutoCalling && !roomData.isGameOver && (
+            <Button 
+                onClick={handleCallNextNumber}
+                disabled={isCallingNextNumber || roomData.isGameOver}
+                className="w-full"
+            >
+              {isCallingNextNumber ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+              {isCallingNextNumber ? 'Calling...' : 'Call Next Number'}
+            </Button>
+          )}
         </div>
-      ) : currentUser ? (
-        children
-      ) : (
-        <LoginSelectionScreen />
-      )}
-    </AuthContext.Provider>
+
+        <div className="lg:col-span-2">
+          <div className="max-w-7xl mx-auto space-y-4">
+            {myTickets.length > 0 && !roomData.isGameOver && (
+              <div className="flex flex-wrap gap-2 justify-center">
+                {prizesForFormat.map((prizeType, prizeIdx) => {
+                  const claimInfo = roomData.prizeStatus[prizeType];
+                  const isPrizeClaimedByAnyone = claimInfo && claimInfo.claimedBy.length > 0;
+                  
+                  return (
+                    <Button
+                      key={`${prizeType}-${prizeIdx}`}
+                      onClick={() => handleClaimPrize(prizeType)}
+                      disabled={
+                        roomData.isGameOver ||
+                        isPrizeClaimedByAnyone
+                      }
+                      variant={isPrizeClaimedByAnyone ? "secondary" : "default"}
+                      className={cn("px-2 py-1 rounded-md text-xs sm:text-sm",
+                        !isPrizeClaimedByAnyone && prizeType.includes("Early") ? "bg-green-500 hover:bg-green-600" :
+                          !isPrizeClaimedByAnyone && prizeType.includes("Line") ? "bg-yellow-400 hover:bg-yellow-500 text-black" :
+                            !isPrizeClaimedByAnyone && prizeType.includes("Full House") ? "bg-red-500 hover:bg-red-600" : ""
+                      )}
+                    >
+                      {prizeType}
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
+            
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-white">Your Tickets ({myTickets.length})</h2>
+              <Dialog>
+                <DialogTrigger asChild>
+                   <Button variant="default" size="sm" className="font-semibold" onClick={() => playSound('cards.mp3')}>
+                    Number Board
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md p-4">
+                  <DialogHeader className="pb-2">
+                    <DialogTitle>Number Board</DialogTitle>
+                  </DialogHeader>
+                  <MemoizedLiveNumberBoard
+                    calledNumbers={roomData.calledNumbers}
+                    currentNumber={roomData.currentNumber}
+                    remainingCount={NUMBERS_RANGE_MAX - roomData.calledNumbers.length}
+                    calledCount={roomData.calledNumbers.length}
+                  />
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {myTickets.length === 0 && !roomData.isGameOver && roomData.isGameStarted && <p className="text-center text-muted-foreground">You are spectating or have no tickets in this game.</p>}
+            <ScrollArea className="max-h-[60vh] lg:max-h-none">
+              <div className="flex flex-wrap justify-center gap-4 p-1">
+                {myTickets.map((ticket, index) => (
+                  <MemoizedHousieTicket
+                    key={index}
+                    ticketIndex={index}
+                    ticket={ticket}
+                    calledNumbers={roomData.calledNumbers}
+                    markedNumbers={markedNumbers}
+                    onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
+                    className={ticketClassName}
+                  />
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
-
-    
