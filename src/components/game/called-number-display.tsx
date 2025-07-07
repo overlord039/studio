@@ -24,16 +24,16 @@ export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMu
 
   return (
     <Card className="shadow-lg bg-primary text-primary-foreground">
-      <CardContent className="p-4 flex items-center justify-center gap-6">
+      <CardContent className="p-4 flex items-end justify-center gap-6">
         {/* Main Number Section */}
         <div className="flex flex-col items-center text-center">
           <p className="text-xs uppercase tracking-wider mb-2">Called Number</p>
-          <div className="flex items-center gap-3">
+          <div className="flex items-end gap-3">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={onToggleMute} 
-              className="text-primary-foreground hover:bg-primary/80 h-8 w-8 self-center"
+              className="text-primary-foreground hover:bg-primary/80 h-8 w-8"
               aria-label={isMuted ? "Unmute voice" : "Mute voice"}
             >
               {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
@@ -53,7 +53,7 @@ export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMu
         {/* Recent Numbers Section */}
         <div className="flex flex-col items-center">
           <p className="text-xs uppercase tracking-wider mb-2">Recent</p>
-          <div className="flex gap-2">
+          <div className="flex items-end gap-2">
             {displayNumbers.map((num, index) => (
               <div
                 key={num !== null ? `recent-${num}` : `empty-${index}`}
