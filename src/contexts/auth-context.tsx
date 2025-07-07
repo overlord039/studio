@@ -120,7 +120,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const router = useRouter();
   const firebaseConfigured = !!auth && !!db;
-  const [statsUpdated, setStatsUpdated] = useState(false);
 
   const handleEmailLinkSignIn = useCallback(async () => {
       if (auth && isSignInWithEmailLink(auth, window.location.href)) {
@@ -179,8 +178,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (userDocUnsubscribe) {
             userDocUnsubscribe();
         }
-        
-        setStatsUpdated(false);
 
         if (firebaseUser) {
             const userDocRef = doc(db, "users", firebaseUser.uid);
@@ -201,6 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     };
 
                     setCurrentUser(prevUser => {
+                        // Only update state if the user data has actually changed.
                         if (areUsersEqual(prevUser, newUser)) {
                             return prevUser;
                         }
