@@ -24,6 +24,7 @@ import { auth, db } from '@/lib/firebase/config';
 import { useToast } from '@/hooks/use-toast';
 import type { User, UserStats, PrizeType } from '@/types';
 import { PRIZE_TYPES } from '@/types';
+import { PRIZE_DEFINITIONS, DEFAULT_GAME_SETTINGS } from '@/lib/constants';
 import LoginSelectionScreen from '@/components/auth/login-selection-screen';
 import { Loader2 } from 'lucide-react';
 import { ToastAction } from '@/components/ui/toast';
@@ -39,7 +40,6 @@ export interface User {
 
 interface AuthContextType {
   currentUser: User | null;
-  userStats: UserStats | null;
   updateUserStats: (newStats: Partial<UserStats>) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   loginWithEmailLink: (email: string) => Promise<boolean>;
@@ -71,12 +71,33 @@ const writeUserProfileToDB = async (appUser: User): Promise<void> => {
 };
 
 // A more robust comparison function to prevent infinite loops.
-// This is a standard pattern for comparing complex but serializable objects.
 function areUsersEqual(a: User | null, b: User | null): boolean {
-  if (!a || !b) return a === b;
-  // This is a robust way to compare data objects for value equality.
-  // It avoids issues with object references and deep comparison logic by comparing the string representation.
-  return JSON.stringify(a) === JSON.stringify(b);
+    if (!a || !b) return a === b;
+    // Simple field comparison
+    if (
+        a.uid !== b.uid ||
+        a.displayName !== b.displayName ||
+        a.email !== b.email ||
+        a.isGuest !== b.isGuest ||
+        a.createdAt !== b.createdAt
+    ) {
+        return false;
+    }
+
+    // Deep, stable comparison for stats
+    if (a.stats.matchesPlayed !== b.stats.matchesPlayed) {
+        return false;
+    }
+    
+    // Check prizes won against a canonical list of keys to avoid order issues
+    const prizeKeys = PRIZE_DEFINITIONS[DEFAULT_GAME_SETTINGS.prizeFormat] as PrizeType[];
+    for (const key of prizeKeys) {
+        if ((a.stats.prizesWon[key] || 0) !== (b.stats.prizesWon[key] || 0)) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 
@@ -206,8 +227,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUserStats = async (newStats: Partial<UserStats>) => {
     if (!currentUser || !db || currentUser.isGuest) return;
     const userDocRef = doc(db, "users", currentUser.uid);
-    await updateDoc(userDocRef, { stats: newStats });
-    setCurrentUser(prevUser => prevUser ? { ...prevUser, stats: { ...prevUser.stats, ...newStats } } : null);
+    try {
+        await updateDoc(userDocRef, { 
+            stats: {
+                ...currentUser.stats,
+                ...newStats,
+                prizesWon: {
+                    ...currentUser.stats.prizesWon,
+                    ...newStats.prizesWon,
+                }
+            }
+        });
+    } catch(err) {
+        console.error("Failed to update user stats:", err)
+    }
   };
   
   const showFirebaseNotConfiguredToast = () => {
@@ -233,20 +266,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userDocRef = doc(db, "users", firebaseUser.uid);
       const userDoc = await getDoc(userDocRef);
 
-      let userProfile: User;
-      if (userDoc.exists()) {
-        const firestoreData = userDoc.data();
-        userProfile = {
-            uid: firestoreData.uid,
-            displayName: firestoreData.displayName,
-            email: firestoreData.email,
-            isGuest: firestoreData.isGuest,
-            createdAt: firestoreData.createdAt?.toDate ? firestoreData.createdAt.toDate().toISOString() : firestoreData.createdAt,
-            stats: firestoreData.stats || createDefaultStats(),
-        };
-
-      } else {
-        userProfile = {
+      if (!userDoc.exists()) {
+        const userProfile: User = {
           uid: firebaseUser.uid,
           displayName: firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`,
           email: firebaseUser.email,
@@ -256,8 +277,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
         await writeUserProfileToDB(userProfile);
       }
-      setCurrentUser(userProfile);
-      toast({ title: "Signed In Successfully", description: `Welcome back, ${userProfile.displayName}!` });
+      toast({ title: "Signed In Successfully", description: `Welcome!` });
       router.push('/');
     } catch (error: any) {
       if (error.code === 'auth/account-exists-with-different-credential') {
@@ -333,6 +353,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     const guestUser = auth.currentUser;
+    const guestData = { ...currentUser };
+
     setIsSigningIn('google');
     try {
       const provider = new GoogleAuthProvider();
@@ -340,7 +362,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await linkWithPopup(guestUser, provider);
       
       const firebaseUser = result.user;
-      const guestStats = currentUser?.stats || createDefaultStats();
       
       const newUserProfile: User = {
         uid: firebaseUser.uid,
@@ -348,11 +369,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: firebaseUser.email,
         isGuest: false,
         createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-        stats: guestStats,
+        stats: guestData.stats || createDefaultStats(),
       };
 
       await writeUserProfileToDB(newUserProfile);
-      setCurrentUser(newUserProfile);
 
       toast({ title: "Account Linked!", description: "Your guest progress has been saved to your Google account." });
       router.push('/');
@@ -392,17 +412,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setIsSigningIn('guest');
     try {
-        const result = await signInAnonymously(auth);
-        const firebaseUser = result.user;
-        const guestUser: User = {
-            uid: firebaseUser.uid,
-            displayName: `Guest#${firebaseUser.uid.substring(0, 5)}`,
-            email: null,
-            isGuest: true,
-            createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-            stats: createDefaultStats(),
-        };
-        setCurrentUser(guestUser);
+        await signInAnonymously(auth);
         router.push('/');
     } catch (error: any) {
         console.error("Guest Sign-In Error:", error);
@@ -418,7 +428,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
     }
     await signOut(auth);
-    setCurrentUser(null);
   };
   
   const deleteAccount = async () => {
@@ -451,7 +460,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = { 
       currentUser, 
-      userStats: currentUser?.stats || null, 
       updateUserStats, 
       loginWithGoogle,
       loginWithEmailLink,

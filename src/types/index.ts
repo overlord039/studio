@@ -10,7 +10,6 @@ export interface Player {
   name: string;
   isHost?: boolean;
   email?: string | null;
-  stats?: UserStats;
 }
 
 export interface BackendPlayerInRoom extends Player {
