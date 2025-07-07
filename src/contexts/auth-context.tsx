@@ -71,47 +71,51 @@ const writeUserProfileToDB = async (appUser: User): Promise<void> => {
 };
 
 // Helper to deeply compare two user objects to prevent unnecessary re-renders
-function areUsersEqual(userA: User | null, userB: User | null): boolean {
-    if (!userA || !userB) return userA === userB;
+function areUsersEqual(a: User | null, b: User | null): boolean {
+  if (!a || !b) return a === b;
 
-    // Fast checks for primitive values
-    if (
-        userA.uid !== userB.uid ||
-        userA.displayName !== userB.displayName ||
-        userA.email !== userB.email ||
-        userA.isGuest !== userB.isGuest ||
-        userA.createdAt !== userB.createdAt
-    ) {
-        return false;
+  // Compare primitive fields
+  if (
+    a.uid !== b.uid ||
+    a.displayName !== b.displayName ||
+    a.email !== b.email ||
+    a.isGuest !== b.isGuest ||
+    a.createdAt !== b.createdAt // Relies on createdAt being a consistent string
+  ) {
+    return false;
+  }
+  
+  // Compare stats object
+  const statsA = a.stats;
+  const statsB = b.stats;
+  if (!statsA && !statsB) return true; // Both are null/undefined
+  if (!statsA || !statsB) return false; // One is null/undefined, the other isn't
+
+  if (statsA.matchesPlayed !== statsB.matchesPlayed) return false;
+
+  const prizesA = statsA.prizesWon;
+  const prizesB = b.stats.prizesWon;
+  if (!prizesA && !prizesB) return true; // Both are null/undefined
+  if (!prizesA || !prizesB) return false; // One is null/undefined
+
+  // Compare prize objects by iterating over a defined set of keys to avoid order issues
+  const allPrizeTypes = Object.values(PRIZE_TYPES);
+
+  // Ensure both prize objects have the same set of keys as the canonical list
+  if (Object.keys(prizesA).length !== allPrizeTypes.length || Object.keys(prizesB).length !== allPrizeTypes.length) {
+    return false;
+  }
+
+  for (const prizeType of allPrizeTypes) {
+    if ((prizesA[prizeType] || 0) !== (prizesB[prizeType] || 0)) {
+      return false;
     }
+  }
 
-    // Compare stats object
-    const statsA = userA.stats;
-    const statsB = userB.stats;
-
-    // If both are null/undefined, they are equal. If one is but not the other, not equal.
-    if (!statsA || !statsB) return statsA === statsB;
-    
-    if (statsA.matchesPlayed !== statsB.matchesPlayed) return false;
-    
-    const prizesA = statsA.prizesWon;
-    const prizesB = statsB.prizesWon;
-
-    if (!prizesA || !prizesB) return prizesA === prizesB;
-
-    const prizeKeysA = Object.keys(prizesA);
-    const prizeKeysB = Object.keys(prizesB);
-
-    if (prizeKeysA.length !== prizeKeysB.length) return false;
-
-    for (const key of prizeKeysA) {
-        if (prizesA[key as PrizeType] !== prizesB[key as PrizeType]) {
-            return false;
-        }
-    }
-
-    return true;
+  // If all checks pass, the objects are considered equal
+  return true;
 }
+
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -185,20 +189,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             userDocUnsubscribe = onSnapshot(userDocRef, async (docSnap) => {
                 if (docSnap.exists()) {
                     const firestoreData = docSnap.data();
-                    // Create a plain JS object from Firestore data to ensure consistent shape and types
+                    
                     const newUser: User = {
                         uid: firestoreData.uid,
                         displayName: firestoreData.displayName,
                         email: firestoreData.email,
                         isGuest: firestoreData.isGuest,
-                        // Convert Firestore Timestamp to ISO string for reliable comparison
                         createdAt: firestoreData.createdAt?.toDate ? firestoreData.createdAt.toDate().toISOString() : firestoreData.createdAt,
-                        // Ensure stats object is always present to prevent comparison errors
                         stats: firestoreData.stats || createDefaultStats(),
                     };
 
                     setCurrentUser(prevUser => {
-                        // Only update state if the user data has actually changed.
                         if (areUsersEqual(prevUser, newUser)) {
                             return prevUser;
                         }
@@ -513,3 +514,5 @@ export function useAuth() {
   }
   return context;
 }
+
+    
