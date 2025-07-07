@@ -70,33 +70,42 @@ const writeUserProfileToDB = async (appUser: User): Promise<void> => {
     await setDoc(userDocRef, appUser, { merge: true });
 };
 
-// A more robust comparison function to prevent infinite loops.
+// A robust, order-insensitive comparison for the prizes object
+const arePrizesEqual = (a: Record<PrizeType, number>, b: Record<PrizeType, number>): boolean => {
+    const allPrizeKeys = Object.values(PRIZE_TYPES); // Canonical list of prizes
+
+    for (const key of allPrizeKeys) {
+        // Use `|| 0` to handle cases where a prize might not be in the object yet
+        if ((a[key] || 0) !== (b[key] || 0)) {
+            return false;
+        }
+    }
+    return true;
+};
+
+// A robust comparison for the entire user object
 function areUsersEqual(a: User | null, b: User | null): boolean {
-    if (!a || !b) return a === b;
-    // Simple field comparison
+    if (!a && !b) return true; // Both are null
+    if (!a || !b) return false; // One is null, the other isn't
+
+    // Compare primitive fields first for a fast exit
     if (
         a.uid !== b.uid ||
         a.displayName !== b.displayName ||
         a.email !== b.email ||
         a.isGuest !== b.isGuest ||
-        a.createdAt !== b.createdAt
+        a.createdAt !== b.createdAt ||
+        a.stats.matchesPlayed !== b.stats.matchesPlayed
     ) {
         return false;
     }
 
-    // Deep, stable comparison for stats
-    if (a.stats.matchesPlayed !== b.stats.matchesPlayed) {
+    // Use the dedicated function to compare the prizes object
+    if (!arePrizesEqual(a.stats.prizesWon, b.stats.prizesWon)) {
         return false;
     }
-    
-    // Check prizes won against a canonical list of keys to avoid order issues
-    const prizeKeys = PRIZE_DEFINITIONS[DEFAULT_GAME_SETTINGS.prizeFormat] as PrizeType[];
-    for (const key of prizeKeys) {
-        if ((a.stats.prizesWon[key] || 0) !== (b.stats.prizesWon[key] || 0)) {
-            return false;
-        }
-    }
 
+    // If all checks pass, the objects are considered equal
     return true;
 }
 
@@ -494,3 +503,5 @@ export function useAuth() {
   }
   return context;
 }
+
+    
