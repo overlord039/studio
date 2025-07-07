@@ -19,7 +19,7 @@ import {
   EmailAuthProvider,
   linkWithCredential,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, deleteDoc, updateDoc, onSnapshot, type Unsubscribe, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, updateDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 import { useToast } from '@/hooks/use-toast';
 import type { User, UserStats, PrizeType } from '@/types';
@@ -264,7 +264,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       let userProfile: User;
       if (userDoc.exists()) {
-        userProfile = userDoc.data() as User;
+        const firestoreData = userDoc.data();
+        userProfile = {
+            uid: firestoreData.uid,
+            displayName: firestoreData.displayName,
+            email: firestoreData.email,
+            isGuest: firestoreData.isGuest,
+            createdAt: firestoreData.createdAt?.toDate ? firestoreData.createdAt.toDate().toISOString() : firestoreData.createdAt,
+            stats: firestoreData.stats || createDefaultStats(),
+        };
+
       } else {
         userProfile = {
           uid: firebaseUser.uid,
