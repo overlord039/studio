@@ -70,42 +70,13 @@ const writeUserProfileToDB = async (appUser: User): Promise<void> => {
     await setDoc(userDocRef, appUser, { merge: true });
 };
 
-// A more robust comparison function to prevent infinite loops
+// A more robust comparison function to prevent infinite loops.
+// This is a standard pattern for comparing complex but serializable objects.
 function areUsersEqual(a: User | null, b: User | null): boolean {
   if (!a || !b) return a === b;
-
-  // Compare primitive fields
-  if (
-    a.uid !== b.uid ||
-    a.displayName !== b.displayName ||
-    a.email !== b.email ||
-    a.isGuest !== b.isGuest ||
-    a.createdAt !== b.createdAt
-  ) {
-    return false;
-  }
-  
-  // Compare stats object
-  const statsA = a.stats;
-  const statsB = b.stats;
-  if (!statsA && !statsB) return true;
-  if (!statsA || !statsB) return false;
-
-  if (statsA.matchesPlayed !== statsB.matchesPlayed) return false;
-
-  const prizesA = statsA.prizesWon;
-  const prizesB = b.stats.prizesWon;
-  if (!prizesA && !prizesB) return true;
-  if (!prizesA || !prizesB) return false;
-
-  const allPrizeTypes = Object.values(PRIZE_TYPES);
-  for (const prizeType of allPrizeTypes) {
-    if ((prizesA[prizeType] || 0) !== (prizesB[prizeType] || 0)) {
-      return false;
-    }
-  }
-
-  return true;
+  // This is a robust way to compare data objects for value equality.
+  // It avoids issues with object references and deep comparison logic by comparing the string representation.
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 
