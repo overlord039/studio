@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -247,7 +248,7 @@ export default function GameRoomPage() {
     
     const isManualMode = roomData?.settings.callingMode === 'manual';
     const isHost = roomData?.host.id === currentUser.uid;
-    const pollInterval = isManualMode && !isHost ? 7000 : 3000;
+    const pollInterval = isManualMode && !isHost ? 7000 : 5000;
 
     const intervalId = setInterval(() => {
       if (!document.hidden) { 
@@ -605,9 +606,9 @@ export default function GameRoomPage() {
           </div>
            <div className="flex-shrink-0 flex items-center gap-2">
             {isCurrentUserHost && !roomData.settings.isPublic && !roomData.isGameOver && (
-              <div className="flex items-center gap-1.5 p-1 rounded-md border bg-card/80 backdrop-blur-sm">
-                  <Label htmlFor="calling-mode-switch" className="text-xs font-medium text-foreground pl-1 cursor-pointer">
-                      Auto-Call
+              <div className="flex items-center gap-1 p-1 rounded-md border bg-card/80 backdrop-blur-sm">
+                  <Label htmlFor="calling-mode-switch" className="text-xs font-medium text-foreground cursor-pointer">
+                      Auto
                   </Label>
                   <Switch
                       id="calling-mode-switch"
