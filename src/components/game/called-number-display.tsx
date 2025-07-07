@@ -24,7 +24,7 @@ export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMu
 
   return (
     <Card className="shadow-lg bg-primary text-primary-foreground">
-      <CardContent className="p-4 flex items-center justify-between">
+      <CardContent className="p-4 flex items-center justify-center gap-8">
         {/* Main Number Section */}
         <div className="flex flex-col items-center text-center">
           <p className="text-xs uppercase tracking-wider mb-1">Called Number</p>
@@ -45,9 +45,6 @@ export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMu
             )}
           </div>
         </div>
-
-        {/* Vertical Separator */}
-        <div className="h-16 w-px bg-primary-foreground/30 mx-4"></div>
 
         {/* Recent Numbers Section */}
         <div className="flex flex-col items-center gap-1">
