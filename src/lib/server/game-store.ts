@@ -365,7 +365,7 @@ export function callNextNumberStore(roomId: string): Room | { error: string; num
   }
 
   room.currentNumber = nextNumber;
-  room.calledNumbers.push(nextNumber);
+  room.calledNumbers.unshift(nextNumber);
   room.lastNumberCalledTimestamp = new Date();
   rooms.set(roomId, room);
   return room;

@@ -31,7 +31,7 @@ export default function NumberCallerPage() {
   const [calledNumbers, setCalledNumbers] = useState<number[]>([]);
   const [availableNumbers, setAvailableNumbers] = useState<number[]>(shuffleArray(ALL_NUMBERS));
   const [isAutoCalling, setIsAutoCalling] = useState(false);
-  const autoCallSpeed = 5; // Fixed speed in seconds
+  const autoCallSpeed = 6; // Fixed speed in seconds
   const { isSfxMuted, toggleSfxMute } = useSound();
   const autoCallIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
