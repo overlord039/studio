@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +19,6 @@ interface GameOption {
   title: string;
   subtitle: string;
   icon: React.ElementType;
-  description: string;
   disabled: boolean;
   href: string;
   iconBgColor: string;
@@ -39,7 +37,6 @@ export default function CreateRoomSelectionPage() {
       title: "Create Room",
       subtitle: "Host a new game for your friends",
       icon: House,
-      description: "Set up a private game with custom rules and invite your friends to play.",
       disabled: false,
       href: "/create-room/private",
       iconBgColor: "bg-primary/20",
@@ -150,9 +147,6 @@ export default function CreateRoomSelectionPage() {
                 <CardTitle className="text-lg font-bold">{option.title}</CardTitle>
                 <CardDescription className="text-sm">{option.subtitle}</CardDescription>
                 </CardHeader>
-                <CardContent className="text-center p-6 pt-0 flex-grow">
-                <p className="text-muted-foreground text-sm">{option.description}</p>
-                </CardContent>
             </Card>
             ))}
         </div>
