@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Gamepad2, LogOut, Key } from 'lucide-react';
+import { Gamepad2, LogOut, KeyRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
@@ -97,7 +97,7 @@ export default function CreateRoomSelectionPage() {
       <div className="w-full max-w-xl space-y-6">
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center"><Key className="mr-2 h-5 w-5 text-primary"/> Join a Room</CardTitle>
+                <CardTitle className="flex items-center"><KeyRound className="mr-2 h-5 w-5 text-primary"/> Join a Room</CardTitle>
                 <CardDescription>Enter the Room ID given by the host.</CardDescription>
             </CardHeader>
             <CardContent>
