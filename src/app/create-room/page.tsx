@@ -1,8 +1,7 @@
-
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Globe, House, LogOut, VenetianMask } from 'lucide-react';
+import { House, LogOut, VenetianMask } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
@@ -12,9 +11,8 @@ import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
-type Mode = 'public' | 'private';
+type Mode = 'private';
 
 interface GameOption {
   mode: Mode;
@@ -35,17 +33,6 @@ export default function CreateRoomSelectionPage() {
   const [joinRoomId, setJoinRoomId] = useState('');
 
   const options: GameOption[] = [
-    {
-      mode: 'public' as Mode,
-      title: "Public Multiplayer",
-      subtitle: "Play globally with auto-called numbers",
-      icon: Globe,
-      description: "Numbers are called automatically at a fixed speed. No host controls for manual calling.",
-      disabled: true,
-      href: "/create-room/public",
-      iconBgColor: "bg-accent/20",
-      iconTextColor: "text-accent",
-    },
     {
       mode: 'private' as Mode,
       title: "Private Multiplayer",
@@ -140,7 +127,7 @@ export default function CreateRoomSelectionPage() {
             <div className="flex-grow border-t"></div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-6 md:max-w-sm mx-auto">
             {options.map((option) => (
             <Card
                 key={option.mode}
