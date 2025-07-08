@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -95,36 +96,6 @@ export default function CreateRoomSelectionPage() {
         <p className="text-white/80 mt-2 text-base">Create a new room or join an existing one.</p>
       </div>
       <div className="w-full max-w-xl space-y-6">
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center"><KeyRound className="mr-2 h-5 w-5 text-primary"/> Join a Room</CardTitle>
-                <CardDescription>Enter the Room ID given by the host.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex w-full items-center space-x-2">
-                    <Input
-                    id="join-room-input"
-                    type="text"
-                    placeholder="Enter Room ID"
-                    className="h-10 text-sm"
-                    value={joinRoomId}
-                    onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
-                    disabled={authLoading}
-                    maxLength={6}
-                    />
-                    <Button variant="secondary" onClick={handleJoinRoom} disabled={authLoading}>
-                    Join
-                    </Button>
-                </div>
-            </CardContent>
-        </Card>
-
-        <div className="relative flex items-center justify-center">
-            <div className="flex-grow border-t"></div>
-            <span className="flex-shrink mx-4 text-xs uppercase text-white">OR</span>
-            <div className="flex-grow border-t"></div>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-1 gap-6 md:max-w-sm mx-auto">
             {options.map((option) => (
             <Card
@@ -152,6 +123,36 @@ export default function CreateRoomSelectionPage() {
             </Card>
             ))}
         </div>
+
+        <div className="relative flex items-center justify-center">
+            <div className="flex-grow border-t"></div>
+            <span className="flex-shrink mx-4 text-xs uppercase text-white">OR</span>
+            <div className="flex-grow border-t"></div>
+        </div>
+
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center"><KeyRound className="mr-2 h-5 w-5 text-primary"/> Join a Room</CardTitle>
+                <CardDescription>Enter the Room ID given by the host.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex w-full items-center space-x-2">
+                    <Input
+                    id="join-room-input"
+                    type="text"
+                    placeholder="Enter Room ID"
+                    className="h-10 text-sm"
+                    value={joinRoomId}
+                    onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
+                    disabled={authLoading}
+                    maxLength={6}
+                    />
+                    <Button variant="secondary" onClick={handleJoinRoom} disabled={authLoading}>
+                    Join
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
       </div>
       <div className="mt-8 w-full max-w-xl">
         <Link href="/" passHref>
