@@ -29,7 +29,7 @@ export default function HousieTicket({ ticketIndex, ticket, calledNumbers, onNum
   };
 
   return (
-    <div className={cn("border-2 border-primary/50 rounded-lg shadow-md bg-card overflow-hidden flex flex-col", className)}>
+    <div className={cn("border-2 border-primary/50 rounded-lg shadow-md bg-card overflow-hidden flex flex-col p-1", className)}>
       {ticket.map((row, r) => (
         <div key={`row-${r}`} className={cn("grid", `grid-cols-${cols}`)} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
           {row.map((number, c) => {
