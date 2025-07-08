@@ -9,7 +9,6 @@ import HousieTicket from '@/components/game/housie-ticket';
 import CalledNumberDisplay from '@/components/game/called-number-display';
 import type { HousieTicketGrid, PrizeType, Room, GameSettings, CallingMode, PrizeClaimant } from '@/types';
 import { PRIZE_TYPES } from '@/types';
-import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause, Menu } from 'lucide-react';
@@ -69,8 +68,6 @@ export default function GameRoomPage() {
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [statsUpdated, setStatsUpdated] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
   const [animationKey, setAnimationKey] = useState(0);
 
   const previousCurrentNumberRef = useRef<number | null>(null);
@@ -98,31 +95,18 @@ export default function GameRoomPage() {
     }
   }, [roomData?.isGameOver]);
 
-  const announce = useCallback(async (num: number) => {
-    if (isSfxMuted) return;
-    try {
-      const response = await announceCalledNumber({ number: num });
-      if (response && response.audioContent) {
-        setAudioUrl(`data:audio/wav;base64,${response.audioContent}`);
-      } else {
-        throw new Error('No audio media was generated.');
-      }
-    } catch (error) {
-      console.error('Error generating audio announcement:', error);
-      toast({
-        title: "Audio Error",
-        description: "Could not generate voice announcement.",
-        variant: "destructive"
-      });
-    }
-  }, [isSfxMuted, toast]);
+  const announce = useCallback((num: number) => {
+    if (isSfxMuted || typeof window === 'undefined' || !window.speechSynthesis) return;
+    
+    // Cancel any previous speech to prevent overlap
+    window.speechSynthesis.cancel();
 
-  useEffect(() => {
-    if (audioUrl && audioRef.current) {
-      audioRef.current.src = audioUrl;
-      audioRef.current.play().catch(e => console.error("Audio playback failed:", e));
-    }
-  }, [audioUrl]);
+    const utterance = new SpeechSynthesisUtterance(String(num));
+    // Optionally configure the voice, rate, pitch
+    utterance.rate = 0.9;
+    utterance.pitch = 1.1;
+    window.speechSynthesis.speak(utterance);
+  }, [isSfxMuted]);
 
   const fetchGameDetails = useCallback(async (isInitialLoad = false) => {
     const playerTicketsParam = searchParams.get('playerTickets');
@@ -304,7 +288,7 @@ export default function GameRoomPage() {
       announce(roomData.currentNumber);
       previousCurrentNumberRef.current = roomData.currentNumber;
     }
-  }, [roomData, announce]);
+  }, [roomData?.currentNumber, announce]);
 
 
   const handleNumberClick = (ticketIndex: number, numberValue: number, rowIndex: number, colIndex: number) => {
@@ -704,7 +688,6 @@ export default function GameRoomPage() {
 
   return (
     <div className="container mx-auto p-4 space-y-4">
-      <audio ref={audioRef} src={audioUrl || undefined} />
       <Card className="shadow-none border-none bg-transparent">
         <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
           <div className="flex-grow">
