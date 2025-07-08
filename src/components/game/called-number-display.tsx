@@ -12,21 +12,13 @@ interface CalledNumberDisplayProps {
   calledNumbers: number[];
   isMuted: boolean;
   onToggleMute: () => void;
+  animationKey: number;
 }
 
-export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMuted, onToggleMute }: CalledNumberDisplayProps) {
-  const [animationKey, setAnimationKey] = useState(0);
-
-  // This effect runs whenever a new number is called.
-  // By changing the key, we force React to re-render the animated elements, thus re-triggering the animation.
-  useEffect(() => {
-    if (currentNumber !== null) {
-      setAnimationKey(key => key + 1);
-    }
-  }, [currentNumber]);
+export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMuted, onToggleMute, animationKey }: CalledNumberDisplayProps) {
 
   // Get the last 3 numbers from the list, *excluding* the current one.
-  const recentThree = calledNumbers.filter(n => n !== currentNumber).slice(-3).reverse();
+  const recentThree = calledNumbers.slice(1, 4);
   
   // Pad for consistent layout
   const displayNumbers = [...recentThree];

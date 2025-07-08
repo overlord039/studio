@@ -53,7 +53,6 @@ const MemoizedCalledNumberDisplay = React.memo(CalledNumberDisplay);
 export default function GameRoomPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const playerTicketsParam = searchParams.get('playerTickets');
   const params = useParams();
   const roomId = Array.isArray(params.id) ? params.id[0] ?? '' : params.id ?? '';
   const { toast } = useToast();
@@ -70,11 +69,19 @@ export default function GameRoomPage() {
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [statsUpdated, setStatsUpdated] = useState(false);
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const [animationKey, setAnimationKey] = useState(0);
 
   const previousCurrentNumberRef = useRef<number | null>(null);
   const roomDataRef = useRef(roomData);
   const previousPrizeStatusRef = useRef<Room['prizeStatus'] | null>(null);
   const gameOverSoundPlayedRef = useRef(false);
+
+  useEffect(() => {
+    if (roomData?.currentNumber !== previousCurrentNumberRef.current) {
+      setAnimationKey(prev => prev + 1);
+    }
+  }, [roomData?.currentNumber]);
 
   useEffect(() => {
     roomDataRef.current = roomData;
@@ -90,7 +97,31 @@ export default function GameRoomPage() {
     }
   }, [roomData?.isGameOver]);
 
+  const announce = useCallback(async (num: number) => {
+    if (isSfxMuted) return;
+    try {
+      const response = await announceCalledNumber({ number: num });
+      if (response && response.audioContent) {
+        const audioBlob = new Blob([Buffer.from(response.audioContent, 'base64')], { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const newAudio = new Audio(audioUrl);
+        setAudio(newAudio);
+      } else {
+        throw new Error('No audio media was generated.');
+      }
+    } catch (error) {
+      console.error('Error generating audio announcement:', error);
+    }
+  }, [isSfxMuted]);
+
+  useEffect(() => {
+    if (audio) {
+      audio.play().catch(e => console.error("Audio playback failed:", e));
+    }
+  }, [audio]);
+
   const fetchGameDetails = useCallback(async (isInitialLoad = false) => {
+    const playerTicketsParam = searchParams.get('playerTickets');
     if (!roomId || !currentUser?.uid) {
       if (isInitialLoad) {
         setError("Room ID or User not available for fetching game details.");
@@ -129,29 +160,31 @@ export default function GameRoomPage() {
               const newClaim = newPrizeStatus[prize];
               const oldClaim = oldPrizeStatus[prize];
               
-              const newClaimants = newClaim?.claimedBy ?? [];
-              const oldClaimants = oldClaim?.claimedBy ?? [];
+              if (newClaim && oldClaim) {
+                const newClaimants = newClaim?.claimedBy ?? [];
+                const oldClaimants = oldClaim?.claimedBy ?? [];
 
-              if (newClaimants.length > oldClaimants.length) {
-                  const oldClaimantIds = new Set(oldClaimants.map(c => c.id));
-                  const newlyAddedClaimants = newClaimants.filter(c => !oldClaimantIds.has(c.id));
+                if (newClaimants.length > oldClaimants.length) {
+                    const oldClaimantIds = new Set(oldClaimants.map(c => c.id));
+                    const newlyAddedClaimants = newClaimants.filter(c => !oldClaimantIds.has(c.id));
 
-                  if (newlyAddedClaimants.length > 0) {
-                      playSound('win.wav');
-                      const claimantNames = newlyAddedClaimants
-                          .map(claimant => {
-                              if (claimant.id === currentUser?.uid) return "You";
-                              return claimant.name || claimant.id;
-                           })
-                          .join(', ');
-                      
-                      toast({
-                        title: "Game Update!",
-                        description: `🔔 ${claimantNames} claimed ${prize}!`
-                      });
-                      
-                      break; 
-                  }
+                    if (newlyAddedClaimants.length > 0) {
+                        playSound('win.wav');
+                        const claimantNames = newlyAddedClaimants
+                            .map(claimant => {
+                                if (claimant.id === currentUser?.uid) return "You";
+                                return claimant.name || claimant.id;
+                             })
+                            .join(', ');
+                        
+                        toast({
+                          title: "Game Update!",
+                          description: `🔔 ${claimantNames} claimed ${prize}!`
+                        });
+                        
+                        break; 
+                    }
+                }
               }
           }
       }
@@ -190,7 +223,7 @@ export default function GameRoomPage() {
         setIsLoading(false);
       }
     }
-  }, [roomId, currentUser, playerTicketsParam, toast]);
+  }, [roomId, currentUser, searchParams, toast]);
 
   // Effect to update player stats when game is over
   useEffect(() => {
@@ -262,17 +295,10 @@ export default function GameRoomPage() {
   // Announce new numbers
   useEffect(() => {
     if (roomData && roomData.currentNumber !== null && roomData.currentNumber !== previousCurrentNumberRef.current) {
-      if (!isSfxMuted && typeof window !== 'undefined' && window.speechSynthesis) {
-        const utterance = new SpeechSynthesisUtterance(String(roomData.currentNumber));
-        window.speechSynthesis.speak(utterance);
-        
-        announceCalledNumber({ number: roomData.currentNumber })
-          .then(() => console.log(`AI flow 'announceCalledNumber' invoked for: ${roomData.currentNumber}`))
-          .catch(err => console.error("Error invoking announceCalledNumber AI flow:", err));
-      }
+      announce(roomData.currentNumber);
       previousCurrentNumberRef.current = roomData.currentNumber;
     }
-  }, [roomData?.currentNumber, isSfxMuted]);
+  }, [roomData, announce]);
 
 
   const handleNumberClick = (ticketIndex: number, numberValue: number, rowIndex: number, colIndex: number) => {
@@ -300,13 +326,47 @@ export default function GameRoomPage() {
       return;
     }
     
-    const ticketIndex = 0;
+    // Find a ticket that meets the claim condition to determine the ticketIndex
+    let winningTicketIndex = -1;
+    for (let i = 0; i < myTickets.length; i++) {
+        const housieLib = require('@/lib/housie');
+        if (housieLib.checkWinningCondition(myTickets[i], roomData.calledNumbers, prizeType)) {
+            winningTicketIndex = i;
+            break;
+        }
+    }
+
+    if (winningTicketIndex === -1 && prizeType !== 'Early 5') {
+       const bogieLib = require('@/lib/housie');
+       let isPotentialBogey = true;
+       // For line prizes, you must have all numbers in a row on *one* ticket.
+       // Let's verify for all tickets. If none match, it's a bogey.
+       if (prizeType.includes('Line') || prizeType.includes('Full House')) {
+          const isAnyTicketValid = myTickets.some(ticket => bogieLib.checkWinningCondition(ticket, roomData.calledNumbers, prizeType));
+          if (!isAnyTicketValid) {
+            isPotentialBogey = true;
+          } else {
+            isPotentialBogey = false; // at least one ticket is valid, but maybe not the one sent.
+          }
+       }
+       
+       if(isPotentialBogey){
+          playSound('error.wav');
+          toast({
+              title: `Claim for ${prizeType} Failed`,
+              description: `Your claim is not valid (Bogey!).`,
+              variant: "destructive"
+          });
+          return;
+       }
+    }
+
 
     try {
       const response = await fetch(`/api/rooms/${roomId}/claim-prize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId: currentUser.uid, prizeType, ticketIndex }),
+        body: JSON.stringify({ playerId: currentUser.uid, prizeType, ticketIndex: winningTicketIndex }),
       });
 
       const result = await response.json();
@@ -514,7 +574,7 @@ export default function GameRoomPage() {
             if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
                 currentUserPrizeNames.push(prize);
                 const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
-                const prizeAmount = (totalPrizePool * percentage) / 100;
+                const prizeAmount = (totalPrizePool * percentage);
                 const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
                 currentUserWinnings += prizePerWinner;
             }
@@ -550,19 +610,25 @@ export default function GameRoomPage() {
                 {prizesForFormat.map(prize => {
                   const claimInfo = roomData.prizeStatus[prize];
                   const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
-                  const prizeAmount = (totalPrizePool * percentage) / 100;
+                  const prizeAmount = (totalPrizePool * percentage);
 
                   let prizeStatusText = "Not Claimed";
+                  let prizeValueText = formatCurrency(prizeAmount);
                   if (claimInfo && claimInfo.claimedBy.length > 0) {
                     const winnerNames = claimInfo.claimedBy.map(c => c.name).join(', ');
                     prizeStatusText = `Claimed by ${winnerNames}`;
+                    if (claimInfo.claimedBy.length > 1) {
+                      prizeStatusText += ` (Split)`;
+                      const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
+                      prizeValueText = `${formatCurrency(prizePerWinner)} each`;
+                    }
                   }
                   
                   return (
                      <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
                         <div className="flex flex-col">
                             <span className="font-medium">{prize}</span>
-                            <span className="text-xs text-muted-foreground">{formatCurrency(prizeAmount)} ({percentage}%)</span>
+                            <span className="text-xs text-muted-foreground">{formatCurrency(prizeAmount)}</span>
                         </div>
                         <span className={cn("font-semibold text-right", claimInfo && claimInfo.claimedBy.length > 0 ? "text-green-600" : "text-muted-foreground")}>
                             {prizeStatusText}
@@ -642,24 +708,31 @@ export default function GameRoomPage() {
                                 <ul className="space-y-1 text-xs">
                                 {prizesForFormat.map(prize => {
                                     const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
-                                    const prizeAmount = (totalPrizePool * percentage) / 100;
+                                    const prizeAmount = (totalPrizePool * percentage);
                                     const claimInfo = roomData.prizeStatus[prize as PrizeType];
                                     const isClaimed = claimInfo && claimInfo.claimedBy.length > 0;
                                     
                                     let claimantText = "Unclaimed";
+                                    let prizeValueText = formatCurrency(prizeAmount);
+
                                     if (isClaimed) {
                                         const claimantNames = claimInfo.claimedBy.map(c => {
                                             if (c.id === currentUser?.uid) return "You";
                                             return c.name || c.id;
                                         }).join(', ');
                                         claimantText = `Claimed by ${claimantNames}`;
+                                        if (claimInfo.claimedBy.length > 1) {
+                                            claimantText += ` (Split)`;
+                                            const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
+                                            prizeValueText = `${formatCurrency(prizePerWinner)} each`;
+                                        }
                                     }
 
                                     return (
                                         <li key={prize} className="flex flex-col bg-background/50 p-1.5 rounded-md">
                                             <div className="flex justify-between items-center w-full">
-                                                <span>{prize} <span className="text-muted-foreground">({percentage}%)</span></span>
-                                                <span className="font-semibold">₹{prizeAmount.toFixed(2)}</span>
+                                                <span>{prize}</span>
+                                                <span className="font-semibold">{prizeValueText}</span>
                                             </div>
                                             <span className={cn("text-xs text-right w-full", isClaimed ? "text-green-600 font-medium" : "text-muted-foreground/80")}>
                                                 {claimantText}
@@ -735,6 +808,7 @@ export default function GameRoomPage() {
             calledNumbers={roomData.calledNumbers}
             isMuted={isSfxMuted}
             onToggleMute={toggleSfxMute}
+            animationKey={animationKey}
           />
 
           {isCurrentUserHost && !isAutoCalling && !roomData.isGameOver && (
@@ -823,3 +897,7 @@ export default function GameRoomPage() {
     </div>
   );
 }
+
+function formatCurrency(amount: number) {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+};
