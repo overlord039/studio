@@ -131,7 +131,7 @@ export default function CreateRoomSelectionPage() {
                 key={option.mode}
                 onClick={() => handleCardClick(option)}
                 className={cn(
-                "shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer relative overflow-hidden border-2 border-transparent flex flex-col",
+                "shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer relative overflow-hidden border-2 border-transparent",
                 option.disabled ? 'opacity-50 cursor-not-allowed hover:transform-none' : ''
                 )}
             >
@@ -140,12 +140,14 @@ export default function CreateRoomSelectionPage() {
                         Coming Soon
                     </div>
                 )}
-                <CardHeader className="items-center text-center p-6">
-                <div className={cn("p-3 rounded-full mb-3 inline-block", option.iconBgColor)}>
+                <CardHeader className="flex flex-row items-center gap-4 p-6">
+                  <div className={cn("p-3 rounded-full", option.iconBgColor)}>
                     <option.icon className={cn("h-8 w-8", option.iconTextColor)} />
-                </div>
-                <CardTitle className="text-lg font-bold">{option.title}</CardTitle>
-                <CardDescription className="text-sm">{option.subtitle}</CardDescription>
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-bold">{option.title}</CardTitle>
+                    <CardDescription className="text-sm">{option.subtitle}</CardDescription>
+                  </div>
                 </CardHeader>
             </Card>
             ))}
