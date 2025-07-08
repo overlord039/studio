@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { TICKET_PRICES, MIN_LOBBY_SIZE, MAX_LOBBY_SIZE, DEFAULT_GAME_SETTINGS } from "@/lib/constants";
 import type { TicketPrice, Player, Room, GameSettings } from "@/types";
-import { Settings } from "lucide-react";
+import { Gamepad2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -113,7 +113,7 @@ export default function CreatePrivateRoomPage() {
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
            <div className="flex justify-center mb-4">
-            <Settings className="h-12 w-12 text-primary" />
+            <Gamepad2 className="h-12 w-12 text-primary" />
           </div>
           <CardTitle className="text-3xl font-bold">Create Game</CardTitle>
           <CardDescription>Set up your private game and invite friends!</CardDescription>
@@ -202,5 +202,3 @@ export default function CreatePrivateRoomPage() {
     </div>
   );
 }
-
-    
