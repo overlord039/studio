@@ -608,7 +608,7 @@ export default function GameRoomPage() {
             if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
                 currentUserPrizeNames.push(prize);
                 const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
-                const prizeAmount = (totalPrizePool * percentage);
+                const prizeAmount = (totalPrizePool * percentage) / 100;
                 const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
                 currentUserWinnings += prizePerWinner;
             }
@@ -644,7 +644,7 @@ export default function GameRoomPage() {
                 {prizesForFormat.map(prize => {
                   const claimInfo = roomData.prizeStatus[prize];
                   const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
-                  const prizeAmount = (totalPrizePool * percentage);
+                  const prizeAmount = (totalPrizePool * percentage) / 100;
 
                   let prizeStatusText = "Not Claimed";
                   let prizeValueText = formatCurrency(prizeAmount);
@@ -742,7 +742,7 @@ export default function GameRoomPage() {
                                 <ul className="space-y-1 text-xs">
                                 {prizesForFormat.map(prize => {
                                     const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
-                                    const prizeAmount = (totalPrizePool * percentage);
+                                    const prizeAmount = (totalPrizePool * percentage) / 100;
                                     const claimInfo = roomData.prizeStatus[prize as PrizeType];
                                     const isClaimed = claimInfo && claimInfo.claimedBy.length > 0;
                                     
