@@ -325,43 +325,77 @@ export default function GameRoomPage() {
       toast({ title: "Cannot Claim", description: "Room data missing or not logged in.", variant: "destructive" });
       return;
     }
+
+    // Helper to get all number positions for a specific prize on a specific ticket
+    const getPrizeNumbersOnTicket = (ticket: HousieTicketGrid, prizeType: PrizeType): { num: number; r: number; c: number }[] => {
+        const prizeNumbers: { num: number; r: number; c: number }[] = [];
+        if (prizeType === PRIZE_TYPES.FIRST_LINE) {
+            ticket[0].forEach((num, c) => { if (num !== null) prizeNumbers.push({ num, r: 0, c }); });
+        } else if (prizeType === PRIZE_TYPES.SECOND_LINE) {
+            ticket[1].forEach((num, c) => { if (num !== null) prizeNumbers.push({ num, r: 1, c }); });
+        } else if (prizeType === PRIZE_TYPES.THIRD_LINE) {
+            ticket[2].forEach((num, c) => { if (num !== null) prizeNumbers.push({ num, r: 2, c }); });
+        } else if (prizeType === PRIZE_TYPES.FULL_HOUSE) {
+            ticket.forEach((row, r) => row.forEach((num, c) => { if (num !== null) prizeNumbers.push({ num, r, c }); }));
+        }
+        return prizeNumbers;
+    };
     
-    // Find a ticket that meets the claim condition to determine the ticketIndex
+    let isClaimValidAndMarked = false;
     let winningTicketIndex = -1;
+
+    // Loop through each of the player's tickets to find one that is both eligible and fully marked
     for (let i = 0; i < myTickets.length; i++) {
+        const ticket = myTickets[i];
         const housieLib = require('@/lib/housie');
-        if (housieLib.checkWinningCondition(myTickets[i], roomData.calledNumbers, prizeType)) {
-            winningTicketIndex = i;
-            break;
+
+        // First, check server-side eligibility: are all numbers for the prize in the called list?
+        if (housieLib.checkWinningCondition(ticket, roomData.calledNumbers, prizeType)) {
+            // This ticket is eligible based on called numbers. Now, check if it's fully marked by the player.
+            
+            if (prizeType === PRIZE_TYPES.EARLY_5) {
+                // For Early 5, we just need to find 5 marked numbers that have been called.
+                let markedAndCalledCount = 0;
+                ticket.forEach((row, r) => {
+                    row.forEach((num, c) => {
+                        if (num !== null && roomData.calledNumbers.includes(num)) {
+                            if (markedNumbers.has(`${i}-${r}-${c}`)) {
+                                markedAndCalledCount++;
+                            }
+                        }
+                    });
+                });
+
+                if (markedAndCalledCount >= 5) {
+                    isClaimValidAndMarked = true;
+                    winningTicketIndex = i;
+                    break; // Found a valid ticket, stop searching
+                }
+            } else {
+                // For Line and Full House prizes
+                const prizeNumbers = getPrizeNumbersOnTicket(ticket, prizeType);
+                const areAllMarked = prizeNumbers.every(({ r, c }) => markedNumbers.has(`${i}-${r}-${c}`));
+                
+                if (areAllMarked) {
+                    isClaimValidAndMarked = true;
+                    winningTicketIndex = i;
+                    break; // Found a valid ticket, stop searching
+                }
+            }
         }
     }
 
-    if (winningTicketIndex === -1 && prizeType !== 'Early 5') {
-       const bogieLib = require('@/lib/housie');
-       let isPotentialBogey = true;
-       // For line prizes, you must have all numbers in a row on *one* ticket.
-       // Let's verify for all tickets. If none match, it's a bogey.
-       if (prizeType.includes('Line') || prizeType.includes('Full House')) {
-          const isAnyTicketValid = myTickets.some(ticket => bogieLib.checkWinningCondition(ticket, roomData.calledNumbers, prizeType));
-          if (!isAnyTicketValid) {
-            isPotentialBogey = true;
-          } else {
-            isPotentialBogey = false; // at least one ticket is valid, but maybe not the one sent.
-          }
-       }
-       
-       if(isPotentialBogey){
-          playSound('error.wav');
-          toast({
-              title: `Claim for ${prizeType} Failed`,
-              description: `Your claim is not valid (Bogey!).`,
-              variant: "destructive"
-          });
-          return;
-       }
+    if (!isClaimValidAndMarked) {
+        playSound('error.wav');
+        toast({
+            title: `Claim for ${prizeType} Failed`,
+            description: "You must mark all required numbers on your ticket before claiming a prize.",
+            variant: "destructive"
+        });
+        return;
     }
-
-
+    
+    // If we've reached here, the claim is valid on the client side. Proceed with the API call.
     try {
       const response = await fetch(`/api/rooms/${roomId}/claim-prize`, {
         method: 'POST',
