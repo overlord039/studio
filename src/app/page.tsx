@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { 
-  House, 
+  PlusCircle, 
   KeyRound, 
   Speaker,
   Calculator
@@ -94,8 +95,8 @@ export default function HomePage() {
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCreateRoom() }}
           >
             <CardContent className="flex flex-col items-center justify-center p-4 text-center">
-              <House className="h-10 w-10 mb-2" />
-              <p className="text-lg font-bold">Create Private Room</p>
+              <PlusCircle className="h-10 w-10 mb-2" />
+              <p className="text-lg font-bold">Create Room</p>
             </CardContent>
           </Card>
 
