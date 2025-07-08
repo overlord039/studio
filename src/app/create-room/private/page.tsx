@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -116,7 +115,7 @@ export default function CreatePrivateRoomPage() {
            <div className="flex justify-center mb-4">
             <Settings className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-3xl font-bold">Create Private Game</CardTitle>
+          <CardTitle className="text-3xl font-bold">Create Game</CardTitle>
           <CardDescription>Set up your private game and invite friends!</CardDescription>
         </CardHeader>
         <CardContent>
