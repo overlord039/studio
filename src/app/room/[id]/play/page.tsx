@@ -704,7 +704,7 @@ export default function GameRoomPage() {
 
   return (
     <div className="container mx-auto p-4 space-y-4">
-      <audio ref={audioRef} src={audioUrl ?? ''} />
+      <audio ref={audioRef} src={audioUrl || undefined} />
       <Card className="shadow-none border-none bg-transparent">
         <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
           <div className="flex-grow">

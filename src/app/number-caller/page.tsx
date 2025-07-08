@@ -122,7 +122,7 @@ export default function NumberCallerPage() {
 
   return (
     <div className="container mx-auto p-4 space-y-3 md:space-y-4 border rounded-xl shadow-lg">
-      <audio ref={audioRef} src={audioUrl ?? ''} />
+      <audio ref={audioRef} src={audioUrl || undefined} />
       <Card className="shadow-xl bg-gradient-to-br from-primary via-purple-600 to-accent text-primary-foreground">
         <CardHeader className="flex flex-row items-center justify-between gap-4 py-3 md:py-4 px-4 md:px-6">
            <div className="flex items-center gap-4">
