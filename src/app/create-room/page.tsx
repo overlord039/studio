@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,10 +36,10 @@ export default function CreateRoomSelectionPage() {
   const options: GameOption[] = [
     {
       mode: 'private' as Mode,
-      title: "Private Multiplayer",
-      subtitle: "Play with friends and family",
+      title: "Create Room",
+      subtitle: "Host a new game for your friends",
       icon: House,
-      description: "Host can choose between automatic system calls or manual calls, and can pause/resume the game.",
+      description: "Set up a private game with custom rules and invite your friends to play.",
       disabled: false,
       href: "/create-room/private",
       iconBgColor: "bg-primary/20",
