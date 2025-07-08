@@ -24,6 +24,7 @@ import { Settings } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { playSound } from "@/lib/sounds";
 
 const createRoomFormSchema = z.object({
   ticketPrice: z.coerce.number().refine(price => TICKET_PRICES.includes(price as TicketPrice), {
@@ -89,6 +90,7 @@ export default function CreatePrivateRoomPage() {
 
       const newRoom: Room = await response.json(); 
       
+      playSound('notification.wav');
       toast({
         title: "Private Room Created!",
         description: `Room ID: ${newRoom.id}. Share this ID with friends!`,
@@ -201,3 +203,5 @@ export default function CreatePrivateRoomPage() {
     </div>
   );
 }
+
+    
