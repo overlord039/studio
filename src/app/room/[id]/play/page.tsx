@@ -69,7 +69,8 @@ export default function GameRoomPage() {
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [statsUpdated, setStatsUpdated] = useState(false);
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const [audioUrl, setAudioUrl] = useState('');
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [animationKey, setAnimationKey] = useState(0);
 
   const previousCurrentNumberRef = useRef<number | null>(null);
@@ -102,10 +103,7 @@ export default function GameRoomPage() {
     try {
       const response = await announceCalledNumber({ number: num });
       if (response && response.audioContent) {
-        const audioBlob = new Blob([Buffer.from(response.audioContent, 'base64')], { type: 'audio/wav' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const newAudio = new Audio(audioUrl);
-        setAudio(newAudio);
+        setAudioUrl(`data:audio/wav;base64,${response.audioContent}`);
       } else {
         throw new Error('No audio media was generated.');
       }
@@ -115,10 +113,10 @@ export default function GameRoomPage() {
   }, [isSfxMuted]);
 
   useEffect(() => {
-    if (audio) {
-      audio.play().catch(e => console.error("Audio playback failed:", e));
+    if (audioUrl && audioRef.current) {
+      audioRef.current.play().catch(e => console.error("Audio playback failed:", e));
     }
-  }, [audio]);
+  }, [audioUrl]);
 
   const fetchGameDetails = useCallback(async (isInitialLoad = false) => {
     const playerTicketsParam = searchParams.get('playerTickets');
@@ -196,11 +194,13 @@ export default function GameRoomPage() {
       if (me && me.tickets) {
         setMyTickets(me.tickets);
       } else if (isInitialLoad && (!me || !me.tickets || me.tickets.length === 0)) {
-        const numTickets = playerTicketsParam ? parseInt(playerTicketsParam, 10) : 0;
-        if (numTickets === 0 && data.isGameStarted && !data.isGameOver) {
-          if (!roomDataRef.current || !roomDataRef.current.isGameOver) { 
-            toast({ title: 'Spectating', description: "You don't have any tickets for this game." });
-          }
+        if (playerTicketsParam) {
+            const numTickets = parseInt(playerTicketsParam, 10);
+            if (numTickets === 0 && data.isGameStarted && !data.isGameOver) {
+                if (!roomDataRef.current || !roomDataRef.current.isGameOver) { 
+                    toast({ title: 'Spectating', description: "You don't have any tickets for this game." });
+                }
+            }
         }
         setMyTickets([]);
       }
@@ -698,6 +698,7 @@ export default function GameRoomPage() {
 
   return (
     <div className="container mx-auto p-4 space-y-4">
+      <audio ref={audioRef} src={audioUrl} />
       <Card className="shadow-none border-none bg-transparent">
         <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
           <div className="flex-grow">

@@ -13,6 +13,7 @@ import CalledNumberDisplay from '@/components/game/called-number-display';
 import { useSound } from '@/contexts/sound-context';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { announceCalledNumber } from '@/ai/flows/announce-called-number';
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const newArray = [...array];
@@ -35,13 +36,29 @@ export default function NumberCallerPage() {
   const { isSfxMuted, toggleSfxMute } = useSound();
   const autoCallIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
+  const [audioUrl, setAudioUrl] = useState('');
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [animationKey, setAnimationKey] = useState(0);
 
-  const speakNumber = useCallback((num: number) => {
-    if (!isSfxMuted && typeof window !== 'undefined' && window.speechSynthesis) {
-      const utterance = new SpeechSynthesisUtterance(String(num));
-      window.speechSynthesis.speak(utterance);
+  const speakNumber = useCallback(async (num: number) => {
+    if (isSfxMuted) return;
+    try {
+      const response = await announceCalledNumber({ number: num });
+      if (response && response.audioContent) {
+        setAudioUrl(`data:audio/wav;base64,${response.audioContent}`);
+      } else {
+        throw new Error('No audio media was generated.');
+      }
+    } catch (error) {
+      console.error('Error generating audio announcement:', error);
     }
   }, [isSfxMuted]);
+
+  useEffect(() => {
+    if (audioUrl && audioRef.current) {
+      audioRef.current.play().catch(e => console.error("Audio playback failed:", e));
+    }
+  }, [audioUrl]);
 
   const callNextNumber = useCallback(() => {
     if (availableNumbers.length === 0) {
@@ -55,6 +72,7 @@ export default function NumberCallerPage() {
     setCurrentNumber(nextNumber);
     setCalledNumbers(prev => [nextNumber, ...prev]);
     speakNumber(nextNumber);
+    setAnimationKey(prev => prev + 1);
   }, [availableNumbers, speakNumber, toast]);
 
   const resetGame = () => {
@@ -98,6 +116,7 @@ export default function NumberCallerPage() {
 
   return (
     <div className="container mx-auto p-4 space-y-3 md:space-y-4 border rounded-xl shadow-lg">
+      <audio ref={audioRef} src={audioUrl} />
       <Card className="shadow-xl bg-gradient-to-br from-primary via-purple-600 to-accent text-primary-foreground">
         <CardHeader className="flex flex-row items-center justify-between gap-4 py-3 md:py-4 px-4 md:px-6">
            <div className="flex items-center gap-4">
@@ -127,6 +146,7 @@ export default function NumberCallerPage() {
             calledNumbers={calledNumbers}
             isMuted={isSfxMuted}
             onToggleMute={toggleSfxMute}
+            animationKey={animationKey}
           />
           {!isAutoCalling && (
             <Button onClick={callNextNumber} disabled={availableNumbers.length === 0} className="w-full">
