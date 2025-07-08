@@ -36,7 +36,7 @@ export default function NumberCallerPage() {
   const { isSfxMuted, toggleSfxMute } = useSound();
   const autoCallIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
-  const [audioUrl, setAudioUrl] = useState('');
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [animationKey, setAnimationKey] = useState(0);
 
@@ -56,6 +56,7 @@ export default function NumberCallerPage() {
 
   useEffect(() => {
     if (audioUrl && audioRef.current) {
+      audioRef.current.src = audioUrl;
       audioRef.current.play().catch(e => console.error("Audio playback failed:", e));
     }
   }, [audioUrl]);
@@ -116,7 +117,7 @@ export default function NumberCallerPage() {
 
   return (
     <div className="container mx-auto p-4 space-y-3 md:space-y-4 border rounded-xl shadow-lg">
-      <audio ref={audioRef} src={audioUrl} />
+      <audio ref={audioRef} />
       <Card className="shadow-xl bg-gradient-to-br from-primary via-purple-600 to-accent text-primary-foreground">
         <CardHeader className="flex flex-row items-center justify-between gap-4 py-3 md:py-4 px-4 md:px-6">
            <div className="flex items-center gap-4">

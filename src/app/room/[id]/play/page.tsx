@@ -69,7 +69,7 @@ export default function GameRoomPage() {
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [statsUpdated, setStatsUpdated] = useState(false);
-  const [audioUrl, setAudioUrl] = useState('');
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [animationKey, setAnimationKey] = useState(0);
 
@@ -114,6 +114,7 @@ export default function GameRoomPage() {
 
   useEffect(() => {
     if (audioUrl && audioRef.current) {
+      audioRef.current.src = audioUrl;
       audioRef.current.play().catch(e => console.error("Audio playback failed:", e));
     }
   }, [audioUrl]);
@@ -698,7 +699,7 @@ export default function GameRoomPage() {
 
   return (
     <div className="container mx-auto p-4 space-y-4">
-      <audio ref={audioRef} src={audioUrl} />
+      <audio ref={audioRef} />
       <Card className="shadow-none border-none bg-transparent">
         <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
           <div className="flex-grow">
