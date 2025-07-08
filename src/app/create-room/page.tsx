@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { House, LogOut, VenetianMask } from 'lucide-react';
+import { Gamepad2, LogOut, VenetianMask } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
@@ -36,7 +36,7 @@ export default function CreateRoomSelectionPage() {
       mode: 'private' as Mode,
       title: "Create Room",
       subtitle: "Host a new game for your friends",
-      icon: House,
+      icon: Gamepad2,
       disabled: false,
       href: "/create-room/private",
       iconBgColor: "bg-primary/20",
