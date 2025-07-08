@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import Link from 'next/link';
@@ -8,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { 
-  UsersRound, 
+  House, 
   KeyRound, 
   Speaker,
   Calculator
@@ -57,7 +55,7 @@ export default function HomePage() {
       });
       return;
     }
-    router.push('/create-room');
+    router.push('/create-room/private');
   };
   
   const handleNavigateWithSound = (path: string) => {
@@ -96,8 +94,8 @@ export default function HomePage() {
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCreateRoom() }}
           >
             <CardContent className="flex flex-col items-center justify-center p-4 text-center">
-              <UsersRound className="h-10 w-10 mb-2" />
-              <p className="text-lg font-bold">Create Multiplayer Room</p>
+              <House className="h-10 w-10 mb-2" />
+              <p className="text-lg font-bold">Create Private Room</p>
             </CardContent>
           </Card>
 
