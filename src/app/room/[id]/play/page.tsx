@@ -109,8 +109,13 @@ export default function GameRoomPage() {
       }
     } catch (error) {
       console.error('Error generating audio announcement:', error);
+      toast({
+        title: "Audio Error",
+        description: "Could not generate voice announcement.",
+        variant: "destructive"
+      });
     }
-  }, [isSfxMuted]);
+  }, [isSfxMuted, toast]);
 
   useEffect(() => {
     if (audioUrl && audioRef.current) {
@@ -699,7 +704,7 @@ export default function GameRoomPage() {
 
   return (
     <div className="container mx-auto p-4 space-y-4">
-      <audio ref={audioRef} />
+      <audio ref={audioRef} src={audioUrl ?? ''} />
       <Card className="shadow-none border-none bg-transparent">
         <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
           <div className="flex-grow">
