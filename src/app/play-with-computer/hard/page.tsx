@@ -44,8 +44,12 @@ export default function HardModePage() {
       }
 
       const newRoom: Room = await response.json();
-      toast({ title: "Hard Game Created!", description: "Ticket counts are random. Check the lobby!" });
-      router.push(`/room/${newRoom.id}/lobby`);
+      toast({ title: "Hard Game Starting!", description: "Ticket counts are random. Good luck!" });
+      
+      const hostPlayerInRoom = newRoom.players.find(p => p.id === currentUser.uid);
+      const hostTicketCount = hostPlayerInRoom?.tickets.length || 1;
+
+      router.push(`/room/${newRoom.id}/play?playerTickets=${hostTicketCount}`);
 
     } catch (error) {
       console.error("Error creating bot game:", error);
@@ -57,7 +61,7 @@ export default function HardModePage() {
 
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
-      <Card className="w-full max-w-md shadow-xl text-center">
+      <Card className="w-full max-w-md shadow-xl text-center border-accent">
         <CardHeader>
            <div className="flex justify-center items-center gap-2 mb-4">
             <Bot className="h-12 w-12 text-primary" />

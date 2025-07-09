@@ -62,8 +62,8 @@ export default function EasyModePage() {
       }
 
       const newRoom: Room = await response.json();
-      toast({ title: "Game Created!", description: "Get ready to play against the bots!" });
-      router.push(`/room/${newRoom.id}/lobby`);
+      toast({ title: "Game Starting!", description: "Get ready to play against the bots!" });
+      router.push(`/room/${newRoom.id}/play?playerTickets=${values.numberOfTickets}`);
 
     } catch (error) {
       console.error("Error creating bot game:", error);
@@ -75,7 +75,7 @@ export default function EasyModePage() {
 
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
-      <Card className="w-full max-w-md shadow-xl">
+      <Card className="w-full max-w-md shadow-xl border-accent">
         <CardHeader className="text-center">
            <div className="flex justify-center items-center gap-2 mb-4">
             <Bot className="h-12 w-12 text-primary" />

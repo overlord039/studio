@@ -1,6 +1,6 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { createRoomStore, addPlayerToRoomStore, getRoomStateForClient } from '@/lib/server/game-store';
+import { createRoomStore, addPlayerToRoomStore, getRoomStateForClient, startGameInRoomStore } from '@/lib/server/game-store';
 import type { Player, GameSettings, Room } from '@/types';
 
 const BOT_NAMES = ["Chip", "Glitch", "Byte", "Pixel", "Unit 734", "Rookie", "Vector", "Domino"];
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       isPublic: false,
       callingMode: 'auto',
       gameMode: mode,
-      // Ticket price and other settings can use defaults
+      ticketPrice: 0, // No prize money in bot games
     };
     const newRoom = createRoomStore(host, roomSettings);
 
@@ -60,6 +60,14 @@ export async function POST(request: NextRequest) {
         addPlayerToRoomStore(newRoom.id, botPlayer, botTickets);
     }
 
+    // 4. Start the game immediately
+    const startResult = startGameInRoomStore(newRoom.id, host.id);
+    if (startResult && 'error' in startResult) {
+        console.error(`Failed to start bot game ${newRoom.id}:`, startResult.error);
+        return NextResponse.json({ message: 'Failed to start bot game after creation', error: startResult.error }, { status: 500 });
+    }
+
+    // 5. Get the final state and return it
     const roomForClient = getRoomStateForClient(newRoom.id);
     if (!roomForClient) {
         return NextResponse.json({ message: 'Failed to retrieve bot room after creation' }, { status: 500 });
