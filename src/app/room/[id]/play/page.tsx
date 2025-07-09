@@ -535,9 +535,9 @@ export default function GameRoomPage() {
 
   if (isLoading || authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4 text-xl">Loading Game...</p>
+        <p className="mt-4 text-xl">Loading Game...</p>
       </div>
     );
   }
@@ -864,7 +864,7 @@ export default function GameRoomPage() {
 
         <div className="w-full max-w-7xl mx-auto space-y-4">
             {myTickets.length > 0 && !roomData.isGameOver && (
-            <div className="flex flex-wrap gap-1 sm:gap-2 justify-center">
+            <div className="flex flex-wrap gap-1 justify-center">
                 {prizesForFormat.map((prizeType, prizeIdx) => {
                 const claimInfo = roomData.prizeStatus[prizeType];
                 const isPrizeClaimedByAnyone = claimInfo && claimInfo.claimedBy.length > 0;
@@ -878,7 +878,7 @@ export default function GameRoomPage() {
                         isPrizeClaimedByAnyone
                     }
                     variant={isPrizeClaimedByAnyone ? "secondary" : "default"}
-                    className={cn("px-2 py-1 h-auto rounded-md text-xs sm:text-sm",
+                    className={cn("px-2 py-1.5 h-auto rounded-md text-xs sm:text-sm",
                         !isPrizeClaimedByAnyone && prizeType.includes("Early") ? "bg-green-500 hover:bg-green-600" :
                         !isPrizeClaimedByAnyone && prizeType.includes("Line") ? "bg-yellow-400 hover:bg-yellow-500 text-black" :
                             !isPrizeClaimedByAnyone && prizeType.includes("Full House") ? "bg-red-500 hover:bg-red-600" : ""
