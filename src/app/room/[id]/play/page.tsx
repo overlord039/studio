@@ -147,32 +147,30 @@ export default function GameRoomPage() {
           for (const prize of prizes) {
               const newClaim = newPrizeStatus[prize];
               const oldClaim = oldPrizeStatus[prize];
-              
-              if (newClaim && oldClaim) {
-                const newClaimants = newClaim?.claimedBy ?? [];
-                const oldClaimants = oldClaim?.claimedBy ?? [];
 
-                if (newClaimants.length > oldClaimants.length) {
-                    const oldClaimantIds = new Set(oldClaimants.map(c => c.id));
-                    const newlyAddedClaimants = newClaimants.filter(c => !oldClaimantIds.has(c.id));
+              const newClaimants = newClaim?.claimedBy ?? [];
+              const oldClaimants = oldClaim?.claimedBy ?? [];
 
-                    if (newlyAddedClaimants.length > 0) {
-                        playSound('win.wav');
-                        const claimantNames = newlyAddedClaimants
-                            .map(claimant => {
-                                if (claimant.id === currentUser?.uid) return "You";
-                                return claimant.name || claimant.id;
-                             })
-                            .join(', ');
-                        
-                        toast({
-                          title: "Game Update!",
-                          description: `🔔 ${claimantNames} claimed ${prize}!`
-                        });
-                        
-                        break; 
-                    }
-                }
+              if (newClaimants.length > oldClaimants.length) {
+                  const oldClaimantIds = new Set(oldClaimants.map(c => c.id));
+                  const newlyAddedClaimants = newClaimants.filter(c => !oldClaimantIds.has(c.id));
+
+                  if (newlyAddedClaimants.length > 0) {
+                      playSound('win.wav');
+                      const claimantNames = newlyAddedClaimants
+                          .map(claimant => {
+                              if (claimant.id === currentUser?.uid) return "You";
+                              return claimant.name || claimant.id;
+                           })
+                          .join(', ');
+                      
+                      toast({
+                        title: "Game Update!",
+                        description: `🔔 ${claimantNames} claimed ${prize}!`
+                      });
+                      
+                      break; 
+                  }
               }
           }
       }
