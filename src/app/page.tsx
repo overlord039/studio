@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -111,9 +112,9 @@ export default function HomePage() {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleFreeToolsNavigation('/number-caller') }}
           >
-            <CardContent className="flex flex-col items-center justify-center p-4 text-center">
-              <Speaker className="h-10 w-10 mb-2" />
-              <p className="text-lg font-bold">Number Caller</p>
+            <CardContent className="flex flex-col items-center justify-center p-3 text-center">
+              <Speaker className="h-8 w-8 mb-1" />
+              <p className="text-sm font-bold">Number Caller</p>
             </CardContent>
           </Card>
 
@@ -124,9 +125,9 @@ export default function HomePage() {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleFreeToolsNavigation('/prize-calculator') }}
           >
-            <CardContent className="flex flex-col items-center justify-center p-4 text-center">
-              <Calculator className="h-10 w-10 mb-2" />
-              <p className="text-lg font-bold">Prize Calculator</p>
+            <CardContent className="flex flex-col items-center justify-center p-3 text-center">
+              <Calculator className="h-8 w-8 mb-1" />
+              <p className="text-sm font-bold">Prize Calculator</p>
             </CardContent>
           </Card>
         </section>
