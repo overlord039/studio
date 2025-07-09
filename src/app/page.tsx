@@ -8,7 +8,8 @@ import {
   Users,
   Speaker,
   Calculator,
-  Bot
+  Bot,
+  Globe
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
@@ -83,6 +84,20 @@ export default function HomePage() {
           <CardContent className="flex flex-col items-center justify-center p-4 text-center">
             <Bot className="h-10 w-10 mb-2" />
             <p className="text-lg font-bold">vs Computer</p>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="bg-gray-500 text-white rounded-2xl shadow-lg relative opacity-50 cursor-not-allowed"
+          role="button"
+          aria-disabled="true"
+        >
+          <div className="absolute top-2 right-2 bg-muted text-muted-foreground text-xs font-bold uppercase px-2 py-1 rounded-full z-10">
+              Coming Soon
+          </div>
+          <CardContent className="flex flex-col items-center justify-center p-4 text-center">
+            <Globe className="h-10 w-10 mb-2" />
+            <p className="text-lg font-bold">Online</p>
           </CardContent>
         </Card>
         
