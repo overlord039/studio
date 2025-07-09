@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -104,33 +103,35 @@ export default function HomePage() {
             </Card>
         </div>
         
-        <section className="grid grid-cols-2 gap-4">
-          <Card 
-            className="bg-accent text-accent-foreground hover:bg-accent/90 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
-            onClick={() => handleFreeToolsNavigation('/number-caller')}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleFreeToolsNavigation('/number-caller') }}
-          >
-            <CardContent className="flex flex-col items-center justify-center p-3 text-center">
-              <Speaker className="h-8 w-8 mb-1" />
-              <p className="text-sm font-bold">Number Caller</p>
-            </CardContent>
-          </Card>
+        <div className="flex justify-center">
+          <section className="grid grid-cols-2 gap-4 w-2/3">
+            <Card 
+              className="bg-accent text-accent-foreground hover:bg-accent/90 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
+              onClick={() => handleFreeToolsNavigation('/number-caller')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleFreeToolsNavigation('/number-caller') }}
+            >
+              <CardContent className="flex flex-col items-center justify-center p-3 text-center">
+                <Speaker className="h-8 w-8 mb-1" />
+                <p className="text-sm font-bold">Number Caller</p>
+              </CardContent>
+            </Card>
 
-          <Card 
-            className="bg-green-600 text-white hover:bg-green-700 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
-            onClick={() => handleFreeToolsNavigation('/prize-calculator')}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleFreeToolsNavigation('/prize-calculator') }}
-          >
-            <CardContent className="flex flex-col items-center justify-center p-3 text-center">
-              <Calculator className="h-8 w-8 mb-1" />
-              <p className="text-sm font-bold">Prize Calculator</p>
-            </CardContent>
-          </Card>
-        </section>
+            <Card 
+              className="bg-green-600 text-white hover:bg-green-700 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
+              onClick={() => handleFreeToolsNavigation('/prize-calculator')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleFreeToolsNavigation('/prize-calculator') }}
+            >
+              <CardContent className="flex flex-col items-center justify-center p-3 text-center">
+                <Calculator className="h-8 w-8 mb-1" />
+                <p className="text-sm font-bold">Prize Calculator</p>
+              </CardContent>
+            </Card>
+          </section>
+        </div>
       </div>
     </div>
   );
