@@ -96,7 +96,7 @@ export default function CreateRoomSelectionPage() {
         <p className="text-white/80 mt-2 text-base">Create a new room or join an existing one.</p>
       </div>
       <div className="w-full max-w-xl space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-1 gap-6 md:max-w-sm mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
             {options.map((option) => (
             <Card
                 key={option.mode}
