@@ -18,6 +18,7 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
   prizeFormat: "Format 1",
   numberOfTicketsPerPlayer: DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER,
   callingMode: 'auto',
+  gameMode: 'multiplayer',
 };
 
 

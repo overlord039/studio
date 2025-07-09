@@ -57,6 +57,7 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
     email: host.email || `${host.id}@housiehub.guest`, // Fallback email
     isHost: true,
     tickets: [], 
+    isBot: false,
   };
 
   const newRoom: Room = {
@@ -90,7 +91,7 @@ export function getRoomStore(roomId: string): Room | undefined {
   return room;
 }
 
-export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; name: string; email: string | null }, numberOfTickets?: number): Room | { error: string } {
+export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberOfTickets?: number): Room | { error: string } {
     const room = rooms.get(roomId);
     if (!room) {
         return { error: "Room not found." };
@@ -120,6 +121,7 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; n
         
         existingPlayer.name = playerInfo.name;
         existingPlayer.isHost = playerInfo.id === room.host.id;
+        existingPlayer.isBot = !!playerInfo.isBot;
         if (playerInfo.email) {
             existingPlayer.email = playerInfo.email;
         }
@@ -147,6 +149,7 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: { id: string; n
             name: playerInfo.name,
             email: playerInfo.email || `${playerInfo.id}@housiehub.guest`, // Fallback email
             isHost: playerInfo.id === room.host.id,
+            isBot: !!playerInfo.isBot,
             tickets: Array.from({ length: numTicketsToGenerate }, () => generateImprovedHousieTicket()),
         };
         room.players.push(newPlayer);
@@ -170,7 +173,7 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
     return { error: `Host must have tickets before starting.` };
   }
 
-  const minPlayersRequired = process.env.NODE_ENV === 'development' ? 1 : MIN_LOBBY_SIZE;
+  const minPlayersRequired = room.settings.gameMode === 'multiplayer' ? MIN_LOBBY_SIZE : 1;
   const playersWithTickets = room.players.filter(p => p.tickets.length > 0).length;
 
   if (playersWithTickets < minPlayersRequired) {
@@ -272,7 +275,7 @@ export function removePlayerFromRoomStore(roomId: string, playerId: string): { s
     console.log(`Room ${roomId} is empty and has been deleted.`);
   } else if (leavingPlayer.isHost) {
     // Host migration
-    const newHost = room.players[0];
+    const newHost = room.players.find(p => !p.isBot) || room.players[0]; // Prefer a human host
     newHost.isHost = true;
     room.host = { id: newHost.id, name: newHost.name, email: newHost.email, isHost: true };
     console.log(`Host migration in room ${roomId}: ${newHost.id} is the new host.`);
@@ -299,6 +302,7 @@ export function transferHostStore(
 
   if (!currentHost) return { error: "Current host not found in players list." };
   if (!newHost) return { error: "Target player to become host not found." };
+  if (newHost.isBot) return { error: "Cannot make a bot the host." };
 
   // Swap host status
   currentHost.isHost = false;
@@ -320,6 +324,9 @@ export function kickPlayerStore(
   if (room.host.id !== hostId) return { error: "Only the host can kick players." };
   if (hostId === playerIdToKick) return { error: "Host cannot kick themselves." };
   if (room.isGameStarted) return { error: "Cannot kick players once the game has started." };
+  
+  const playerToKick = room.players.find(p => p.id === playerIdToKick);
+  if(playerToKick?.isBot) return { error: "Cannot kick a bot player." };
 
   const playerIndex = room.players.findIndex(p => p.id === playerIdToKick);
   if (playerIndex === -1) {
@@ -368,6 +375,40 @@ export function callNextNumberStore(roomId: string): Room | { error: string; num
   room.calledNumbers.unshift(nextNumber);
   room.lastNumberCalledTimestamp = new Date();
   rooms.set(roomId, room);
+
+  // Bot logic
+  if ((room.settings.gameMode === 'easy' || room.settings.gameMode === 'hard') && !room.isGameOver) {
+    const bots = room.players.filter(p => p.isBot);
+    const prizes = PRIZE_DEFINITIONS[room.settings.prizeFormat || 'Format 1'];
+    const delay = room.settings.gameMode === 'easy' ? 1000 : 0; // 1s for easy, 0 for hard
+
+    setTimeout(() => {
+        const currentRoomState = getRoomStore(roomId);
+        if (!currentRoomState || currentRoomState.isGameOver) return; // Game ended while waiting
+
+        for (const bot of bots) {
+            for (const prizeType of prizes) {
+                // Check if prize is already claimed by anyone in this single-winner context for bots
+                if ((currentRoomState.prizeStatus[prizeType]?.claimedBy.length ?? 0) > 0) {
+                    continue; 
+                }
+                
+                // Check if this bot has a valid claim
+                for (let i = 0; i < bot.tickets.length; i++) {
+                    const ticket = bot.tickets[i];
+                    const housieLib = require('@/lib/housie'); 
+                    if (housieLib.checkWinningCondition(ticket, currentRoomState.calledNumbers, prizeType)) {
+                        console.log(`Bot ${bot.name} is claiming ${prizeType} in room ${roomId}.`);
+                        claimPrizeStore(roomId, bot.id, prizeType, i);
+                        // Break from checking this bot's tickets for this prize, move to next prize for this bot
+                        break; 
+                    }
+                }
+            }
+        }
+    }, delay);
+  }
+
   return room;
 }
 
@@ -511,6 +552,7 @@ export function getRoomStateForClient(roomId: string): Omit<Room, 'numberPool'> 
       id: p.id,
       name: p.name,
       isHost: p.isHost,
+      isBot: p.isBot,
       tickets: Array.isArray(p.tickets) ? p.tickets : [], 
     }));
 

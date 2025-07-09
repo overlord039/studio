@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -73,6 +74,7 @@ export default function CreatePrivateRoomPage() {
       lobbySize: values.lobbySize,
       numberOfTicketsPerPlayer: values.numberOfTicketsPerPlayer,
       isPublic: false, // Private game
+      gameMode: 'multiplayer',
     };
 
     try {

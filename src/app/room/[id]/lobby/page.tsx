@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter, useParams } from "next/navigation";
-import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangle, Edit, RotateCcw, Crown, UserX } from "lucide-react";
+import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangle, Edit, RotateCcw, Crown, UserX, Bot } from "lucide-react";
 import type { Room, GameSettings, PrizeType, BackendPlayerInRoom } from "@/types";
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE } from "@/lib/constants";
 import React, { useEffect, useState, useCallback, useRef } from "react";
@@ -210,7 +210,7 @@ export default function LobbyPage() {
         return;
     }
 
-     const minPlayersRequired = process.env.NODE_ENV === 'development' ? 1 : MIN_LOBBY_SIZE;
+     const minPlayersRequired = roomData.settings.gameMode !== 'multiplayer' ? 1 : MIN_LOBBY_SIZE;
      const playersWithTicketsCount = roomData.players.filter(p => p.tickets.length > 0).length;
 
      if (playersWithTicketsCount < minPlayersRequired) {
@@ -410,7 +410,7 @@ export default function LobbyPage() {
   
   const totalTicketsBoughtByPlayers = roomData.players.reduce((sum, player) => sum + (player.tickets?.length || 0), 0);
   const currentTotalPrizePool = gameSettings.ticketPrice * totalTicketsBoughtByPlayers;
-  const minPlayersToStart = process.env.NODE_ENV === 'development' ? 1 : MIN_LOBBY_SIZE;
+  const minPlayersToStart = gameSettings.gameMode !== 'multiplayer' ? 1 : MIN_LOBBY_SIZE;
 
   const showTicketSelectionUI = currentUser && !roomData.isGameStarted && 
     (!doesCurrentUserHaveTickets || isEditingTickets);
@@ -547,6 +547,7 @@ export default function LobbyPage() {
                   <div className="flex flex-col">
                     <div className="flex items-center">
                       <span className="font-medium">{player.name}</span>
+                      {player.isBot && <Bot className="ml-1.5 h-4 w-4 text-muted-foreground" />}
                       {player.id === currentUser?.uid && <span className="text-xs text-muted-foreground ml-1.5">(You)</span>}
                       {player.isHost && <span className="text-xs font-semibold text-primary ml-1.5">(Host)</span>}
                     </div>
@@ -555,7 +556,7 @@ export default function LobbyPage() {
                     </span>
                   </div>
                   
-                  {isCurrentUserHost && player.id !== currentUser?.uid && !roomData.isGameStarted && (
+                  {isCurrentUserHost && !player.isBot && player.id !== currentUser?.uid && !roomData.isGameStarted && (
                     <div className="flex items-center gap-1">
                       <AlertDialog>
                         <AlertDialogTrigger asChild>

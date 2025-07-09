@@ -10,11 +10,13 @@ export interface Player {
   name: string;
   isHost?: boolean;
   email?: string | null;
+  isBot?: boolean;
 }
 
 export interface BackendPlayerInRoom extends Player {
   tickets: HousieTicketGrid[];
   email: string; // Make it mandatory for backend (will have a fallback)
+  isBot: boolean;
 }
 
 export type TicketPrice = 5 | 10 | 20 | 25 | 50 | 100;
@@ -28,6 +30,7 @@ export interface GameSettings {
   numberOfTicketsPerPlayer: number; // How many tickets each player gets by default
   callingMode: CallingMode;
   isPublic?: boolean;
+  gameMode?: 'multiplayer' | 'easy' | 'hard';
 }
 
 export const PRIZE_TYPES = {

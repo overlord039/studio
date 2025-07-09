@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { 
   Users,
   Speaker,
-  Calculator
+  Calculator,
+  Bot
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
@@ -70,6 +71,19 @@ export default function HomePage() {
           <CardContent className="flex flex-col items-center justify-center p-4 text-center">
             <Users className="h-10 w-10 mb-2" />
             <p className="text-lg font-bold">Play with Friends</p>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
+          onClick={() => handleNavigateWithAuth('/play-with-computer')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/play-with-computer') }}
+        >
+          <CardContent className="flex flex-col items-center justify-center p-4 text-center">
+            <Bot className="h-10 w-10 mb-2" />
+            <p className="text-lg font-bold">Play with Computer</p>
           </CardContent>
         </Card>
         
