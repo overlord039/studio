@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -83,7 +82,7 @@ export default function HomePage() {
         >
           <CardContent className="flex flex-col items-center justify-center p-4 text-center">
             <Bot className="h-10 w-10 mb-2" />
-            <p className="text-lg font-bold">Play with Computer</p>
+            <p className="text-lg font-bold">vs Computer</p>
           </CardContent>
         </Card>
         
