@@ -18,10 +18,13 @@ export default function PageLayout({ children }: { children: ReactNode }) {
       (pathname?.includes('/room/') && (pathname.endsWith('/play') || pathname.endsWith('/lobby'))) || 
       pathname === '/' ||
       pathname?.startsWith('/number-caller') ||
-      pathname?.startsWith('/create-room');
+      pathname?.startsWith('/create-room') ||
+      pathname?.startsWith('/play-with-computer') ||
+      pathname?.startsWith('/prize-calculator') ||
+      pathname?.startsWith('/profile');
 
     const mainClassName = cn(
-        "flex-grow flex flex-col",
+        "flex-grow flex flex-col justify-center",
         !isSpecialLayoutPage && "container mx-auto px-4 py-8"
     );
 
