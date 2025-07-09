@@ -24,8 +24,8 @@ export default function PageLayout({ children }: { children: ReactNode }) {
       pathname?.startsWith('/profile');
 
     const mainClassName = cn(
-        "flex-grow flex flex-col justify-center",
-        !isSpecialLayoutPage && "container mx-auto px-4 py-8"
+        "flex-grow flex flex-col",
+        !isSpecialLayoutPage && "container mx-auto px-4 py-8 justify-center"
     );
 
     return (
