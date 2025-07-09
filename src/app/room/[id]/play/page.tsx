@@ -838,17 +838,19 @@ export default function GameRoomPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="space-y-4 lg:col-span-1">
-          <MemoizedCalledNumberDisplay 
-            currentNumber={roomData.currentNumber}
-            calledNumbers={roomData.calledNumbers}
-            isMuted={isSfxMuted}
-            onToggleMute={toggleSfxMute}
-            animationKey={animationKey}
-          />
+      <div className="flex flex-col items-center space-y-4">
+        <div className="w-full max-w-md">
+            <MemoizedCalledNumberDisplay 
+                currentNumber={roomData.currentNumber}
+                calledNumbers={roomData.calledNumbers}
+                isMuted={isSfxMuted}
+                onToggleMute={toggleSfxMute}
+                animationKey={animationKey}
+            />
+        </div>
 
-          {isCurrentUserHost && !isAutoCalling && !roomData.isGameOver && (
+        {isCurrentUserHost && !isAutoCalling && !roomData.isGameOver && (
+          <div className="w-full max-w-md">
             <Button 
                 onClick={handleCallNextNumber}
                 disabled={isCallingNextNumber || roomData.isGameOver}
@@ -857,66 +859,65 @@ export default function GameRoomPage() {
               {isCallingNextNumber ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
               {isCallingNextNumber ? 'Calling...' : 'Call Next Number'}
             </Button>
-          )}
-        </div>
+          </div>
+        )}
 
-        <div className="lg:col-span-2">
-          <div className="max-w-7xl mx-auto space-y-4">
+        <div className="w-full max-w-7xl mx-auto space-y-4">
             {myTickets.length > 0 && !roomData.isGameOver && (
-              <div className="flex flex-wrap gap-2 justify-center">
+            <div className="flex flex-wrap gap-1 sm:gap-2 justify-center">
                 {prizesForFormat.map((prizeType, prizeIdx) => {
-                  const claimInfo = roomData.prizeStatus[prizeType];
-                  const isPrizeClaimedByAnyone = claimInfo && claimInfo.claimedBy.length > 0;
-                  
-                  return (
+                const claimInfo = roomData.prizeStatus[prizeType];
+                const isPrizeClaimedByAnyone = claimInfo && claimInfo.claimedBy.length > 0;
+                
+                return (
                     <Button
-                      key={`${prizeType}-${prizeIdx}`}
-                      onClick={() => handleClaimPrize(prizeType)}
-                      disabled={
+                    key={`${prizeType}-${prizeIdx}`}
+                    onClick={() => handleClaimPrize(prizeType)}
+                    disabled={
                         roomData.isGameOver ||
                         isPrizeClaimedByAnyone
-                      }
-                      variant={isPrizeClaimedByAnyone ? "secondary" : "default"}
-                      className={cn("px-2 py-1 rounded-md text-xs sm:text-sm",
+                    }
+                    variant={isPrizeClaimedByAnyone ? "secondary" : "default"}
+                    className={cn("px-2 py-1 h-auto rounded-md text-xs sm:text-sm",
                         !isPrizeClaimedByAnyone && prizeType.includes("Early") ? "bg-green-500 hover:bg-green-600" :
-                          !isPrizeClaimedByAnyone && prizeType.includes("Line") ? "bg-yellow-400 hover:bg-yellow-500 text-black" :
+                        !isPrizeClaimedByAnyone && prizeType.includes("Line") ? "bg-yellow-400 hover:bg-yellow-500 text-black" :
                             !isPrizeClaimedByAnyone && prizeType.includes("Full House") ? "bg-red-500 hover:bg-red-600" : ""
-                      )}
+                    )}
                     >
-                      {prizeType}
+                    {prizeType}
                     </Button>
-                  );
+                );
                 })}
-              </div>
+            </div>
             )}
             
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-white">Your Tickets ({myTickets.length})</h2>
-              <Dialog>
+            <h2 className="text-xl font-semibold text-white">Your Tickets ({myTickets.length})</h2>
+            <Dialog>
                 <DialogTrigger asChild>
-                   <Button variant="default" size="sm" className="font-semibold" onClick={() => playSound('cards.mp3')}>
+                    <Button variant="default" size="sm" className="font-semibold" onClick={() => playSound('cards.mp3')}>
                     Number Board
-                  </Button>
+                </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-md p-4">
-                  <DialogHeader className="pb-2">
+                <DialogHeader className="pb-2">
                     <DialogTitle>Number Board</DialogTitle>
-                  </DialogHeader>
-                  <MemoizedLiveNumberBoard
+                </DialogHeader>
+                <MemoizedLiveNumberBoard
                     calledNumbers={roomData.calledNumbers}
                     currentNumber={roomData.currentNumber}
                     remainingCount={NUMBERS_RANGE_MAX - roomData.calledNumbers.length}
                     calledCount={roomData.calledNumbers.length}
-                  />
+                />
                 </DialogContent>
-              </Dialog>
+            </Dialog>
             </div>
 
             {myTickets.length === 0 && !roomData.isGameOver && roomData.isGameStarted && <p className="text-center text-muted-foreground">You are spectating or have no tickets in this game.</p>}
             <ScrollArea className="max-h-[60vh] lg:max-h-none">
-              <div className="flex flex-wrap justify-center gap-4 p-1">
+            <div className="flex flex-wrap justify-center gap-4 p-1">
                 {myTickets.map((ticket, index) => (
-                  <MemoizedHousieTicket
+                <MemoizedHousieTicket
                     key={index}
                     ticketIndex={index}
                     ticket={ticket}
@@ -924,11 +925,10 @@ export default function GameRoomPage() {
                     markedNumbers={markedNumbers}
                     onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
                     className={ticketClassName}
-                  />
+                />
                 ))}
-              </div>
+            </div>
             </ScrollArea>
-          </div>
         </div>
       </div>
     </div>
