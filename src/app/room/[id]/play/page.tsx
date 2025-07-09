@@ -535,9 +535,9 @@ export default function GameRoomPage() {
 
   if (isLoading || authLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
+      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-xl">Loading Game...</p>
+        <p className="ml-4 text-xl">Loading Game...</p>
       </div>
     );
   }
