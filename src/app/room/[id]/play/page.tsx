@@ -723,56 +723,69 @@ export default function GameRoomPage() {
                     <SheetTitle className="text-base">Game Info &amp; Players</SheetTitle>
                 </SheetHeader>
                 <div className="py-2 space-y-4 flex-grow overflow-y-auto">
-                    {!isBotGame && (
-                      <Card className="bg-secondary/30">
-                          <CardHeader className="p-3 pb-2">
-                              <CardTitle className="text-sm font-semibold flex items-center"><Award className="mr-2 h-4 w-4 text-primary" />Prize Pool</CardTitle>
-                              <p className="text-xs text-muted-foreground">Total: ₹{totalPrizePool.toFixed(2)}</p>
-                          </CardHeader>
-                          <CardContent className="p-3 pt-0">
-                              {isLoading ? (
-                                  <p className="text-xs text-muted-foreground">Loading prize info...</p>
-                              ) : (
-                                  <ul className="space-y-1 text-xs">
-                                  {prizesForFormat.map(prize => {
-                                      const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
-                                      const prizeAmount = (totalPrizePool * percentage) / 100;
-                                      const claimInfo = roomData.prizeStatus[prize as PrizeType];
-                                      const isClaimed = claimInfo && claimInfo.claimedBy.length > 0;
-                                      
-                                      let claimantText = "Unclaimed";
-                                      let prizeValueText = formatCurrency(prizeAmount);
+                    <Card className="bg-secondary/30">
+                        <CardHeader className="p-3 pb-2">
+                            <CardTitle className="text-sm font-semibold flex items-center">
+                                <Award className="mr-2 h-4 w-4 text-primary" />
+                                {isBotGame ? 'Prize Status' : 'Prize Pool'}
+                            </CardTitle>
+                            {!isBotGame && <p className="text-xs text-muted-foreground">Total: ₹{totalPrizePool.toFixed(2)}</p>}
+                        </CardHeader>
+                        <CardContent className="p-3 pt-0">
+                            {isLoading ? (
+                                <p className="text-xs text-muted-foreground">Loading prize info...</p>
+                            ) : (
+                                <ul className="space-y-1 text-xs">
+                                {prizesForFormat.map(prize => {
+                                    const claimInfo = roomData.prizeStatus[prize as PrizeType];
+                                    const isClaimed = claimInfo && claimInfo.claimedBy.length > 0;
 
-                                      if (isClaimed) {
-                                          const claimantNames = claimInfo.claimedBy.map(c => {
-                                              if (c.id === currentUser?.uid) return "You";
-                                              return c.name || c.id;
-                                          }).join(', ');
-                                          claimantText = `Claimed by ${claimantNames}`;
-                                          if (claimInfo.claimedBy.length > 1) {
-                                              claimantText += ` (Split)`;
-                                              const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
-                                              prizeValueText = `${formatCurrency(prizePerWinner)} each`;
-                                          }
-                                      }
+                                    let claimantText = "Unclaimed";
+                                    if (isClaimed) {
+                                        const claimantNames = claimInfo.claimedBy.map(c => {
+                                            if (c.id === currentUser?.uid) return "You";
+                                            return c.name || c.id;
+                                        }).join(', ');
+                                        claimantText = `Claimed by ${claimantNames}`;
+                                    }
+                                    
+                                    if (isBotGame) {
+                                        return (
+                                            <li key={prize} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
+                                                <span>{prize}</span>
+                                                <span className={cn("font-semibold text-right", isClaimed ? "text-green-600" : "text-muted-foreground")}>
+                                                    {claimantText}
+                                                </span>
+                                            </li>
+                                        );
+                                    }
 
-                                      return (
-                                          <li key={prize} className="flex flex-col bg-background/50 p-1.5 rounded-md">
-                                              <div className="flex justify-between items-center w-full">
-                                                  <span>{prize}</span>
-                                                  <span className="font-semibold">{prizeValueText}</span>
-                                              </div>
-                                              <span className={cn("text-xs text-right w-full", isClaimed ? "text-green-600 font-medium" : "text-muted-foreground/80")}>
-                                                  {claimantText}
-                                              </span>
-                                          </li>
-                                      );
-                                  })}
-                                  </ul>
-                              )}
-                          </CardContent>
-                      </Card>
-                    )}
+                                    // Logic for non-bot games (with money)
+                                    const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
+                                    const prizeAmount = (totalPrizePool * percentage) / 100;
+                                    let prizeValueText = formatCurrency(prizeAmount);
+
+                                    if (isClaimed && claimInfo.claimedBy.length > 1) {
+                                        const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
+                                        prizeValueText = `${formatCurrency(prizePerWinner)} each`;
+                                    }
+
+                                    return (
+                                        <li key={prize} className="flex flex-col bg-background/50 p-1.5 rounded-md">
+                                            <div className="flex justify-between items-center w-full">
+                                                <span>{prize}</span>
+                                                <span className="font-semibold">{prizeValueText}</span>
+                                            </div>
+                                            <span className={cn("text-xs text-right w-full", isClaimed ? "text-green-600 font-medium" : "text-muted-foreground/80")}>
+                                                {claimantText}
+                                            </span>
+                                        </li>
+                                    );
+                                })}
+                                </ul>
+                            )}
+                        </CardContent>
+                    </Card>
 
                     <Card className="bg-secondary/30">
                         <CardHeader className="p-3 pb-2">
