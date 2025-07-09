@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -603,94 +602,63 @@ export default function GameRoomPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-             {currentUserPrizeNames.length > 0 && !isBotGame && (
+             {currentUserPrizeNames.length > 0 && (
                 <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
                     <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
-                    <p className="text-2xl font-bold text-green-700 dark:text-green-300">You won a total of {formatCurrency(currentUserWinnings)}!</p>
+                    {!isBotGame && <p className="text-2xl font-bold text-green-700 dark:text-green-300">You won a total of {formatCurrency(currentUserWinnings)}!</p>}
                     <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
                 </div>
             )}
-             {currentUserPrizeNames.length > 0 && isBotGame && (
-                <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
-                    <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
-                    <p className="text-muted-foreground">You won: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
-                </div>
-            )}
             
-            {!isBotGame && (
-              <>
-                <h3 className="text-xl font-semibold text-center mb-2 flex items-center justify-center">
-                    <Award className="mr-2 h-5 w-5 text-accent"/>
-                    Final Prize Summary
-                </h3>
-                <div className="border rounded-md p-3">
-                  <div className="flex justify-between items-center text-lg font-bold mb-2 pb-2 border-b">
-                    <span>Total Prize Pool:</span>
-                    <span>{formatCurrency(totalPrizePool)}</span>
-                  </div>
-                  <ul className="space-y-2">
-                    {prizesForFormat.map(prize => {
-                      const claimInfo = roomData.prizeStatus[prize];
-                      const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
-                      const prizeAmount = (totalPrizePool * percentage) / 100;
-
-                      let prizeStatusText = "Not Claimed";
-                      let prizeValueText = formatCurrency(prizeAmount);
-                      if (claimInfo && claimInfo.claimedBy.length > 0) {
-                        const winnerNames = claimInfo.claimedBy.map(c => c.name).join(', ');
-                        prizeStatusText = `Claimed by ${winnerNames}`;
-                        if (claimInfo.claimedBy.length > 1) {
-                          prizeStatusText += ` (Split)`;
-                          const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
-                          prizeValueText = `${formatCurrency(prizePerWinner)} each`;
-                        }
-                      }
-                      
-                      return (
-                        <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
-                            <div className="flex flex-col">
-                                <span className="font-medium">{prize}</span>
-                                <span className="text-xs text-muted-foreground">{formatCurrency(prizeAmount)}</span>
-                            </div>
-                            <span className={cn("font-semibold text-right", claimInfo && claimInfo.claimedBy.length > 0 ? "text-green-600" : "text-muted-foreground")}>
-                                {prizeStatusText}
-                            </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              </>
-            )}
-             {isBotGame && (
-                <>
-                <h3 className="text-xl font-semibold text-center mb-2 flex items-center justify-center">
-                    <Award className="mr-2 h-5 w-5 text-accent"/>
-                    Final Prize Summary
-                </h3>
-                <div className="border rounded-md p-3">
-                  <ul className="space-y-2">
-                    {prizesForFormat.map(prize => {
-                      const claimInfo = roomData.prizeStatus[prize];
-                      let prizeStatusText = "Not Claimed";
-                      if (claimInfo && claimInfo.claimedBy.length > 0) {
-                        const winnerNames = claimInfo.claimedBy.map(c => (c.id === currentUser?.uid ? 'You' : c.name)).join(', ');
-                        prizeStatusText = `Claimed by ${winnerNames}`;
-                      }
-                      
-                      return (
-                        <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
+            <h3 className="text-xl font-semibold text-center mb-2 flex items-center justify-center">
+                <Award className="mr-2 h-5 w-5 text-accent"/>
+                Final Prize Summary
+            </h3>
+            <div className="border rounded-md p-3">
+              {!isBotGame && (
+              <div className="flex justify-between items-center text-lg font-bold mb-2 pb-2 border-b">
+                <span>Total Prize Pool:</span>
+                <span>{formatCurrency(totalPrizePool)}</span>
+              </div>
+              )}
+              <ul className="space-y-2">
+                {prizesForFormat.map(prize => {
+                  const claimInfo = roomData.prizeStatus[prize];
+                  
+                  let prizeStatusText = "Not Claimed";
+                  if (claimInfo && claimInfo.claimedBy.length > 0) {
+                    const winnerNames = claimInfo.claimedBy.map(c => c.id === currentUser?.uid ? 'You' : c.name).join(', ');
+                    prizeStatusText = `Claimed by ${winnerNames}`;
+                  }
+                  
+                  if (isBotGame) {
+                     return (
+                         <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
                             <span className="font-medium">{prize}</span>
                             <span className={cn("font-semibold text-right", claimInfo && claimInfo.claimedBy.length > 0 ? "text-green-600" : "text-muted-foreground")}>
                                 {prizeStatusText}
                             </span>
                         </li>
                       );
-                    })}
-                  </ul>
-                </div>
-              </>
-            )}
+                  }
+
+                  const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
+                  const prizeAmount = (totalPrizePool * percentage) / 100;
+                  
+                  return (
+                     <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
+                        <div className="flex flex-col">
+                            <span className="font-medium">{prize}</span>
+                            <span className="text-xs text-muted-foreground">{formatCurrency(prizeAmount)} ({percentage}%)</span>
+                        </div>
+                        <span className={cn("font-semibold text-right", claimInfo && claimInfo.claimedBy.length > 0 ? "text-green-600" : "text-muted-foreground")}>
+                            {prizeStatusText}
+                        </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
             <div className="flex flex-row gap-4 mt-6">
               <Button onClick={handlePlayAgain} className="flex-1" size="lg" disabled={isResetting}>
                 {isResetting ? (
@@ -720,10 +688,7 @@ export default function GameRoomPage() {
       <Card className="shadow-none border-none bg-transparent">
         <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
           <div className="flex-grow">
-            <div className="text-white">Room ID: #{roomId} 
-                {!isBotGame && ` | Prize Pool: ₹${totalPrizePool.toFixed(2)}`}
-                | Players: {roomData.players.length}
-            </div>
+            <div className="text-white">Room ID: #{roomId}</div>
             <div className="font-semibold text-white">{currentUser.displayName} ({myTickets.length} {ticketsText(myTickets.length)})</div>
           </div>
            <div className="flex-shrink-0 flex items-center gap-2">
