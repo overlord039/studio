@@ -70,7 +70,7 @@ export default function HomePage() {
         >
           <CardContent className="flex flex-col items-center justify-center p-4 text-center">
             <Users className="h-10 w-10 mb-2" />
-            <p className="text-lg font-bold">Play with Friends</p>
+            <p className="text-lg font-bold">Friends</p>
           </CardContent>
         </Card>
 
