@@ -135,7 +135,7 @@ export default function HomePage() {
           </section>
         </div>
       </div>
-       <div className="fixed bottom-16 right-4 z-50">
+      <div className="pt-4 z-50">
         <FeedbackForm />
       </div>
     </div>
