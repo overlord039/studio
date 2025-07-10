@@ -42,6 +42,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import Footer from '@/components/layout/footer';
 
 
 const MemoizedHousieTicket = React.memo(HousieTicket);
@@ -681,258 +682,261 @@ export default function GameRoomPage() {
 
   const isAutoCalling = roomData.settings.callingMode === 'auto';
   const ticketClassName = 
-    myTickets.length === 3 ? "w-full max-w-[19rem] text-sm" :
     myTickets.length === 4 ? "w-full max-w-[19rem] text-sm" :
+    myTickets.length === 3 ? "w-full max-w-[19rem] text-sm" :
     "w-full max-w-sm text-base";
 
   return (
-    <div className="container mx-auto p-4 space-y-4">
-      <Card className="shadow-none border-none bg-transparent">
-        <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
-          <div className="flex-grow">
-            <div className="text-white">Room ID: #{roomId}</div>
-            <div className="font-semibold text-white">{currentUser.displayName} ({myTickets.length} {ticketsText(myTickets.length)})</div>
-          </div>
-           <div className="flex-shrink-0 flex items-center gap-2">
-            {isCurrentUserHost && !roomData.settings.isPublic && !roomData.isGameOver && (
-              <div className="flex items-center gap-1 p-1 rounded-md border bg-card/80 backdrop-blur-sm">
-                  <Label htmlFor="calling-mode-switch" className="text-xs font-medium text-foreground cursor-pointer">
-                      Auto
-                  </Label>
-                  <Switch
-                      id="calling-mode-switch"
-                      checked={isAutoCalling}
-                      onCheckedChange={handleToggleCallingMode}
-                      disabled={isUpdatingMode || roomData.isGameOver}
-                      aria-label="Toggle automatic number calling"
-                  />
-              </div>
-            )}
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" aria-label="Game Info &amp; Players">
-                  <Menu className="h-5 w-5 text-primary" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="flex flex-col bg-card/90 backdrop-blur-sm border-primary/20">
-                <SheetHeader className="text-center border-b pb-2">
-                    <SheetTitle className="text-base">Game Info &amp; Players</SheetTitle>
-                </SheetHeader>
-                <div className="py-2 space-y-4 flex-grow overflow-y-auto">
-                    <Card className="bg-secondary/30">
-                        <CardHeader className="p-3 pb-2">
-                            <CardTitle className="text-sm font-semibold flex items-center">
-                                <Award className="mr-2 h-4 w-4 text-primary" />
-                                {isBotGame ? 'Prize Status' : 'Prize Pool'}
-                            </CardTitle>
-                            {!isBotGame && <p className="text-xs text-muted-foreground">Total: ₹{totalPrizePool.toFixed(2)}</p>}
-                        </CardHeader>
-                        <CardContent className="p-3 pt-0">
-                            {isLoading ? (
-                                <p className="text-xs text-muted-foreground">Loading prize info...</p>
-                            ) : (
-                                <ul className="space-y-1 text-xs">
-                                {prizesForFormat.map(prize => {
-                                    const claimInfo = roomData.prizeStatus[prize as PrizeType];
-                                    const isClaimed = claimInfo && claimInfo.claimedBy.length > 0;
-
-                                    let claimantText = "Unclaimed";
-                                    if (isClaimed) {
-                                        const claimantNames = claimInfo.claimedBy.map(c => {
-                                            if (c.id === currentUser?.uid) return "You";
-                                            return c.name || c.id;
-                                        }).join(', ');
-                                        claimantText = `Claimed by ${claimantNames}`;
-                                    }
-                                    
-                                    if (isBotGame) {
-                                        return (
-                                            <li key={prize} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
-                                                <span>{prize}</span>
-                                                <span className={cn("font-semibold text-right", isClaimed ? "text-green-600" : "text-muted-foreground")}>
-                                                    {claimantText}
-                                                </span>
-                                            </li>
-                                        );
-                                    }
-
-                                    // Logic for non-bot games (with money)
-                                    const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
-                                    const prizeAmount = (totalPrizePool * percentage) / 100;
-                                    let prizeValueText = formatCurrency(prizeAmount);
-
-                                    if (isClaimed && claimInfo.claimedBy.length > 1) {
-                                        const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
-                                        prizeValueText = `${formatCurrency(prizePerWinner)} each`;
-                                    }
-
-                                    return (
-                                        <li key={prize} className="flex flex-col bg-background/50 p-1.5 rounded-md">
-                                            <div className="flex justify-between items-center w-full">
-                                                <span>{prize}</span>
-                                                <span className="font-semibold">{prizeValueText}</span>
-                                            </div>
-                                            <span className={cn("text-xs text-right w-full", isClaimed ? "text-green-600 font-medium" : "text-muted-foreground/80")}>
-                                                {claimantText}
-                                            </span>
-                                        </li>
-                                    );
-                                })}
-                                </ul>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-secondary/30">
-                        <CardHeader className="p-3 pb-2">
-                            <CardTitle className="text-sm font-semibold flex items-center"><Users className="mr-2 h-4 w-4 text-primary" />Players ({roomData.players.length})</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-3 pt-0">
-                            {isLoading ? (
-                                <p className="text-xs text-muted-foreground">Loading player list...</p>
-                            ) : (
-                                <ScrollArea className="h-40">
-                                    <ul className="space-y-1 text-xs">
-                                    {[...roomData.players].sort((a,b) => (a.isHost ? -1 : b.isHost ? 1 : 0)).map((player) => (
-                                        <li key={player.id} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
-                                        <span className="font-medium">
-                                            {player.name}
-                                            {player.isHost && <span className="ml-2 font-semibold text-primary">(Host)</span>}
-                                            {player.id === currentUser?.uid && <span className="ml-2 text-muted-foreground">(You)</span>}
-                                        </span>
-                                        <span className="text-muted-foreground">{player.tickets?.length || 0} {ticketsText(player.tickets?.length || 0)}</span>
-                                        </li>
-                                    ))}
-                                    </ul>
-                                </ScrollArea>
-                            )}
-                        </CardContent>
-                    </Card>
-
+    <>
+      <div className="container mx-auto p-4 space-y-4">
+        <Card className="shadow-none border-none bg-transparent">
+          <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
+            <div className="flex-grow">
+              <div className="text-white">Room ID: #{roomId}</div>
+              <div className="font-semibold text-white">{currentUser.displayName} ({myTickets.length} {ticketsText(myTickets.length)})</div>
+            </div>
+            <div className="flex-shrink-0 flex items-center gap-2">
+              {isCurrentUserHost && !roomData.settings.isPublic && !roomData.isGameOver && (
+                <div className="flex items-center gap-1 p-1 rounded-md border bg-card/80 backdrop-blur-sm">
+                    <Label htmlFor="calling-mode-switch" className="text-xs font-medium text-foreground cursor-pointer">
+                        Auto
+                    </Label>
+                    <Switch
+                        id="calling-mode-switch"
+                        checked={isAutoCalling}
+                        onCheckedChange={handleToggleCallingMode}
+                        disabled={isUpdatingMode || roomData.isGameOver}
+                        aria-label="Toggle automatic number calling"
+                    />
                 </div>
-                <div className="border-t pt-2">
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive" className="w-full" size="sm">
-                                <LogOut className="mr-2 h-4 w-4" /> Leave Game
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure you want to leave the game?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This will remove you from the current game session. If you are the host, a new host will be assigned.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Stay</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleLeaveRoom} className={buttonVariants({ variant: "destructive" })}>
-                                    Leave
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </CardContent>
-      </Card>
+              )}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon" aria-label="Game Info &amp; Players">
+                    <Menu className="h-5 w-5 text-primary" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent className="flex flex-col bg-card/90 backdrop-blur-sm border-primary/20">
+                  <SheetHeader className="text-center border-b pb-2">
+                      <SheetTitle className="text-base">Game Info &amp; Players</SheetTitle>
+                  </SheetHeader>
+                  <div className="py-2 space-y-4 flex-grow overflow-y-auto">
+                      <Card className="bg-secondary/30">
+                          <CardHeader className="p-3 pb-2">
+                              <CardTitle className="text-sm font-semibold flex items-center">
+                                  <Award className="mr-2 h-4 w-4 text-primary" />
+                                  {isBotGame ? 'Prize Status' : 'Prize Pool'}
+                              </CardTitle>
+                              {!isBotGame && <p className="text-xs text-muted-foreground">Total: ₹{totalPrizePool.toFixed(2)}</p>}
+                          </CardHeader>
+                          <CardContent className="p-3 pt-0">
+                              {isLoading ? (
+                                  <p className="text-xs text-muted-foreground">Loading prize info...</p>
+                              ) : (
+                                  <ul className="space-y-1 text-xs">
+                                  {prizesForFormat.map(prize => {
+                                      const claimInfo = roomData.prizeStatus[prize as PrizeType];
+                                      const isClaimed = claimInfo && claimInfo.claimedBy.length > 0;
 
-      <div className="flex flex-col items-center space-y-4">
-        <div className="w-full max-w-md">
-            <MemoizedCalledNumberDisplay 
-                currentNumber={roomData.currentNumber}
-                calledNumbers={roomData.calledNumbers}
-                isMuted={isSfxMuted}
-                onToggleMute={toggleSfxMute}
-                animationKey={animationKey}
-            />
-        </div>
+                                      let claimantText = "Unclaimed";
+                                      if (isClaimed) {
+                                          const claimantNames = claimInfo.claimedBy.map(c => {
+                                              if (c.id === currentUser?.uid) return "You";
+                                              return c.name || c.id;
+                                          }).join(', ');
+                                          claimantText = `Claimed by ${claimantNames}`;
+                                      }
+                                      
+                                      if (isBotGame) {
+                                          return (
+                                              <li key={prize} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
+                                                  <span>{prize}</span>
+                                                  <span className={cn("font-semibold text-right", isClaimed ? "text-green-600" : "text-muted-foreground")}>
+                                                      {claimantText}
+                                                  </span>
+                                              </li>
+                                          );
+                                      }
 
-        {isCurrentUserHost && !isAutoCalling && !roomData.isGameOver && (
+                                      // Logic for non-bot games (with money)
+                                      const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
+                                      const prizeAmount = (totalPrizePool * percentage) / 100;
+                                      let prizeValueText = formatCurrency(prizeAmount);
+
+                                      if (isClaimed && claimInfo.claimedBy.length > 1) {
+                                          const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
+                                          prizeValueText = `${formatCurrency(prizePerWinner)} each`;
+                                      }
+
+                                      return (
+                                          <li key={prize} className="flex flex-col bg-background/50 p-1.5 rounded-md">
+                                              <div className="flex justify-between items-center w-full">
+                                                  <span>{prize}</span>
+                                                  <span className="font-semibold">{prizeValueText}</span>
+                                              </div>
+                                              <span className={cn("text-xs text-right w-full", isClaimed ? "text-green-600 font-medium" : "text-muted-foreground/80")}>
+                                                  {claimantText}
+                                              </span>
+                                          </li>
+                                      );
+                                  })}
+                                  </ul>
+                              )}
+                          </CardContent>
+                      </Card>
+
+                      <Card className="bg-secondary/30">
+                          <CardHeader className="p-3 pb-2">
+                              <CardTitle className="text-sm font-semibold flex items-center"><Users className="mr-2 h-4 w-4 text-primary" />Players ({roomData.players.length})</CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-3 pt-0">
+                              {isLoading ? (
+                                  <p className="text-xs text-muted-foreground">Loading player list...</p>
+                              ) : (
+                                  <ScrollArea className="h-40">
+                                      <ul className="space-y-1 text-xs">
+                                      {[...roomData.players].sort((a,b) => (a.isHost ? -1 : b.isHost ? 1 : 0)).map((player) => (
+                                          <li key={player.id} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
+                                          <span className="font-medium">
+                                              {player.name}
+                                              {player.isHost && <span className="ml-2 font-semibold text-primary">(Host)</span>}
+                                              {player.id === currentUser?.uid && <span className="ml-2 text-muted-foreground">(You)</span>}
+                                          </span>
+                                          <span className="text-muted-foreground">{player.tickets?.length || 0} {ticketsText(player.tickets?.length || 0)}</span>
+                                          </li>
+                                      ))}
+                                      </ul>
+                                  </ScrollArea>
+                              )}
+                          </CardContent>
+                      </Card>
+
+                  </div>
+                  <div className="border-t pt-2">
+                      <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                              <Button variant="destructive" className="w-full" size="sm">
+                                  <LogOut className="mr-2 h-4 w-4" /> Leave Game
+                              </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you sure you want to leave the game?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                      This will remove you from the current game session. If you are the host, a new host will be assigned.
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel>Stay</AlertDialogCancel>
+                                  <AlertDialogAction onClick={handleLeaveRoom} className={buttonVariants({ variant: "destructive" })}>
+                                      Leave
+                                  </AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                      </AlertDialog>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex flex-col items-center space-y-4">
           <div className="w-full max-w-md">
-            <Button 
-                onClick={handleCallNextNumber}
-                disabled={isCallingNextNumber || roomData.isGameOver}
-                className="w-full"
-            >
-              {isCallingNextNumber ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-              {isCallingNextNumber ? 'Calling...' : 'Call Next Number'}
-            </Button>
+              <MemoizedCalledNumberDisplay 
+                  currentNumber={roomData.currentNumber}
+                  calledNumbers={roomData.calledNumbers}
+                  isMuted={isSfxMuted}
+                  onToggleMute={toggleSfxMute}
+                  animationKey={animationKey}
+              />
           </div>
-        )}
 
-        <div className="w-full max-w-7xl mx-auto space-y-4">
-            {myTickets.length > 0 && !roomData.isGameOver && (
-            <div className="flex flex-wrap gap-1 justify-center">
-                {prizesForFormat.map((prizeType, prizeIdx) => {
-                const claimInfo = roomData.prizeStatus[prizeType];
-                const isPrizeClaimedByAnyone = claimInfo && claimInfo.claimedBy.length > 0;
-                
-                return (
-                    <Button
-                    key={`${prizeType}-${prizeIdx}`}
-                    onClick={() => handleClaimPrize(prizeType)}
-                    disabled={
-                        roomData.isGameOver ||
-                        isPrizeClaimedByAnyone
-                    }
-                    variant={isPrizeClaimedByAnyone ? "secondary" : "default"}
-                    className={cn("px-2 py-3 h-auto rounded-md text-xs sm:text-sm",
-                        !isPrizeClaimedByAnyone && prizeType.includes("Early") ? "bg-green-500 hover:bg-green-600" :
-                        !isPrizeClaimedByAnyone && prizeType.includes("Line") ? "bg-yellow-400 hover:bg-yellow-500 text-black" :
-                            !isPrizeClaimedByAnyone && prizeType.includes("Full House") ? "bg-red-500 hover:bg-red-600" : ""
-                    )}
-                    >
-                    {prizeType}
-                    </Button>
-                );
-                })}
+          {isCurrentUserHost && !isAutoCalling && !roomData.isGameOver && (
+            <div className="w-full max-w-md">
+              <Button 
+                  onClick={handleCallNextNumber}
+                  disabled={isCallingNextNumber || roomData.isGameOver}
+                  className="w-full"
+              >
+                {isCallingNextNumber ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+                {isCallingNextNumber ? 'Calling...' : 'Call Next Number'}
+              </Button>
             </div>
-            )}
-            
-            <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-white">Your Tickets ({myTickets.length})</h2>
-            <Dialog>
-                <DialogTrigger asChild>
-                    <Button variant="default" size="sm" className="font-semibold" onClick={() => playSound('cards.mp3')}>
-                    Number Board
-                </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md p-4">
-                <DialogHeader className="pb-2">
-                    <DialogTitle>Number Board</DialogTitle>
-                </DialogHeader>
-                <MemoizedLiveNumberBoard
-                    calledNumbers={roomData.calledNumbers}
-                    currentNumber={roomData.currentNumber}
-                    remainingCount={NUMBERS_RANGE_MAX - roomData.calledNumbers.length}
-                    calledCount={roomData.calledNumbers.length}
-                />
-                </DialogContent>
-            </Dialog>
-            </div>
+          )}
 
-            {myTickets.length === 0 && !roomData.isGameOver && roomData.isGameStarted && <p className="text-center text-muted-foreground">You are spectating or have no tickets in this game.</p>}
-            <ScrollArea>
-              <div className="flex flex-wrap justify-center gap-4 p-1">
-                {myTickets.map((ticket, index) => (
-                  <MemoizedHousieTicket
-                    key={index}
-                    ticketIndex={index}
-                    ticket={ticket}
-                    calledNumbers={roomData.calledNumbers}
-                    markedNumbers={markedNumbers}
-                    onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
-                    className={ticketClassName}
-                  />
-                ))}
+          <div className="w-full max-w-7xl mx-auto space-y-4">
+              {myTickets.length > 0 && !roomData.isGameOver && (
+              <div className="flex flex-wrap gap-1 justify-center">
+                  {prizesForFormat.map((prizeType, prizeIdx) => {
+                  const claimInfo = roomData.prizeStatus[prizeType];
+                  const isPrizeClaimedByAnyone = claimInfo && claimInfo.claimedBy.length > 0;
+                  
+                  return (
+                      <Button
+                      key={`${prizeType}-${prizeIdx}`}
+                      onClick={() => handleClaimPrize(prizeType)}
+                      disabled={
+                          roomData.isGameOver ||
+                          isPrizeClaimedByAnyone
+                      }
+                      variant={isPrizeClaimedByAnyone ? "secondary" : "default"}
+                      className={cn("px-2 py-3 h-auto rounded-md text-xs sm:text-sm",
+                          !isPrizeClaimedByAnyone && prizeType.includes("Early") ? "bg-green-500 hover:bg-green-600" :
+                          !isPrizeClaimedByAnyone && prizeType.includes("Line") ? "bg-yellow-400 hover:bg-yellow-500 text-black" :
+                              !isPrizeClaimedByAnyone && prizeType.includes("Full House") ? "bg-red-500 hover:bg-red-600" : ""
+                      )}
+                      >
+                      {prizeType}
+                      </Button>
+                  );
+                  })}
               </div>
-            </ScrollArea>
+              )}
+              
+              <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-white">Your Tickets ({myTickets.length})</h2>
+              <Dialog>
+                  <DialogTrigger asChild>
+                      <Button variant="default" size="sm" className="font-semibold" onClick={() => playSound('cards.mp3')}>
+                      Number Board
+                  </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md p-4">
+                  <DialogHeader className="pb-2">
+                      <DialogTitle>Number Board</DialogTitle>
+                  </DialogHeader>
+                  <MemoizedLiveNumberBoard
+                      calledNumbers={roomData.calledNumbers}
+                      currentNumber={roomData.currentNumber}
+                      remainingCount={NUMBERS_RANGE_MAX - roomData.calledNumbers.length}
+                      calledCount={roomData.calledNumbers.length}
+                  />
+                  </DialogContent>
+              </Dialog>
+              </div>
+
+              {myTickets.length === 0 && !roomData.isGameOver && roomData.isGameStarted && <p className="text-center text-muted-foreground">You are spectating or have no tickets in this game.</p>}
+              <ScrollArea>
+                <div className="flex flex-wrap justify-center gap-4 p-1">
+                  {myTickets.map((ticket, index) => (
+                    <MemoizedHousieTicket
+                      key={index}
+                      ticketIndex={index}
+                      ticket={ticket}
+                      calledNumbers={roomData.calledNumbers}
+                      markedNumbers={markedNumbers}
+                      onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
+                      className={ticketClassName}
+                    />
+                  ))}
+                </div>
+              </ScrollArea>
+          </div>
         </div>
       </div>
-    </div>
+      {myTickets.length < 4 && <Footer />}
+    </>
   );
 }
 
@@ -944,3 +948,6 @@ function formatCurrency(amount: number) {
 
 
 
+
+
+    
