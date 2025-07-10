@@ -914,10 +914,10 @@ export default function GameRoomPage() {
             </div>
 
             {myTickets.length === 0 && !roomData.isGameOver && roomData.isGameStarted && <p className="text-center text-muted-foreground">You are spectating or have no tickets in this game.</p>}
-            <ScrollArea className="max-h-[60vh] lg:max-h-none">
-            <div className="flex flex-wrap justify-center gap-4 p-1">
+            <ScrollArea>
+              <div className="flex flex-wrap justify-center gap-4 p-1">
                 {myTickets.map((ticket, index) => (
-                <MemoizedHousieTicket
+                  <MemoizedHousieTicket
                     key={index}
                     ticketIndex={index}
                     ticket={ticket}
@@ -925,9 +925,9 @@ export default function GameRoomPage() {
                     markedNumbers={markedNumbers}
                     onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
                     className={ticketClassName}
-                />
+                  />
                 ))}
-            </div>
+              </div>
             </ScrollArea>
         </div>
       </div>
