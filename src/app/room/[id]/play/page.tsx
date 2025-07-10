@@ -680,9 +680,10 @@ export default function GameRoomPage() {
   }
 
   const isAutoCalling = roomData.settings.callingMode === 'auto';
-  const ticketClassName = myTickets.length > 2 
-    ? "w-full max-w-[18rem] text-xs" 
-    : "w-full max-w-sm text-base";
+  const ticketClassName = 
+    myTickets.length === 3 ? "w-full max-w-[19rem] text-sm" :
+    myTickets.length >= 4 ? "w-full max-w-[16rem] text-xs" :
+    "w-full max-w-sm text-base";
 
   return (
     <div className="container mx-auto p-4 space-y-4">
@@ -940,3 +941,4 @@ function formatCurrency(amount: number) {
 };
 
     
+
