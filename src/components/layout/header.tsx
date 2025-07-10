@@ -342,7 +342,7 @@ export default function Header() {
 
   const AuthContent = () => {
     if (loading) {
-      return <Skeleton className="h-10 w-10 rounded-full" />;
+      return <Skeleton className="h-12 w-12 rounded-full" />;
     }
 
     if (!currentUser) {
@@ -354,10 +354,10 @@ export default function Header() {
     
     return (
         <Link href="/profile" passHref>
-          <Button variant="ghost" className="relative p-0 h-10 w-10 rounded-full">
-            <Avatar className="h-10 w-10 border-2 border-primary">
+          <Button variant="ghost" className="relative p-0 h-12 w-12 rounded-full">
+            <Avatar className="h-12 w-12 border-2 border-primary">
               <AvatarImage 
-                src={`https://placehold.co/32x32.png?text=${avatarFallback}`} 
+                src={`https://placehold.co/48x48.png?text=${avatarFallback}`} 
                 alt={displayName} 
                 data-ai-hint="profile avatar"
               />
@@ -373,7 +373,7 @@ export default function Header() {
       "sticky top-0 z-50 transition-transform duration-300 ease-in-out",
       isHidden && "-translate-y-full"
     )}>
-      <div className="container mx-auto px-4 py-2 flex justify-between items-center">
+      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div className="flex items-center">
           <AuthContent />
         </div>
@@ -381,8 +381,8 @@ export default function Header() {
         <nav className="flex items-center gap-2">
           <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-white h-12 w-12">
-                <Settings className="h-8 w-8" />
+              <Button variant="ghost" size="icon" className="text-white h-14 w-14">
+                <Settings className="h-9 w-9" />
                 <span className="sr-only">Settings</span>
               </Button>
             </DialogTrigger>
