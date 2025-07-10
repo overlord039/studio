@@ -101,7 +101,7 @@ export default function FeedbackForm() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon" className="text-white h-12 w-12">
-            <MessageSquare className="h-7 w-7" />
+            <Star className="h-7 w-7" />
             <span className="sr-only">Feedback & Rate Us</span>
         </Button>
       </DialogTrigger>
