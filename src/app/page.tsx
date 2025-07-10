@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -15,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/auth-context';
 import { playSound } from '@/lib/sounds';
+import FeedbackForm from '@/components/layout/feedback-form';
 
 export default function HomePage() {
   const router = useRouter();
@@ -132,6 +134,9 @@ export default function HomePage() {
             </Card>
           </section>
         </div>
+      </div>
+       <div className="fixed bottom-16 right-4 z-50">
+        <FeedbackForm />
       </div>
     </div>
   );
