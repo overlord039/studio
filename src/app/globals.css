@@ -151,6 +151,19 @@ body {
   animation: slide-in-recent 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
+@keyframes progress-ring {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: 214;
+  }
+}
+
+.animate-progress-ring {
+  animation: progress-ring 6s linear forwards;
+}
+
 
 /* Grid Pattern for Hero */
 .bg-grid-pattern {

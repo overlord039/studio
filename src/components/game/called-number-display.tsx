@@ -16,11 +16,7 @@ interface CalledNumberDisplayProps {
 }
 
 export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMuted, onToggleMute, animationKey }: CalledNumberDisplayProps) {
-
-  // Get the last 3 numbers from the list, *excluding* the current one.
   const recentThree = calledNumbers.slice(1, 4);
-  
-  // Pad for consistent layout
   const displayNumbers = [...recentThree];
   while (displayNumbers.length < 3) {
     displayNumbers.push(null);
@@ -29,30 +25,42 @@ export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMu
   return (
     <Card className="shadow-lg bg-primary text-primary-foreground overflow-hidden">
       <CardContent className="p-4 flex items-end justify-center gap-6">
-        {/* Main Number Section */}
         <div className="flex flex-col items-center text-center">
           <p className="text-xs uppercase tracking-wider mb-2">Called Number</p>
-          <div className="flex items-end gap-3">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={onToggleMute} 
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggleMute}
               className="text-primary-foreground hover:bg-primary/80 h-8 w-8"
               aria-label={isMuted ? "Unmute voice" : "Mute voice"}
             >
               {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
             </Button>
-            {/* Animate the main number */}
-            <div key={`current-${animationKey}`} className={cn("flex items-center justify-center size-20 rounded-full border-4 shadow-lg", currentNumber !== null ? "bg-card text-card-foreground border-primary-foreground/50 animate-scale-in-pop" : "bg-card/50 text-card-foreground/70 border-dashed border-primary-foreground/20")}>
-              <span className="text-4xl font-extrabold">{currentNumber ?? '-'}</span>
+            <div key={`current-${animationKey}`} className="relative size-20">
+              <div className={cn("flex items-center justify-center size-20 rounded-full border-4 shadow-lg", currentNumber !== null ? "bg-card text-card-foreground border-primary-foreground/50 animate-scale-in-pop" : "bg-card/50 text-card-foreground/70 border-dashed border-primary-foreground/20")}>
+                <span className="text-4xl font-extrabold">{currentNumber ?? '-'}</span>
+              </div>
+              {currentNumber !== null && (
+                <svg className="absolute inset-0 size-20 -rotate-90">
+                  <circle
+                    r="34"
+                    cx="40"
+                    cy="40"
+                    fill="transparent"
+                    stroke="hsl(var(--accent))"
+                    strokeWidth="4"
+                    strokeDasharray="214"
+                    strokeDashoffset="214"
+                    className="animate-progress-ring"
+                  ></circle>
+                </svg>
+              )}
             </div>
           </div>
         </div>
-
-        {/* Recent Numbers Section */}
         <div className="flex flex-col items-center">
           <p className="text-xs uppercase tracking-wider mb-2">Recent</p>
-          {/* Animate the recent numbers container */}
           <div key={`recent-${animationKey}`} className="flex items-end gap-2 animate-slide-in-recent">
             {displayNumbers.map((num, index) => (
               <div
