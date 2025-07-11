@@ -29,7 +29,7 @@ export default function HousieTicket({ ticketIndex, ticket, calledNumbers, onNum
   };
 
   return (
-    <div className={cn("border-2 border-primary/50 rounded-lg shadow-md bg-white overflow-hidden flex flex-col p-1", className)}>
+    <div className={cn("border-2 border-primary/50 rounded-lg shadow-md bg-white dark:bg-slate-800 overflow-hidden flex flex-col p-1", className)}>
       {ticket.map((row, r) => (
         <div key={`row-${r}`} className={cn("grid", `grid-cols-${cols}`)} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
           {row.map((number, c) => {
@@ -43,10 +43,10 @@ export default function HousieTicket({ ticketIndex, ticket, calledNumbers, onNum
                 className={cn(
                   "aspect-square flex items-center justify-center p-1 text-base border-t border-l border-border/20 transition-all duration-150 ease-in-out",
                   // Checkerboard background for all cells
-                  (r + c) % 2 === 0 ? 'bg-secondary/20' : 'bg-card',
+                  (r + c) % 2 === 0 ? 'bg-secondary/20 dark:bg-slate-700/50' : 'bg-card dark:bg-slate-800',
                   
                   // Default styling for cells with numbers
-                  number !== null && 'font-bold text-secondary-foreground cursor-pointer',
+                  number !== null && 'font-bold text-secondary-foreground dark:text-slate-200 cursor-pointer',
 
                   // Style for marked numbers (overrides default and checkerboard)
                   status === 'called-marked' ? 'bg-green-500 text-white' : '',
