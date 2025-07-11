@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Smile, Skull, ArrowLeft } from 'lucide-react';
+import { Smile, Skull, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { playSound } from '@/lib/sounds';
@@ -63,8 +63,8 @@ export default function PlayWithComputerModesPage() {
       </div>
        <div className="mt-8 w-full max-w-md">
         <Link href="/" passHref>
-          <Button variant="outline">
-            <ArrowLeft className="mr-2 h-4 w-4" />
+          <Button variant="destructive">
+            <LogOut className="mr-2 h-4 w-4" />
             Back to Home
           </Button>
         </Link>

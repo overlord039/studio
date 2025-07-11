@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Speaker, VolumeX, RotateCcw, Zap, Settings2, Play, Pause, Home } from 'lucide-react';
+import { Speaker, VolumeX, RotateCcw, Zap, Settings2, Play, Pause, LogOut } from 'lucide-react';
 import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import LiveNumberBoard from '@/components/game/live-number-board';
@@ -13,6 +13,7 @@ import CalledNumberDisplay from '@/components/game/called-number-display';
 import { useSound } from '@/contexts/sound-context';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import Link from 'next/link';
 
 const shuffleArray = <T,>(array: T[]): T[] => {
   const newArray = [...array];
@@ -151,9 +152,11 @@ export default function NumberCallerPage() {
         />
 
         <div className="flex w-full gap-2 pt-2">
-          <Button onClick={() => router.push('/')} variant="destructive" className="flex-1">
-              <Home className="mr-2 h-4 w-4" /> Back to Home
-          </Button>
+          <Link href="/" passHref className="flex-1">
+            <Button variant="destructive" className="w-full">
+                <LogOut className="mr-2 h-4 w-4" /> Back to Home
+            </Button>
+          </Link>
           <Button onClick={resetGame} variant="outline" className="flex-1">
               <RotateCcw className="mr-2 h-4 w-4" /> Reset
           </Button>

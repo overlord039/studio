@@ -157,7 +157,7 @@ export default function CreateRoomSelectionPage() {
       <div className="mt-8 w-full max-w-xl">
         <Link href="/" passHref>
           <Button variant="destructive">
-            <LogOut className="mr-2 h-4 w-4 rotate-180" />
+            <LogOut className="mr-2 h-4 w-4" />
             Back to Home
           </Button>
         </Link>
