@@ -185,26 +185,9 @@ export default function ProfilePage() {
                         <div>
                             <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">Statistics</h3>
                              <Card className="bg-secondary/30 mt-2">
-                                <CardContent className="p-4 space-y-3">
-                                  <div className="flex justify-between items-center text-sm">
-                                      <div className="flex items-center gap-2 text-muted-foreground"><Gamepad2 className="h-4 w-4" /> Matches Played</div>
-                                      <span className="font-bold text-lg">{currentUser.stats?.matchesPlayed ?? 0}</span>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <div className="flex items-center gap-2 text-muted-foreground text-sm"><Award className="h-4 w-4" /> Prizes Won</div>
-                                     {prizesWonArray.length > 0 ? (
-                                      <ul className="space-y-1 pl-6 text-sm">
-                                        {prizesWonArray.map(([prize, count]) => (
-                                          <li key={prize} className="flex justify-between">
-                                            <span className="text-muted-foreground">{prize}:</span>
-                                            <span className="font-medium">{count}</span>
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    ) : (
-                                      <p className="text-muted-foreground text-sm text-center pt-2">No prizes won yet. Keep playing!</p>
-                                    )}
-                                  </div>
+                                <CardContent className="p-4 text-center text-muted-foreground">
+                                  <p className="font-semibold">Coming Soon!</p>
+                                  <p className="text-sm">Game statistics will be available here in a future update.</p>
                                 </CardContent>
                              </Card>
                         </div>
