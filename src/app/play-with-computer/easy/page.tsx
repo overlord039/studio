@@ -74,7 +74,7 @@ export default function EasyModePage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4">
+    <div className="flex flex-col items-center justify-center flex-grow py-12 px-4">
       <Card className="w-full max-w-md shadow-xl border-accent">
         <CardHeader className="text-center">
            <div className="flex justify-center items-center gap-2 mb-4">
