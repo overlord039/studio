@@ -154,7 +154,7 @@ export default function NumberCallerPage() {
         <div className="flex w-full gap-2 pt-2">
           <Link href="/" passHref className="flex-1">
             <Button variant="destructive" className="w-full">
-                <LogOut className="mr-2 h-4 w-4" /> Back to Home
+                <LogOut className="mr-2 h-4 w-4 rotate-180" /> Back to Home
             </Button>
           </Link>
           <Button onClick={resetGame} variant="outline" className="flex-1">
