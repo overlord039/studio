@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     const shuffledBotNames = shuffleArray([...BOT_NAMES]);
     for (let i = 0; i < 4; i++) {
         const botId = `bot-${i+1}-${Date.now()}`;
-        const botName = `Bot ${shuffledBotNames[i]}`;
+        const botName = shuffledBotNames[i];
         const botPlayer: Player = { id: botId, name: botName, isBot: true };
 
         let botTickets = tickets;
