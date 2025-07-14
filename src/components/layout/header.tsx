@@ -187,7 +187,7 @@ const SettingsModal = ({ activeTab, setActiveTab }: { activeTab: string; setActi
                      <div className="space-y-4">
                         <h3 className="text-2xl font-bold flex items-center"><HelpCircle className="mr-2 h-7 w-7 text-primary" /> How to Play HousieHub</h3>
                         <p className="text-muted-foreground">A quick guide to get you started.</p>
-                        <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+                        <Accordion type="single" collapsible className="w-full">
                             <AccordionItem value="item-1">
                                 <AccordionTrigger><UserPlus className="mr-2 h-5 w-5 text-accent"/>1. Create an Account</AccordionTrigger>
                                 <AccordionContent className="text-base pl-8">
