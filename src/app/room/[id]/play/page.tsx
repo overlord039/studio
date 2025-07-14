@@ -742,7 +742,9 @@ export default function GameRoomPage() {
         <Card className="shadow-none border-none bg-transparent">
           <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
             <div className="flex-grow">
-              <div className="text-white">Room ID: #{roomId}</div>
+              <div className="text-white capitalize">
+                {isBotGame ? `${roomData.settings.gameMode} Mode` : `Room ID: #${roomId}`}
+              </div>
               <div className="font-semibold text-white">{currentUser.displayName} ({myTickets.length} {ticketsText(myTickets.length)})</div>
             </div>
             <div className="flex-shrink-0 flex items-center gap-2">
