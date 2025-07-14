@@ -43,14 +43,15 @@ export default function HousieTicket({ ticketIndex, ticket, calledNumbers, onNum
                 onClick={() => number && onNumberClick?.(number, r, c)}
                 className={cn(
                   "aspect-square flex items-center justify-center p-1 text-base border-t border-l border-border/20 transition-all duration-150 ease-in-out",
-                  // Checkerboard background for all cells
-                  (r + c) % 2 === 0 ? 'bg-secondary/20 dark:bg-slate-700/50' : 'bg-card dark:bg-slate-800',
+                  
+                  // Checkerboard background for all cells, only applies if not marked
+                  status !== 'called-marked' && ((r + c) % 2 === 0 ? 'bg-secondary/20 dark:bg-slate-700/50' : 'bg-card dark:bg-slate-800'),
                   
                   // Default styling for cells with numbers
                   number !== null && 'font-bold text-secondary-foreground dark:text-slate-200 cursor-pointer',
 
                   // Style for marked numbers (overrides default and checkerboard)
-                  status === 'called-marked' ? 'bg-green-500 text-white' : '',
+                  status === 'called-marked' && 'bg-green-500 text-white',
                   
                   // Hover effect for clickable numbers that are not marked
                   status === 'default' && number !== null && onNumberClick ? 'hover:shadow-lg' : ''
