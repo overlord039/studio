@@ -550,7 +550,9 @@ export default function LobbyPage() {
                       {player.isHost && <span className="text-xs font-semibold text-primary ml-1.5">(Host)</span>}
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {player.tickets?.length > 0 ? `${player.tickets.length} ticket${player.tickets.length === 1 ? '' : 's'}` : (roomData.isGameOver ? "Game Over" : "No tickets yet")}
+                      {player.tickets?.length > 0 
+                        ? `${player.tickets.length} ticket${player.tickets.length === 1 ? '' : 's'} (₹${player.tickets.length * gameSettings.ticketPrice})` 
+                        : (roomData.isGameOver ? "Game Over" : "No tickets yet")}
                     </span>
                   </div>
                   
