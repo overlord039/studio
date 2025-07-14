@@ -615,6 +615,7 @@ export default function GameRoomPage() {
   if (roomData.isGameOver) {
     let currentUserWinnings = 0;
     const currentUserPrizeNames: PrizeType[] = [];
+    let currentUserSpent = 0;
 
     if (currentUser) {
         prizesForFormat.forEach(prize => {
@@ -629,6 +630,8 @@ export default function GameRoomPage() {
                 }
             }
         });
+        const myPlayerRecord = roomData.players.find(p => p.id === currentUser.uid);
+        currentUserSpent = (myPlayerRecord?.tickets.length || 0) * gameSettings.ticketPrice;
     }
     
     const playAgainButtonText = isBotGame ? "Play Again" : (isCurrentUserHost ? "New Game" : "To Lobby");
@@ -645,7 +648,12 @@ export default function GameRoomPage() {
              {currentUserPrizeNames.length > 0 && (
                 <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
                     <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
-                    {!isBotGame && <p className="text-2xl font-bold text-green-700 dark:text-green-300">You won a total of {formatCurrency(currentUserWinnings)}!</p>}
+                    {!isBotGame && 
+                      <>
+                        <p className="text-2xl font-bold text-green-700 dark:text-green-300">You won a total of {formatCurrency(currentUserWinnings)}!</p>
+                        <p className="text-sm text-muted-foreground">You spent {formatCurrency(currentUserSpent)} on tickets.</p>
+                      </>
+                    }
                     <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
                 </div>
             )}
