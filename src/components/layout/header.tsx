@@ -126,7 +126,6 @@ const SettingsModal = ({ activeTab, setActiveTab }: { activeTab: string; setActi
             <aside className="hidden md:block w-1/4 bg-card p-4 border-r border-border">
                 <nav className="flex flex-col gap-2">
                     <TabButton id="general" label="General" icon={Settings} />
-                    <TabButton id="social" label="Social" icon={Users} />
                     <TabButton id="how-to-play" label="How to Play" icon={HelpCircle} />
                     <TabButton id="developer-note" label="Developer Note" icon={FileCode} />
                     <TabButton id="about" label="About" icon={Info} />
@@ -136,7 +135,6 @@ const SettingsModal = ({ activeTab, setActiveTab }: { activeTab: string; setActi
             <div className="flex-grow flex flex-col">
               <nav className="md:hidden flex-shrink-0 flex p-1 border-b justify-around bg-card">
                   <MobileTabButton id="general" label="General" icon={Settings} />
-                  <MobileTabButton id="social" label="Social" icon={Users} />
                   <MobileTabButton id="how-to-play" label="How to Play" icon={HelpCircle} />
                   <MobileTabButton id="developer-note" label="Developer" icon={FileCode} />
                   <MobileTabButton id="about" label="About" icon={Info} />
@@ -181,18 +179,6 @@ const SettingsModal = ({ activeTab, setActiveTab }: { activeTab: string; setActi
                                   </AlertDialogFooter>
                                   </AlertDialogContent>
                               </AlertDialog>
-                          </div>
-                      </div>
-                  )}
-
-                  {activeTab === 'social' && (
-                      <div className="space-y-6">
-                          <h3 className="text-xl font-semibold">Social Accounts</h3>
-                          <p className="text-muted-foreground">Connect your accounts for a seamless HousieHub experience with friends.</p>
-                          <div className="space-y-3">
-                          <Button className="w-full bg-white text-black hover:bg-gray-200 shadow-sm" disabled><GoogleIcon className="mr-2 h-5 w-5 fill-current" /> Continue with Google</Button>
-                          <Button className="w-full bg-[#1877F2] text-white hover:bg-[#166fe5] shadow-sm" disabled><Facebook className="mr-2 h-5 w-5" /> Login with Facebook</Button>
-                          <Button variant="secondary" className="w-full" onClick={handleShare}><Share2 className="mr-2 h-5 w-5" /> Share Website</Button>
                           </div>
                       </div>
                   )}
