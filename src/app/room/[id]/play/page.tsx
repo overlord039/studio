@@ -791,7 +791,7 @@ export default function GameRoomPage() {
                                   <Award className="mr-2 h-4 w-4 text-primary" />
                                   {isBotGame ? 'Prize Status' : 'Prize Pool'}
                               </CardTitle>
-                              {!isBotGame && <p className="text-xs text-muted-foreground">Total: ₹{totalPrizePool.toFixed(2)}</p>}
+                              {!isBotGame && <p className="text-xs text-muted-foreground">Total: {formatCurrency(totalPrizePool)}</p>}
                           </CardHeader>
                           <CardContent className="p-3 pt-0">
                               {isLoading ? (
@@ -859,16 +859,23 @@ export default function GameRoomPage() {
                               ) : (
                                   <ScrollArea className="h-40">
                                       <ul className="space-y-1 text-xs">
-                                      {[...roomData.players].sort((a,b) => (a.isHost ? -1 : b.isHost ? 1 : 0)).map((player) => (
+                                      {[...roomData.players].sort((a,b) => (a.isHost ? -1 : b.isHost ? 1 : 0)).map((player) => {
+                                         const ticketCount = player.tickets?.length || 0;
+                                         const ticketCost = ticketCount * gameSettings.ticketPrice;
+                                         return (
                                           <li key={player.id} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
                                           <span className="font-medium">
                                               {player.name}
                                               {player.isHost && <span className="ml-2 font-semibold text-primary">(Host)</span>}
                                               {player.id === currentUser?.uid && <span className="ml-2 text-muted-foreground">(You)</span>}
                                           </span>
-                                          <span className="text-muted-foreground">{player.tickets?.length || 0} {ticketsText(player.tickets?.length || 0)}</span>
+                                          <span className="text-muted-foreground">
+                                              {ticketCount} {ticketsText(ticketCount)}
+                                              {!isBotGame && ` (${formatCurrency(ticketCost)})`}
+                                          </span>
                                           </li>
-                                      ))}
+                                        );
+                                      })}
                                       </ul>
                                   </ScrollArea>
                               )}
@@ -985,7 +992,7 @@ export default function GameRoomPage() {
 
               {myTickets.length === 0 && !roomData.isGameOver && roomData.isGameStarted && <p className="text-center text-muted-foreground">You are spectating or have no tickets in this game.</p>}
               
-              <div className={cn("grid gap-4 justify-items-center", getTicketLayoutClass(myTickets.length))}>
+              <div className={cn("grid gap-x-2 gap-y-4 justify-items-center", getTicketLayoutClass(myTickets.length))}>
                 {myTickets.map((ticket, index) => (
                   <div key={index} className={cn(
                     'w-full flex justify-center',
@@ -1012,5 +1019,5 @@ export default function GameRoomPage() {
 }
 
 function formatCurrency(amount: number) {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 };
