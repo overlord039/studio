@@ -484,33 +484,69 @@ export default function GameRoomPage() {
   const isCurrentUserHost = roomData?.host.id === currentUser?.uid;
 
   const handlePlayAgain = async () => {
-    if (!currentUser) return;
-    
-    if (isCurrentUserHost) {
+      if (!currentUser || !roomData) return;
+
+      const isBotGame = roomData.settings.gameMode !== 'multiplayer';
       setIsResetting(true);
-      try {
-        const response = await fetch(`/api/rooms/${roomId}/reset`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ hostId: currentUser.uid }),
-        });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Failed to reset the game.");
-        }
-        router.push(`/room/${roomId}/lobby`);
-        playSound('notification.wav');
-        toast({ title: "New Game Ready!", description: "The lobby has been reset for all players." });
-      } catch (err) {
-        console.error("Error resetting game:", err);
-        toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
-        setIsResetting(false);
+
+      if (isBotGame) {
+          playSound('start.wav');
+          const hostPlayer = {
+              id: currentUser.uid,
+              name: currentUser.displayName || 'Guest',
+              email: currentUser.email,
+          };
+
+          try {
+              const response = await fetch('/api/bot-game/create', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ host: hostPlayer, mode: 'hard' }),
+              });
+
+              if (!response.ok) {
+                  const errorData = await response.json();
+                  throw new Error(errorData.message || "Failed to create bot game.");
+              }
+
+              const newRoom: Room = await response.json();
+              toast({ title: "New Game Starting!", description: "Get ready for another round!" });
+
+              const hostPlayerInRoom = newRoom.players.find(p => p.id === currentUser.uid);
+              const hostTicketCount = hostPlayerInRoom?.tickets.length || 1;
+              router.push(`/room/${newRoom.id}/play?playerTickets=${hostTicketCount}`);
+
+          } catch (error) {
+              console.error("Error creating new bot game:", error);
+              toast({ title: "Error", description: (error as Error).message, variant: "destructive" });
+              setIsResetting(false);
+          }
+      } else { // It's a multiplayer game
+          if (isCurrentUserHost) {
+              try {
+                  const response = await fetch(`/api/rooms/${roomId}/reset`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ hostId: currentUser.uid }),
+                  });
+                  if (!response.ok) {
+                      const errorData = await response.json();
+                      throw new Error(errorData.message || "Failed to reset the game.");
+                  }
+                  router.push(`/room/${roomId}/lobby`);
+                  playSound('notification.wav');
+                  toast({ title: "New Game Ready!", description: "The lobby has been reset for all players." });
+              } catch (err) {
+                  console.error("Error resetting game:", err);
+                  toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
+                  setIsResetting(false);
+              }
+          } else {
+              router.push(`/room/${roomId}/lobby`);
+              playSound('notification.wav');
+              toast({ title: "Returning to Lobby", description: "Waiting for host to start a new game." });
+          }
       }
-    } else {
-      router.push(`/room/${roomId}/lobby`);
-      playSound('notification.wav');
-      toast({ title: "Returning to Lobby", description: "Waiting for host to start a new game." });
-    }
   };
 
   const handleLeaveRoom = async () => {
@@ -594,6 +630,8 @@ export default function GameRoomPage() {
             }
         });
     }
+    
+    const playAgainButtonText = isBotGame ? "Play Again" : (isCurrentUserHost ? "New Game" : "To Lobby");
 
     return (
       <div className="flex-grow p-4 flex flex-col items-center justify-center">
@@ -668,7 +706,7 @@ export default function GameRoomPage() {
                 ) : (
                   <RotateCcw className="mr-2 h-5 w-5" />
                 )}
-                {isResetting ? "Returning to Lobby..." : "To Lobby"}
+                {isResetting ? "Starting..." : playAgainButtonText}
               </Button>
               <Button variant="destructive" className="flex-1" size="lg" onClick={handleLeaveRoom}>
                 <LogOut className="mr-2 h-5 w-5" /> Leave
@@ -954,3 +992,4 @@ function formatCurrency(amount: number) {
 
 
     
+
