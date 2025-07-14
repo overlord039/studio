@@ -132,11 +132,11 @@ const SettingsModal = ({ activeTab, setActiveTab }: { activeTab: string; setActi
                 </nav>
             </aside>
             
-            <div className="flex-grow flex flex-col">
+            <div className="flex-grow flex flex-col min-h-0">
               <nav className="md:hidden flex-shrink-0 flex p-1 border-b justify-around bg-card">
                   <MobileTabButton id="general" label="General" icon={Settings} />
                   <MobileTabButton id="how-to-play" label="How to Play" icon={HelpCircle} />
-                  <MobileTabButton id="developer-note" label="Developer" icon={FileCode} />
+                  <MobileTabButton id="developer" label="Developer" icon={FileCode} />
                   <MobileTabButton id="about" label="About" icon={Info} />
               </nav>
 
