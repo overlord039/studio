@@ -501,7 +501,7 @@ export default function GameRoomPage() {
               const response = await fetch('/api/bot-game/create', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ host: hostPlayer, mode: 'hard' }),
+                  body: JSON.stringify({ host: hostPlayer, mode: roomData.settings.gameMode }),
               });
 
               if (!response.ok) {
@@ -935,7 +935,7 @@ export default function GameRoomPage() {
               <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold text-white">
                 Your Tickets ({myTickets.length}
-                <Ticket className="ml-1 h-5 w-5 inline-block align-middle" />)
+                <Ticket className="ml-1 h-5 w-5 inline-block align-middle transform -rotate-30" />)
               </h2>
               <Dialog>
                   <DialogTrigger asChild>
@@ -992,5 +992,6 @@ function formatCurrency(amount: number) {
 
 
     
+
 
 
