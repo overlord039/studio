@@ -742,8 +742,20 @@ export default function GameRoomPage() {
         <Card className="shadow-none border-none bg-transparent">
           <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
             <div className="flex-grow">
-              <div className="text-white capitalize">
-                {isBotGame ? `${roomData.settings.gameMode} Mode` : `Room ID: #${roomId}`}
+               <div className="flex items-center gap-2 mb-1">
+                  {isBotGame ? (
+                      <div className={cn(
+                          "px-2 py-1 text-xs font-bold text-white rounded-md capitalize",
+                          roomData.settings.gameMode === 'easy' && "bg-green-600",
+                          roomData.settings.gameMode === 'hard' && "bg-red-600",
+                      )}>
+                          {roomData.settings.gameMode} Mode
+                      </div>
+                  ) : (
+                      <div className="text-white capitalize">
+                          Room ID: #{roomId}
+                      </div>
+                  )}
               </div>
               <div className="font-semibold text-white">{currentUser.displayName} ({myTickets.length} {ticketsText(myTickets.length)})</div>
             </div>
