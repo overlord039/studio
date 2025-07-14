@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Settings, HelpCircle, X, Volume2, Music, Bell, Trash2, Users, Info, Facebook, Share2, Linkedin, Mail, Sun, Moon, Monitor, FileCode, Star, MessageSquare } from 'lucide-react';
+import { Settings, HelpCircle, X, Volume2, Music, Bell, Trash2, Info, Sun, Moon, Monitor, FileCode, MessageSquare, Gamepad2, UserPlus, LogIn, Ticket, CheckSquare, Trophy } from 'lucide-react';
 import { useTheme } from "next-themes";
 import { useAuth } from '@/contexts/auth-context';
 import React, { useState, useEffect, useCallback } from 'react';
@@ -185,24 +185,38 @@ const SettingsModal = ({ activeTab, setActiveTab }: { activeTab: string; setActi
 
                   {activeTab === 'how-to-play' && (
                      <div className="space-y-4">
-                        <h3 className="text-2xl font-bold flex items-center"><HelpCircle className="mr-2 h-7 w-7 text-primary" /> How to Play</h3>
+                        <h3 className="text-2xl font-bold flex items-center"><HelpCircle className="mr-2 h-7 w-7 text-primary" /> How to Play HousieHub</h3>
+                        <p className="text-muted-foreground">A quick guide to get you started.</p>
                         <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
                             <AccordionItem value="item-1">
-                                <AccordionTrigger className="text-lg">1. Get Started</AccordionTrigger>
-                                <AccordionContent className="text-base">
-                                Create an account and log in. You can then create a new game room to host, or join a friend's room using their unique Room ID.
+                                <AccordionTrigger><UserPlus className="mr-2 h-5 w-5 text-accent"/>1. Create an Account</AccordionTrigger>
+                                <AccordionContent className="text-base pl-8">
+                                Sign up with Google or Email to save your game stats and play across devices. You can also play as a Guest, but your data won't be saved if you clear your browser cache.
                                 </AccordionContent>
                             </AccordionItem>
-                            <AccordionItem value="item-2">
-                                <AccordionTrigger className="text-lg">2. The Game</AccordionTrigger>
-                                <AccordionContent className="text-base">
-                                Once in the game lobby, confirm how many tickets you want to play with. When the game starts, numbers from 1 to 90 are called out. Click the matching numbers on your tickets to mark them.
+                             <AccordionItem value="item-2">
+                                <AccordionTrigger><Gamepad2 className="mr-2 h-5 w-5 text-accent"/>2. Choose a Game Mode</AccordionTrigger>
+                                <AccordionContent className="text-base pl-8 space-y-2">
+                                    <p><strong>Play with Friends:</strong> Create a private room and share the Room ID with your friends to play together.</p>
+                                    <p><strong>Play vs Computer:</strong> Practice your skills against bot players in Easy or Hard mode.</p>
                                 </AccordionContent>
                             </AccordionItem>
                             <AccordionItem value="item-3">
-                                <AccordionTrigger className="text-lg">3. Win Prizes</AccordionTrigger>
-                                <AccordionContent className="text-base">
-                                When you complete a winning pattern (e.g., Jaldi 5, a full line, or a Full House), click the corresponding 'Claim' button. The system automatically validates your claim. The first valid claim wins the prize for that pattern!
+                                <AccordionTrigger><LogIn className="mr-2 h-5 w-5 text-accent"/>3. Join the Lobby</AccordionTrigger>
+                                <AccordionContent className="text-base pl-8">
+                                Once in the lobby, select how many tickets you want to play with for the upcoming game. You'll see other players join in real-time. The host starts the game when ready.
+                                </AccordionContent>
+                            </AccordionItem>
+                             <AccordionItem value="item-4">
+                                <AccordionTrigger><CheckSquare className="mr-2 h-5 w-5 text-accent"/>4. Mark Your Numbers</AccordionTrigger>
+                                <AccordionContent className="text-base pl-8">
+                                As numbers are called, they will appear at the top. If a called number is on any of your tickets, click on it to mark it. Marked numbers will turn green.
+                                </AccordionContent>
+                            </AccordionItem>
+                            <AccordionItem value="item-5">
+                                <AccordionTrigger><Trophy className="mr-2 h-5 w-5 text-accent"/>5. Claim Prizes</AccordionTrigger>
+                                <AccordionContent className="text-base pl-8">
+                                When you complete a winning pattern (e.g., Early 5, a full line, or a Full House), the corresponding claim button will become active. Click it to claim your prize. The system automatically validates your claim. The first valid claim wins!
                                 </AccordionContent>
                             </AccordionItem>
                         </Accordion>
@@ -230,9 +244,6 @@ const SettingsModal = ({ activeTab, setActiveTab }: { activeTab: string; setActi
                         <div className="flex justify-center items-center space-x-6">
                           <a href="mailto:durgasankar.d@gmail.com" aria-label="Email" className="text-muted-foreground hover:text-primary transition-colors">
                             <Mail className="h-6 w-6" />
-                          </a>
-                          <a href="https://www.linkedin.com/in/durga-sankar-d/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary transition-colors">
-                            <Linkedin className="h-6 w-6" />
                           </a>
                         </div>
                       </div>
