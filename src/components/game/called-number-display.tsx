@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 
 interface CalledNumberDisplayProps {
   currentNumber: number | null;
@@ -42,7 +42,7 @@ export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMu
                 <span className="text-4xl font-extrabold">{currentNumber ?? '-'}</span>
               </div>
               {currentNumber !== null && (
-                <svg className="absolute inset-0 size-20 -rotate-90">
+                <svg key={`progress-${animationKey}`} className="absolute inset-0 size-20 -rotate-90">
                   <circle
                     r="34"
                     cx="40"
