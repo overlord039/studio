@@ -11,7 +11,7 @@ import type { HousieTicketGrid, PrizeType, Room, GameSettings, CallingMode, Priz
 import { PRIZE_TYPES } from '@/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause, Menu } from 'lucide-react';
+import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause, Menu, Ticket } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
@@ -895,7 +895,10 @@ export default function GameRoomPage() {
               )}
               
               <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-white">Your Tickets ({myTickets.length})</h2>
+              <h2 className="text-xl font-semibold text-white flex items-center">
+                Your Tickets ({myTickets.length})
+                <Ticket className="ml-2 h-5 w-5" />
+              </h2>
               <Dialog>
                   <DialogTrigger asChild>
                       <Button variant="default" size="sm" className="font-semibold" onClick={() => playSound('cards.mp3')}>
