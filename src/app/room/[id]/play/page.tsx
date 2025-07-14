@@ -719,10 +719,22 @@ export default function GameRoomPage() {
   }
 
   const isAutoCalling = roomData.settings.callingMode === 'auto';
-  const ticketClassName = 
-    myTickets.length === 4 ? "w-full max-w-[19rem] text-sm" :
-    myTickets.length === 3 ? "w-full max-w-[19rem] text-sm" :
-    "w-full max-w-sm text-base";
+  
+  const getTicketLayoutClass = (count: number) => {
+    switch (count) {
+      case 1:
+        return 'grid-cols-1';
+      case 2:
+        return 'grid-cols-1 lg:grid-cols-2';
+      case 3:
+        return 'grid-cols-1 lg:grid-cols-2';
+      case 4:
+        return 'grid-cols-1 lg:grid-cols-2';
+      default:
+        return 'grid-cols-1 lg:grid-cols-2';
+    }
+  };
+
 
   return (
     <>
@@ -958,21 +970,25 @@ export default function GameRoomPage() {
               </div>
 
               {myTickets.length === 0 && !roomData.isGameOver && roomData.isGameStarted && <p className="text-center text-muted-foreground">You are spectating or have no tickets in this game.</p>}
-              <ScrollArea>
-                <div className="flex flex-wrap justify-center gap-4 p-1">
-                  {myTickets.map((ticket, index) => (
+              
+              <div className={cn("grid gap-4 justify-items-center", getTicketLayoutClass(myTickets.length))}>
+                {myTickets.map((ticket, index) => (
+                  <div key={index} className={cn(
+                    'w-full flex justify-center',
+                    myTickets.length === 3 && index === 2 && 'lg:col-span-2'
+                  )}>
                     <MemoizedHousieTicket
-                      key={index}
                       ticketIndex={index}
                       ticket={ticket}
                       calledNumbers={roomData.calledNumbers}
                       markedNumbers={markedNumbers}
                       onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
-                      className={ticketClassName}
+                      className="w-full max-w-md lg:max-w-lg"
                     />
-                  ))}
-                </div>
-              </ScrollArea>
+                  </div>
+                ))}
+              </div>
+
           </div>
         </div>
       </div>
@@ -992,6 +1008,7 @@ function formatCurrency(amount: number) {
 
 
     
+
 
 
 
