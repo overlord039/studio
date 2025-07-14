@@ -933,9 +933,9 @@ export default function GameRoomPage() {
               )}
               
               <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-white flex items-center">
-                Your Tickets ({myTickets.length})
-                <Ticket className="ml-2 h-5 w-5" />
+              <h2 className="text-xl font-semibold text-white">
+                Your Tickets ({myTickets.length}
+                <Ticket className="ml-1 h-5 w-5 inline-block align-middle" />)
               </h2>
               <Dialog>
                   <DialogTrigger asChild>
@@ -992,4 +992,5 @@ function formatCurrency(amount: number) {
 
 
     
+
 
