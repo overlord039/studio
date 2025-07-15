@@ -65,15 +65,16 @@ export default function HomePage() {
       <div className="w-full max-w-md space-y-4">
         <div className="grid grid-cols-3 gap-4">
             <Card 
-            className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
-            onClick={() => handleNavigateWithAuth('/create-room')}
+            className="bg-gray-500 text-white rounded-2xl shadow-lg relative opacity-50 cursor-not-allowed"
             role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/create-room') }}
+            aria-disabled="true"
             >
+            <div className="absolute top-1 right-1 bg-muted text-muted-foreground text-[0.6rem] font-bold uppercase px-1.5 py-0.5 rounded-full z-10">
+                Coming Soon
+            </div>
             <CardContent className="flex flex-col items-center justify-center p-3 text-center">
-                <Users className="h-8 w-8 mb-1" />
-                <p className="text-sm font-bold">Friends</p>
+                <Globe className="h-8 w-8 mb-1" />
+                <p className="text-sm font-bold">Online</p>
             </CardContent>
             </Card>
 
@@ -91,16 +92,15 @@ export default function HomePage() {
             </Card>
 
             <Card 
-            className="bg-gray-500 text-white rounded-2xl shadow-lg relative opacity-50 cursor-not-allowed"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
+            onClick={() => handleNavigateWithAuth('/create-room')}
             role="button"
-            aria-disabled="true"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/create-room') }}
             >
-            <div className="absolute top-1 right-1 bg-muted text-muted-foreground text-[0.6rem] font-bold uppercase px-1.5 py-0.5 rounded-full z-10">
-                Coming Soon
-            </div>
             <CardContent className="flex flex-col items-center justify-center p-3 text-center">
-                <Globe className="h-8 w-8 mb-1" />
-                <p className="text-sm font-bold">Online</p>
+                <Users className="h-8 w-8 mb-1" />
+                <p className="text-sm font-bold">Friends</p>
             </CardContent>
             </Card>
         </div>
