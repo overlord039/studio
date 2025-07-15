@@ -48,9 +48,9 @@ export default function HomePage() {
          <Image 
             src="/applogo.png" 
             alt="HousieHub Logo" 
-            width={300} 
-            height={300} 
-            className="h-auto w-[200px] md:w-[300px]"
+            width={250} 
+            height={250} 
+            className="h-auto w-[180px] md:w-[250px]"
             priority 
           />
       </section>
