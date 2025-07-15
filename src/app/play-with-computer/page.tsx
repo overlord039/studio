@@ -117,9 +117,8 @@ export default function PlayWithComputerModesPage() {
       </div>
        <div className="mt-8 w-full max-w-md">
         <Link href="/" passHref>
-          <Button variant="destructive">
-            <LogOut className="mr-2 h-4 w-4 rotate-180" />
-            Back to Home
+          <Button variant="destructive" size="icon">
+            <LogOut className="h-4 w-4 rotate-180" />
           </Button>
         </Link>
       </div>
