@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Settings, HelpCircle, X, Volume2, Music, Bell, Trash2, Info, Sun, Moon, Monitor, FileCode, MessageSquare, Gamepad2, UserPlus, LogIn, Ticket, CheckSquare, Trophy } from 'lucide-react';
+import { Settings, HelpCircle, X, Volume2, Music, Bell, Trash2, Info, Sun, Moon, Monitor, FileCode, MessageSquare, Gamepad2, UserPlus, LogIn, Ticket, CheckSquare, Trophy, Mail } from 'lucide-react';
 import { useTheme } from "next-themes";
 import { useAuth } from '@/contexts/auth-context';
 import React, { useState, useEffect, useCallback } from 'react';
