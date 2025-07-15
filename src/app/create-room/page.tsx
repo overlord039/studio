@@ -126,10 +126,10 @@ export default function CreateOrJoinRoomPage() {
     <button
       onClick={() => setActiveTab(tab)}
       className={cn(
-        "relative w-1/2 py-3 text-lg font-bold text-white transition-all duration-300 rounded-t-xl",
+        "relative w-1/2 py-3 text-lg font-bold text-white transition-all duration-300 rounded-t-xl group",
         activeTab === tab 
-          ? "bg-yellow-500/10" 
-          : "bg-blue-500/10 hover:bg-blue-500/20"
+          ? "bg-yellow-500 text-black" 
+          : "bg-primary/80 hover:bg-primary"
       )}
     >
       <span className="relative z-10">{label}</span>
