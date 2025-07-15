@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Minus, Plus, Users, Gamepad2, KeyRound } from 'lucide-react';
+import { Minus, Plus } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import type { Player, GameSettings, Room } from '@/types';
 
@@ -59,9 +59,8 @@ export default function CreateOrJoinRoomPage() {
     };
 
     const roomSettings: Partial<GameSettings> = {
-      ticketPrice: ticketPrice as any, // Cast as it can be any number now
+      ticketPrice: ticketPrice,
       lobbySize: lobbySize,
-      numberOfTicketsPerPlayer: 1, // Defaulting to 1, can be changed in lobby
       isPublic: false,
       gameMode: 'multiplayer',
     };
@@ -126,10 +125,10 @@ export default function CreateOrJoinRoomPage() {
     <button
       onClick={() => setActiveTab(tab)}
       className={cn(
-        "relative w-1/2 py-3 text-lg font-bold text-white transition-all duration-300 rounded-t-xl group",
+        "relative w-1/2 py-3 text-lg font-bold transition-all duration-300 rounded-t-xl group",
         activeTab === tab 
-          ? "bg-yellow-500 text-black" 
-          : "bg-primary/80 hover:bg-primary"
+          ? "bg-accent text-accent-foreground" 
+          : "bg-primary/80 text-primary-foreground hover:bg-primary"
       )}
     >
       <span className="relative z-10">{label}</span>
@@ -138,8 +137,8 @@ export default function CreateOrJoinRoomPage() {
         className={cn(
           "absolute inset-0 rounded-t-xl blur-md transition-opacity duration-300",
           activeTab === tab
-            ? "bg-yellow-500 opacity-50"
-            : "bg-blue-500 opacity-0 group-hover:opacity-30"
+            ? "bg-accent opacity-50"
+            : "bg-primary opacity-0 group-hover:opacity-30"
         )}
       ></div>
     </button>
@@ -152,29 +151,29 @@ export default function CreateOrJoinRoomPage() {
           <TabButton tab="create" label="Create" />
           <TabButton tab="join" label="Join" />
         </div>
-        <CardContent className="bg-card p-6 rounded-b-xl border border-t-0 border-white/10">
+        <CardContent className="bg-card p-6 rounded-b-xl border border-t-0 border-border">
           {activeTab === 'create' && (
             <div className="space-y-6 animate-fade-in">
-              <h2 className="text-center text-xl font-bold text-white tracking-widest uppercase">SELECT LOBBY</h2>
+              <h2 className="text-center text-xl font-bold text-foreground tracking-widest uppercase">SELECT LOBBY</h2>
               
               <div className="space-y-2 text-center">
-                <label className="text-sm font-semibold text-white uppercase">Entry Fee</label>
+                <label className="text-sm font-semibold text-muted-foreground uppercase">Entry Fee</label>
                 <div className="flex items-center justify-center gap-4">
-                  <Button size="icon" className="rounded-full bg-blue-500 hover:bg-blue-600 w-10 h-10" onClick={() => handlePriceChange(-5)} disabled={ticketPrice <= 5}>
-                    <Minus className="h-6 w-6 text-white" />
+                  <Button size="icon" variant="secondary" className="rounded-full w-10 h-10" onClick={() => handlePriceChange(-5)} disabled={ticketPrice <= 5}>
+                    <Minus className="h-6 w-6" />
                   </Button>
-                  <div className="flex flex-col items-center justify-center w-28 h-20 rounded-lg border-2 border-yellow-400 bg-yellow-500/10">
-                    <span className="text-3xl font-bold text-white">₹{ticketPrice}</span>
-                    <span className="text-xs text-yellow-300 uppercase">ticket prize</span>
+                  <div className="flex flex-col items-center justify-center w-28 h-20 rounded-lg border-2 border-accent bg-accent/10">
+                    <span className="text-3xl font-bold text-foreground">₹{ticketPrice}</span>
+                    <span className="text-xs text-accent uppercase">ticket prize</span>
                   </div>
-                  <Button size="icon" className="rounded-full bg-blue-500 hover:bg-blue-600 w-10 h-10" onClick={() => handlePriceChange(5)}>
-                    <Plus className="h-6 w-6 text-white" />
+                  <Button size="icon" variant="secondary" className="rounded-full w-10 h-10" onClick={() => handlePriceChange(5)}>
+                    <Plus className="h-6 w-6" />
                   </Button>
                 </div>
               </div>
 
               <div className="space-y-2 text-center">
-                <label className="text-sm font-semibold text-white uppercase">Lobby Size</label>
+                <label className="text-sm font-semibold text-muted-foreground uppercase">Lobby Size</label>
                 <div className="flex items-center justify-center gap-2">
                   {LOBBY_SIZES.map(size => (
                     <Button
@@ -183,7 +182,7 @@ export default function CreateOrJoinRoomPage() {
                       variant={lobbySize === size ? 'default' : 'secondary'}
                       className={cn(
                           "rounded-full h-10 w-10 p-0 text-sm",
-                          lobbySize === size ? 'bg-yellow-500 text-black font-bold' : 'bg-blue-500/30 text-white'
+                          lobbySize === size ? 'bg-accent text-accent-foreground font-bold' : ''
                       )}
                     >
                       {size}
@@ -192,7 +191,7 @@ export default function CreateOrJoinRoomPage() {
                 </div>
               </div>
 
-              <Button onClick={handleCreateRoom} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-lg font-bold" disabled={isSubmitting || authLoading}>
+              <Button onClick={handleCreateRoom} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-lg font-bold text-white" disabled={isSubmitting || authLoading}>
                 {isSubmitting ? 'Creating...' : 'Create Room'}
               </Button>
             </div>
@@ -200,7 +199,7 @@ export default function CreateOrJoinRoomPage() {
           
           {activeTab === 'join' && (
             <div className="space-y-6 animate-fade-in">
-              <h2 className="text-center text-sm font-bold text-white tracking-widest uppercase">
+              <h2 className="text-center text-sm font-bold text-muted-foreground tracking-widest uppercase">
                 Enter the Room ID given by the host.
               </h2>
               
@@ -209,7 +208,7 @@ export default function CreateOrJoinRoomPage() {
                   id="join-room-input"
                   type="text"
                   placeholder="Enter Room ID"
-                  className="h-12 text-lg text-center bg-black/30 text-white placeholder:text-gray-400 border-white/20 focus:border-yellow-400 tracking-widest"
+                  className="h-12 text-lg text-center bg-background border-input focus:border-accent tracking-widest"
                   value={joinRoomId}
                   onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
                   disabled={authLoading}
@@ -217,7 +216,7 @@ export default function CreateOrJoinRoomPage() {
                 />
               </div>
 
-              <Button onClick={handleJoinRoom} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-lg font-bold" disabled={authLoading}>
+              <Button onClick={handleJoinRoom} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-lg font-bold text-white" disabled={authLoading}>
                 Join Room
               </Button>
             </div>
