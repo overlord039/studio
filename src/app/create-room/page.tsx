@@ -9,9 +9,10 @@ import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Minus, Plus } from 'lucide-react';
+import { Minus, Plus, LogOut } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import type { Player, GameSettings, Room } from '@/types';
+import Link from 'next/link';
 
 const LOBBY_SIZES = [5, 10, 15, 20, 25, 50];
 
@@ -228,9 +229,11 @@ export default function CreateOrJoinRoomPage() {
         </CardContent>
       </Card>
       <div className="mt-8 w-full max-w-xl text-center">
-        <Button variant="link" onClick={() => router.push('/')} className="text-white">
-          Back to Home
-        </Button>
+        <Link href="/" passHref>
+          <Button variant="destructive" size="icon">
+            <LogOut className="h-4 w-4 rotate-180" />
+          </Button>
+        </Link>
       </div>
     </div>
   );
