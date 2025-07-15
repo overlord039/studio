@@ -191,7 +191,7 @@ export default function CreateOrJoinRoomPage() {
                 </div>
               </div>
 
-              <Button onClick={handleCreateRoom} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-lg font-bold text-white" disabled={isSubmitting || authLoading}>
+              <Button onClick={handleCreateRoom} variant="default" size="lg" className="w-full text-lg font-bold" disabled={isSubmitting || authLoading}>
                 {isSubmitting ? 'Creating...' : 'Create Room'}
               </Button>
             </div>
@@ -216,7 +216,7 @@ export default function CreateOrJoinRoomPage() {
                 />
               </div>
 
-              <Button onClick={handleJoinRoom} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-lg font-bold text-white" disabled={authLoading}>
+              <Button onClick={handleJoinRoom} variant="default" size="lg" className="w-full text-lg font-bold" disabled={authLoading}>
                 Join Room
               </Button>
             </div>
