@@ -484,69 +484,75 @@ export default function GameRoomPage() {
   const isCurrentUserHost = roomData?.host.id === currentUser?.uid;
 
   const handlePlayAgain = async () => {
-      if (!currentUser || !roomData) return;
+    if (!currentUser || !roomData) return;
 
-      const isBotGame = roomData.settings.gameMode !== 'multiplayer';
-      setIsResetting(true);
+    const isBotGame = roomData.settings.gameMode !== 'multiplayer';
+    setIsResetting(true);
 
-      if (isBotGame) {
-          playSound('start.wav');
-          const hostPlayer = {
-              id: currentUser.uid,
-              name: currentUser.displayName || 'Guest',
-              email: currentUser.email,
-          };
-
-          try {
-              const response = await fetch('/api/bot-game/create', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ host: hostPlayer, mode: roomData.settings.gameMode, tickets: myTickets.length > 0 ? myTickets.length : 1 }),
-              });
-
-              if (!response.ok) {
-                  const errorData = await response.json();
-                  throw new Error(errorData.message || "Failed to create bot game.");
-              }
-
-              const newRoom: Room = await response.json();
-              toast({ title: "New Game Starting!", description: "Get ready for another round!" });
-
-              const hostPlayerInRoom = newRoom.players.find(p => p.id === currentUser.uid);
-              const hostTicketCount = hostPlayerInRoom?.tickets.length || 1;
-              router.push(`/room/${newRoom.id}/play?playerTickets=${hostTicketCount}`);
-
-          } catch (error) {
-              console.error("Error creating new bot game:", error);
-              toast({ title: "Error", description: (error as Error).message, variant: "destructive" });
-              setIsResetting(false);
-          }
-      } else { // It's a multiplayer game
-          if (isCurrentUserHost) {
-              try {
-                  const response = await fetch(`/api/rooms/${roomId}/reset`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ hostId: currentUser.uid }),
-                  });
-                  if (!response.ok) {
-                      const errorData = await response.json();
-                      throw new Error(errorData.message || "Failed to reset the game.");
-                  }
-                  router.push(`/room/${roomId}/lobby`);
-                  playSound('notification.wav');
-                  toast({ title: "New Game Ready!", description: "The lobby has been reset for all players." });
-              } catch (err) {
-                  console.error("Error resetting game:", err);
-                  toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
-                  setIsResetting(false);
-              }
-          } else {
-              router.push(`/room/${roomId}/lobby`);
-              playSound('notification.wav');
-              toast({ title: "Returning to Lobby", description: "Waiting for host to start a new game." });
-          }
+    if (isBotGame) {
+      if (roomData.settings.gameMode === 'easy') {
+        playSound('cards.mp3');
+        router.push('/play-with-computer/easy');
+        return;
       }
+      
+      // For Hard mode, create a new game immediately
+      playSound('start.wav');
+      const hostPlayer = {
+        id: currentUser.uid,
+        name: currentUser.displayName || 'Guest',
+        email: currentUser.email,
+      };
+
+      try {
+        const response = await fetch('/api/bot-game/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ host: hostPlayer, mode: 'hard' }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to create bot game.");
+        }
+
+        const newRoom: Room = await response.json();
+        toast({ title: "New Game Starting!", description: "Get ready for another round!" });
+        const hostPlayerInRoom = newRoom.players.find(p => p.id === currentUser.uid);
+        const hostTicketCount = hostPlayerInRoom?.tickets.length || 1;
+        router.push(`/room/${newRoom.id}/play?playerTickets=${hostTicketCount}`);
+      } catch (error) {
+        console.error("Error creating new hard bot game:", error);
+        toast({ title: "Error", description: (error as Error).message, variant: "destructive" });
+        setIsResetting(false);
+      }
+
+    } else { // It's a multiplayer game
+      if (isCurrentUserHost) {
+        try {
+          const response = await fetch(`/api/rooms/${roomId}/reset`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ hostId: currentUser.uid }),
+          });
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Failed to reset the game.");
+          }
+          router.push(`/room/${roomId}/lobby`);
+          playSound('notification.wav');
+          toast({ title: "New Game Ready!", description: "The lobby has been reset for all players." });
+        } catch (err) {
+          console.error("Error resetting game:", err);
+          toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
+          setIsResetting(false);
+        }
+      } else {
+        router.push(`/room/${roomId}/lobby`);
+        playSound('notification.wav');
+        toast({ title: "Returning to Lobby", description: "Waiting for host to start a new game." });
+      }
+    }
   };
 
   const handleLeaveRoom = async () => {
