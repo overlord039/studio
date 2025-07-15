@@ -387,7 +387,7 @@ export default function GameRoomPage() {
 
       if (response.ok) {
         const updatedRoom: Room = result;
-        setRoomData(updatedRoom); // This will now update the entire room state from server response.
+        setRoomData(updatedRoom); 
         previousPrizeStatusRef.current = updatedRoom.prizeStatus;
 
         const claimStatus = updatedRoom.prizeStatus[prizeType];
@@ -692,12 +692,16 @@ export default function GameRoomPage() {
 
                   const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
                   const prizeAmount = (totalPrizePool * percentage) / 100;
+                  const prizePerWinner = (claimInfo && claimInfo.claimedBy.length > 0) ? prizeAmount / claimInfo.claimedBy.length : 0;
                   
                   return (
                      <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
                         <div className="flex flex-col">
                             <span className="font-medium">{prize}</span>
-                            <span className="text-xs text-muted-foreground">{formatCurrency(prizeAmount)} ({percentage}%)</span>
+                            <span className="text-xs text-muted-foreground">
+                                {formatCurrency(prizeAmount)} ({percentage}%)
+                                {prizePerWinner > 0 && claimInfo && claimInfo.claimedBy.length > 1 && ` / ${formatCurrency(prizePerWinner)} each`}
+                            </span>
                         </div>
                         <span className={cn("font-semibold text-right", claimInfo && claimInfo.claimedBy.length > 0 ? "text-green-600" : "text-muted-foreground")}>
                             {prizeStatusText}
@@ -834,9 +838,10 @@ export default function GameRoomPage() {
                                       const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
                                       const prizeAmount = (totalPrizePool * percentage) / 100;
                                       let prizeValueText = formatCurrency(prizeAmount);
+                                      const winnerCount = claimInfo?.claimedBy.length ?? 0;
 
-                                      if (isClaimed && claimInfo.claimedBy.length > 1) {
-                                          const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
+                                      if (isClaimed && winnerCount > 1) {
+                                          const prizePerWinner = prizeAmount / winnerCount;
                                           prizeValueText = `${formatCurrency(prizePerWinner)} each`;
                                       }
 
