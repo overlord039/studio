@@ -127,7 +127,7 @@ export default function CreateOrJoinRoomPage() {
       className={cn(
         "relative w-1/2 py-3 text-lg font-bold transition-all duration-300 rounded-t-xl group",
         activeTab === tab 
-          ? "bg-accent text-accent-foreground" 
+          ? "bg-accent text-accent-foreground border-b-2 border-accent" 
           : "bg-primary/80 text-primary-foreground hover:bg-primary"
       )}
     >
