@@ -156,38 +156,42 @@ export default function CreateOrJoinRoomPage() {
             <div className="space-y-6 animate-fade-in">
               <h2 className="text-center text-xl font-bold text-foreground tracking-widest uppercase">SELECT LOBBY</h2>
               
-              <div className="space-y-2 text-center">
-                <label className="text-sm font-semibold text-muted-foreground uppercase">Entry Fee</label>
-                <div className="flex items-center justify-center gap-4">
-                  <Button size="icon" variant="secondary" className="rounded-full w-10 h-10" onClick={() => handlePriceChange(-5)} disabled={ticketPrice <= 5}>
-                    <Minus className="h-6 w-6" />
-                  </Button>
-                  <div className="flex flex-col items-center justify-center w-28 h-20 rounded-lg border-2 border-accent bg-accent/10">
-                    <span className="text-3xl font-bold text-foreground">₹{ticketPrice}</span>
-                    <span className="text-xs text-accent uppercase">ticket prize</span>
+              <div className="bg-secondary/30 p-4 rounded-lg">
+                <div className="space-y-2 text-center">
+                  <label className="text-sm font-semibold text-muted-foreground uppercase">Entry Fee</label>
+                  <div className="flex items-center justify-center gap-4">
+                    <Button size="icon" variant="secondary" className="rounded-full w-10 h-10" onClick={() => handlePriceChange(-5)} disabled={ticketPrice <= 5}>
+                      <Minus className="h-6 w-6" />
+                    </Button>
+                    <div className="flex flex-col items-center justify-center w-28 h-20 rounded-lg border-2 border-accent bg-accent/10">
+                      <span className="text-3xl font-bold text-foreground">₹{ticketPrice}</span>
+                      <span className="text-xs text-accent uppercase">ticket prize</span>
+                    </div>
+                    <Button size="icon" variant="secondary" className="rounded-full w-10 h-10" onClick={() => handlePriceChange(5)}>
+                      <Plus className="h-6 w-6" />
+                    </Button>
                   </div>
-                  <Button size="icon" variant="secondary" className="rounded-full w-10 h-10" onClick={() => handlePriceChange(5)}>
-                    <Plus className="h-6 w-6" />
-                  </Button>
                 </div>
               </div>
 
-              <div className="space-y-2 text-center">
-                <label className="text-sm font-semibold text-muted-foreground uppercase">Lobby Size</label>
-                <div className="flex items-center justify-center gap-2">
-                  {LOBBY_SIZES.map(size => (
-                    <Button
-                      key={size}
-                      onClick={() => { playSound('cards.mp3'); setLobbySize(size); }}
-                      variant={lobbySize === size ? 'default' : 'secondary'}
-                      className={cn(
-                          "rounded-full h-10 w-10 p-0 text-sm",
-                          lobbySize === size ? 'bg-accent text-accent-foreground font-bold' : ''
-                      )}
-                    >
-                      {size}
-                    </Button>
-                  ))}
+              <div className="bg-secondary/30 p-4 rounded-lg">
+                <div className="space-y-2 text-center">
+                  <label className="text-sm font-semibold text-muted-foreground uppercase">Lobby Size</label>
+                  <div className="flex items-center justify-center gap-2">
+                    {LOBBY_SIZES.map(size => (
+                      <Button
+                        key={size}
+                        onClick={() => { playSound('cards.mp3'); setLobbySize(size); }}
+                        variant={lobbySize === size ? 'default' : 'secondary'}
+                        className={cn(
+                            "rounded-full h-10 w-10 p-0 text-sm",
+                            lobbySize === size ? 'bg-accent text-accent-foreground font-bold' : ''
+                        )}
+                      >
+                        {size}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
