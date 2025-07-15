@@ -228,7 +228,7 @@ export default function CreateOrJoinRoomPage() {
           )}
         </CardContent>
       </Card>
-      <div className="mt-8 w-full max-w-xl text-center">
+      <div className="mt-8 w-full max-w-xl text-left">
         <Link href="/" passHref>
           <Button variant="destructive" size="icon">
             <LogOut className="h-4 w-4 rotate-180" />
