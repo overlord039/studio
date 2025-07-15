@@ -152,7 +152,7 @@ export default function CreateOrJoinRoomPage() {
           <TabButton tab="create" label="Create" />
           <TabButton tab="join" label="Join" />
         </div>
-        <CardContent className="bg-black/20 backdrop-blur-sm p-6 rounded-b-xl border border-t-0 border-white/10">
+        <CardContent className="bg-card p-6 rounded-b-xl border border-t-0 border-white/10">
           {activeTab === 'create' && (
             <div className="space-y-6 animate-fade-in">
               <h2 className="text-center text-xl font-bold text-white tracking-widest uppercase">SELECT LOBBY</h2>
