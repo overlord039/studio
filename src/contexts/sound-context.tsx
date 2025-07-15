@@ -17,8 +17,9 @@ interface SoundContextType {
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
 
 export function SoundProvider({ children }: { children: ReactNode }) {
-  const [isSfxMuted, setIsSfxMuted] = useState(false); // Default to not muted (SFX on)
-  const [isBgmEnabled, setIsBgmEnabled] = useState(true); // Default to enabled (BGM on)
+  // Default to SFX on (not muted) and BGM on. Client-side useEffect will override this.
+  const [isSfxMuted, setIsSfxMuted] = useState(false);
+  const [isBgmEnabled, setIsBgmEnabled] = useState(true);
 
   useEffect(() => {
     // This effect runs only on the client to sync with localStorage
