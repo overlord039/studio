@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -386,11 +387,11 @@ export default function GameRoomPage() {
 
       if (response.ok) {
         const updatedRoom: Room = result;
-        setRoomData(updatedRoom);
+        setRoomData(updatedRoom); // This will now update the entire room state from server response.
         previousPrizeStatusRef.current = updatedRoom.prizeStatus;
 
         const claimStatus = updatedRoom.prizeStatus[prizeType];
-
+        
         let toastMessageAlert = `Your claim for ${prizeType} has been submitted for validation.`;
         if (claimStatus?.claimedBy.some(c => c.id === currentUser.uid)) {
             toastMessageAlert = `You successfully claimed ${prizeType}!`;
