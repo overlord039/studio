@@ -57,7 +57,7 @@ const AvatarSelectionDialog = ({ onSelect, children }: { onSelect: (src: string)
 
 
 export default function ProfilePage() {
-  const { currentUser, loading, logout, linkGoogleAccount, isSigningIn, linkWithEmailLink, updateUserProfile } = useAuth();
+  const { currentUser, loading, logout, linkGoogleAccount, isSigningIn, linkWithEmailLink, updateUserProfile, setLocalGuestAvatar } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -75,8 +75,12 @@ export default function ProfilePage() {
   };
 
   const handleAvatarSelect = async (src: string) => {
-    if (currentUser && !currentUser.isGuest) {
-      await updateUserProfile({ photoURL: src });
+    if (currentUser) {
+      if (currentUser.isGuest) {
+        setLocalGuestAvatar(src);
+      } else {
+        await updateUserProfile({ photoURL: src });
+      }
       toast({
         title: "Avatar Updated!",
         description: "Your new profile picture has been saved.",
@@ -168,8 +172,7 @@ export default function ProfilePage() {
                               size="icon" 
                               variant="secondary" 
                               className="absolute bottom-0 right-0 rounded-full h-8 w-8 sm:h-10 sm:w-10 border-2 border-background"
-                              disabled={currentUser.isGuest}
-                              title={currentUser.isGuest ? "Link account to change avatar" : "Change avatar"}
+                              title="Change avatar"
                             >
                               <Pencil className="h-4 w-4 sm:h-5 sm:w-5"/>
                               <span className="sr-only">Edit profile picture</span>

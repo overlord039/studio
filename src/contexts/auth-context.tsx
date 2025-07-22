@@ -53,6 +53,7 @@ interface AuthContextType {
   deleteAccount: () => Promise<void>;
   loading: boolean;
   isSigningIn: null | 'guest' | 'google' | 'email';
+  setLocalGuestAvatar: (url: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -202,6 +203,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (firebaseUser) {
+            if (firebaseUser.isAnonymous) {
+              const guestAvatar = localStorage.getItem('guestAvatar');
+              const newUserProfile: User = {
+                  uid: firebaseUser.uid,
+                  displayName: `Guest#${firebaseUser.uid.substring(0,5)}`,
+                  email: null,
+                  photoURL: guestAvatar,
+                  isGuest: true,
+                  createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+                  stats: createDefaultStats(),
+              };
+              setCurrentUser(newUserProfile);
+              setLoading(false);
+              return;
+            }
+
             const userDocRef = doc(db, "users", firebaseUser.uid);
             
             userDocUnsubscribe = onSnapshot(userDocRef, async (docSnap) => {
@@ -259,6 +276,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
   }, [toast, handleEmailLinkSignIn]);
+
+  const setLocalGuestAvatar = (url: string) => {
+    if (currentUser && currentUser.isGuest) {
+        localStorage.setItem('guestAvatar', url);
+        setCurrentUser(prevUser => prevUser ? { ...prevUser, photoURL: url } : null);
+    }
+  };
 
   const updateUserProfile = async (data: Partial<Pick<User, 'displayName' | 'photoURL'>>) => {
     if (!currentUser || currentUser.isGuest || !db) return;
@@ -392,6 +416,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const guestUser = auth.currentUser;
     const guestData = { ...currentUser };
+    const guestAvatar = localStorage.getItem('guestAvatar');
+
 
     setIsSigningIn('google');
     try {
@@ -405,13 +431,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         uid: firebaseUser.uid,
         displayName: firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`,
         email: firebaseUser.email,
-        photoURL: firebaseUser.photoURL,
+        photoURL: firebaseUser.photoURL || guestAvatar,
         isGuest: false,
         createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
         stats: guestData.stats || createDefaultStats(),
       };
 
       await writeUserProfileToDB(newUserProfile);
+      localStorage.removeItem('guestAvatar');
 
       toast({ title: "Account Linked!", description: "Your guest progress has been saved to your Google account." });
       router.push('/');
@@ -503,7 +530,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout, 
       deleteAccount, 
       loading,
-      isSigningIn
+      isSigningIn,
+      setLocalGuestAvatar,
   };
 
   if (!allConfigValuesPresent && !loading) {
