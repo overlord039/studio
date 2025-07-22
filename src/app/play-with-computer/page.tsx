@@ -84,49 +84,35 @@ export default function PlayWithComputerModesPage() {
       <div className="w-full max-w-md space-y-6">
         <Card
           onClick={() => handleModeSelection('/play-with-computer/easy')}
-          className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer"
+          className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer bg-green-500 text-white hover:bg-green-600"
         >
-          <CardHeader className="flex flex-row items-center gap-4 p-6">
-            <div className="p-3 rounded-full bg-green-500/20">
-              <Smile className="h-8 w-8 text-green-500" />
-            </div>
-            <div>
-              <CardTitle className="text-xl font-bold">Easy</CardTitle>
-              <CardDescription>You choose how many tickets you want. Play at your pace.</CardDescription>
-            </div>
+          <CardHeader className="p-6">
+            <CardTitle className="text-xl font-bold">Easy</CardTitle>
+            <CardDescription className="text-green-100">You choose how many tickets you want. Play at your pace.</CardDescription>
           </CardHeader>
         </Card>
 
         <Card
           onClick={() => handleModeSelection('/play-with-computer/medium')}
-          className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer"
+          className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer bg-accent text-accent-foreground hover:bg-accent/90"
         >
-          <CardHeader className="flex flex-row items-center gap-4 p-6">
-            <div className="p-3 rounded-full bg-yellow-500/20">
-              <Scaling className="h-8 w-8 text-yellow-500" />
-            </div>
-            <div>
-              <CardTitle className="text-xl font-bold">Classic</CardTitle>
-              <CardDescription>You choose your tickets, bots get random tickets for a balanced match.</CardDescription>
-            </div>
+          <CardHeader className="p-6">
+            <CardTitle className="text-xl font-bold">Classic</CardTitle>
+            <CardDescription className="text-accent-foreground/80">You choose your tickets, bots get random tickets for a balanced match.</CardDescription>
           </CardHeader>
         </Card>
 
         <Card
           onClick={() => handleModeSelection('/play-with-computer/hard')}
           className={cn(
-            "shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer",
+            "shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90",
             isCreatingHardGame && "opacity-50 cursor-not-allowed"
           )}
         >
-          <CardHeader className="flex flex-row items-center gap-4 p-6">
-            <div className="p-3 rounded-full bg-red-500/20">
-              {isCreatingHardGame ? <Loader2 className="h-8 w-8 text-red-500 animate-spin" /> : <Zap className="h-8 w-8 text-red-500" />}
-            </div>
-            <div>
-              <CardTitle className="text-xl font-bold">Rush</CardTitle>
-              <CardDescription>Ticket counts are random for everyone. Fast-paced and challenging!</CardDescription>
-            </div>
+          <CardHeader className="p-6">
+            {isCreatingHardGame ? <Loader2 className="absolute top-4 right-4 h-6 w-6 animate-spin" /> : null}
+            <CardTitle className="text-xl font-bold">Rush</CardTitle>
+            <CardDescription className="text-destructive-foreground/80">Ticket counts are random for everyone. Fast-paced and challenging!</CardDescription>
           </CardHeader>
         </Card>
       </div>
