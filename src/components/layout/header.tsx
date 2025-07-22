@@ -353,7 +353,7 @@ export default function Header() {
           <Button variant="ghost" className="relative p-0 h-12 w-12 rounded-full">
             <Avatar className="h-12 w-12 border-2 border-primary">
               <AvatarImage 
-                src={`https://placehold.co/48x48.png?text=${avatarFallback}`} 
+                src={currentUser.photoURL || `https://placehold.co/48x48.png?text=${avatarFallback}`} 
                 alt={displayName} 
                 data-ai-hint="profile avatar"
               />

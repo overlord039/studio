@@ -5,6 +5,16 @@ export interface UserStats {
   prizesWon: Record<PrizeType, number>;
 }
 
+export interface User {
+  uid: string;
+  displayName: string | null;
+  email: string | null;
+  photoURL: string | null;
+  isGuest: boolean;
+  createdAt: string;
+  stats: UserStats;
+}
+
 export interface Player {
   id: string; // Will typically be derived from username or a unique auth ID
   name: string;

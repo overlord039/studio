@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { type FormEvent, useState } from 'react';
+import React, { type FormEvent, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,13 +57,12 @@ const AvatarSelectionDialog = ({ onSelect, children }: { onSelect: (src: string)
 
 
 export default function ProfilePage() {
-  const { currentUser, loading, logout, linkGoogleAccount, isSigningIn, linkWithEmailLink } = useAuth();
+  const { currentUser, loading, logout, linkGoogleAccount, isSigningIn, linkWithEmailLink, updateUserProfile } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
   const [emailForLink, setEmailForLink] = React.useState('');
   const [linkSent, setLinkSent] = React.useState(false);
-  const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
 
   const handleLinkEmailSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -72,6 +71,16 @@ export default function ProfilePage() {
       if (success) {
         setLinkSent(true);
       }
+    }
+  };
+
+  const handleAvatarSelect = async (src: string) => {
+    if (currentUser && !currentUser.isGuest) {
+      await updateUserProfile({ photoURL: src });
+      toast({
+        title: "Avatar Updated!",
+        description: "Your new profile picture has been saved.",
+      });
     }
   };
 
@@ -151,14 +160,16 @@ export default function ProfilePage() {
                        <div className="text-xs text-muted-foreground font-mono bg-background/50 px-2 py-1 rounded-full mb-2">ID: {currentUser.uid}</div>
                        <div className="relative">
                           <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-background shadow-lg">
-                              <AvatarImage src={selectedAvatar || `https://placehold.co/128x128.png?text=${avatarFallback}`} alt={displayName} data-ai-hint="profile avatar"/>
+                              <AvatarImage src={currentUser.photoURL || `https://placehold.co/128x128.png?text=${avatarFallback}`} alt={displayName} data-ai-hint="profile avatar"/>
                               <AvatarFallback className="text-3xl sm:text-4xl">{avatarFallback}</AvatarFallback>
                           </Avatar>
-                           <AvatarSelectionDialog onSelect={setSelectedAvatar}>
+                           <AvatarSelectionDialog onSelect={handleAvatarSelect}>
                             <Button 
                               size="icon" 
                               variant="secondary" 
                               className="absolute bottom-0 right-0 rounded-full h-8 w-8 sm:h-10 sm:w-10 border-2 border-background"
+                              disabled={currentUser.isGuest}
+                              title={currentUser.isGuest ? "Link account to change avatar" : "Change avatar"}
                             >
                               <Pencil className="h-4 w-4 sm:h-5 sm:w-5"/>
                               <span className="sr-only">Edit profile picture</span>

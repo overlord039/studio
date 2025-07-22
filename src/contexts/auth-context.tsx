@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ReactNode } from 'react';
@@ -33,6 +34,7 @@ export interface User {
   uid: string;
   displayName: string | null;
   email: string | null;
+  photoURL: string | null;
   isGuest: boolean;
   createdAt: string;
   stats: UserStats;
@@ -40,6 +42,7 @@ export interface User {
 
 interface AuthContextType {
   currentUser: User | null;
+  updateUserProfile: (data: Partial<Pick<User, 'displayName' | 'photoURL'>>) => Promise<void>;
   updateUserStats: (newStats: Partial<UserStats>) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   loginWithEmailLink: (email: string) => Promise<boolean>;
@@ -93,6 +96,7 @@ function areUsersEqual(a: User | null, b: User | null): boolean {
         a.uid !== b.uid ||
         a.displayName !== b.displayName ||
         a.email !== b.email ||
+        a.photoURL !== b.photoURL ||
         a.isGuest !== b.isGuest ||
         a.createdAt !== b.createdAt ||
         a.stats.matchesPlayed !== b.stats.matchesPlayed
@@ -208,6 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         uid: firestoreData.uid,
                         displayName: firestoreData.displayName,
                         email: firestoreData.email,
+                        photoURL: firestoreData.photoURL || null,
                         isGuest: firestoreData.isGuest,
                         createdAt: firestoreData.createdAt?.toDate ? firestoreData.createdAt.toDate().toISOString() : firestoreData.createdAt,
                         stats: firestoreData.stats || createDefaultStats(),
@@ -224,6 +229,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         uid: firebaseUser.uid,
                         displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || `User#${firebaseUser.uid.substring(0,5)}`,
                         email: firebaseUser.email,
+                        photoURL: firebaseUser.photoURL || null,
                         isGuest: firebaseUser.isAnonymous,
                         createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
                         stats: createDefaultStats(),
@@ -253,6 +259,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
   }, [toast, handleEmailLinkSignIn]);
+
+  const updateUserProfile = async (data: Partial<Pick<User, 'displayName' | 'photoURL'>>) => {
+    if (!currentUser || currentUser.isGuest || !db) return;
+    const userDocRef = doc(db, "users", currentUser.uid);
+    try {
+      await updateDoc(userDocRef, data);
+    } catch (err) {
+      console.error("Failed to update user profile:", err);
+      toast({
+        title: "Update Failed",
+        description: "Your profile could not be updated.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const updateUserStats = async (newStats: Partial<UserStats>) => {
     if (!currentUser || currentUser.isGuest || !db) return;
@@ -290,6 +311,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           uid: firebaseUser.uid,
           displayName: firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`,
           email: firebaseUser.email,
+          photoURL: firebaseUser.photoURL,
           isGuest: false,
           createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
           stats: createDefaultStats(),
@@ -383,6 +405,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         uid: firebaseUser.uid,
         displayName: firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`,
         email: firebaseUser.email,
+        photoURL: firebaseUser.photoURL,
         isGuest: false,
         createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
         stats: guestData.stats || createDefaultStats(),
@@ -470,6 +493,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = { 
       currentUser, 
+      updateUserProfile,
       updateUserStats, 
       loginWithGoogle,
       loginWithEmailLink,
