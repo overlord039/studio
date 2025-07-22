@@ -883,10 +883,9 @@ export default function GameRoomPage() {
                                          const ticketCost = ticketCount * gameSettings.ticketPrice;
                                          return (
                                           <li key={player.id} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
-                                          <span className="font-medium">
+                                          <span className={cn("font-medium", player.id === currentUser?.uid && "text-primary font-bold")}>
                                               {player.name}
                                               {player.isHost && <span className="ml-1 font-semibold text-primary">*</span>}
-                                              {player.id === currentUser?.uid && <span className="ml-2 text-muted-foreground">(You)</span>}
                                           </span>
                                           <span className="text-muted-foreground">
                                               {ticketCount} {ticketsText(ticketCount)}
@@ -1040,3 +1039,6 @@ export default function GameRoomPage() {
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 };
+
+
+    
