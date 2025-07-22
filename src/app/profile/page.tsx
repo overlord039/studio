@@ -5,7 +5,7 @@ import React, { type FormEvent } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { AlertTriangle, Calendar, Mail, LogOut, X, Fingerprint, Gamepad2, Award, Loader2 } from "lucide-react";
+import { AlertTriangle, Calendar, Mail, LogOut, X, Fingerprint, Gamepad2, Award, Loader2, Pencil } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import type { PrizeType } from '@/types';
 import { Input } from '@/components/ui/input';
 import { PRIZE_DEFINITIONS, DEFAULT_GAME_SETTINGS } from '@/lib/constants';
+import { useToast } from "@/hooks/use-toast";
 
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -25,6 +26,7 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function ProfilePage() {
   const { currentUser, loading, logout, linkGoogleAccount, isSigningIn, linkWithEmailLink } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   const [emailForLink, setEmailForLink] = React.useState('');
   const [linkSent, setLinkSent] = React.useState(false);
@@ -113,10 +115,21 @@ export default function ProfilePage() {
               <div className="bg-gradient-to-br from-primary/10 to-secondary/10 p-6 sm:p-8">
                   <div className="flex flex-col items-center gap-2 text-center">
                        <div className="text-xs text-muted-foreground font-mono bg-background/50 px-2 py-1 rounded-full mb-2">ID: {currentUser.uid}</div>
-                       <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-background shadow-lg">
-                          <AvatarImage src={`https://placehold.co/128x128.png?text=${avatarFallback}`} alt={displayName} data-ai-hint="profile avatar"/>
-                          <AvatarFallback className="text-3xl sm:text-4xl">{avatarFallback}</AvatarFallback>
-                      </Avatar>
+                       <div className="relative">
+                          <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-background shadow-lg">
+                              <AvatarImage src={`https://placehold.co/128x128.png?text=${avatarFallback}`} alt={displayName} data-ai-hint="profile avatar"/>
+                              <AvatarFallback className="text-3xl sm:text-4xl">{avatarFallback}</AvatarFallback>
+                          </Avatar>
+                          <Button 
+                            size="icon" 
+                            variant="secondary" 
+                            className="absolute bottom-0 right-0 rounded-full h-8 w-8 sm:h-10 sm:w-10 border-2 border-background"
+                            onClick={() => toast({ title: "Coming Soon!", description: "Profile picture editing will be available in a future update."})}
+                          >
+                            <Pencil className="h-4 w-4 sm:h-5 sm:w-5"/>
+                            <span className="sr-only">Edit profile picture</span>
+                          </Button>
+                       </div>
                       <div className="space-y-1 mt-2">
                           <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
                           {currentUser.isGuest && <Badge variant="secondary">Guest Account</Badge>}
