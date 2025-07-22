@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
+    <svg role="img" viewBox="0 0 24" xmlns="http://www.w3.org/2000/svg" {...props}>
       <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.854 3.187-1.782 4.133-1.147 1.147-2.933 2.4-5.11 2.4-4.333 0-7.84-3.52-7.84-7.84s3.507-7.84 7.84-7.84c2.44 0 4.007 1.013 4.907 1.947l2.6-2.6C18.067.733 15.447 0 12.48 0 5.867 0 .333 5.393.333 12s5.534 12 12.147 12c3.553 0 6.227-1.173 8.24-3.253 2.133-2.133 2.84-5.24 2.84-7.667 0-.76-.053-1.467-.173-2.133H12.48z" />
     </svg>
 );
@@ -66,6 +66,7 @@ export default function ProfilePage() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState(currentUser?.displayName || '');
   const [isSavingName, setIsSavingName] = useState(false);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
 
 
   const handleLinkEmailSubmit = async (e: FormEvent) => {
@@ -96,15 +97,17 @@ export default function ProfilePage() {
     const trimmedName = newDisplayName.trim();
     if (!currentUser || !trimmedName || trimmedName === currentUser.displayName) {
         setIsEditingName(false);
+        setUsernameError(null);
         return;
     }
 
     if (trimmedName.length < 3 || trimmedName.length > 20) {
-        toast({ title: "Invalid Name", description: "Name must be between 3 and 20 characters.", variant: "destructive"});
+        setUsernameError("Name must be between 3 and 20 characters.");
         return;
     }
     
     setIsSavingName(true);
+    setUsernameError(null);
 
     try {
       const checkResponse = await fetch('/api/users/check-username', {
@@ -140,6 +143,7 @@ export default function ProfilePage() {
 
     } catch (error) {
       console.error("Error updating username:", error);
+      setUsernameError((error as Error).message);
       toast({
         title: "Update Failed",
         description: (error as Error).message || "Could not update your username.",
@@ -207,7 +211,7 @@ export default function ProfilePage() {
             .filter(([_, count]) => count > 0)
         : [];
     
-    const canChangeName = currentUser.stats?.usernameChanged !== true;
+    const canChangeName = !currentUser.stats?.usernameChanged;
 
     return (
       <div className="animate-fade-in max-w-lg w-full">
@@ -244,22 +248,34 @@ export default function ProfilePage() {
                        </div>
                       <div className="space-y-1 mt-2 min-h-[4rem]">
                         {isEditingName ? (
-                          <div className="flex items-center gap-2">
-                              <Input 
-                                  value={newDisplayName}
-                                  onChange={(e) => setNewDisplayName(e.target.value)}
-                                  className="text-2xl font-bold text-center h-12"
-                                  maxLength={20}
-                              />
-                              <Button size="icon" onClick={handleNameChange} disabled={isSavingName}>
-                                  {isSavingName ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4"/>}
-                              </Button>
+                          <div className="w-64">
+                              <div className="flex items-center gap-2">
+                                <Input 
+                                    value={newDisplayName}
+                                    onChange={(e) => {
+                                        setNewDisplayName(e.target.value);
+                                        if (usernameError) setUsernameError(null);
+                                    }}
+                                    className={cn(
+                                        "text-2xl font-bold text-center h-12",
+                                        usernameError && "border-destructive focus-visible:ring-destructive"
+                                    )}
+                                    maxLength={20}
+                                />
+                                <Button size="icon" onClick={handleNameChange} disabled={isSavingName}>
+                                    {isSavingName ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4"/>}
+                                </Button>
+                                <Button size="icon" variant="ghost" onClick={() => setIsEditingName(false)}>
+                                    <X className="h-4 w-4"/>
+                                </Button>
+                              </div>
+                              {usernameError && <p className="text-xs text-destructive mt-1">{usernameError}</p>}
                           </div>
                         ) : (
                           <div className="flex items-center gap-2">
                             <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
                             {canChangeName && (
-                              <Button size="icon" variant="ghost" onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); }}>
+                              <Button size="icon" variant="ghost" onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); setUsernameError(null); }}>
                                 <Pencil className="h-5 w-5"/>
                               </Button>
                             )}
