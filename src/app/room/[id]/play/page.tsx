@@ -22,8 +22,6 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import LiveNumberBoard from '@/components/game/live-number-board';
 import { playSound } from '@/lib/sounds';
-import { db } from '@/lib/firebase/config';
-import { doc, increment, updateDoc } from 'firebase/firestore';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,7 +66,7 @@ export default function GameRoomPage() {
   const [isCallingNextNumber, setIsCallingNextNumber] = useState(false);
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
-  const [statsUpdated, setStatsUpdated] = useState(false);
+  const [statsUpdatedForThisGame, setStatsUpdatedForThisGame] = useState(false);
   const [animationKey, setAnimationKey] = useState(0);
 
   const previousCurrentNumberRef = useRef<number | null>(null);
@@ -213,46 +211,42 @@ export default function GameRoomPage() {
   }, [roomId, currentUser, searchParams, toast]);
 
   useEffect(() => {
+    // This effect runs ONCE when the game is over to trigger the stat update.
     const updateMyStats = async () => {
-        if (!roomData || !currentUser || currentUser.isGuest || !db || !roomData.isGameOver) {
+        if (!roomData || !currentUser || currentUser.isGuest) {
             return;
-        }
-        const isBotGame = roomData.settings.gameMode !== 'multiplayer';
-        if (isBotGame) return; // Do not update stats for bot games
-
-        const myPlayerInfo = roomData.players.find(p => p.id === currentUser.uid);
-        if (!myPlayerInfo) return;
-
-        const playerDocRef = doc(db, "users", currentUser.uid);
-        const statsUpdate: { [key: string]: any } = {
-            'stats.matchesPlayed': increment(1)
-        };
-
-        for (const prizeType in roomData.prizeStatus) {
-            const prizeInfo = roomData.prizeStatus[prizeType as PrizeType];
-            if (prizeInfo && prizeInfo.claimedBy.some(c => c.id === currentUser.uid)) {
-                statsUpdate[`stats.prizesWon.${prizeType}`] = increment(1);
-            }
         }
 
         try {
-            await updateDoc(playerDocRef, statsUpdate);
-            console.log(`Successfully updated stats for ${currentUser.displayName}.`);
-            setStatsUpdated(true);
+            const response = await fetch(`/api/rooms/${roomId}/update-stats`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUser.uid }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || "Failed to trigger stat update.");
+            }
+            
+            console.log(`Successfully triggered stats update for user ${currentUser.uid} in room ${roomId}.`);
+            // Set the flag to true so this doesn't run again for this game instance.
+            setStatsUpdatedForThisGame(true);
+
         } catch (error) {
-            console.error("Failed to update stats:", error);
+            console.error("Failed to trigger stats update:", error);
             toast({
                 title: "Stats Sync Error",
-                description: "Could not save your game stats. They will be out of sync.",
+                description: "Could not save your game stats. They may be out of sync.",
                 variant: "destructive"
             });
         }
     };
 
-    if (roomData?.isGameOver && !statsUpdated) {
+    if (roomData?.isGameOver && !statsUpdatedForThisGame) {
         updateMyStats();
     }
-  }, [roomData, currentUser, statsUpdated, toast]);
+  }, [roomData?.isGameOver, statsUpdatedForThisGame, currentUser, roomId, toast]);
 
   useEffect(() => {
     if (currentUser && roomId && !authLoading) {
@@ -1039,6 +1033,3 @@ export default function GameRoomPage() {
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 };
-
-
-    
