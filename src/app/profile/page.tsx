@@ -28,7 +28,7 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 const AVATAR_IMAGES = Array.from({ length: 8 }, (_, i) => `/userimages/ui${i + 1}.png`);
 
-const AvatarSelectionDialog = ({ onSelect, children }: { onSelect: (src: string) => void; children: React.ReactNode }) => {
+const AvatarSelectionDialog = ({ onSelect, children, disabled }: { onSelect: (src: string) => void; children: React.ReactNode, disabled?: boolean }) => {
   const [open, setOpen] = useState(false);
 
   const handleSelect = (src: string) => {
@@ -38,7 +38,7 @@ const AvatarSelectionDialog = ({ onSelect, children }: { onSelect: (src: string)
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogTrigger asChild disabled={disabled}>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Choose your Avatar</DialogTitle>
@@ -107,20 +107,28 @@ export default function ProfilePage() {
     setIsSavingName(true);
 
     try {
-      if (!currentUser.isGuest) {
-        const response = await fetch('/api/users/check-username', {
+      const checkResponse = await fetch('/api/users/check-username', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: trimmedName }),
-        });
+      });
+      const checkData = await checkResponse.json();
 
-        const data = await response.json();
-        if (!response.ok || !data.isAvailable) {
-          throw new Error(data.message || "This username is already taken.");
-        }
+      if (!checkResponse.ok || !checkData.isAvailable) {
+          throw new Error(checkData.message || "This username is already taken.");
       }
 
-      // If username is available or user is a guest, proceed with the update
+      const updateResponse = await fetch('/api/users/check-username', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: trimmedName, userId: currentUser.uid, oldUsername: currentUser.displayName }),
+      });
+
+      const updateData = await updateResponse.json();
+      if (!updateResponse.ok || !updateData.success) {
+          throw new Error(updateData.message || "Could not reserve username.");
+      }
+      
       if (currentUser.isGuest) {
         setLocalGuestUsername(trimmedName);
       } else {
@@ -199,7 +207,7 @@ export default function ProfilePage() {
             .filter(([_, count]) => count > 0)
         : [];
     
-    const canChangeName = currentUser.isGuest ? !currentUser.stats.usernameChanged : !currentUser.stats.usernameChanged;
+    const canChangeName = currentUser.stats?.usernameChanged !== true;
 
     return (
       <div className="animate-fade-in max-w-lg w-full">
