@@ -91,8 +91,8 @@ export default function PlayWithComputerModesPage() {
               <Smile className="h-8 w-8 text-green-500" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold">Easy Mode</CardTitle>
-              <CardDescription>You choose your tickets. A relaxed game.</CardDescription>
+              <CardTitle className="text-xl font-bold">Choose &amp; Play</CardTitle>
+              <CardDescription>You choose how many tickets you want. Play at your pace.</CardDescription>
             </div>
           </CardHeader>
         </Card>
@@ -106,8 +106,8 @@ export default function PlayWithComputerModesPage() {
               <Meh className="h-8 w-8 text-yellow-500" />
             </div>
             <div>
-              <CardTitle className="text-xl font-bold">Medium Mode</CardTitle>
-              <CardDescription>You choose your tickets, bots' tickets are random.</CardDescription>
+              <CardTitle className="text-xl font-bold">Fair Challenge</CardTitle>
+              <CardDescription>You choose your tickets, bots get random tickets for a balanced match.</CardDescription>
             </div>
           </CardHeader>
         </Card>
@@ -124,8 +124,8 @@ export default function PlayWithComputerModesPage() {
               {isCreatingHardGame ? <Loader2 className="h-8 w-8 text-red-500 animate-spin" /> : <Skull className="h-8 w-8 text-red-500" />}
             </div>
             <div>
-              <CardTitle className="text-xl font-bold">Hard Mode</CardTitle>
-              <CardDescription>Ticket counts are random. A challenging game.</CardDescription>
+              <CardTitle className="text-xl font-bold">Random Rush</CardTitle>
+              <CardDescription>Ticket counts are random for everyone. Fast-paced and challenging!</CardDescription>
             </div>
           </CardHeader>
         </Card>
