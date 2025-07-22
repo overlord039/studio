@@ -174,7 +174,7 @@ export default function ProfilePage() {
             .filter(([_, count]) => count > 0)
         : [];
     
-    const canChangeName = currentUser.isGuest || !currentUser.stats.usernameChanged;
+    const canChangeName = !currentUser.stats.usernameChanged;
 
 
     return (

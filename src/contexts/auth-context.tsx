@@ -209,6 +209,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (firebaseUser.isAnonymous) {
               const guestAvatar = localStorage.getItem('guestAvatar');
               const guestName = localStorage.getItem('guestUsername');
+              const guestUsernameChanged = localStorage.getItem('guestUsernameChanged') === 'true';
+
               const newUserProfile: User = {
                   uid: firebaseUser.uid,
                   displayName: guestName || `Guest#${firebaseUser.uid.substring(0,5)}`,
@@ -216,7 +218,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   photoURL: guestAvatar,
                   isGuest: true,
                   createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-                  stats: createDefaultStats(),
+                  stats: {
+                    ...createDefaultStats(),
+                    usernameChanged: guestUsernameChanged,
+                  },
               };
               setCurrentUser(newUserProfile);
               setLoading(false);
@@ -291,14 +296,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setLocalGuestUsername = (name: string) => {
     if (currentUser && currentUser.isGuest) {
         localStorage.setItem('guestUsername', name);
-        setCurrentUser(prevUser => prevUser ? { ...prevUser, displayName: name } : null);
+        localStorage.setItem('guestUsernameChanged', 'true');
+        setCurrentUser(prevUser => {
+          if (!prevUser) return null;
+          return { 
+            ...prevUser, 
+            displayName: name, 
+            stats: { ...prevUser.stats, usernameChanged: true }
+          };
+        });
     }
   };
 
   const updateUserProfile = async (data: Partial<Pick<User, 'displayName' | 'photoURL'>>) => {
-    if (!currentUser || currentUser.isGuest) return;
+    if (!currentUser || currentUser.isGuest || !db) return;
 
-    if (!db) return;
     const userDocRef = doc(db, "users", currentUser.uid);
     const updates: { [key: string]: any } = { ...data };
     
@@ -460,6 +472,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await writeUserProfileToDB(newUserProfile);
       localStorage.removeItem('guestAvatar');
       localStorage.removeItem('guestUsername');
+      localStorage.removeItem('guestUsernameChanged');
+
 
       toast({ title: "Account Linked!", description: "Your guest progress has been saved to your Google account." });
       router.push('/');
