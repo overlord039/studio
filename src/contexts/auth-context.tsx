@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { ReactNode } from 'react';
@@ -20,14 +19,15 @@ import {
   linkWithCredential,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, deleteDoc, updateDoc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase/config';
+import { auth, db, allConfigValuesPresent } from '@/lib/firebase/config';
 import { useToast } from '@/hooks/use-toast';
 import type { User, UserStats, PrizeType } from '@/types';
 import { PRIZE_TYPES } from '@/types';
-import { PRIZE_DEFINITIONS, DEFAULT_GAME_SETTINGS } from '@/lib/constants';
 import LoginSelectionScreen from '@/components/auth/login-selection-screen';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { ToastAction } from '@/components/ui/toast';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export interface User {
   uid: string;
@@ -65,7 +65,7 @@ const createDefaultStats = (): UserStats => {
 };
 
 const writeUserProfileToDB = async (appUser: User): Promise<void> => {
-    if (!db || appUser.isGuest) return; 
+    if (appUser.isGuest || !db) return; 
     const userDocRef = doc(db, "users", appUser.uid);
     await setDoc(userDocRef, appUser, { merge: true });
 };
@@ -109,6 +109,30 @@ function areUsersEqual(a: User | null, b: User | null): boolean {
     return true;
 }
 
+const FirebaseConfigErrorScreen = () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background">
+        <Card className="w-full max-w-md text-center shadow-lg border-destructive">
+            <CardHeader>
+                <CardTitle className="flex items-center justify-center gap-2 text-destructive">
+                    <AlertTriangle /> Configuration Error
+                </CardTitle>
+                <CardDescription>
+                    Firebase API keys are missing.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <p className="text-sm">
+                    Please add your project credentials to the <strong>.env</strong> file to enable authentication and other Firebase features.
+                </p>
+                <p className="text-xs text-muted-foreground bg-muted p-2 rounded-md">
+                    You can find these keys in your Firebase Console: <br/>
+                    Project Settings &gt; General &gt; Your apps &gt; Web app.
+                </p>
+            </CardContent>
+        </Card>
+    </div>
+);
+
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -116,58 +140,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isSigningIn, setIsSigningIn] = useState<null | 'guest' | 'google' | 'email'>(null);
   const { toast } = useToast();
   const router = useRouter();
-  const firebaseConfigured = !!auth && !!db;
 
   const handleEmailLinkSignIn = useCallback(async () => {
-      if (auth && isSignInWithEmailLink(auth, window.location.href)) {
-        let email = window.localStorage.getItem('emailForSignIn');
-        if (!email) {
-          toast({
-            title: "Sign-in link error",
-            description: "Please use the sign-in link on the same device and browser you used to request it.",
-            variant: "destructive",
-            duration: 7000,
-          });
-          window.history.replaceState({}, document.title, window.location.pathname);
-          return;
-        }
+      if (!auth || !isSignInWithEmailLink(auth, window.location.href)) return;
 
-        setIsSigningIn('email');
-        try {
-          if (auth.currentUser && auth.currentUser.isAnonymous) {
-            const guestUser = auth.currentUser;
-            const credential = EmailAuthProvider.credentialWithLink(email, window.location.href);
-            await linkWithCredential(guestUser, credential);
-            const userDocRef = doc(db, "users", guestUser.uid);
-            await updateDoc(userDocRef, {
-                email: email,
-                isGuest: false,
-                displayName: guestUser.displayName || email.split('@')[0],
-            });
-            toast({ title: "Account Linked!", description: "Your guest progress is now saved to your email." });
-          } else {
-            await signInWithEmailLink(auth, email, window.location.href);
-          }
-          window.localStorage.removeItem('emailForSignIn');
-          window.history.replaceState({}, document.title, '/'); // Clean URL after sign-in
-          router.push('/');
-        } catch (error: any) {
-          toast({ title: "Link/Sign-in Failed", description: error.message, variant: "destructive" });
-        } finally {
-          setIsSigningIn(null);
+      let email = window.localStorage.getItem('emailForSignIn');
+      if (!email) {
+        toast({
+          title: "Sign-in link error",
+          description: "Please use the sign-in link on the same device and browser you used to request it.",
+          variant: "destructive",
+          duration: 7000,
+        });
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
+
+      setIsSigningIn('email');
+      try {
+        if (auth.currentUser && auth.currentUser.isAnonymous) {
+          const guestUser = auth.currentUser;
+          const credential = EmailAuthProvider.credentialWithLink(email, window.location.href);
+          await linkWithCredential(guestUser, credential);
+          const userDocRef = doc(db, "users", guestUser.uid);
+          await updateDoc(userDocRef, {
+              email: email,
+              isGuest: false,
+              displayName: guestUser.displayName || email.split('@')[0],
+          });
+          toast({ title: "Account Linked!", description: "Your guest progress is now saved to your email." });
+        } else {
+          await signInWithEmailLink(auth, email, window.location.href);
         }
+        window.localStorage.removeItem('emailForSignIn');
+        window.history.replaceState({}, document.title, '/'); // Clean URL after sign-in
+        router.push('/');
+      } catch (error: any) {
+        toast({ title: "Link/Sign-in Failed", description: error.message, variant: "destructive" });
+      } finally {
+        setIsSigningIn(null);
       }
     }, [router, toast]);
 
   useEffect(() => {
-    if (!firebaseConfigured) {
+    if (!auth || !db) {
         setLoading(false);
         return;
     }
-    
-    if (!auth?.currentUser) {
-      handleEmailLinkSignIn();
-    }
+
+    handleEmailLinkSignIn();
 
     let userDocUnsubscribe: Unsubscribe | undefined;
 
@@ -231,10 +252,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             userDocUnsubscribe();
         }
     };
-  }, [firebaseConfigured, toast, handleEmailLinkSignIn]);
+  }, [toast, handleEmailLinkSignIn]);
 
   const updateUserStats = async (newStats: Partial<UserStats>) => {
-    if (!currentUser || !db || currentUser.isGuest) return;
+    if (!currentUser || currentUser.isGuest || !db) return;
     const userDocRef = doc(db, "users", currentUser.uid);
     try {
         await updateDoc(userDocRef, { 
@@ -251,20 +272,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("Failed to update user stats:", err)
     }
   };
-  
-  const showFirebaseNotConfiguredToast = () => {
-    toast({
-        title: "Firebase Not Configured",
-        description: "Please add your Firebase credentials to the .env file to enable this feature.",
-        variant: "destructive"
-    });
-  }
 
   const loginWithGoogle = async () => {
-    if (!auth || !db) {
-      showFirebaseNotConfiguredToast();
-      return;
-    }
+    if (!auth || !db) return;
     setIsSigningIn('google');
     try {
       const provider = new GoogleAuthProvider();
@@ -301,13 +311,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const loginWithEmailLink = async (email: string): Promise<boolean> => {
-    if (!auth) {
-      showFirebaseNotConfiguredToast();
-      return false;
-    }
+    if (!auth) return false;
     setIsSigningIn('email');
     const actionCodeSettings = {
-        url: `${window.location.origin}/`,
+        url: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/`,
         handleCodeInApp: true,
     };
     try {
@@ -329,13 +336,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const linkWithEmailLink = async (email: string): Promise<boolean> => {
-    if (!auth?.currentUser?.isAnonymous) {
+    if (!auth || !auth.currentUser?.isAnonymous) {
       toast({ title: "Error", description: "Only guest accounts can be linked.", variant: "destructive" });
       return false;
     }
     setIsSigningIn('email');
     const actionCodeSettings = {
-        url: `${window.location.origin}/profile`, // Send them back to the profile page
+        url: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/profile`,
         handleCodeInApp: true,
     };
     try {
@@ -357,7 +364,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const linkGoogleAccount = async () => {
-    if (!auth?.currentUser?.isAnonymous || !db) {
+    if (!auth || !auth.currentUser?.isAnonymous) {
       toast({ title: "Error", description: "You must be signed in as a guest to link an account.", variant: "destructive" });
       return;
     }
@@ -415,10 +422,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   const loginAsGuest = async () => {
-    if (!auth) {
-      showFirebaseNotConfiguredToast();
-      return;
-    }
+    if (!auth) return;
     setIsSigningIn('guest');
     try {
         await signInAnonymously(auth);
@@ -432,15 +436,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-     if (!auth) {
-        showFirebaseNotConfiguredToast();
-        return;
-    }
+    if (!auth) return;
     await signOut(auth);
   };
   
   const deleteAccount = async () => {
-    if (!auth || !db || !auth.currentUser) {
+    if (!auth || !auth.currentUser) {
         toast({ title: "Error", description: "No user is currently signed in to delete.", variant: "destructive"});
         return;
     }
@@ -448,7 +449,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userToDelete = auth.currentUser;
 
     try {
-      if (!userToDelete.isAnonymous) {
+      if (!userToDelete.isAnonymous && db) {
         const userDocRef = doc(db, "users", userToDelete.uid);
         await deleteDoc(userDocRef);
       }
@@ -481,6 +482,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isSigningIn
   };
 
+  if (!allConfigValuesPresent && !loading) {
+    return (
+        <AuthContext.Provider value={value}>
+            <FirebaseConfigErrorScreen />
+        </AuthContext.Provider>
+    );
+  }
+
   return (
     <AuthContext.Provider value={value}>
       {loading ? (
@@ -503,5 +512,3 @@ export function useAuth() {
   }
   return context;
 }
-
-    

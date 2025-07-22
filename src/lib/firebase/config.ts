@@ -2,7 +2,7 @@ import { initializeApp, getApps, getApp, type FirebaseOptions, type FirebaseApp 
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 
-const firebaseConfig: FirebaseOptions = {
+const firebaseConfigValues = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -11,33 +11,24 @@ const firebaseConfig: FirebaseOptions = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Check if all necessary Firebase config keys are present.
-const firebaseConfigIsValid =
-  firebaseConfig.apiKey &&
-  firebaseConfig.authDomain &&
-  firebaseConfig.projectId;
+const allConfigValuesPresent = Object.values(firebaseConfigValues).every(Boolean);
 
-let app: FirebaseApp | null;
-let auth: Auth | null;
-let db: Firestore | null;
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
 
-if (firebaseConfigIsValid) {
-  // Initialize Firebase
-  try {
-    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-    auth = getAuth(app);
-    db = getFirestore(app);
-  } catch (error) {
-    console.error("Firebase initialization error:", error);
-    app = null;
-    auth = null;
-    db = null;
+if (allConfigValuesPresent) {
+  const firebaseConfig: FirebaseOptions = firebaseConfigValues;
+  if (!getApps().length) {
+      app = initializeApp(firebaseConfig);
+  } else {
+      app = getApp();
   }
+  auth = getAuth(app);
+  db = getFirestore(app);
 } else {
-    console.warn("Firebase configuration is missing or incomplete in your .env file. Firebase services will be disabled. Make sure all NEXT_PUBLIC_FIREBASE_* variables are set.");
-    app = null;
-    auth = null;
-    db = null;
+  console.warn("Firebase configuration is incomplete. Please check your .env file. Some features like authentication will not work.");
 }
 
-export { app, auth, db };
+
+export { app, auth, db, allConfigValuesPresent };
