@@ -248,8 +248,8 @@ export default function ProfilePage() {
                        </div>
                       <div className="space-y-1 mt-2 min-h-[4rem] flex flex-col items-center justify-center">
                         {isEditingName ? (
-                          <div className="w-64 flex flex-col items-center">
-                              <div className="flex items-center gap-2">
+                          <div className="w-full flex flex-col items-center">
+                              <div className="flex w-full max-w-xs justify-center items-center gap-2">
                                 <Input 
                                     value={newDisplayName}
                                     onChange={(e) => {
