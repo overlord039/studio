@@ -66,13 +66,13 @@ export default function GameRoomPage() {
   const [isCallingNextNumber, setIsCallingNextNumber] = useState(false);
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
-  const [statsUpdatedForThisGame, setStatsUpdatedForThisGame] = useState(false);
   const [animationKey, setAnimationKey] = useState(0);
 
   const previousCurrentNumberRef = useRef<number | null>(null);
   const roomDataRef = useRef(roomData);
   const previousPrizeStatusRef = useRef<Room['prizeStatus'] | null>(null);
   const gameOverSoundPlayedRef = useRef(false);
+  const statsUpdateInitiatedRef = useRef(false); // Ref to prevent double-updates
 
   useEffect(() => {
     if (roomData?.currentNumber !== previousCurrentNumberRef.current) {
@@ -210,43 +210,43 @@ export default function GameRoomPage() {
     }
   }, [roomId, currentUser, searchParams, toast]);
 
+  // This effect runs ONCE when the game is over to trigger the stat update.
   useEffect(() => {
-    // This effect runs ONCE when the game is over to trigger the stat update.
-    const updateMyStats = async () => {
-        if (!roomData || !currentUser || currentUser.isGuest) {
-            return;
+    if (roomData?.isGameOver && currentUser && !statsUpdateInitiatedRef.current) {
+      statsUpdateInitiatedRef.current = true;
+
+      const updateMyStats = async () => {
+        if (currentUser.isGuest) {
+          console.log("Guest user, skipping stat update.");
+          return;
         }
 
         try {
-            const response = await fetch(`/api/rooms/${roomId}/update-stats`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: currentUser.uid }),
-            });
+          const response = await fetch(`/api/rooms/${roomId}/update-stats`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUser.uid }),
+          });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || "Failed to trigger stat update.");
-            }
-            
-            console.log(`Successfully triggered stats update for user ${currentUser.uid} in room ${roomId}.`);
-            // Set the flag to true so this doesn't run again for this game instance.
-            setStatsUpdatedForThisGame(true);
-
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Failed to trigger stat update.");
+          }
+          const result = await response.json();
+          console.log(`Stat update API response: ${result.message}`);
         } catch (error) {
-            console.error("Failed to trigger stats update:", error);
-            toast({
-                title: "Stats Sync Error",
-                description: "Could not save your game stats. They may be out of sync.",
-                variant: "destructive"
-            });
+          console.error("Failed to trigger stats update:", error);
+          toast({
+            title: "Stats Sync Error",
+            description: "Could not save your game stats.",
+            variant: "destructive"
+          });
         }
-    };
+      };
 
-    if (roomData?.isGameOver && !statsUpdatedForThisGame) {
-        updateMyStats();
+      updateMyStats();
     }
-  }, [roomData?.isGameOver, statsUpdatedForThisGame, currentUser, roomId, toast]);
+  }, [roomData?.isGameOver, currentUser, roomId, toast]);
 
   useEffect(() => {
     if (currentUser && roomId && !authLoading) {
