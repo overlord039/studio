@@ -106,15 +106,40 @@ export default function ProfilePage() {
     
     setIsSavingName(true);
 
-    if (currentUser.isGuest) {
-      setLocalGuestUsername(trimmedName);
-    } else {
-      await updateUserProfile({ displayName: trimmedName });
+    try {
+      if (!currentUser.isGuest) {
+        const response = await fetch('/api/users/check-username', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: trimmedName }),
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.isAvailable) {
+          throw new Error(data.message || "This username is already taken.");
+        }
+      }
+
+      // If username is available or user is a guest, proceed with the update
+      if (currentUser.isGuest) {
+        setLocalGuestUsername(trimmedName);
+      } else {
+        await updateUserProfile({ displayName: trimmedName });
+      }
+      
+      setIsEditingName(false);
+      toast({ title: "Name Updated", description: `Your name has been changed to ${trimmedName}.`});
+
+    } catch (error) {
+      console.error("Error updating username:", error);
+      toast({
+        title: "Update Failed",
+        description: (error as Error).message || "Could not update your username.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingName(false);
     }
-    
-    setIsSavingName(false);
-    setIsEditingName(false);
-    toast({ title: "Name Updated", description: `Your name has been changed to ${trimmedName}.`});
   };
 
 
@@ -174,8 +199,7 @@ export default function ProfilePage() {
             .filter(([_, count]) => count > 0)
         : [];
     
-    const canChangeName = !currentUser.stats.usernameChanged;
-
+    const canChangeName = currentUser.isGuest ? !currentUser.stats.usernameChanged : !currentUser.stats.usernameChanged;
 
     return (
       <div className="animate-fade-in max-w-lg w-full">
