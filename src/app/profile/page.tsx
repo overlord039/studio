@@ -248,7 +248,7 @@ export default function ProfilePage() {
                        </div>
                       <div className="space-y-1 mt-2 min-h-[4rem] flex flex-col items-center justify-center">
                         {isEditingName ? (
-                          <div className="w-64">
+                          <div className="w-64 flex flex-col items-center">
                               <div className="flex items-center gap-2">
                                 <Input 
                                     value={newDisplayName}
@@ -275,7 +275,7 @@ export default function ProfilePage() {
                           <div className="flex items-center gap-1">
                             <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
                             {canChangeName && (
-                              <Button size="icon" variant="ghost" onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); setUsernameError(null); }}>
+                              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); setUsernameError(null); }}>
                                 <Pencil className="h-4 w-4"/>
                               </Button>
                             )}
