@@ -347,9 +347,27 @@ export default function ProfilePage() {
                         <div>
                             <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">Statistics</h3>
                              <Card className="bg-secondary/30 mt-2">
-                                <CardContent className="p-4 text-center text-muted-foreground">
-                                  <p className="font-semibold">Coming Soon!</p>
-                                  <p className="text-sm">Game statistics will be available here in a future update.</p>
+                                <CardContent className="p-4 space-y-3">
+                                  <div className="flex justify-between items-center text-sm">
+                                    <dt className="font-medium text-muted-foreground flex items-center gap-2"><Gamepad2 className="h-4 w-4" /> Games Played</dt>
+                                    <dd className="font-bold text-lg text-foreground">{currentUser.stats?.matchesPlayed || 0}</dd>
+                                  </div>
+                                  
+                                  {prizesWonArray.length > 0 ? (
+                                    <div className="pt-2 border-t border-border/50">
+                                      <h4 className="font-medium text-muted-foreground mb-2 text-sm flex items-center gap-2"><Award className="h-4 w-4" /> Prizes Won</h4>
+                                      <dl className="space-y-1 text-sm">
+                                        {prizesWonArray.map(([prize, count]) => (
+                                          <div key={prize} className="flex justify-between items-center">
+                                            <dt className="text-muted-foreground">{prize}</dt>
+                                            <dd className="font-semibold text-foreground">{count}</dd>
+                                          </div>
+                                        ))}
+                                      </dl>
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-center text-muted-foreground pt-2 border-t border-border/50">No prizes won yet. Keep playing!</p>
+                                  )}
                                 </CardContent>
                              </Card>
                         </div>
