@@ -1,10 +1,12 @@
 
 "use client";
 
-import React, { type FormEvent } from 'react';
+import React, { type FormEvent, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertTriangle, Calendar, Mail, LogOut, X, Fingerprint, Gamepad2, Award, Loader2, Pencil } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
@@ -15,6 +17,7 @@ import type { PrizeType } from '@/types';
 import { Input } from '@/components/ui/input';
 import { PRIZE_DEFINITIONS, DEFAULT_GAME_SETTINGS } from '@/lib/constants';
 import { useToast } from "@/hooks/use-toast";
+import { cn } from '@/lib/utils';
 
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -23,6 +26,36 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
+const AVATAR_IMAGES = Array.from({ length: 6 }, (_, i) => `/userimages/avatar${i + 1}.png`);
+
+const AvatarSelectionDialog = ({ onSelect, children }: { onSelect: (src: string) => void; children: React.ReactNode }) => {
+  const [open, setOpen] = useState(false);
+
+  const handleSelect = (src: string) => {
+    onSelect(src);
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Choose your Avatar</DialogTitle>
+        </DialogHeader>
+        <div className="grid grid-cols-3 gap-4 py-4">
+          {AVATAR_IMAGES.map((src) => (
+            <button key={src} onClick={() => handleSelect(src)} className="rounded-full overflow-hidden border-2 border-transparent hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring">
+              <Image src={src} alt={`Avatar option`} width={96} height={96} />
+            </button>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+
 export default function ProfilePage() {
   const { currentUser, loading, logout, linkGoogleAccount, isSigningIn, linkWithEmailLink } = useAuth();
   const router = useRouter();
@@ -30,6 +63,7 @@ export default function ProfilePage() {
 
   const [emailForLink, setEmailForLink] = React.useState('');
   const [linkSent, setLinkSent] = React.useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
 
   const handleLinkEmailSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -117,18 +151,19 @@ export default function ProfilePage() {
                        <div className="text-xs text-muted-foreground font-mono bg-background/50 px-2 py-1 rounded-full mb-2">ID: {currentUser.uid}</div>
                        <div className="relative">
                           <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-background shadow-lg">
-                              <AvatarImage src={`https://placehold.co/128x128.png?text=${avatarFallback}`} alt={displayName} data-ai-hint="profile avatar"/>
+                              <AvatarImage src={selectedAvatar || `https://placehold.co/128x128.png?text=${avatarFallback}`} alt={displayName} data-ai-hint="profile avatar"/>
                               <AvatarFallback className="text-3xl sm:text-4xl">{avatarFallback}</AvatarFallback>
                           </Avatar>
-                          <Button 
-                            size="icon" 
-                            variant="secondary" 
-                            className="absolute bottom-0 right-0 rounded-full h-8 w-8 sm:h-10 sm:w-10 border-2 border-background"
-                            onClick={() => toast({ title: "Coming Soon!", description: "Profile picture editing will be available in a future update."})}
-                          >
-                            <Pencil className="h-4 w-4 sm:h-5 sm:w-5"/>
-                            <span className="sr-only">Edit profile picture</span>
-                          </Button>
+                           <AvatarSelectionDialog onSelect={setSelectedAvatar}>
+                            <Button 
+                              size="icon" 
+                              variant="secondary" 
+                              className="absolute bottom-0 right-0 rounded-full h-8 w-8 sm:h-10 sm:w-10 border-2 border-background"
+                            >
+                              <Pencil className="h-4 w-4 sm:h-5 sm:w-5"/>
+                              <span className="sr-only">Edit profile picture</span>
+                            </Button>
+                          </AvatarSelectionDialog>
                        </div>
                       <div className="space-y-1 mt-2">
                           <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
@@ -224,3 +259,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
