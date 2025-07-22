@@ -26,7 +26,7 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-const AVATAR_IMAGES = Array.from({ length: 8 }, (_, i) => `/userimages/u${i + 1}.png`);
+const AVATAR_IMAGES = Array.from({ length: 8 }, (_, i) => `/userimages/ui${i + 1}.png`);
 
 const AvatarSelectionDialog = ({ onSelect, children }: { onSelect: (src: string) => void; children: React.ReactNode }) => {
   const [open, setOpen] = useState(false);
@@ -270,7 +270,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
-
-    
