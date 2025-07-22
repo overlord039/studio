@@ -238,10 +238,10 @@ export default function ProfilePage() {
                             <Button 
                               size="icon" 
                               variant="secondary" 
-                              className="absolute bottom-0 right-0 rounded-full h-8 w-8 sm:h-10 sm:w-10 border-2 border-background"
+                              className="absolute bottom-0 right-0 rounded-full h-8 w-8 border-2 border-background"
                               title="Change avatar"
                             >
-                              <Pencil className="h-4 w-4 sm:h-5 sm:w-5"/>
+                              <Pencil className="h-4 w-4"/>
                               <span className="sr-only">Edit profile picture</span>
                             </Button>
                           </AvatarSelectionDialog>
@@ -275,8 +275,8 @@ export default function ProfilePage() {
                           <div className="flex items-center gap-1">
                             <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
                             {canChangeName && (
-                              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); setUsernameError(null); }}>
-                                <Pencil className="h-4 w-4"/>
+                              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); setUsernameError(null); }}>
+                                <Pencil className="h-3 w-3"/>
                               </Button>
                             )}
                           </div>
