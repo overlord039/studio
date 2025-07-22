@@ -26,28 +26,6 @@ export default function LoginSelectionScreen() {
       process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN &&
       process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
-  if (!firebaseConfigured) {
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-cover bg-center" style={{ backgroundImage: "url('/bgpc2.png')" }}>
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-            <Card className="w-full max-w-sm text-center animate-fade-in-up bg-destructive border-white/20 relative">
-                 <CardContent className="p-6">
-                    <div className="flex items-center justify-center text-destructive-foreground mb-2">
-                        <AlertTriangle className="mr-2 h-6 w-6"/>
-                        <h2 className="text-xl font-bold">Configuration Error</h2>
-                    </div>
-                    <p className="text-destructive-foreground">
-                        Firebase API keys are missing.
-                    </p>
-                    <p className="text-sm mt-2 text-destructive-foreground/90">
-                        Please add your project credentials to the <strong>.env</strong> file to enable authentication.
-                    </p>
-                </CardContent>
-            </Card>
-        </div>
-      );
-  }
-
   const anySignInInProgress = !!isSigningIn;
 
   const handleEmailSubmit = async (e: FormEvent) => {
@@ -65,13 +43,25 @@ export default function LoginSelectionScreen() {
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
       <Card className="w-full max-w-sm text-center animate-fade-in-up bg-black/50 backdrop-blur-md border border-white/20 relative">
         <CardContent className="p-8 space-y-4">
+          {!firebaseConfigured && (
+             <div className="p-3 rounded-md bg-destructive text-destructive-foreground">
+                <div className="flex items-center justify-center">
+                    <AlertTriangle className="mr-2 h-5 w-5"/>
+                    <h2 className="text-lg font-bold">Configuration Error</h2>
+                </div>
+                <p className="text-sm mt-1">
+                    Firebase API keys are missing. Please add your project credentials to the <strong>.env</strong> file to enable authentication.
+                </p>
+            </div>
+          )}
+
           <h1 className="text-2xl font-bold text-white">Welcome to HousieHub</h1>
           
           <div className="space-y-3 pt-4">
-            <Button variant="outline" size="lg" className="w-full bg-white text-black hover:bg-gray-200" onClick={loginWithGoogle} disabled={anySignInInProgress}>
+            <Button variant="outline" size="lg" className="w-full bg-white text-black hover:bg-gray-200" onClick={loginWithGoogle} disabled={anySignInInProgress || !firebaseConfigured}>
               {isSigningIn === 'google' && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
               <GoogleIcon className="mr-2 h-5 w-5 fill-current" />
-              {isSigningIn === 'google' ? "Signing in..." : "Sign in with Google"}
+              {isSigningIn === 'google' ? "Signing in..." : "Continue with Google"}
             </Button>
             
             <form onSubmit={handleEmailSubmit} className="space-y-3 pt-3">
@@ -82,12 +72,12 @@ export default function LoginSelectionScreen() {
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    disabled={anySignInInProgress || linkSent}
+                    disabled={anySignInInProgress || linkSent || !firebaseConfigured}
                     required
                     className="bg-black/20 border-white/30 text-white placeholder:text-gray-400 focus:border-primary pl-10"
                 />
               </div>
-              <Button type="submit" variant="secondary" size="lg" className="w-full" disabled={anySignInInProgress || !email || linkSent}>
+              <Button type="submit" variant="secondary" size="lg" className="w-full" disabled={anySignInInProgress || !email || linkSent || !firebaseConfigured}>
                   {isSigningIn === 'email' && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                   {isSigningIn === 'email' 
                     ? 'Sending link...' 
@@ -102,7 +92,7 @@ export default function LoginSelectionScreen() {
                 <span className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-black/50 px-2 text-xs uppercase text-gray-300">OR</span>
             </div>
 
-            <Button variant="default" size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={loginAsGuest} disabled={anySignInInProgress}>
+            <Button variant="default" size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={loginAsGuest} disabled={anySignInInProgress || !firebaseConfigured}>
               {isSigningIn === 'guest' && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
               {isSigningIn === 'guest' ? "Entering..." : "Play as Guest"}
             </Button>
