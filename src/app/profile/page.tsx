@@ -57,7 +57,7 @@ const AvatarSelectionDialog = ({ onSelect, children }: { onSelect: (src: string)
 
 
 export default function ProfilePage() {
-  const { currentUser, loading, logout, linkGoogleAccount, isSigningIn, linkWithEmailLink, updateUserProfile, setLocalGuestAvatar } = useAuth();
+  const { currentUser, loading, logout, linkGoogleAccount, isSigningIn, linkWithEmailLink, updateUserProfile, setLocalGuestAvatar, setLocalGuestUsername } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -93,21 +93,28 @@ export default function ProfilePage() {
   };
 
   const handleNameChange = async () => {
-    if (!currentUser || !newDisplayName.trim() || newDisplayName.trim() === currentUser.displayName) {
+    const trimmedName = newDisplayName.trim();
+    if (!currentUser || !trimmedName || trimmedName === currentUser.displayName) {
         setIsEditingName(false);
         return;
     }
 
-    if (newDisplayName.trim().length < 3 || newDisplayName.trim().length > 20) {
+    if (trimmedName.length < 3 || trimmedName.length > 20) {
         toast({ title: "Invalid Name", description: "Name must be between 3 and 20 characters.", variant: "destructive"});
         return;
     }
-
+    
     setIsSavingName(true);
-    await updateUserProfile({ displayName: newDisplayName.trim() });
+
+    if (currentUser.isGuest) {
+      setLocalGuestUsername(trimmedName);
+    } else {
+      await updateUserProfile({ displayName: trimmedName });
+    }
+    
     setIsSavingName(false);
     setIsEditingName(false);
-    toast({ title: "Name Updated", description: `Your name has been changed to ${newDisplayName.trim()}.`});
+    toast({ title: "Name Updated", description: `Your name has been changed to ${trimmedName}.`});
   };
 
 

@@ -54,6 +54,7 @@ interface AuthContextType {
   loading: boolean;
   isSigningIn: null | 'guest' | 'google' | 'email';
   setLocalGuestAvatar: (url: string) => void;
+  setLocalGuestUsername: (name: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -207,9 +208,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (firebaseUser) {
             if (firebaseUser.isAnonymous) {
               const guestAvatar = localStorage.getItem('guestAvatar');
+              const guestName = localStorage.getItem('guestUsername');
               const newUserProfile: User = {
                   uid: firebaseUser.uid,
-                  displayName: `Guest#${firebaseUser.uid.substring(0,5)}`,
+                  displayName: guestName || `Guest#${firebaseUser.uid.substring(0,5)}`,
                   email: null,
                   photoURL: guestAvatar,
                   isGuest: true,
@@ -286,13 +288,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateUserProfile = async (data: Partial<Pick<User, 'displayName' | 'photoURL'>>) => {
-    if (!currentUser) return;
-
-    if (currentUser.isGuest) {
-        setCurrentUser(prev => prev ? { ...prev, ...data } : null);
-        return;
+  const setLocalGuestUsername = (name: string) => {
+    if (currentUser && currentUser.isGuest) {
+        localStorage.setItem('guestUsername', name);
+        setCurrentUser(prevUser => prevUser ? { ...prevUser, displayName: name } : null);
     }
+  };
+
+  const updateUserProfile = async (data: Partial<Pick<User, 'displayName' | 'photoURL'>>) => {
+    if (!currentUser || currentUser.isGuest) return;
 
     if (!db) return;
     const userDocRef = doc(db, "users", currentUser.uid);
@@ -455,6 +459,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       await writeUserProfileToDB(newUserProfile);
       localStorage.removeItem('guestAvatar');
+      localStorage.removeItem('guestUsername');
 
       toast({ title: "Account Linked!", description: "Your guest progress has been saved to your Google account." });
       router.push('/');
@@ -548,6 +553,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       isSigningIn,
       setLocalGuestAvatar,
+      setLocalGuestUsername,
   };
 
   if (!allConfigValuesPresent && !loading) {
