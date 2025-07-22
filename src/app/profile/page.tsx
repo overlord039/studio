@@ -272,7 +272,7 @@ export default function ProfilePage() {
                               {usernameError && <p className="text-xs text-destructive mt-1">{usernameError}</p>}
                           </div>
                         ) : (
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-baseline gap-1">
                             <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
                             {canChangeName && (
                               <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); setUsernameError(null); }}>
