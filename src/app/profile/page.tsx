@@ -246,7 +246,7 @@ export default function ProfilePage() {
                             </Button>
                           </AvatarSelectionDialog>
                        </div>
-                      <div className="space-y-1 mt-2 min-h-[4rem]">
+                      <div className="space-y-1 mt-2 min-h-[4rem] flex flex-col items-center justify-center">
                         {isEditingName ? (
                           <div className="w-64">
                               <div className="flex items-center gap-2">
@@ -272,11 +272,11 @@ export default function ProfilePage() {
                               {usernameError && <p className="text-xs text-destructive mt-1">{usernameError}</p>}
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
                             {canChangeName && (
                               <Button size="icon" variant="ghost" onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); setUsernameError(null); }}>
-                                <Pencil className="h-5 w-5"/>
+                                <Pencil className="h-4 w-4"/>
                               </Button>
                             )}
                           </div>
