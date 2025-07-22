@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Smile, Meh, Skull, LogOut, Loader2 } from 'lucide-react';
+import { Smile, Zap, Scaling, LogOut, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { playSound } from '@/lib/sounds';
@@ -103,7 +103,7 @@ export default function PlayWithComputerModesPage() {
         >
           <CardHeader className="flex flex-row items-center gap-4 p-6">
             <div className="p-3 rounded-full bg-yellow-500/20">
-              <Meh className="h-8 w-8 text-yellow-500" />
+              <Scaling className="h-8 w-8 text-yellow-500" />
             </div>
             <div>
               <CardTitle className="text-xl font-bold">Fair Challenge</CardTitle>
@@ -121,7 +121,7 @@ export default function PlayWithComputerModesPage() {
         >
           <CardHeader className="flex flex-row items-center gap-4 p-6">
             <div className="p-3 rounded-full bg-red-500/20">
-              {isCreatingHardGame ? <Loader2 className="h-8 w-8 text-red-500 animate-spin" /> : <Skull className="h-8 w-8 text-red-500" />}
+              {isCreatingHardGame ? <Loader2 className="h-8 w-8 text-red-500 animate-spin" /> : <Zap className="h-8 w-8 text-red-500" />}
             </div>
             <div>
               <CardTitle className="text-xl font-bold">Random Rush</CardTitle>
