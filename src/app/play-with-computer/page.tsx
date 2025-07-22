@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Smile, Skull, LogOut, Loader2 } from 'lucide-react';
+import { Smile, Meh, Skull, LogOut, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { playSound } from '@/lib/sounds';
@@ -93,6 +93,21 @@ export default function PlayWithComputerModesPage() {
             <div>
               <CardTitle className="text-xl font-bold">Easy Mode</CardTitle>
               <CardDescription>You choose your tickets. A relaxed game.</CardDescription>
+            </div>
+          </CardHeader>
+        </Card>
+
+        <Card
+          onClick={() => handleModeSelection('/play-with-computer/medium')}
+          className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer"
+        >
+          <CardHeader className="flex flex-row items-center gap-4 p-6">
+            <div className="p-3 rounded-full bg-yellow-500/20">
+              <Meh className="h-8 w-8 text-yellow-500" />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-bold">Medium Mode</CardTitle>
+              <CardDescription>You choose your tickets, bots' tickets are random.</CardDescription>
             </div>
           </CardHeader>
         </Card>

@@ -40,7 +40,7 @@ export interface GameSettings {
   numberOfTicketsPerPlayer: number; // How many tickets each player gets by default
   callingMode: CallingMode;
   isPublic?: boolean;
-  gameMode?: 'multiplayer' | 'easy' | 'hard';
+  gameMode?: 'multiplayer' | 'easy' | 'medium' | 'hard';
 }
 
 export const PRIZE_TYPES = {

@@ -17,16 +17,16 @@ function shuffleArray<T>(array: T[]): T[] {
 
 export async function POST(request: NextRequest) {
   try {
-    const { host, mode, tickets } = (await request.json()) as { host: Player; mode: 'easy' | 'hard', tickets?: number };
+    const { host, mode, tickets } = (await request.json()) as { host: Player; mode: 'easy' | 'medium' | 'hard', tickets?: number };
 
     if (!host || !host.id || !host.name) {
       return NextResponse.json({ message: 'Host details are required' }, { status: 400 });
     }
-    if (!mode || (mode !== 'easy' && mode !== 'hard')) {
-        return NextResponse.json({ message: 'A valid game mode (easy/hard) is required' }, { status: 400 });
+    if (!mode || (mode !== 'easy' && mode !== 'medium' && mode !== 'hard')) {
+        return NextResponse.json({ message: 'A valid game mode (easy/medium/hard) is required' }, { status: 400 });
     }
-    if (mode === 'easy' && (typeof tickets !== 'number' || tickets < 1 || tickets > 4)) {
-        return NextResponse.json({ message: 'For easy mode, a ticket count between 1 and 4 is required' }, { status: 400 });
+    if ((mode === 'easy' || mode === 'medium') && (typeof tickets !== 'number' || tickets < 1 || tickets > 4)) {
+        return NextResponse.json({ message: `For ${mode} mode, a ticket count between 1 and 4 is required` }, { status: 400 });
     }
     
     // 1. Create the room with bot-specific settings
@@ -53,8 +53,10 @@ export async function POST(request: NextRequest) {
         const botName = shuffledBotNames[i];
         const botPlayer: Player = { id: botId, name: botName, isBot: true };
 
-        let botTickets = tickets;
-        if (mode === 'hard') {
+        let botTickets;
+        if (mode === 'easy') {
+            botTickets = tickets;
+        } else { // medium and hard mode have random bot tickets
             botTickets = 1 + Math.floor(Math.random() * 4);
         }
         addPlayerToRoomStore(newRoom.id, botPlayer, botTickets);
