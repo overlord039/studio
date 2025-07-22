@@ -300,7 +300,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (!db) return;
     const userDocRef = doc(db, "users", currentUser.uid);
-    const updates: any = { ...data };
+    const updates: { [key: string]: any } = { ...data };
     
     // If updating displayName, also set the usernameChanged flag
     if (data.displayName && !currentUser.stats.usernameChanged) {
