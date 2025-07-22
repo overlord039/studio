@@ -45,8 +45,8 @@ const AvatarSelectionDialog = ({ onSelect, children }: { onSelect: (src: string)
         </DialogHeader>
         <div className="grid grid-cols-3 gap-4 py-4">
           {AVATAR_IMAGES.map((src) => (
-            <button key={src} onClick={() => handleSelect(src)} className="rounded-full overflow-hidden border-2 border-transparent hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring">
-              <Image src={src} alt={`Avatar option`} width={96} height={96} />
+            <button key={src} onClick={() => handleSelect(src)} className="aspect-square w-full rounded-full overflow-hidden border-2 border-transparent hover:border-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring">
+              <Image src={src} alt={`Avatar option`} width={96} height={96} className="h-full w-full object-cover" />
             </button>
           ))}
         </div>
@@ -259,4 +259,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
