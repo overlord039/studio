@@ -3,6 +3,7 @@
 export interface UserStats {
   matchesPlayed: number;
   prizesWon: Record<PrizeType, number>;
+  usernameChanged?: boolean;
 }
 
 export interface User {

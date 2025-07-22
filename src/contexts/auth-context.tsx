@@ -65,6 +65,7 @@ const createDefaultStats = (): UserStats => {
             acc[prize] = 0;
             return acc;
         }, {} as Record<PrizeType, number>),
+        usernameChanged: false,
     };
 };
 
@@ -100,7 +101,8 @@ function areUsersEqual(a: User | null, b: User | null): boolean {
         a.photoURL !== b.photoURL ||
         a.isGuest !== b.isGuest ||
         a.createdAt !== b.createdAt ||
-        a.stats.matchesPlayed !== b.stats.matchesPlayed
+        a.stats.matchesPlayed !== b.stats.matchesPlayed ||
+        a.stats.usernameChanged !== b.stats.usernameChanged
     ) {
         return false;
     }
@@ -285,10 +287,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const updateUserProfile = async (data: Partial<Pick<User, 'displayName' | 'photoURL'>>) => {
-    if (!currentUser || currentUser.isGuest || !db) return;
+    if (!currentUser) return;
+
+    if (currentUser.isGuest) {
+        setCurrentUser(prev => prev ? { ...prev, ...data } : null);
+        return;
+    }
+
+    if (!db) return;
     const userDocRef = doc(db, "users", currentUser.uid);
+    const updates: any = { ...data };
+    
+    // If updating displayName, also set the usernameChanged flag
+    if (data.displayName && !currentUser.stats.usernameChanged) {
+        updates['stats.usernameChanged'] = true;
+    }
+
     try {
-      await updateDoc(userDocRef, data);
+      await updateDoc(userDocRef, updates);
     } catch (err) {
       console.error("Failed to update user profile:", err);
       toast({

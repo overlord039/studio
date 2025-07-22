@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertTriangle, Calendar, Mail, LogOut, X, Fingerprint, Gamepad2, Award, Loader2, Pencil } from "lucide-react";
+import { AlertTriangle, Calendar, Mail, LogOut, X, Fingerprint, Gamepad2, Award, Loader2, Pencil, Check } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -63,6 +63,10 @@ export default function ProfilePage() {
 
   const [emailForLink, setEmailForLink] = React.useState('');
   const [linkSent, setLinkSent] = React.useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newDisplayName, setNewDisplayName] = useState(currentUser?.displayName || '');
+  const [isSavingName, setIsSavingName] = useState(false);
+
 
   const handleLinkEmailSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -86,6 +90,24 @@ export default function ProfilePage() {
         description: "Your new profile picture has been saved.",
       });
     }
+  };
+
+  const handleNameChange = async () => {
+    if (!currentUser || !newDisplayName.trim() || newDisplayName.trim() === currentUser.displayName) {
+        setIsEditingName(false);
+        return;
+    }
+
+    if (newDisplayName.trim().length < 3 || newDisplayName.trim().length > 20) {
+        toast({ title: "Invalid Name", description: "Name must be between 3 and 20 characters.", variant: "destructive"});
+        return;
+    }
+
+    setIsSavingName(true);
+    await updateUserProfile({ displayName: newDisplayName.trim() });
+    setIsSavingName(false);
+    setIsEditingName(false);
+    toast({ title: "Name Updated", description: `Your name has been changed to ${newDisplayName.trim()}.`});
   };
 
 
@@ -144,6 +166,8 @@ export default function ProfilePage() {
             .map(prize => [prize, prizesWon[prize] ?? 0] as [string, number])
             .filter(([_, count]) => count > 0)
         : [];
+    
+    const canChangeName = currentUser.isGuest || !currentUser.stats.usernameChanged;
 
 
     return (
@@ -179,8 +203,29 @@ export default function ProfilePage() {
                             </Button>
                           </AvatarSelectionDialog>
                        </div>
-                      <div className="space-y-1 mt-2">
-                          <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
+                      <div className="space-y-1 mt-2 min-h-[4rem]">
+                        {isEditingName ? (
+                          <div className="flex items-center gap-2">
+                              <Input 
+                                  value={newDisplayName}
+                                  onChange={(e) => setNewDisplayName(e.target.value)}
+                                  className="text-2xl font-bold text-center h-12"
+                                  maxLength={20}
+                              />
+                              <Button size="icon" onClick={handleNameChange} disabled={isSavingName}>
+                                  {isSavingName ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4"/>}
+                              </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
+                            {canChangeName && (
+                              <Button size="icon" variant="ghost" onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); }}>
+                                <Pencil className="h-5 w-5"/>
+                              </Button>
+                            )}
+                          </div>
+                        )}
                           {currentUser.isGuest && <Badge variant="secondary">Guest Account</Badge>}
                       </div>
                   </div>
