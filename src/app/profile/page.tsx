@@ -350,22 +350,22 @@ export default function ProfilePage() {
                                 <Card className="bg-secondary/30">
                                     <CardContent className="p-3 flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <Gamepad2 className="h-5 w-5 text-primary" />
+                                            <Gamepad2 className="h-4 w-4 text-primary" />
                                             <span className="font-semibold text-sm">Games Played</span>
                                         </div>
-                                        <span className="font-bold text-xl text-primary">{currentUser.stats?.matchesPlayed || 0}</span>
+                                        <span className="font-bold text-lg text-primary">{currentUser.stats?.matchesPlayed || 0}</span>
                                     </CardContent>
                                 </Card>
                                 
                                 {prizesWonArray.length > 0 ? (
                                     <Card className="bg-secondary/30">
-                                        <CardHeader className="p-4 pb-2">
-                                            <CardTitle className="text-base font-semibold flex items-center gap-2 text-primary">
-                                                <Award className="h-5 w-5" /> Prizes Won
+                                        <CardHeader className="p-3 pb-1">
+                                            <CardTitle className="text-sm font-semibold flex items-center gap-2 text-primary">
+                                                <Award className="h-4 w-4" /> Prizes Won
                                             </CardTitle>
                                         </CardHeader>
-                                        <CardContent className="p-4 pt-0">
-                                            <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                                        <CardContent className="p-3 pt-0">
+                                            <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
                                                 {prizesWonArray.map(([prize, count]) => (
                                                     <div key={prize} className="flex justify-between items-baseline">
                                                         <dt className="text-muted-foreground">{prize}</dt>
