@@ -196,11 +196,6 @@ export default function ProfilePage() {
 
     const displayName = currentUser.displayName || 'Guest';
     const avatarFallback = displayName.substring(0, 2).toUpperCase();
-    const joinDateFormatted = new Date(currentUser.createdAt).toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    }).replace(/ /g, '-');
     
     const prizesWon = currentUser.stats?.prizesWon;
     const orderedPrizeTypes = PRIZE_DEFINITIONS[DEFAULT_GAME_SETTINGS.prizeFormat];
@@ -297,17 +292,7 @@ export default function ProfilePage() {
                         <div>
                           <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">Account Details</h3>
                           <dl className="mt-2 divide-y divide-border">
-                             {currentUser.email &&
-                                <div className="py-3 flex justify-between items-center text-sm font-medium">
-                                  <dt className="text-muted-foreground flex items-center gap-2"><Mail className="h-4 w-4" /> Email</dt>
-                                  <dd className="text-foreground break-all text-right">{currentUser.email}</dd>
-                                </div>
-                             }
                              <div className="py-3 flex justify-between items-center text-sm font-medium">
-                              <dt className="text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4" /> Joined</dt>
-                              <dd className="text-foreground">{joinDateFormatted}</dd>
-                            </div>
-                            <div className="py-3 flex justify-between items-center text-sm font-medium">
                               <dt className="text-muted-foreground flex items-center gap-2"><Coins className="h-4 w-4" /> Coins</dt>
                               <dd className="text-foreground font-bold">{currentUser.stats.coins}</dd>
                             </div>
