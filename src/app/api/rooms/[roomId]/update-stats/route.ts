@@ -4,6 +4,18 @@ import { getRoomStore } from '@/lib/server/game-store';
 import { db } from '@/lib/firebase/config';
 import { doc, increment, writeBatch } from 'firebase/firestore';
 import type { PrizeType } from '@/types';
+import { PRIZE_TYPES } from '@/types';
+
+// Define coin rewards for offline games
+const OFFLINE_COIN_REWARDS: Record<PrizeType, number> = {
+  [PRIZE_TYPES.EARLY_5]: 1,
+  [PRIZE_TYPES.FIRST_LINE]: 2,
+  [PRIZE_TYPES.SECOND_LINE]: 2,
+  [PRIZE_TYPES.THIRD_LINE]: 2,
+  [PRIZE_TYPES.FULL_HOUSE]: 3,
+};
+const PARTICIPATION_REWARD = 1;
+
 
 export async function POST(
   request: NextRequest,
@@ -26,40 +38,50 @@ export async function POST(
       return NextResponse.json({ message: 'Room not found.' }, { status: 404 });
     }
 
-    // Crucial validation: only update stats if the game is actually over
     if (!room.isGameOver) {
       return NextResponse.json({ message: 'Game is not over yet. Stats cannot be updated.' }, { status: 400 });
     }
     
-    // Do not update stats for bot games
-    if (room.settings.gameMode !== 'multiplayer') {
-        return NextResponse.json({ success: true, message: 'Stats not updated for bot games.' });
-    }
-
     const playerInRoom = room.players.find(p => p.id === userId);
-    if (!playerInRoom) {
-      return NextResponse.json({ message: 'Player not found in this game.' }, { status: 404 });
+    if (!playerInRoom || playerInRoom.isBot) {
+      return NextResponse.json({ message: 'Player not found in this game or is a bot.' }, { status: 404 });
     }
 
     const playerDocRef = doc(db, "users", userId);
-    
     const batch = writeBatch(db);
+
+    const isBotGame = room.settings.gameMode !== 'multiplayer' && room.settings.gameMode !== 'online';
 
     const statsUpdate: { [key: string]: any } = {
         'stats.matchesPlayed': increment(1)
     };
 
+    let totalPrizesWon = 0;
+    let coinsEarned = 0;
+
     for (const prizeType in room.prizeStatus) {
         const prizeInfo = room.prizeStatus[prizeType as PrizeType];
         if (prizeInfo && prizeInfo.claimedBy.some(c => c.id === userId)) {
             statsUpdate[`stats.prizesWon.${prizeType}`] = increment(1);
+            totalPrizesWon++;
+            if (isBotGame) {
+                coinsEarned += OFFLINE_COIN_REWARDS[prizeType as PrizeType] || 0;
+            }
         }
     }
 
+    if (isBotGame) {
+        if (totalPrizesWon === 0) {
+            // Participation reward
+            coinsEarned = PARTICIPATION_REWARD;
+        }
+        statsUpdate['stats.coins'] = increment(coinsEarned);
+    }
+    
     batch.update(playerDocRef, statsUpdate);
     await batch.commit();
 
-    return NextResponse.json({ success: true, message: 'Stats updated successfully.' });
+    return NextResponse.json({ success: true, message: 'Stats updated successfully.', coinsEarned });
 
   } catch (error) {
     console.error(`Error updating stats for room ${roomId}:`, error);

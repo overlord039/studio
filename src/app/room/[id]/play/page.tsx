@@ -11,7 +11,7 @@ import type { HousieTicketGrid, PrizeType, Room, GameSettings, CallingMode, Priz
 import { PRIZE_TYPES } from '@/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause, Menu, Ticket } from 'lucide-react';
+import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause, Menu, Ticket, Coins } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
@@ -72,7 +72,7 @@ export default function GameRoomPage() {
   const roomDataRef = useRef(roomData);
   const previousPrizeStatusRef = useRef<Room['prizeStatus'] | null>(null);
   const gameOverSoundPlayedRef = useRef(false);
-  const statsUpdateInitiatedRef = useRef(false); // Ref to prevent double-updates
+  const statsUpdateInitiatedRef = useRef(false);
 
   useEffect(() => {
     if (roomData?.currentNumber !== previousCurrentNumberRef.current) {
@@ -228,12 +228,19 @@ export default function GameRoomPage() {
             body: JSON.stringify({ userId: currentUser.uid }),
           });
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "Failed to trigger stat update.");
-          }
           const result = await response.json();
+          if (!response.ok) {
+            throw new Error(result.message || "Failed to trigger stat update.");
+          }
+          
           console.log(`Stat update API response: ${result.message}`);
+          if (result.coinsEarned > 0) {
+            toast({
+                title: "Coins Rewarded!",
+                description: `You earned ${result.coinsEarned} coins for playing.`,
+                className: "bg-yellow-500 text-white",
+            })
+          }
         } catch (error) {
           console.error("Failed to trigger stats update:", error);
           toast({
@@ -480,48 +487,14 @@ export default function GameRoomPage() {
   const handlePlayAgain = async () => {
     if (!currentUser || !roomData) return;
 
-    const isBotGame = roomData.settings.gameMode !== 'multiplayer';
+    const isBotGame = roomData.settings.gameMode !== 'multiplayer' && roomData.settings.gameMode !== 'online';
     setIsResetting(true);
 
     if (isBotGame) {
-      if (roomData.settings.gameMode === 'easy') {
         playSound('cards.mp3');
-        router.push('/play-with-computer/easy');
+        router.push(`/play-with-computer`);
         return;
-      }
-      
-      // For Hard mode, create a new game immediately
-      playSound('start.wav');
-      const hostPlayer = {
-        id: currentUser.uid,
-        name: currentUser.displayName || 'Guest',
-        email: currentUser.email,
-      };
-
-      try {
-        const response = await fetch('/api/bot-game/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ host: hostPlayer, mode: 'hard' }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Failed to create bot game.");
-        }
-
-        const newRoom: Room = await response.json();
-        toast({ title: "New Game Starting!", description: "Get ready for another round!" });
-        const hostPlayerInRoom = newRoom.players.find(p => p.id === currentUser.uid);
-        const hostTicketCount = hostPlayerInRoom?.tickets.length || 1;
-        router.push(`/room/${newRoom.id}/play?playerTickets=${hostTicketCount}`);
-      } catch (error) {
-        console.error("Error creating new hard bot game:", error);
-        toast({ title: "Error", description: (error as Error).message, variant: "destructive" });
-        setIsResetting(false);
-      }
-
-    } else { // It's a multiplayer game
+    } else { // It's a multiplayer or online game
       if (isCurrentUserHost) {
         try {
           const response = await fetch(`/api/rooms/${roomId}/reset`, {
@@ -601,7 +574,8 @@ export default function GameRoomPage() {
     );
   }
 
-  const isBotGame = roomData.settings.gameMode !== 'multiplayer';
+  const isBotGame = roomData.settings.gameMode !== 'multiplayer' && roomData.settings.gameMode !== 'online';
+  const isOnlineGame = roomData.settings.gameMode === 'online';
   const gameSettings: GameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
   const currentPrizeFormat = gameSettings.prizeFormat;
   const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
@@ -622,7 +596,7 @@ export default function GameRoomPage() {
             const claimInfo = roomData.prizeStatus[prize];
             if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
                 currentUserPrizeNames.push(prize);
-                if (!isBotGame) {
+                if (isOnlineGame) {
                     const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
                     const prizeAmount = (totalPrizePool * percentage) / 100;
                     const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
@@ -634,7 +608,7 @@ export default function GameRoomPage() {
         currentUserSpent = (myPlayerRecord?.tickets.length || 0) * gameSettings.ticketPrice;
     }
     
-    const playAgainButtonText = isBotGame ? "Play Again" : (isCurrentUserHost ? "New Game" : "To Lobby");
+    const playAgainButtonText = isBotGame ? "Play Again" : isOnlineGame ? "Find New Match" : (isCurrentUserHost ? "New Game" : "To Lobby");
 
     return (
       <div className="flex-grow p-4 flex flex-col items-center justify-center">
@@ -648,13 +622,15 @@ export default function GameRoomPage() {
              {currentUserPrizeNames.length > 0 && (
                 <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
                     <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
-                    {!isBotGame && 
+                    {isOnlineGame && 
                       <>
                         <p className="text-2xl font-bold text-green-700 dark:text-green-300">You won a total of {formatCurrency(currentUserWinnings)}!</p>
                         <p className="text-sm text-muted-foreground">You spent {formatCurrency(currentUserSpent)} on tickets.</p>
                       </>
                     }
-                    <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
+                     {!isOnlineGame && 
+                        <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
+                     }
                 </div>
             )}
             
@@ -663,7 +639,7 @@ export default function GameRoomPage() {
                 Final Prize Summary
             </h3>
             <div className="border rounded-md p-3">
-              {!isBotGame && (
+              {(isOnlineGame) && (
               <div className="flex justify-between items-center text-lg font-bold mb-2 pb-2 border-b">
                 <span>Total Prize Pool:</span>
                 <span>{formatCurrency(totalPrizePool)}</span>
@@ -759,20 +735,21 @@ export default function GameRoomPage() {
                       <div className={cn(
                           "px-2 py-1 text-xs font-bold text-white rounded-md capitalize",
                           roomData.settings.gameMode === 'easy' && "bg-green-600",
+                          roomData.settings.gameMode === 'medium' && "bg-yellow-600",
                           roomData.settings.gameMode === 'hard' && "bg-red-600",
                       )}>
                           {roomData.settings.gameMode} Mode
                       </div>
                   ) : (
                       <div className="text-white capitalize">
-                          Room ID: #{roomId}
+                          {isOnlineGame ? `Online: ${TIERS[roomData.settings.tier].name}` : `Room ID: #${roomId}`}
                       </div>
                   )}
               </div>
               <div className="font-semibold text-white">{currentUser.displayName} ({myTickets.length} {ticketsText(myTickets.length)})</div>
             </div>
             <div className="flex-shrink-0 flex items-center gap-2">
-              {isCurrentUserHost && !roomData.settings.isPublic && !roomData.isGameOver && (
+              {isCurrentUserHost && !isOnlineGame && !isBotGame && !roomData.isGameOver && (
                 <div className="flex items-center gap-1 p-1 rounded-md border bg-card/80 backdrop-blur-sm">
                     <Label htmlFor="calling-mode-switch" className="text-xs font-medium text-foreground cursor-pointer">
                         Auto
@@ -801,9 +778,9 @@ export default function GameRoomPage() {
                           <CardHeader className="p-3 pb-2">
                               <CardTitle className="text-sm font-semibold flex items-center">
                                   <Award className="mr-2 h-4 w-4 text-primary" />
-                                  {isBotGame ? 'Prize Status' : 'Prize Pool'}
+                                  {(isBotGame || isOnlineGame) ? 'Prize Status' : 'Prize Pool'}
                               </CardTitle>
-                              {!isBotGame && <p className="text-xs text-muted-foreground">Total: {formatCurrency(totalPrizePool)}</p>}
+                              {(!isBotGame && !isOnlineGame) && <p className="text-xs text-muted-foreground">Total: {formatCurrency(totalPrizePool)}</p>}
                           </CardHeader>
                           <CardContent className="p-3 pt-0">
                               {isLoading ? (
@@ -823,7 +800,7 @@ export default function GameRoomPage() {
                                           claimantText = `Claimed by ${claimantNames}`;
                                       }
                                       
-                                      if (isBotGame) {
+                                      if (isBotGame || isOnlineGame) {
                                           return (
                                               <li key={prize} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
                                                   <span>{prize}</span>
@@ -883,7 +860,7 @@ export default function GameRoomPage() {
                                           </span>
                                           <span className="text-muted-foreground">
                                               {ticketCount} {ticketsText(ticketCount)}
-                                              {!isBotGame && ` (${formatCurrency(ticketCost)})`}
+                                              {(!isBotGame && !isOnlineGame) && ` (${formatCurrency(ticketCost)})`}
                                           </span>
                                           </li>
                                         );
