@@ -117,7 +117,7 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
                             <SelectContent>
                                 {[1, 2, 3, 4].map(num => (
                                     <SelectItem key={num} value={String(num)}>
-                                        {num} ticket(s)
+                                        {num} {num === 1 ? 'ticket' : 'tickets'}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
