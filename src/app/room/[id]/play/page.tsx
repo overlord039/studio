@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import HousieTicket from '@/components/game/housie-ticket';
 import CalledNumberDisplay from '@/components/game/called-number-display';
-import type { HousieTicketGrid, PrizeType, Room, GameSettings, CallingMode, PrizeClaimant } from '@/types';
+import type { HousieTicketGrid, PrizeType, Room, GameSettings, CallingMode, PrizeClaimant, OnlineGameTier, TierConfig } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,6 +46,21 @@ import Footer from '@/components/layout/footer';
 const MemoizedHousieTicket = React.memo(HousieTicket);
 const MemoizedLiveNumberBoard = React.memo(LiveNumberBoard);
 const MemoizedCalledNumberDisplay = React.memo(CalledNumberDisplay);
+
+const TIERS: Record<OnlineGameTier, TierConfig> = {
+    quick: {
+        name: "Quick Play", ticketPrice: 5, roomSize: 4, matchmakingTime: 15,
+        unlockRequirements: { matches: 0, coins: 0 },
+    },
+    classic: {
+        name: "Classic", ticketPrice: 10, roomSize: 6, matchmakingTime: 30,
+        unlockRequirements: { matches: 5, coins: 50 },
+    },
+    tournament: {
+        name: "Tournament", ticketPrice: 20, roomSize: 10, matchmakingTime: 60,
+        unlockRequirements: { matches: 15, coins: 150 },
+    }
+};
 
 
 export default function GameRoomPage() {
@@ -742,7 +757,7 @@ export default function GameRoomPage() {
                       </div>
                   ) : (
                       <div className="text-white capitalize">
-                          {isOnlineGame ? `Online: ${TIERS[roomData.settings.tier].name}` : `Room ID: #${roomId}`}
+                          {isOnlineGame ? `Online: ${TIERS[roomData.settings.tier as OnlineGameTier].name}` : `Room ID: #${roomId}`}
                       </div>
                   )}
               </div>
