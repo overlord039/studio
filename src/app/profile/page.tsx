@@ -353,43 +353,37 @@ export default function ProfilePage() {
                    </div>
 
                    {currentUser.isGuest && (
-                     <div className="text-center p-4 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg border border-yellow-500/30">
-                        <p className="font-semibold">Store your game progress and prizes by logging in!</p>
-                        <p className="text-sm text-muted-foreground mb-3">
+                     <div className="text-center p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg border border-yellow-500/30">
+                        <p className="font-semibold text-sm">Store your game progress and prizes!</p>
+                        <p className="text-xs text-muted-foreground mb-2">
                             Linking an account saves your progress permanently.
                         </p>
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             <Button
                                 onClick={linkGoogleAccount}
                                 disabled={!!isSigningIn}
-                                className="bg-white text-black hover:bg-gray-200 w-full"
+                                className="bg-white text-black hover:bg-gray-200 w-full h-9 text-sm"
                             >
                                 {isSigningIn === 'google' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
                                 Continue with Google
                             </Button>
-
-                            <div className="relative flex items-center justify-center my-2">
-                                <div className="flex-grow border-t border-yellow-400/50"></div>
-                                <span className="flex-shrink mx-2 text-xs text-muted-foreground">OR</span>
-                                <div className="flex-grow border-t border-yellow-400/50"></div>
-                            </div>
                             
-                            <form onSubmit={handleLinkEmailSubmit} className="space-y-2">
-                                <div className="relative">
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <form onSubmit={handleLinkEmailSubmit} className="flex gap-2">
+                                <div className="relative flex-grow">
+                                    <Mail className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                                     <Input
                                         type="email"
-                                        placeholder="Enter your email"
+                                        placeholder="your@email.com"
                                         value={emailForLink}
                                         onChange={(e) => setEmailForLink(e.target.value)}
                                         disabled={!!isSigningIn || linkSent}
                                         required
-                                        className="bg-background/50 border-input pl-9 text-sm h-10 focus:ring-2 focus:ring-ring"
+                                        className="bg-background/50 border-input pl-8 text-xs h-9 focus:ring-1 focus:ring-ring"
                                     />
                                 </div>
-                                <Button type="submit" variant="secondary" className="w-full" disabled={!!isSigningIn || !emailForLink || linkSent}>
-                                    {isSigningIn === 'email' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    {linkSent ? 'Link Sent! Check your inbox.' : 'Link with Email'}
+                                <Button type="submit" variant="secondary" className="h-9 text-xs px-3" disabled={!!isSigningIn || !emailForLink || linkSent}>
+                                    {isSigningIn === 'email' && <Loader2 className="h-4 w-4 animate-spin" />}
+                                    {linkSent ? 'Sent!' : 'Link Email'}
                                 </Button>
                             </form>
                         </div>
