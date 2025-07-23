@@ -239,10 +239,10 @@ export default function ProfilePage() {
                             <Button 
                               size="icon" 
                               variant="secondary" 
-                              className="absolute bottom-0 right-0 rounded-full h-8 w-8 border-2 border-background"
+                              className="absolute bottom-0 right-0 rounded-full h-7 w-7 border-2 border-background"
                               title="Change avatar"
                             >
-                              <Pencil className="h-4 w-4"/>
+                              <Pencil className="h-3.5 w-3.5"/>
                               <span className="sr-only">Edit profile picture</span>
                             </Button>
                           </AvatarSelectionDialog>
@@ -283,7 +283,7 @@ export default function ProfilePage() {
                               disabled={!canChangeName}
                               title={canChangeName ? "Edit username" : "Username can only be changed once"}
                             >
-                              <Pencil className="h-5 w-5"/>
+                              <Pencil className="h-4 w-4"/>
                             </Button>
                           </div>
                         )}
@@ -407,7 +407,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-
-
-
