@@ -2,7 +2,9 @@
 import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid, CallingMode } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { generateImprovedHousieTicket } from '@/lib/housie';
-import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE, PRIZE_DEFINITIONS, DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER, SERVER_CALL_INTERVAL } from '@/lib/constants';
+import { db } from '@/lib/firebase/config';
+import { doc, writeBatch, increment } from 'firebase/firestore';
+import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE, PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER, SERVER_CALL_INTERVAL } from '@/lib/constants';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -468,6 +470,35 @@ export function claimPrizeStore(
     room.isGameOver = true;
     console.log(`Room ${roomId}: Full House claimed by ${playerId}. Game Over.`);
     stopRoomTimer(roomId, "Full House claimed");
+    
+    // Distribute winnings for online games
+    if (room.settings.gameMode === 'online' && db) {
+        const batch = writeBatch(db);
+        const prizeDistribution = PRIZE_DISTRIBUTION_PERCENTAGES[room.settings.prizeFormat];
+        const totalTickets = room.players.reduce((acc, p) => acc + p.tickets.length, 0);
+        const totalPrizePool = totalTickets * room.settings.ticketPrice;
+
+        const allPrizes = PRIZE_DEFINITIONS[room.settings.prizeFormat];
+        
+        allPrizes.forEach(prize => {
+            const claimInfo = room.prizeStatus[prize];
+            if (claimInfo && claimInfo.claimedBy.length > 0) {
+                const prizePercentage = prizeDistribution[prize];
+                const prizeAmount = (totalPrizePool * prizePercentage) / 100;
+                const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
+                
+                claimInfo.claimedBy.forEach(winner => {
+                    // Don't award coins to bots
+                    if (!room.players.find(p => p.id === winner.id)?.isBot) {
+                        const playerDocRef = doc(db, "users", winner.id);
+                        batch.update(playerDocRef, { 'stats.coins': increment(prizePerWinner) });
+                    }
+                });
+            }
+        });
+        batch.commit().catch(err => console.error(`Error writing online winnings for room ${roomId}:`, err));
+    }
+
 
     const linePrizesToAutoCheck: PrizeType[] = [PRIZE_TYPES.FIRST_LINE, PRIZE_TYPES.SECOND_LINE, PRIZE_TYPES.THIRD_LINE];
     for (const linePrize of linePrizesToAutoCheck) {

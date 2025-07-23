@@ -2,7 +2,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getRoomStore } from '@/lib/server/game-store';
 import { db } from '@/lib/firebase/config';
-import { doc, increment, writeBatch } from 'firebase/firestore';
+import { doc, increment, writeBatch, getDoc } from 'firebase/firestore';
 import type { PrizeType } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 
@@ -48,9 +48,14 @@ export async function POST(
     }
 
     const playerDocRef = doc(db, "users", userId);
+    const playerDoc = await getDoc(playerDocRef);
+    if (!playerDoc.exists()) {
+        return NextResponse.json({ message: 'User data not found in database.' }, { status: 404 });
+    }
+
     const batch = writeBatch(db);
 
-    const isBotGame = room.settings.gameMode !== 'multiplayer' && room.settings.gameMode !== 'online';
+    const isOfflineGame = room.settings.gameMode !== 'online';
 
     const statsUpdate: { [key: string]: any } = {
         'stats.matchesPlayed': increment(1)
@@ -64,15 +69,14 @@ export async function POST(
         if (prizeInfo && prizeInfo.claimedBy.some(c => c.id === userId)) {
             statsUpdate[`stats.prizesWon.${prizeType}`] = increment(1);
             totalPrizesWon++;
-            if (isBotGame) {
+            if (isOfflineGame) {
                 coinsEarned += OFFLINE_COIN_REWARDS[prizeType as PrizeType] || 0;
             }
         }
     }
 
-    if (isBotGame) {
+    if (isOfflineGame) {
         if (totalPrizesWon === 0) {
-            // Participation reward
             coinsEarned = PARTICIPATION_REWARD;
         }
         statsUpdate['stats.coins'] = increment(coinsEarned);

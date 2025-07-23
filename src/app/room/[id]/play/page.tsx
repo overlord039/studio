@@ -82,6 +82,7 @@ export default function GameRoomPage() {
   const [isUpdatingMode, setIsUpdatingMode] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [animationKey, setAnimationKey] = useState(0);
+  const [coinsWonThisGame, setCoinsWonThisGame] = useState<number | null>(null);
 
   const previousCurrentNumberRef = useRef<number | null>(null);
   const roomDataRef = useRef(roomData);
@@ -236,6 +237,9 @@ export default function GameRoomPage() {
           return;
         }
 
+        const isOfflineGame = roomData.settings.gameMode !== 'online';
+        if (!isOfflineGame) return; // Online games are handled by backend claim logic
+
         try {
           const response = await fetch(`/api/rooms/${roomId}/update-stats`, {
             method: 'POST',
@@ -248,13 +252,15 @@ export default function GameRoomPage() {
             throw new Error(result.message || "Failed to trigger stat update.");
           }
           
-          console.log(`Stat update API response: ${result.message}`);
           if (result.coinsEarned > 0) {
+            setCoinsWonThisGame(result.coinsEarned);
             toast({
                 title: "Coins Rewarded!",
                 description: `You earned ${result.coinsEarned} coins for playing.`,
                 className: "bg-yellow-500 text-white",
             })
+          } else {
+             setCoinsWonThisGame(0);
           }
         } catch (error) {
           console.error("Failed to trigger stats update:", error);
@@ -509,7 +515,11 @@ export default function GameRoomPage() {
         playSound('cards.mp3');
         router.push(`/play-with-computer`);
         return;
-    } else { // It's a multiplayer or online game
+    } else if (isOnlineGame) {
+        playSound('cards.mp3');
+        router.push(`/online`);
+        return;
+    } else { // It's a friends game
       if (isCurrentUserHost) {
         try {
           const response = await fetch(`/api/rooms/${roomId}/reset`, {
@@ -606,24 +616,21 @@ export default function GameRoomPage() {
 
   if (roomData.isGameOver) {
     let currentUserWinnings = 0;
-    const currentUserPrizeNames: PrizeType[] = [];
-    let currentUserSpent = 0;
 
     if (currentUser) {
-        prizesForFormat.forEach(prize => {
-            const claimInfo = roomData.prizeStatus[prize];
-            if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
-                currentUserPrizeNames.push(prize);
-                if (isOnlineGame) {
+        if (isOnlineGame) {
+            prizesForFormat.forEach(prize => {
+                const claimInfo = roomData.prizeStatus[prize];
+                if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
                     const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
                     const prizeAmount = (totalPrizePool * percentage) / 100;
                     const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
                     currentUserWinnings += prizePerWinner;
                 }
-            }
-        });
-        const myPlayerRecord = roomData.players.find(p => p.id === currentUser.uid);
-        currentUserSpent = (myPlayerRecord?.tickets.length || 0) * gameSettings.ticketPrice;
+            });
+        } else if (coinsWonThisGame !== null) {
+            currentUserWinnings = coinsWonThisGame;
+        }
     }
     
     const playAgainButtonText = isBotGame ? "Play Again" : isOnlineGame ? "Find New Match" : (isCurrentUserHost ? "New Game" : "To Lobby");
@@ -637,22 +644,12 @@ export default function GameRoomPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-             {currentUserPrizeNames.length > 0 && (
+             {currentUserWinnings > 0 && (
                 <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
                     <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
-                    {isOnlineGame && 
-                      <>
-                        <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
-                            You won a total of <Coins className="h-6 w-6 text-yellow-500" /> {formatCoins(currentUserWinnings)}!
-                        </div>
-                        <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
-                          You spent <Coins className="h-3 w-3 text-yellow-500" /> {formatCoins(currentUserSpent)} on tickets.
-                        </p>
-                      </>
-                    }
-                     {!isOnlineGame && 
-                        <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
-                     }
+                    <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
+                        You won a total of <Coins className="h-6 w-6 text-yellow-500" /> {formatCoins(currentUserWinnings)}!
+                    </div>
                 </div>
             )}
             
@@ -673,6 +670,7 @@ export default function GameRoomPage() {
               <ul className="space-y-2">
                 {prizesForFormat.map(prize => {
                   const claimInfo = roomData.prizeStatus[prize];
+                  const isClaimed = claimInfo && claimInfo.claimedBy.length > 0;
                   
                   let prizeStatusText = "Not Claimed";
                   if (claimInfo && claimInfo.claimedBy.length > 0) {
@@ -684,7 +682,7 @@ export default function GameRoomPage() {
                      return (
                          <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
                             <span className="font-medium">{prize}</span>
-                            <span className={cn("font-semibold text-right", claimInfo && claimInfo.claimedBy.length > 0 ? "text-green-600" : "text-muted-foreground")}>
+                            <span className={cn("font-semibold text-right", isClaimed ? "text-green-600" : "text-muted-foreground")}>
                                 {prizeStatusText}
                             </span>
                         </li>
