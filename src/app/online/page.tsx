@@ -117,7 +117,7 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
                             <SelectContent>
                                 {[1, 2, 3, 4].map(num => (
                                     <SelectItem key={num} value={String(num)}>
-                                        {num} ticket(s) - <Coins className="inline-block h-3 w-3 mr-1" />{tierConfig.ticketPrice * num}
+                                        {num} ticket(s)
                                     </SelectItem>
                                 ))}
                             </SelectContent>
