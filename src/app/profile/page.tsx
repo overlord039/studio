@@ -227,10 +227,11 @@ export default function ProfilePage() {
                 <span className="sr-only">Close</span>
               </Button>
               <div className="bg-gradient-to-br from-primary/10 to-secondary/10 p-6 sm:p-8">
-                  <div className="flex flex-col items-center gap-2 text-center">
-                       <div className="text-xs text-muted-foreground font-mono bg-background/50 px-2 py-1 rounded-full mb-2">ID: {currentUser.uid}</div>
-                       <div className="relative">
-                          <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-background shadow-lg">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="text-xs text-muted-foreground font-mono bg-background/50 px-2 py-1 rounded-full">ID: {currentUser.uid}</div>
+                  <div className="flex flex-row items-center gap-4 text-left w-full">
+                      <div className="relative flex-shrink-0">
+                          <Avatar className="h-24 w-24 sm:h-28 sm:w-28 border-4 border-background shadow-lg">
                               <AvatarImage src={currentUser.photoURL || `https://placehold.co/128x128.png?text=${avatarFallback}`} alt={displayName} data-ai-hint="profile avatar"/>
                               <AvatarFallback className="text-3xl sm:text-4xl">{avatarFallback}</AvatarFallback>
                           </Avatar>
@@ -246,10 +247,10 @@ export default function ProfilePage() {
                             </Button>
                           </AvatarSelectionDialog>
                        </div>
-                      <div className="space-y-1 mt-2 min-h-[4rem] flex flex-col items-center justify-center">
+                       <div className="space-y-1 flex-grow">
                         {isEditingName ? (
-                          <div className="w-full flex flex-col items-center">
-                              <div className="flex w-full max-w-xs justify-center items-center gap-2">
+                          <div className="w-full flex flex-col items-start">
+                              <div className="flex w-full max-w-xs items-center gap-2">
                                 <Input 
                                     value={newDisplayName}
                                     onChange={(e) => {
@@ -257,7 +258,7 @@ export default function ProfilePage() {
                                         if (usernameError) setUsernameError(null);
                                     }}
                                     className={cn(
-                                        "text-2xl font-bold text-center h-12",
+                                        "text-2xl font-bold h-12",
                                         usernameError && "border-destructive focus-visible:ring-destructive"
                                     )}
                                     maxLength={20}
@@ -277,18 +278,19 @@ export default function ProfilePage() {
                             <Button 
                               size="icon" 
                               variant="ghost" 
-                              className="h-6 w-6" 
+                              className="h-8 w-8" 
                               onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); setUsernameError(null); }}
                               disabled={!canChangeName}
                               title={canChangeName ? "Edit username" : "Username can only be changed once"}
                             >
-                              <Pencil className="h-4 w-4"/>
+                              <Pencil className="h-5 w-5"/>
                             </Button>
                           </div>
                         )}
-                          {currentUser.isGuest && <Badge variant="secondary">Guest Account</Badge>}
-                      </div>
+                        {currentUser.isGuest && <Badge variant="secondary">Guest Account</Badge>}
+                       </div>
                   </div>
+                </div>
               </div>
               <CardContent className="p-6 space-y-6 bg-card">
                    {currentUser.isGuest ? (
@@ -405,6 +407,7 @@ export default function ProfilePage() {
     </div>
   );
 }
+
 
 
 
