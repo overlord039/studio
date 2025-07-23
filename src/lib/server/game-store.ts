@@ -478,9 +478,17 @@ export function claimPrizeStore(
         const prizeDistribution = PRIZE_DISTRIBUTION_PERCENTAGES[room.settings.prizeFormat];
         const totalTickets = room.players.reduce((acc, p) => acc + p.tickets.length, 0);
         const totalPrizePool = totalTickets * room.settings.ticketPrice;
-
         const allPrizes = PRIZE_DEFINITIONS[room.settings.prizeFormat];
         
+        // Update stats for all human players
+        room.players.forEach(p => {
+          if (!p.isBot) {
+            const playerDocRef = doc(db, "users", p.id);
+            batch.update(playerDocRef, { 'stats.matchesPlayed': increment(1) });
+          }
+        });
+
+        // Distribute winnings
         allPrizes.forEach(prize => {
             const claimInfo = room.prizeStatus[prize];
             if (claimInfo && claimInfo.claimedBy.length > 0) {
@@ -489,7 +497,6 @@ export function claimPrizeStore(
                 const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
                 
                 claimInfo.claimedBy.forEach(winner => {
-                    // Don't award coins to bots
                     if (!room.players.find(p => p.id === winner.id)?.isBot) {
                         const playerDocRef = doc(db, "users", winner.id);
                         batch.update(playerDocRef, { 'stats.coins': increment(prizePerWinner) });

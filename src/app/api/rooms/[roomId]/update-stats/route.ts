@@ -55,7 +55,11 @@ export async function POST(
 
     const batch = writeBatch(db);
 
+    // This API is only for offline games. Online game stats are updated in game-store.ts
     const isOfflineGame = room.settings.gameMode !== 'online';
+    if (!isOfflineGame) {
+        return NextResponse.json({ success: true, message: 'Stats for online games are handled separately.' });
+    }
 
     const statsUpdate: { [key: string]: any } = {
         'stats.matchesPlayed': increment(1)
@@ -69,18 +73,14 @@ export async function POST(
         if (prizeInfo && prizeInfo.claimedBy.some(c => c.id === userId)) {
             statsUpdate[`stats.prizesWon.${prizeType}`] = increment(1);
             totalPrizesWon++;
-            if (isOfflineGame) {
-                coinsEarned += OFFLINE_COIN_REWARDS[prizeType as PrizeType] || 0;
-            }
+            coinsEarned += OFFLINE_COIN_REWARDS[prizeType as PrizeType] || 0;
         }
     }
 
-    if (isOfflineGame) {
-        if (totalPrizesWon === 0) {
-            coinsEarned = PARTICIPATION_REWARD;
-        }
-        statsUpdate['stats.coins'] = increment(coinsEarned);
+    if (totalPrizesWon === 0) {
+        coinsEarned = PARTICIPATION_REWARD;
     }
+    statsUpdate['stats.coins'] = increment(coinsEarned);
     
     batch.update(playerDocRef, statsUpdate);
     await batch.commit();
