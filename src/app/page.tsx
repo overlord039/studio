@@ -28,7 +28,7 @@ export default function HomePage() {
     if (!currentUser) {
       toast({
         title: "Login Required",
-        description: "Please sign in to play with friends.",
+        description: "Please sign in to play.",
         variant: "destructive",
       });
       return;
@@ -65,13 +65,12 @@ export default function HomePage() {
       <div className="w-full max-w-md space-y-4">
         <div className="grid grid-cols-3 gap-4">
             <Card 
-            className="bg-gray-500 text-white rounded-2xl shadow-lg relative opacity-50 cursor-not-allowed"
+            className="bg-green-600 text-white hover:bg-green-700 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
+            onClick={() => handleNavigateWithAuth('/online')}
             role="button"
-            aria-disabled="true"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/online') }}
             >
-            <div className="absolute top-1 right-1 bg-muted text-muted-foreground text-[0.6rem] font-bold uppercase px-1.5 py-0.5 rounded-full z-10">
-                Coming Soon
-            </div>
             <CardContent className="flex flex-col items-center justify-center p-3 text-center">
                 <Globe className="h-8 w-8 mb-1" />
                 <p className="text-sm font-bold">Online</p>
@@ -121,7 +120,7 @@ export default function HomePage() {
             </Card>
 
             <Card 
-              className="bg-green-600 text-white hover:bg-green-700 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
+              className="bg-yellow-600 text-white hover:bg-yellow-700 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
               onClick={() => handleFreeToolsNavigation('/prize-calculator')}
               role="button"
               tabIndex={0}

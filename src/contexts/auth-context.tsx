@@ -19,16 +19,17 @@ import {
   EmailAuthProvider,
   linkWithCredential,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, deleteDoc, updateDoc, onSnapshot, type Unsubscribe, runTransaction, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, updateDoc, onSnapshot, type Unsubscribe, runTransaction, writeBatch, increment } from 'firebase/firestore';
 import { auth, db, allConfigValuesPresent } from '@/lib/firebase/config';
 import { useToast } from '@/hooks/use-toast';
 import type { User, UserStats, PrizeType } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import LoginSelectionScreen from '@/components/auth/login-selection-screen';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, Coins } from 'lucide-react';
 import { ToastAction } from '@/components/ui/toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export interface User {
   uid: string;
@@ -67,13 +68,8 @@ const createDefaultStats = (): UserStats => {
             return acc;
         }, {} as Record<PrizeType, number>),
         usernameChanged: false,
+        coins: 0,
     };
-};
-
-const writeUserProfileToDB = async (appUser: User): Promise<void> => {
-    if (appUser.isGuest || !db) return; 
-    const userDocRef = doc(db, "users", appUser.uid);
-    await setDoc(userDocRef, appUser, { merge: true });
 };
 
 // A robust, order-insensitive comparison for the prizes object
@@ -103,7 +99,8 @@ function areUsersEqual(a: User | null, b: User | null): boolean {
         a.isGuest !== b.isGuest ||
         a.createdAt !== b.createdAt ||
         a.stats.matchesPlayed !== b.stats.matchesPlayed ||
-        a.stats.usernameChanged !== b.stats.usernameChanged
+        a.stats.usernameChanged !== b.stats.usernameChanged ||
+        a.stats.coins !== b.stats.coins
     ) {
         return false;
     }
@@ -148,6 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isSigningIn, setIsSigningIn] = useState<null | 'guest' | 'google' | 'email'>(null);
   const { toast } = useToast();
   const router = useRouter();
+  const [reward, setReward] = useState<{ amount: number; message: string } | null>(null);
 
   const handleEmailLinkSignIn = useCallback(async () => {
       if (!auth || !isSignInWithEmailLink(auth, window.location.href)) return;
@@ -184,6 +182,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 email: email,
                 isGuest: false,
                 displayName: oldGuestUsername || email.split('@')[0],
+                stats: {
+                    coins: increment(10) // Linking reward
+                }
             }, { merge: true });
 
             if(oldGuestUsername) {
@@ -193,7 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             
             await batch.commit();
 
-            toast({ title: "Account Linked!", description: "Your guest progress is now saved to your email." });
+            setReward({ amount: 10, message: 'Thanks for linking your account!' });
         } else {
           await signInWithEmailLink(auth, email, window.location.href);
         }
@@ -238,8 +239,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   stats: {
                     ...createDefaultStats(),
                     usernameChanged: guestUsernameChanged,
+                    coins: 10, // Guest reward
                   },
               };
+              if (localStorage.getItem('isNewGuest') === 'true') {
+                 setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
+                 localStorage.removeItem('isNewGuest');
+              }
               setCurrentUser(newUserProfile);
               setLoading(false);
               return;
@@ -273,10 +279,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         uid: firebaseUser.uid,
                         displayName: displayName,
                         email: firebaseUser.email,
-                        photoURL: firebaseUser.photoURL || null,
+                        photoURL: firebaseUser.photoURL,
                         isGuest: firebaseUser.isAnonymous,
                         createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-                        stats: createDefaultStats(),
+                        stats: { ...createDefaultStats(), coins: 20 }, // Full account reward
                     };
                     if (!newUserProfile.isGuest) {
                         const batch = writeBatch(db);
@@ -286,6 +292,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         batch.set(userRef, newUserProfile);
                         batch.set(usernameRef, { userId: firebaseUser.uid, username: displayName });
                         await batch.commit();
+                        setReward({ amount: 20, message: 'Account created! Here are your welcome coins.' });
                     }
                     setCurrentUser(newUserProfile);
                 }
@@ -395,7 +402,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           photoURL: firebaseUser.photoURL,
           isGuest: false,
           createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-          stats: createDefaultStats(),
+          stats: { ...createDefaultStats(), coins: 20 },
         };
 
         const batch = writeBatch(db);
@@ -403,6 +410,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         batch.set(userDocRef, userProfile);
         batch.set(usernameRef, { userId: firebaseUser.uid, username: displayName });
         await batch.commit();
+        setReward({ amount: 20, message: 'Account created! Here are your welcome coins.' });
       }
       toast({ title: "Signed In Successfully", description: `Welcome!` });
       router.push('/');
@@ -503,7 +511,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         photoURL: firebaseUser.photoURL || guestData.photoURL,
         isGuest: false,
         createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-        stats: guestData.stats || createDefaultStats(),
+        stats: {
+          ...guestData.stats,
+          coins: (guestData.stats.coins || 0) + 10 // Linking reward
+        }
       };
 
       batch.set(userDocRef, newUserProfile);
@@ -516,8 +527,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('guestUsername');
       localStorage.removeItem('guestUsernameChanged');
 
-
-      toast({ title: "Account Linked!", description: "Your guest progress has been saved to your Google account." });
+      setReward({ amount: 10, message: 'Thanks for linking your account!' });
       router.push('/');
 
     } catch (error: any) {
@@ -554,9 +564,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
         const result = await signInAnonymously(auth);
         const guestName = `Guest#${result.user.uid.substring(0,5)}`;
-        const usernameDocRef = doc(db, "usernames", guestName.toLowerCase());
-        await setDoc(usernameDocRef, { userId: result.user.uid, username: guestName });
-
+        // Don't write to DB for guests, handle locally
+        localStorage.setItem('isNewGuest', 'true');
         router.push('/');
     } catch (error: any) {
         console.error("Guest Sign-In Error:", error);
@@ -633,6 +642,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
+       <Dialog open={!!reward} onOpenChange={() => setReward(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl">Reward!</DialogTitle>
+            <DialogDescription className="text-center pt-2">
+                {reward?.message}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center gap-2 p-4">
+              <Coins className="h-10 w-10 text-yellow-500" />
+              <span className="text-4xl font-bold text-yellow-500">+{reward?.amount}</span>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setReward(null)} className="w-full">OK</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {loading ? (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />

@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Settings, HelpCircle, X, Volume2, Music, Bell, Trash2, Info, Sun, Moon, Monitor, FileCode, MessageSquare, Gamepad2, UserPlus, LogIn, Ticket, CheckSquare, Trophy, Mail } from 'lucide-react';
+import { Settings, HelpCircle, X, Volume2, Music, Bell, Trash2, Info, Sun, Moon, Monitor, FileCode, MessageSquare, Gamepad2, UserPlus, LogIn, Ticket, CheckSquare, Trophy, Mail, Coins } from 'lucide-react';
 import { useTheme } from "next-themes";
 import { useAuth } from '@/contexts/auth-context';
 import React, { useState, useEffect, useCallback } from 'react';
@@ -338,7 +338,7 @@ export default function Header() {
 
   const AuthContent = () => {
     if (loading) {
-      return <Skeleton className="h-12 w-12 rounded-full" />;
+      return <Skeleton className="h-12 w-28 rounded-full" />;
     }
 
     if (!currentUser) {
@@ -349,18 +349,24 @@ export default function Header() {
     const avatarFallback = currentUser.isGuest ? 'G' : displayName.substring(0, 2).toUpperCase();
     
     return (
-        <Link href="/profile" passHref>
-          <Button variant="ghost" className="relative p-0 h-12 w-12 rounded-full">
-            <Avatar className="h-12 w-12 border-2 border-primary">
-              <AvatarImage 
-                src={currentUser.photoURL || `https://placehold.co/48x48.png?text=${avatarFallback}`} 
-                alt={displayName} 
-                data-ai-hint="profile avatar"
-              />
-              <AvatarFallback>{avatarFallback}</AvatarFallback>
-            </Avatar>
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+            <Link href="/profile" passHref>
+                <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm p-1 pr-3 rounded-full border border-white/20 hover:bg-black/50 transition-colors cursor-pointer">
+                    <Avatar className="h-10 w-10 border-2 border-primary">
+                        <AvatarImage 
+                            src={currentUser.photoURL || `https://placehold.co/48x48.png?text=${avatarFallback}`} 
+                            alt={displayName} 
+                            data-ai-hint="profile avatar"
+                        />
+                        <AvatarFallback>{avatarFallback}</AvatarFallback>
+                    </Avatar>
+                     <div className="flex items-center gap-1 text-white">
+                        <Coins className="h-4 w-4 text-yellow-400" />
+                        <span className="font-bold text-sm">{currentUser.stats.coins ?? 0}</span>
+                    </div>
+                </div>
+            </Link>
+        </div>
     );
   };
 

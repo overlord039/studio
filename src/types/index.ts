@@ -4,6 +4,7 @@ export interface UserStats {
   matchesPlayed: number;
   prizesWon: Record<PrizeType, number>;
   usernameChanged?: boolean;
+  coins: number;
 }
 
 export interface User {
@@ -35,13 +36,13 @@ export type PrizeFormat = "Format 1";
 export type CallingMode = 'auto' | 'manual';
 
 export interface GameSettings {
-  ticketPrice: TicketPrice;
+  ticketPrice: TicketPrice | number; // Allow number for coin-based prices
   lobbySize: number;
   prizeFormat: PrizeFormat;
   numberOfTicketsPerPlayer: number; // How many tickets each player gets by default
   callingMode: CallingMode;
   isPublic?: boolean;
-  gameMode?: 'multiplayer' | 'easy' | 'medium' | 'hard';
+  gameMode?: 'multiplayer' | 'easy' | 'medium' | 'hard' | 'online';
 }
 
 export const PRIZE_TYPES = {
@@ -85,3 +86,17 @@ export interface Room {
 export type HousieTicketNumber = number | null;
 export type HousieTicketRow = HousieTicketNumber[];
 export type HousieTicketGrid = HousieTicketRow[];
+
+// Types for Online Mode
+export type OnlineGameTier = 'quick' | 'classic' | 'tournament';
+
+export interface TierConfig {
+    name: string;
+    ticketPrice: number;
+    roomSize: number;
+    matchmakingTime: number;
+    unlockRequirements: {
+        matches: number;
+        coins: number;
+    };
+}
