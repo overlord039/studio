@@ -112,7 +112,7 @@ export default function ProfilePage() {
     try {
       const checkResponse = await fetch('/api/users/check-username', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'json' },
           body: JSON.stringify({ username: trimmedName }),
       });
       const checkData = await checkResponse.json();
@@ -123,7 +123,7 @@ export default function ProfilePage() {
 
       const updateResponse = await fetch('/api/users/check-username', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'json' },
           body: JSON.stringify({ username: trimmedName, userId: currentUser.uid, oldUsername: currentUser.displayName }),
       });
 
@@ -365,7 +365,7 @@ export default function ProfilePage() {
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent className="p-3 pt-0">
-                                            <div className="grid grid-cols-2 gap-2">
+                                            <div className="grid grid-cols-2 gap-2 mt-2">
                                                 {prizesWonArray.map(([prize, count]) => (
                                                     <div key={prize} className="bg-background/50 rounded-md p-2 flex justify-between items-center">
                                                         <span className="text-xs font-medium text-muted-foreground">{prize}</span>
@@ -400,4 +400,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
 
