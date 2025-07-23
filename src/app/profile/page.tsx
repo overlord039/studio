@@ -348,12 +348,12 @@ export default function ProfilePage() {
                             <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">Statistics</h3>
                             <div className="mt-2 space-y-3">
                                 <Card className="bg-secondary/30">
-                                    <CardContent className="p-4 flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <Gamepad2 className="h-6 w-6 text-primary" />
-                                            <span className="font-semibold">Games Played</span>
+                                    <CardContent className="p-3 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Gamepad2 className="h-5 w-5 text-primary" />
+                                            <span className="font-semibold text-sm">Games Played</span>
                                         </div>
-                                        <span className="font-bold text-2xl text-primary">{currentUser.stats?.matchesPlayed || 0}</span>
+                                        <span className="font-bold text-xl text-primary">{currentUser.stats?.matchesPlayed || 0}</span>
                                     </CardContent>
                                 </Card>
                                 
