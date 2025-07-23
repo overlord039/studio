@@ -18,7 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PRIZE_DISTRIBUTION_PERCENTAGES, PRIZE_DEFINITIONS, DEFAULT_GAME_SETTINGS } from "@/lib/constants";
 import type { PrizeType } from "@/types";
 import { PRIZE_TYPES } from "@/types";
-import { Calculator, Ticket, Users, Percent, Gift, IndianRupee, AlertTriangle, Settings2, EyeOff, Speaker, Home } from "lucide-react";
+import { Calculator, Ticket, Users, Percent, Gift, Coins, AlertTriangle, Settings2, EyeOff, Speaker, Home } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -138,8 +138,8 @@ export default function PrizeCalculatorPage() {
      }
   }
   
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+  const formatCoins = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
   };
 
   const currentPercentageSum = watchedValues.percentages ? prizeCategories.reduce((acc, prize) => acc + (watchedValues.percentages?.[prize] || 0), 0) : 0;
@@ -164,7 +164,7 @@ export default function PrizeCalculatorPage() {
                   name="ticketPrice"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center"><Ticket className="mr-2 h-4 w-4 text-muted-foreground"/>Ticket Price (₹)</FormLabel>
+                      <FormLabel className="flex items-center"><Ticket className="mr-2 h-4 w-4 text-muted-foreground"/>Ticket Price (Coins)</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="e.g., 10" {...field} />
                       </FormControl>
@@ -259,14 +259,20 @@ export default function PrizeCalculatorPage() {
               <Card className="bg-green-50 dark:bg-green-900/30 p-4">
                 <CardContent className="space-y-3 pt-4">
                     <div className="flex justify-between items-center text-lg font-semibold">
-                        <span className="flex items-center"><IndianRupee className="mr-1 h-5 w-5"/>Total Collection:</span>
-                        <span>{formatCurrency(calculatedPrizes.totalCollection)}</span>
+                        <span className="flex items-center">Total Collection:</span>
+                        <div className="flex items-center gap-1">
+                          <Coins className="h-5 w-5 text-yellow-500" />
+                          <span>{formatCoins(calculatedPrizes.totalCollection)}</span>
+                        </div>
                     </div>
                     <hr/>
                   {prizeCategories.map(prize => (
                     <div key={prize} className="flex justify-between items-center">
                       <span className="text-muted-foreground">{prize}:</span>
-                      <span className="font-medium">{formatCurrency(calculatedPrizes[prize] || 0)}</span>
+                      <div className="flex items-center gap-1">
+                        <Coins className="h-4 w-4 text-yellow-500"/>
+                        <span className="font-medium">{formatCoins(calculatedPrizes[prize] || 0)}</span>
+                      </div>
                     </div>
                   ))}
                 </CardContent>

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter, useParams } from "next/navigation";
-import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangle, Edit, RotateCcw, Crown, UserX, Bot } from "lucide-react";
+import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangle, Edit, RotateCcw, Crown, UserX, Bot, Coins } from "lucide-react";
 import type { Room, GameSettings, PrizeType, BackendPlayerInRoom } from "@/types";
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE } from "@/lib/constants";
 import React, { useEffect, useState, useCallback, useRef } from "react";
@@ -476,7 +476,11 @@ export default function LobbyPage() {
         </CardHeader>
         <CardContent className="p-3 md:p-4 pt-0 space-y-4 md:space-y-6">
           <div className="flex flex-row justify-between items-center text-base md:text-lg">
-            <p><strong>Ticket Price:</strong> ₹{gameSettings.ticketPrice}</p>
+            <div className="flex items-center gap-1">
+              <strong>Ticket Price:</strong>
+              <Coins className="h-4 w-4 text-yellow-500" />
+              <span>{gameSettings.ticketPrice}</span>
+            </div>
             <p><strong>Room Size:</strong> {gameSettings.lobbySize}</p>
           </div>
 
@@ -548,9 +552,12 @@ export default function LobbyPage() {
                       {player.isBot && <Bot className="ml-1.5 h-4 w-4 text-muted-foreground" />}
                       {player.isHost && <span className="text-xs font-semibold text-primary ml-1.5">(Host)</span>}
                     </div>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
                       {player.tickets?.length > 0 
-                        ? `${player.tickets.length} ticket${player.tickets.length === 1 ? '' : 's'} (₹${player.tickets.length * gameSettings.ticketPrice})` 
+                        ? <>
+                            <span>{player.tickets.length} ticket{player.tickets.length === 1 ? '' : 's'}</span>
+                            <div className="flex items-center gap-0.5">(<Coins className="h-3 w-3 text-yellow-500" />{player.tickets.length * gameSettings.ticketPrice})</div>
+                          </>
                         : (roomData.isGameOver ? "Game Over" : "No tickets yet")}
                     </span>
                   </div>
@@ -610,7 +617,11 @@ export default function LobbyPage() {
             </h3>
             <Card className="bg-secondary/30">
               <CardContent className="p-2 md:p-4 space-y-2 text-xs md:text-sm">
-                 <p className="font-semibold">Potential Prize Pool: ₹{currentTotalPrizePool.toFixed(2)}</p>
+                 <div className="font-semibold flex items-center gap-1">
+                  <span>Potential Prize Pool:</span>
+                  <Coins className="h-4 w-4 text-yellow-500" />
+                  <span>{currentTotalPrizePool.toFixed(0)}</span>
+                 </div>
                  <p className="text-xs text-muted-foreground">
                    (Based on {totalTicketsBoughtByPlayers} {ticketsText(totalTicketsBoughtByPlayers)} confirmed by players for this round)
                  </p>
@@ -620,7 +631,10 @@ export default function LobbyPage() {
                   return (
                     <div key={prizeName} className="flex justify-between items-center text-xs md:text-sm">
                       <span>{prizeName}:</span>
-                      <span className="font-semibold">₹{prizeAmount.toFixed(2)} ({percentage}%)</span>
+                      <div className="font-semibold flex items-center gap-1">
+                        <Coins className="h-4 w-4 text-yellow-500" />
+                        <span>{prizeAmount.toFixed(0)} ({percentage}%)</span>
+                      </div>
                     </div>
                   );
                 })}
@@ -678,7 +692,3 @@ export default function LobbyPage() {
     </div>
   );
 }
-
-    
-
-    

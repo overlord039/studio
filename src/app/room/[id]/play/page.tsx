@@ -600,6 +600,9 @@ export default function GameRoomPage() {
   const totalPrizePool = gameSettings.ticketPrice * totalTicketsInGame;
   const ticketsText = (count: number) => count === 1 ? 'ticket' : 'tickets';
   
+  const formatCoins = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+  };
 
   if (roomData.isGameOver) {
     let currentUserWinnings = 0;
@@ -639,8 +642,12 @@ export default function GameRoomPage() {
                     <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
                     {isOnlineGame && 
                       <>
-                        <p className="text-2xl font-bold text-green-700 dark:text-green-300">You won a total of {formatCurrency(currentUserWinnings)}!</p>
-                        <p className="text-sm text-muted-foreground">You spent {formatCurrency(currentUserSpent)} on tickets.</p>
+                        <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
+                            You won a total of <Coins className="h-6 w-6 text-yellow-500" /> {formatCoins(currentUserWinnings)}!
+                        </div>
+                        <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                          You spent <Coins className="h-3 w-3 text-yellow-500" /> {formatCoins(currentUserSpent)} on tickets.
+                        </p>
                       </>
                     }
                      {!isOnlineGame && 
@@ -657,7 +664,10 @@ export default function GameRoomPage() {
               {(isOnlineGame) && (
               <div className="flex justify-between items-center text-lg font-bold mb-2 pb-2 border-b">
                 <span>Total Prize Pool:</span>
-                <span>{formatCurrency(totalPrizePool)}</span>
+                <div className="flex items-center gap-1">
+                  <Coins className="h-5 w-5 text-yellow-500" />
+                  <span>{formatCoins(totalPrizePool)}</span>
+                </div>
               </div>
               )}
               <ul className="space-y-2">
@@ -686,18 +696,22 @@ export default function GameRoomPage() {
                   const prizePerWinner = (claimInfo && claimInfo.claimedBy.length > 0) ? prizeAmount / claimInfo.claimedBy.length : 0;
                   
                   return (
-                     <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
-                        <div className="flex flex-col">
-                            <span className="font-medium">{prize}</span>
-                            <span className="text-xs text-muted-foreground">
-                                {formatCurrency(prizeAmount)} ({percentage}%)
-                                {prizePerWinner > 0 && claimInfo && claimInfo.claimedBy.length > 1 && ` / ${formatCurrency(prizePerWinner)} each`}
-                            </span>
+                     <li key={prize} className="flex flex-col bg-secondary/20 p-1.5 rounded-md text-sm">
+                        <div className="flex justify-between items-center w-full">
+                           <div className="flex items-center gap-1">
+                             <span>{prize}</span>
+                             <span className="text-xs text-muted-foreground">({percentage}%)</span>
+                           </div>
+                           <div className="font-semibold flex items-center gap-1">
+                             <Coins className="h-4 w-4 text-yellow-500" />
+                             <span>{formatCoins(prizeAmount)}</span>
+                           </div>
                         </div>
-                        <span className={cn("font-semibold text-right", claimInfo && claimInfo.claimedBy.length > 0 ? "text-green-600" : "text-muted-foreground")}>
-                            {prizeStatusText}
+                        <span className={cn("text-xs text-right w-full", isClaimed ? "text-green-600 font-medium" : "text-muted-foreground/80")}>
+                           {prizeStatusText}
+                           {prizePerWinner > 0 && claimInfo && claimInfo.claimedBy.length > 1 && ` (${formatCoins(prizePerWinner)} each)`}
                         </span>
-                    </li>
+                     </li>
                   );
                 })}
               </ul>
@@ -757,7 +771,7 @@ export default function GameRoomPage() {
                       </div>
                   ) : (
                       <div className="text-white capitalize">
-                          {isOnlineGame ? `Online: ${TIERS[roomData.settings.tier as OnlineGameTier]?.name || 'Mode'}` : `Room ID: #${roomId}`}
+                          {isOnlineGame && roomData.settings.tier ? `Online: ${TIERS[roomData.settings.tier]?.name || 'Mode'}` : `Room ID: #${roomId}`}
                       </div>
                   )}
               </div>
@@ -795,7 +809,7 @@ export default function GameRoomPage() {
                                   <Award className="mr-2 h-4 w-4 text-primary" />
                                   {(isBotGame || isOnlineGame) ? 'Prize Status' : 'Prize Pool'}
                               </CardTitle>
-                              {(!isBotGame && !isOnlineGame) && <p className="text-xs text-muted-foreground">Total: {formatCurrency(totalPrizePool)}</p>}
+                              {(!isBotGame && !isOnlineGame) && <div className="text-xs text-muted-foreground flex items-center gap-1">Total: <Coins className="h-3 w-3 text-yellow-500" />{formatCoins(totalPrizePool)}</div>}
                           </CardHeader>
                           <CardContent className="p-3 pt-0">
                               {isLoading ? (
@@ -815,7 +829,7 @@ export default function GameRoomPage() {
                                           claimantText = `Claimed by ${claimantNames}`;
                                       }
                                       
-                                      if (isBotGame || isOnlineGame) {
+                                      if (isBotGame) {
                                           return (
                                               <li key={prize} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
                                                   <span>{prize}</span>
@@ -829,19 +843,25 @@ export default function GameRoomPage() {
                                       // Logic for non-bot games (with money)
                                       const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
                                       const prizeAmount = (totalPrizePool * percentage) / 100;
-                                      let prizeValueText = formatCurrency(prizeAmount);
                                       const winnerCount = claimInfo?.claimedBy.length ?? 0;
 
+                                      let prizeValueText = formatCoins(prizeAmount);
                                       if (isClaimed && winnerCount > 1) {
                                           const prizePerWinner = prizeAmount / winnerCount;
-                                          prizeValueText = `${formatCurrency(prizePerWinner)} each`;
+                                          prizeValueText = `${formatCoins(prizePerWinner)} each`;
                                       }
 
                                       return (
                                           <li key={prize} className="flex flex-col bg-background/50 p-1.5 rounded-md">
                                               <div className="flex justify-between items-center w-full">
-                                                  <span>{prize}</span>
-                                                  <span className="font-semibold">{prizeValueText}</span>
+                                                  <div className="flex items-center gap-1">
+                                                    <span>{prize}</span>
+                                                    <span className="text-muted-foreground/80">({percentage}%)</span>
+                                                  </div>
+                                                  <div className="font-semibold flex items-center gap-1">
+                                                    <Coins className="h-3 w-3 text-yellow-500" />
+                                                    {prizeValueText}
+                                                  </div>
                                               </div>
                                               <span className={cn("text-xs text-right w-full", isClaimed ? "text-green-600 font-medium" : "text-muted-foreground/80")}>
                                                   {claimantText}
@@ -873,10 +893,14 @@ export default function GameRoomPage() {
                                               {player.name}
                                               {player.isHost && <span className="ml-1 font-semibold text-primary">*</span>}
                                           </span>
-                                          <span className="text-muted-foreground">
-                                              {ticketCount} {ticketsText(ticketCount)}
-                                              {(!isBotGame && !isOnlineGame) && ` (${formatCurrency(ticketCost)})`}
-                                          </span>
+                                          <div className="text-muted-foreground flex items-center gap-1">
+                                            <span>{ticketCount} {ticketsText(ticketCount)}</span>
+                                            {(!isBotGame) && 
+                                              <div className="flex items-center gap-0.5">
+                                                (<Coins className="h-3 w-3 text-yellow-500" />{formatCoins(ticketCost)})
+                                              </div>
+                                            }
+                                          </div>
                                           </li>
                                         );
                                       })}
@@ -1021,7 +1045,3 @@ export default function GameRoomPage() {
     </>
   );
 }
-
-function formatCurrency(amount: number) {
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
-};
