@@ -365,14 +365,14 @@ export default function ProfilePage() {
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent className="p-3 pt-0">
-                                            <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                                            <div className="grid grid-cols-2 gap-2">
                                                 {prizesWonArray.map(([prize, count]) => (
-                                                    <div key={prize} className="flex justify-between items-baseline">
-                                                        <dt className="text-muted-foreground">{prize}</dt>
-                                                        <dd className="font-bold text-foreground">{count}</dd>
+                                                    <div key={prize} className="bg-background/50 rounded-md p-2 flex justify-between items-center">
+                                                        <span className="text-xs font-medium text-muted-foreground">{prize}</span>
+                                                        <span className="font-bold text-sm text-foreground">{count}</span>
                                                     </div>
                                                 ))}
-                                            </dl>
+                                            </div>
                                         </CardContent>
                                     </Card>
                                 ) : (
@@ -400,3 +400,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
