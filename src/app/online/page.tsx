@@ -46,16 +46,15 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
 
     if (!currentUser) return null;
 
-    const isUnlocked = 
+    const isUnlocked = currentUser.isGuest || (
         currentUser.stats.matchesPlayed >= tierConfig.unlockRequirements.matches &&
-        currentUser.stats.coins >= tierConfig.unlockRequirements.coins;
+        currentUser.stats.coins >= tierConfig.unlockRequirements.coins
+    );
     
     const totalCost = tierConfig.ticketPrice * selectedTickets;
     const hasEnoughCoins = currentUser.stats.coins >= totalCost;
 
     const handleJoinTier = () => {
-        if (currentUser.isGuest) return;
-        
         playSound('cards.mp3');
 
         if (!isUnlocked) {
@@ -154,38 +153,6 @@ export default function OnlineModePage() {
                 <Loader2 className="h-8 w-8 animate-spin" />
             </div>
         );
-    }
-    
-    if (currentUser.isGuest) {
-        return (
-            <div className="flex flex-col items-center justify-center flex-grow p-4 text-center">
-                 <Card className="w-full max-w-md shadow-lg border-accent">
-                    <CardHeader>
-                        <CardTitle className="flex items-center justify-center gap-2">
-                            <LinkIcon className="h-6 w-6 text-primary"/>
-                            Account Required
-                        </CardTitle>
-                        <CardDescription>
-                            Online play requires a linked account to save your progress and coin balance.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground">
-                            Please link your guest account to a Google or Email account to access online matchmaking.
-                        </p>
-                        <Button onClick={() => router.push('/profile')}>
-                            Go to Profile to Link
-                        </Button>
-                    </CardContent>
-                </Card>
-                 <div className="mt-8 w-full max-w-md">
-                    <Button variant="outline" onClick={() => router.push('/')}>
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Home
-                    </Button>
-                </div>
-            </div>
-        )
     }
 
     return (

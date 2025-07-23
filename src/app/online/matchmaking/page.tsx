@@ -60,10 +60,11 @@ function MatchmakingContent() {
       setIsFindingMatch(true);
       playSound('start.wav');
 
-      const player: Player = {
+      const player: Player & { isGuest?: boolean } = {
         id: currentUser.uid,
         name: currentUser.displayName || 'Guest',
-        email: currentUser.email
+        email: currentUser.email,
+        isGuest: currentUser.isGuest,
       };
 
       try {

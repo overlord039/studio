@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { player, tier, tickets } = (await request.json()) as { player: Player; tier: OnlineGameTier, tickets: number };
+    const { player, tier, tickets } = (await request.json()) as { player: Player & { isGuest?: boolean }; tier: OnlineGameTier, tickets: number };
 
     if (!player || !player.id || !player.name) {
       return NextResponse.json({ message: 'Player details are required' }, { status: 400 });
@@ -53,28 +53,30 @@ export async function POST(request: NextRequest) {
     const tierConfig = TIERS[tier];
     const totalCost = tierConfig.ticketPrice * tickets;
 
-    // 1. Deduct coins from the player for the ticket
-    const playerDocRef = doc(db, "users", player.id);
-    try {
-        await runTransaction(db, async (transaction) => {
-            const playerDoc = await transaction.get(playerDocRef);
-            if (!playerDoc.exists()) {
-                throw new Error("Player data not found.");
-            }
-            const playerData = playerDoc.data();
-            const currentCoins = playerData.stats?.coins || 0;
+    // 1. Deduct coins from the player for the ticket (only for non-guest users)
+    if (!player.isGuest) {
+      const playerDocRef = doc(db, "users", player.id);
+      try {
+          await runTransaction(db, async (transaction) => {
+              const playerDoc = await transaction.get(playerDocRef);
+              if (!playerDoc.exists()) {
+                  throw new Error("Player data not found.");
+              }
+              const playerData = playerDoc.data();
+              const currentCoins = playerData.stats?.coins || 0;
 
-            if (currentCoins < totalCost) {
-                throw new Error("Not enough coins to buy these tickets.");
-            }
-            
-            transaction.update(playerDocRef, {
-                'stats.coins': increment(-totalCost)
-            });
-        });
-    } catch(e) {
-        // This will catch transaction errors, including the ones we throw
-        return NextResponse.json({ message: (e as Error).message }, { status: 400 });
+              if (currentCoins < totalCost) {
+                  throw new Error("Not enough coins to buy these tickets.");
+              }
+              
+              transaction.update(playerDocRef, {
+                  'stats.coins': increment(-totalCost)
+              });
+          });
+      } catch(e) {
+          // This will catch transaction errors, including the ones we throw
+          return NextResponse.json({ message: (e as Error).message }, { status: 400 });
+      }
     }
     
     // 2. Create the room with online-specific settings
@@ -108,16 +110,22 @@ export async function POST(request: NextRequest) {
     const startResult = startGameInRoomStore(newRoom.id, player.id);
     if (startResult && 'error' in startResult) {
         console.error(`Failed to start online game ${newRoom.id}:`, startResult.error);
-        // Attempt to refund coins on failure
-        await updateDoc(playerDocRef, {'stats.coins': increment(totalCost)});
+        // Attempt to refund coins on failure (only for non-guests)
+        if (!player.isGuest) {
+            const playerDocRef = doc(db, "users", player.id);
+            await updateDoc(playerDocRef, {'stats.coins': increment(totalCost)});
+        }
         return NextResponse.json({ message: 'Failed to start game after creation', error: startResult.error }, { status: 500 });
     }
     
     // 6. Get the final state and return it
     const roomForClient = getRoomStateForClient(newRoom.id);
     if (!roomForClient) {
-         // Attempt to refund coins on failure
-        await updateDoc(playerDocRef, {'stats.coins': increment(totalCost)});
+         // Attempt to refund coins on failure (only for non-guests)
+        if (!player.isGuest) {
+            const playerDocRef = doc(db, "users", player.id);
+            await updateDoc(playerDocRef, {'stats.coins': increment(totalCost)});
+        }
         return NextResponse.json({ message: 'Failed to retrieve online room after creation' }, { status: 500 });
     }
     
