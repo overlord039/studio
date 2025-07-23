@@ -290,16 +290,6 @@ export default function ProfilePage() {
               <CardContent className="p-6 space-y-6 bg-card">
                    <div className="space-y-6">
                         <div>
-                          <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">Account Details</h3>
-                          <dl className="mt-2 divide-y divide-border">
-                             <div className="py-3 flex justify-between items-center text-sm font-medium">
-                              <dt className="text-muted-foreground flex items-center gap-2"><Coins className="h-4 w-4" /> Coins</dt>
-                              <dd className="text-foreground font-bold">{currentUser.stats.coins}</dd>
-                            </div>
-                          </dl>
-                        </div>
-
-                        <div>
                             <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">Statistics</h3>
                             <div className="mt-2 space-y-3">
                                 <Card className="bg-secondary/30">
