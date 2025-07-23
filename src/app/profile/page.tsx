@@ -293,57 +293,16 @@ export default function ProfilePage() {
                 </div>
               </div>
               <CardContent className="p-6 space-y-6 bg-card">
-                   {currentUser.isGuest ? (
-                     <div className="text-center p-4 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg border border-yellow-500/30">
-                        <p className="font-semibold">You are playing as a guest.</p>
-                        <p className="text-sm text-muted-foreground mb-3">
-                            Link your account to save your stats and play on any device.
-                        </p>
-                        <div className="space-y-3">
-                            <Button
-                                onClick={linkGoogleAccount}
-                                disabled={!!isSigningIn}
-                                className="bg-white text-black hover:bg-gray-200 w-full"
-                            >
-                                {isSigningIn === 'google' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
-                                Link Google Account
-                            </Button>
-
-                            <div className="relative flex items-center justify-center my-2">
-                                <div className="flex-grow border-t border-yellow-400/50"></div>
-                                <span className="flex-shrink mx-2 text-xs text-muted-foreground">OR</span>
-                                <div className="flex-grow border-t border-yellow-400/50"></div>
-                            </div>
-                            
-                            <form onSubmit={handleLinkEmailSubmit} className="space-y-2">
-                                <div className="relative">
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        type="email"
-                                        placeholder="Enter your email"
-                                        value={emailForLink}
-                                        onChange={(e) => setEmailForLink(e.target.value)}
-                                        disabled={!!isSigningIn || linkSent}
-                                        required
-                                        className="bg-background/50 border-input pl-9 text-sm h-10 focus:ring-2 focus:ring-ring"
-                                    />
-                                </div>
-                                <Button type="submit" variant="secondary" className="w-full" disabled={!!isSigningIn || !emailForLink || linkSent}>
-                                    {isSigningIn === 'email' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    {linkSent ? 'Link Sent! Check your inbox.' : 'Link with Email'}
-                                </Button>
-                            </form>
-                        </div>
-                    </div>
-                   ) : (
-                      <div className="space-y-6">
+                   <div className="space-y-6">
                         <div>
                           <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">Account Details</h3>
                           <dl className="mt-2 divide-y divide-border">
-                             <div className="py-3 flex justify-between items-center text-sm font-medium">
-                              <dt className="text-muted-foreground flex items-center gap-2"><Mail className="h-4 w-4" /> Email</dt>
-                              <dd className="text-foreground break-all text-right">{currentUser.email || 'No email provided'}</dd>
-                            </div>
+                             {currentUser.email &&
+                                <div className="py-3 flex justify-between items-center text-sm font-medium">
+                                  <dt className="text-muted-foreground flex items-center gap-2"><Mail className="h-4 w-4" /> Email</dt>
+                                  <dd className="text-foreground break-all text-right">{currentUser.email}</dd>
+                                </div>
+                             }
                              <div className="py-3 flex justify-between items-center text-sm font-medium">
                               <dt className="text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4" /> Joined</dt>
                               <dd className="text-foreground">{joinDateFormatted}</dd>
@@ -391,7 +350,50 @@ export default function ProfilePage() {
                                 )}
                             </div>
                         </div>
-                      </div>
+                   </div>
+
+                   {currentUser.isGuest && (
+                     <div className="text-center p-4 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg border border-yellow-500/30">
+                        <p className="font-semibold">Store your game progress and prizes by logging in!</p>
+                        <p className="text-sm text-muted-foreground mb-3">
+                            Linking an account saves your progress permanently.
+                        </p>
+                        <div className="space-y-3">
+                            <Button
+                                onClick={linkGoogleAccount}
+                                disabled={!!isSigningIn}
+                                className="bg-white text-black hover:bg-gray-200 w-full"
+                            >
+                                {isSigningIn === 'google' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
+                                Continue with Google
+                            </Button>
+
+                            <div className="relative flex items-center justify-center my-2">
+                                <div className="flex-grow border-t border-yellow-400/50"></div>
+                                <span className="flex-shrink mx-2 text-xs text-muted-foreground">OR</span>
+                                <div className="flex-grow border-t border-yellow-400/50"></div>
+                            </div>
+                            
+                            <form onSubmit={handleLinkEmailSubmit} className="space-y-2">
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        type="email"
+                                        placeholder="Enter your email"
+                                        value={emailForLink}
+                                        onChange={(e) => setEmailForLink(e.target.value)}
+                                        disabled={!!isSigningIn || linkSent}
+                                        required
+                                        className="bg-background/50 border-input pl-9 text-sm h-10 focus:ring-2 focus:ring-ring"
+                                    />
+                                </div>
+                                <Button type="submit" variant="secondary" className="w-full" disabled={!!isSigningIn || !emailForLink || linkSent}>
+                                    {isSigningIn === 'email' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {linkSent ? 'Link Sent! Check your inbox.' : 'Link with Email'}
+                                </Button>
+                            </form>
+                        </div>
+                    </div>
                    )}
               </CardContent>
               <CardFooter className="bg-card pt-0 p-6">
@@ -411,3 +413,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
