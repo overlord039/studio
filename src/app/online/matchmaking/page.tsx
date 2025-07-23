@@ -1,14 +1,16 @@
 
 "use client";
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
-import type { OnlineGameTier, TierConfig } from '@/types';
-import { Loader2, Users, Clock, ArrowLeft } from 'lucide-react';
+import type { OnlineGameTier, TierConfig, Player, Room } from '@/types';
+import { Loader2, Users, Clock, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { playSound } from '@/lib/sounds';
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
@@ -29,11 +31,13 @@ function MatchmakingContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { currentUser } = useAuth();
+    const { toast } = useToast();
     
     const [tier, setTier] = useState<OnlineGameTier | null>(null);
     const [tierConfig, setTierConfig] = useState<TierConfig | null>(null);
     const [timeLeft, setTimeLeft] = useState(0);
     const [error, setError] = useState<string | null>(null);
+    const [isFindingMatch, setIsFindingMatch] = useState(false);
 
     useEffect(() => {
         const tierParam = searchParams.get('tier') as OnlineGameTier;
@@ -47,16 +51,47 @@ function MatchmakingContent() {
         }
     }, [searchParams]);
 
+    const findMatch = useCallback(async () => {
+      if (!currentUser || !tier) return;
+      
+      setIsFindingMatch(true);
+      playSound('start.wav');
+
+      const player: Player = {
+        id: currentUser.uid,
+        name: currentUser.displayName || 'Guest',
+        email: currentUser.email
+      };
+
+      try {
+        const response = await fetch('/api/online/join-or-create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ player, tier }),
+        });
+        
+        const newRoom: Room = await response.json();
+
+        if (!response.ok) {
+          throw new Error(newRoom.message || 'Failed to create online match.');
+        }
+
+        toast({ title: "Match Found!", description: "Joining the game..." });
+        // In online mode, players get 1 ticket by default
+        router.push(`/room/${newRoom.id}/play?playerTickets=1`);
+
+      } catch (err) {
+        setError((err as Error).message);
+        setIsFindingMatch(false);
+      }
+
+    }, [currentUser, tier, router, toast]);
+
     useEffect(() => {
-        if (error || !tierConfig) return;
+        if (error || !tierConfig || isFindingMatch) return;
 
         if (timeLeft <= 0) {
-            // Here you would typically make an API call to a matchmaking service
-            // and get a room ID. For this example, we'll simulate it.
-            console.log("Matchmaking time ended. Starting game...");
-            // In a real app: const roomId = await joinOrCreateOnlineRoom(tier);
-            // router.push(`/room/${roomId}/play`);
-            setError("Matchmaking service not implemented. This is a placeholder.");
+            findMatch();
             return;
         }
 
@@ -65,42 +100,57 @@ function MatchmakingContent() {
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [timeLeft, tier, tierConfig, error, router]);
+    }, [timeLeft, tierConfig, error, findMatch, isFindingMatch]);
 
     const progressPercentage = tierConfig ? ((tierConfig.matchmakingTime - timeLeft) / tierConfig.matchmakingTime) * 100 : 0;
+    
+    if (!currentUser || !tierConfig) {
+        return <Loader2 className="h-8 w-8 animate-spin text-white" />;
+    }
 
     if (error) {
         return (
-            <div className="text-center text-destructive">
-                <p>{error}</p>
-                <Button onClick={() => router.push('/online')} className="mt-4">Back to Tiers</Button>
-            </div>
+            <Card className="w-full max-w-md shadow-xl border-destructive">
+                <CardHeader className="text-center">
+                    <div className="flex justify-center items-center gap-2 text-destructive mb-2">
+                        <AlertTriangle className="h-10 w-10"/>
+                    </div>
+                    <CardTitle>Matchmaking Failed</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center space-y-4">
+                    <p className="text-muted-foreground">{error}</p>
+                    <Button onClick={() => router.push('/online')} className="mt-4">Back to Tiers</Button>
+                </CardContent>
+            </Card>
         );
-    }
-    
-    if (!currentUser || !tierConfig) {
-        return <Loader2 className="h-8 w-8 animate-spin" />;
     }
 
     return (
-        <Card className="w-full max-w-md shadow-xl">
+        <Card className="w-full max-w-md shadow-xl bg-card/80 backdrop-blur-sm border-primary/20">
             <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Finding a Match...</CardTitle>
-                <p className="text-muted-foreground">Tier: {tierConfig.name}</p>
+                <CardTitle className="text-2xl text-white">Finding a Match...</CardTitle>
+                <CardDescription className="text-white/80">Tier: {tierConfig.name}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="flex justify-center items-end gap-2">
+                <div className="flex justify-center items-end gap-2 text-white">
                     <Clock className="h-10 w-10 text-primary" />
                     <span className="text-5xl font-bold">{timeLeft}s</span>
                 </div>
                 <Progress value={progressPercentage} className="w-full" />
-                <div className="text-center text-sm text-muted-foreground">
+                <div className="text-center text-sm text-white/70">
                     <Users className="inline-block h-4 w-4 mr-2" />
                     <span>Looking for {tierConfig.roomSize} players</span>
                 </div>
-                <Button variant="outline" onClick={() => router.push('/online')} className="w-full">
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Cancel
-                </Button>
+                {isFindingMatch ? (
+                     <Button variant="secondary" disabled className="w-full">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Joining Match...
+                    </Button>
+                ) : (
+                    <Button variant="outline" onClick={() => router.push('/online')} className="w-full">
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Cancel
+                    </Button>
+                )}
             </CardContent>
         </Card>
     );
@@ -110,10 +160,9 @@ function MatchmakingContent() {
 export default function MatchmakingPage() {
     return (
         <div className="flex flex-col items-center justify-center flex-grow p-4">
-             <Suspense fallback={<Loader2 className="h-8 w-8 animate-spin" />}>
+             <Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-white" />}>
                 <MatchmakingContent />
             </Suspense>
         </div>
     );
 }
-
