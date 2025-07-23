@@ -46,10 +46,8 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
 
     if (!currentUser) return null;
 
-    const isUnlocked = currentUser.isGuest || (
-        currentUser.stats.matchesPlayed >= tierConfig.unlockRequirements.matches &&
-        currentUser.stats.coins >= tierConfig.unlockRequirements.coins
-    );
+    const isUnlocked = currentUser.stats.matchesPlayed >= tierConfig.unlockRequirements.matches &&
+        currentUser.stats.coins >= tierConfig.unlockRequirements.coins;
     
     const totalCost = tierConfig.ticketPrice * selectedTickets;
     const hasEnoughCoins = currentUser.stats.coins >= totalCost;
