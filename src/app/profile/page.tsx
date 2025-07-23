@@ -282,7 +282,11 @@ export default function ProfilePage() {
                             </Button>
                           </div>
                         )}
-                        {currentUser.isGuest && <Badge variant="secondary">Guest Account</Badge>}
+                        <div className="flex items-center gap-1.5">
+                            <Coins className="h-5 w-5 text-yellow-500" />
+                            <span className="text-xl font-bold text-foreground">{currentUser.stats?.coins || 0}</span>
+                        </div>
+                        {currentUser.isGuest && <Badge variant="secondary" className="mt-1">Guest Account</Badge>}
                        </div>
                   </div>
                 </div>
@@ -382,5 +386,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
