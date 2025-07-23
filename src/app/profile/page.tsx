@@ -223,7 +223,10 @@ export default function ProfilePage() {
               </Button>
               <div className="bg-gradient-to-br from-primary/10 to-secondary/10 p-6 sm:p-8">
                 <div className="flex flex-col items-center gap-4">
-                  <div className="text-xs text-muted-foreground font-mono bg-background/50 px-2 py-1 rounded-full">ID: {currentUser.uid}</div>
+                  <div className="flex items-center gap-2">
+                      {currentUser.isGuest && <Badge variant="secondary">Guest Account</Badge>}
+                      <div className="text-xs text-muted-foreground font-mono bg-background/50 px-2 py-1 rounded-full">ID: {currentUser.uid}</div>
+                  </div>
                   <div className="flex flex-row items-center justify-center gap-4 text-center w-full">
                       <div className="relative flex-shrink-0">
                           <Avatar className="h-24 w-24 sm:h-28 sm:w-28 border-4 border-background shadow-lg">
@@ -282,11 +285,10 @@ export default function ProfilePage() {
                             </Button>
                           </div>
                         )}
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center justify-center gap-1.5">
                             <Coins className="h-5 w-5 text-yellow-500" />
                             <span className="text-xl font-bold text-foreground">{currentUser.stats?.coins || 0}</span>
                         </div>
-                        {currentUser.isGuest && <Badge variant="secondary" className="mt-1">Guest Account</Badge>}
                        </div>
                   </div>
                 </div>
