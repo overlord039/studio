@@ -1,16 +1,17 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Coins, Lock, Play, Users, ArrowLeft, Loader2, Link as LinkIcon } from 'lucide-react';
+import { Coins, Lock, Play, Users, ArrowLeft, Loader2, Link as LinkIcon, Ticket } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import type { OnlineGameTier, TierConfig } from '@/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { playSound } from '@/lib/sounds';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
@@ -36,22 +37,25 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
     }
 };
 
-export default function OnlineModePage() {
+const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig: TierConfig }) => {
     const router = useRouter();
-    const { currentUser, loading } = useAuth();
+    const { currentUser } = useAuth();
     const { toast } = useToast();
+    const [selectedTickets, setSelectedTickets] = useState(1);
 
-    const handleJoinTier = (tier: OnlineGameTier) => {
-        if (!currentUser || currentUser.isGuest) return;
+    if (!currentUser) return null;
+
+    const isUnlocked = 
+        currentUser.stats.matchesPlayed >= tierConfig.unlockRequirements.matches &&
+        currentUser.stats.coins >= tierConfig.unlockRequirements.coins;
+    
+    const totalCost = tierConfig.ticketPrice * selectedTickets;
+    const hasEnoughCoins = currentUser.stats.coins >= totalCost;
+
+    const handleJoinTier = () => {
+        if (currentUser.isGuest) return;
         
         playSound('cards.mp3');
-
-        const tierConfig = TIERS[tier];
-        const isUnlocked = 
-            currentUser.stats.matchesPlayed >= tierConfig.unlockRequirements.matches &&
-            currentUser.stats.coins >= tierConfig.unlockRequirements.coins;
-        
-        const hasEnoughCoinsForTicket = currentUser.stats.coins >= tierConfig.ticketPrice;
 
         if (!isUnlocked) {
             toast({
@@ -62,17 +66,86 @@ export default function OnlineModePage() {
             return;
         }
 
-        if (!hasEnoughCoinsForTicket) {
+        if (!hasEnoughCoins) {
             toast({
                 title: "Not Enough Coins",
-                description: `You need ${tierConfig.ticketPrice} coins to buy a ticket for this tier.`,
+                description: `You need ${totalCost} coins to buy ${selectedTickets} ticket(s) for this tier.`,
                 variant: "destructive"
             });
             return;
         }
 
-        router.push(`/online/matchmaking?tier=${tier}`);
+        router.push(`/online/matchmaking?tier=${tierKey}&tickets=${selectedTickets}`);
     };
+
+    return (
+        <Card 
+            key={tierKey} 
+            className={cn(
+                "shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1",
+                isUnlocked ? "bg-card" : "bg-muted text-muted-foreground opacity-70 cursor-not-allowed"
+            )}
+        >
+            <CardHeader className="p-4">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle className="text-xl font-bold">{tierConfig.name}</CardTitle>
+                        <CardDescription>
+                            <div className="flex items-center gap-4 text-xs mt-1">
+                                <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {tierConfig.roomSize} Players</span>
+                                <span className="flex items-center gap-1"><Coins className="h-3 w-3" /> {tierConfig.ticketPrice} / ticket</span>
+                            </div>
+                        </CardDescription>
+                    </div>
+                    {!isUnlocked && <Lock className="h-5 w-5 text-destructive" />}
+                </div>
+            </CardHeader>
+            {isUnlocked && (
+                <CardContent className="p-4 pt-0 space-y-3">
+                    <div className="flex items-center gap-2">
+                        <Label htmlFor={`tickets-${tierKey}`} className="flex-shrink-0 text-sm flex items-center gap-1">
+                            <Ticket className="h-4 w-4"/> Tickets
+                        </Label>
+                        <Select
+                            value={String(selectedTickets)}
+                            onValueChange={(value) => setSelectedTickets(Number(value))}
+                        >
+                            <SelectTrigger id={`tickets-${tierKey}`} className="h-9">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {[1, 2, 3, 4].map(num => (
+                                    <SelectItem key={num} value={String(num)}>
+                                        {num} ticket(s) - <Coins className="inline-block h-3 w-3 mr-1" />{tierConfig.ticketPrice * num}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <Button className="w-full" disabled={!hasEnoughCoins} onClick={handleJoinTier}>
+                        <Play className="mr-2 h-4 w-4" />
+                        {hasEnoughCoins ? `Join for ${totalCost} Coins` : "Not enough coins"}
+                    </Button>
+                </CardContent>
+            )}
+            {!isUnlocked && (
+                <CardContent className="p-4 pt-0 text-xs">
+                    <p>
+                        Requires: {tierConfig.unlockRequirements.matches} matches played & {tierConfig.unlockRequirements.coins} coins.
+                    </p>
+                    <p>
+                        Your progress: {currentUser.stats.matchesPlayed} matches & {currentUser.stats.coins} coins.
+                    </p>
+                </CardContent>
+            )}
+        </Card>
+    );
+};
+
+
+export default function OnlineModePage() {
+    const router = useRouter();
+    const { currentUser, loading } = useAuth();
     
     if (loading || !currentUser) {
         return (
@@ -121,56 +194,9 @@ export default function OnlineModePage() {
                 <p className="text-white/80 mt-2">Join a game and play with others online!</p>
             </div>
             <div className="w-full max-w-md space-y-4">
-                {Object.entries(TIERS).map(([tierKey, tierConfig]) => {
-                    const isUnlocked = 
-                        currentUser.stats.matchesPlayed >= tierConfig.unlockRequirements.matches &&
-                        currentUser.stats.coins >= tierConfig.unlockRequirements.coins;
-                    const hasEnoughCoins = currentUser.stats.coins >= tierConfig.ticketPrice;
-
-                    return (
-                        <Card 
-                            key={tierKey} 
-                            className={cn(
-                                "shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1",
-                                isUnlocked ? "cursor-pointer bg-card" : "bg-muted text-muted-foreground opacity-70 cursor-not-allowed"
-                            )}
-                            onClick={() => isUnlocked && handleJoinTier(tierKey as OnlineGameTier)}
-                        >
-                            <CardHeader className="p-4">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <CardTitle className="text-xl font-bold">{tierConfig.name}</CardTitle>
-                                        <CardDescription>
-                                            <div className="flex items-center gap-4 text-xs mt-1">
-                                                <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {tierConfig.roomSize} Players</span>
-                                                <span className="flex items-center gap-1"><Coins className="h-3 w-3" /> {tierConfig.ticketPrice} / ticket</span>
-                                            </div>
-                                        </CardDescription>
-                                    </div>
-                                    {!isUnlocked && <Lock className="h-5 w-5 text-destructive" />}
-                                </div>
-                            </CardHeader>
-                            {isUnlocked && (
-                                <CardContent className="p-4 pt-0">
-                                    <Button className="w-full" disabled={!hasEnoughCoins}>
-                                        <Play className="mr-2 h-4 w-4" />
-                                        {hasEnoughCoins ? "Join" : "Not enough coins"}
-                                    </Button>
-                                </CardContent>
-                            )}
-                            {!isUnlocked && (
-                                <CardContent className="p-4 pt-0 text-xs">
-                                    <p>
-                                        Requires: {tierConfig.unlockRequirements.matches} matches played & {tierConfig.unlockRequirements.coins} coins.
-                                    </p>
-                                    <p>
-                                        Your progress: {currentUser.stats.matchesPlayed} matches & {currentUser.stats.coins} coins.
-                                    </p>
-                                </CardContent>
-                            )}
-                        </Card>
-                    );
-                })}
+                {Object.entries(TIERS).map(([tierKey, tierConfig]) => (
+                    <TierCard key={tierKey} tierKey={tierKey as OnlineGameTier} tierConfig={tierConfig} />
+                ))}
             </div>
              <div className="mt-8 w-full max-w-md">
                 <Button variant="outline" onClick={() => router.push('/')}>

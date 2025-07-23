@@ -1,6 +1,6 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { createRoomStore, addPlayerToRoomStore, getRoomStateForClient, startGameInRoomStore, updateCallingModeStore } from '@/lib/server/game-store';
+import { createRoomStore, addPlayerToRoomStore, getRoomStateForClient, startGameInRoomStore } from '@/lib/server/game-store';
 import type { Player, GameSettings, OnlineGameTier, TierConfig } from '@/types';
 import { db } from '@/lib/firebase/config';
 import { doc, runTransaction, increment, updateDoc } from 'firebase/firestore';
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { player, tier } = (await request.json()) as { player: Player; tier: OnlineGameTier };
+    const { player, tier, tickets } = (await request.json()) as { player: Player; tier: OnlineGameTier, tickets: number };
 
     if (!player || !player.id || !player.name) {
       return NextResponse.json({ message: 'Player details are required' }, { status: 400 });
@@ -46,8 +46,12 @@ export async function POST(request: NextRequest) {
     if (!tier || !TIERS[tier]) {
         return NextResponse.json({ message: 'A valid game tier is required' }, { status: 400 });
     }
+    if (typeof tickets !== 'number' || tickets < 1 || tickets > 4) {
+        return NextResponse.json({ message: 'A valid ticket count (1-4) is required.' }, { status: 400 });
+    }
 
     const tierConfig = TIERS[tier];
+    const totalCost = tierConfig.ticketPrice * tickets;
 
     // 1. Deduct coins from the player for the ticket
     const playerDocRef = doc(db, "users", player.id);
@@ -60,12 +64,12 @@ export async function POST(request: NextRequest) {
             const playerData = playerDoc.data();
             const currentCoins = playerData.stats?.coins || 0;
 
-            if (currentCoins < tierConfig.ticketPrice) {
-                throw new Error("Not enough coins to join this tier.");
+            if (currentCoins < totalCost) {
+                throw new Error("Not enough coins to buy these tickets.");
             }
             
             transaction.update(playerDocRef, {
-                'stats.coins': increment(-tierConfig.ticketPrice)
+                'stats.coins': increment(-totalCost)
             });
         });
     } catch(e) {
@@ -85,8 +89,8 @@ export async function POST(request: NextRequest) {
     // The player joining is the temporary "host" for creation purposes
     const newRoom = createRoomStore(player, roomSettings);
 
-    // 3. Add the human player
-    addPlayerToRoomStore(newRoom.id, { ...player, isHost: true }, 1); // 1 ticket per player in online mode
+    // 3. Add the human player with their chosen number of tickets
+    addPlayerToRoomStore(newRoom.id, { ...player, isHost: true }, tickets);
 
     // 4. Add bot players to fill the room
     const shuffledBotNames = shuffleArray([...BOT_NAMES]);
@@ -95,7 +99,9 @@ export async function POST(request: NextRequest) {
         const botId = `bot-${i+1}-${Date.now()}`;
         const botName = shuffledBotNames[i];
         const botPlayer: Player = { id: botId, name: botName, isBot: true };
-        addPlayerToRoomStore(newRoom.id, botPlayer, 1);
+        // Bots in online mode also get a random number of tickets to make it interesting
+        const botTickets = 1 + Math.floor(Math.random() * 4);
+        addPlayerToRoomStore(newRoom.id, botPlayer, botTickets);
     }
     
     // 5. Start the game immediately
@@ -103,7 +109,7 @@ export async function POST(request: NextRequest) {
     if (startResult && 'error' in startResult) {
         console.error(`Failed to start online game ${newRoom.id}:`, startResult.error);
         // Attempt to refund coins on failure
-        await updateDoc(playerDocRef, {'stats.coins': increment(tierConfig.ticketPrice)});
+        await updateDoc(playerDocRef, {'stats.coins': increment(totalCost)});
         return NextResponse.json({ message: 'Failed to start game after creation', error: startResult.error }, { status: 500 });
     }
     
@@ -111,7 +117,7 @@ export async function POST(request: NextRequest) {
     const roomForClient = getRoomStateForClient(newRoom.id);
     if (!roomForClient) {
          // Attempt to refund coins on failure
-        await updateDoc(playerDocRef, {'stats.coins': increment(tierConfig.ticketPrice)});
+        await updateDoc(playerDocRef, {'stats.coins': increment(totalCost)});
         return NextResponse.json({ message: 'Failed to retrieve online room after creation' }, { status: 500 });
     }
     

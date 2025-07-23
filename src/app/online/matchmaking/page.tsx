@@ -34,6 +34,7 @@ function MatchmakingContent() {
     const { toast } = useToast();
     
     const [tier, setTier] = useState<OnlineGameTier | null>(null);
+    const [tickets, setTickets] = useState(1);
     const [tierConfig, setTierConfig] = useState<TierConfig | null>(null);
     const [timeLeft, setTimeLeft] = useState(0);
     const [error, setError] = useState<string | null>(null);
@@ -41,13 +42,15 @@ function MatchmakingContent() {
 
     useEffect(() => {
         const tierParam = searchParams.get('tier') as OnlineGameTier;
-        if (tierParam && TIERS[tierParam]) {
+        const ticketsParam = searchParams.get('tickets');
+        if (tierParam && TIERS[tierParam] && ticketsParam) {
             setTier(tierParam);
             const config = TIERS[tierParam];
             setTierConfig(config);
             setTimeLeft(config.matchmakingTime);
+            setTickets(parseInt(ticketsParam, 10));
         } else {
-            setError("Invalid game tier specified.");
+            setError("Invalid game tier or ticket count specified.");
         }
     }, [searchParams]);
 
@@ -67,7 +70,7 @@ function MatchmakingContent() {
         const response = await fetch('/api/online/join-or-create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ player, tier }),
+          body: JSON.stringify({ player, tier, tickets }),
         });
         
         const newRoom: Room = await response.json();
@@ -77,15 +80,14 @@ function MatchmakingContent() {
         }
 
         toast({ title: "Match Found!", description: "Joining the game..." });
-        // In online mode, players get 1 ticket by default
-        router.push(`/room/${newRoom.id}/play?playerTickets=1`);
+        router.push(`/room/${newRoom.id}/play?playerTickets=${tickets}`);
 
       } catch (err) {
         setError((err as Error).message);
         setIsFindingMatch(false);
       }
 
-    }, [currentUser, tier, router, toast]);
+    }, [currentUser, tier, tickets, router, toast]);
 
     useEffect(() => {
         if (error || !tierConfig || isFindingMatch) return;
@@ -129,7 +131,7 @@ function MatchmakingContent() {
         <Card className="w-full max-w-md shadow-xl bg-card/80 backdrop-blur-sm border-primary/20">
             <CardHeader className="text-center">
                 <CardTitle className="text-2xl text-white">Finding a Match...</CardTitle>
-                <CardDescription className="text-white/80">Tier: {tierConfig.name}</CardDescription>
+                <CardDescription className="text-white/80">Tier: {tierConfig.name} ({tickets} {tickets === 1 ? 'ticket' : 'tickets'})</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="flex justify-center items-end gap-2 text-white">
