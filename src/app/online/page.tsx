@@ -4,7 +4,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Coins, Lock, Play, Users, ArrowLeft, Loader2 } from 'lucide-react';
+import { Coins, Lock, Play, Users, ArrowLeft, Loader2, Link as LinkIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import type { OnlineGameTier, TierConfig } from '@/types';
@@ -42,7 +42,7 @@ export default function OnlineModePage() {
     const { toast } = useToast();
 
     const handleJoinTier = (tier: OnlineGameTier) => {
-        if (!currentUser) return;
+        if (!currentUser || currentUser.isGuest) return;
         
         playSound('cards.mp3');
 
@@ -82,6 +82,38 @@ export default function OnlineModePage() {
         );
     }
     
+    if (currentUser.isGuest) {
+        return (
+            <div className="flex flex-col items-center justify-center flex-grow p-4 text-center">
+                 <Card className="w-full max-w-md shadow-lg border-accent">
+                    <CardHeader>
+                        <CardTitle className="flex items-center justify-center gap-2">
+                            <LinkIcon className="h-6 w-6 text-primary"/>
+                            Account Required
+                        </CardTitle>
+                        <CardDescription>
+                            Online play requires a linked account to save your progress and coin balance.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                            Please link your guest account to a Google or Email account to access online matchmaking.
+                        </p>
+                        <Button onClick={() => router.push('/profile')}>
+                            Go to Profile to Link
+                        </Button>
+                    </CardContent>
+                </Card>
+                 <div className="mt-8 w-full max-w-md">
+                    <Button variant="outline" onClick={() => router.push('/')}>
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Home
+                    </Button>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="flex flex-col items-center justify-center flex-grow p-4">
             <div className="text-center mb-8">
