@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { playSound } from '@/lib/sounds';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
@@ -131,7 +132,7 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
             {!isUnlocked && (
                 <CardContent className="p-4 pt-0 text-xs">
                     <p>
-                        Requires: {tierConfig.unlockRequirements.matches} matches played & {tierConfig.unlockRequirements.coins} coins.
+                        Requires: {tierConfig.unlockRequirements.matches} played & {tierConfig.unlockRequirements.coins} coins.
                     </p>
                     <p>
                         Your progress: {currentUser.stats.matchesPlayed} matches & {currentUser.stats.coins} coins.
