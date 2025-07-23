@@ -43,6 +43,7 @@ export interface GameSettings {
   callingMode: CallingMode;
   isPublic?: boolean;
   gameMode?: 'multiplayer' | 'easy' | 'medium' | 'hard' | 'online';
+  tier?: OnlineGameTier;
 }
 
 export const PRIZE_TYPES = {

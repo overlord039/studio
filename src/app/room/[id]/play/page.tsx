@@ -757,7 +757,7 @@ export default function GameRoomPage() {
                       </div>
                   ) : (
                       <div className="text-white capitalize">
-                          {isOnlineGame ? `Online: ${TIERS[roomData.settings.tier as OnlineGameTier].name}` : `Room ID: #${roomId}`}
+                          {isOnlineGame ? `Online: ${TIERS[roomData.settings.tier as OnlineGameTier]?.name || 'Mode'}` : `Room ID: #${roomId}`}
                       </div>
                   )}
               </div>

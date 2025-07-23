@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createRoomStore, addPlayerToRoomStore, getRoomStateForClient, startGameInRoomStore, updateCallingModeStore } from '@/lib/server/game-store';
 import type { Player, GameSettings, OnlineGameTier, TierConfig } from '@/types';
 import { db } from '@/lib/firebase/config';
-import { doc, runTransaction, increment } from 'firebase/firestore';
+import { doc, runTransaction, increment, updateDoc } from 'firebase/firestore';
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
       callingMode: 'auto',
       gameMode: 'online',
       ticketPrice: tierConfig.ticketPrice,
+      tier: tier, // Add the tier to settings
     };
     // The player joining is the temporary "host" for creation purposes
     const newRoom = createRoomStore(player, roomSettings);
