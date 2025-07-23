@@ -274,11 +274,16 @@ export default function ProfilePage() {
                         ) : (
                           <div className="flex items-baseline gap-1">
                             <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
-                            {canChangeName && (
-                              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); setUsernameError(null); }}>
-                                <Pencil className="h-3 w-3"/>
-                              </Button>
-                            )}
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-6 w-6" 
+                              onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); setUsernameError(null); }}
+                              disabled={!canChangeName}
+                              title={canChangeName ? "Edit username" : "Username can only be changed once"}
+                            >
+                              <Pencil className="h-4 w-4"/>
+                            </Button>
                           </div>
                         )}
                           {currentUser.isGuest && <Badge variant="secondary">Guest Account</Badge>}
@@ -400,5 +405,6 @@ export default function ProfilePage() {
     </div>
   );
 }
+
 
 
