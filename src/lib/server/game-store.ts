@@ -379,10 +379,11 @@ export function callNextNumberStore(roomId: string): Room | { error: string; num
   rooms.set(roomId, room);
 
   // Bot logic
-  if ((room.settings.gameMode === 'easy' || room.settings.gameMode === 'medium' || room.settings.gameMode === 'hard') && !room.isGameOver) {
+  const isBotGameMode = room.settings.gameMode === 'easy' || room.settings.gameMode === 'medium' || room.settings.gameMode === 'hard' || room.settings.gameMode === 'online';
+  if (isBotGameMode && !room.isGameOver) {
     const bots = room.players.filter(p => p.isBot);
     const prizes = PRIZE_DEFINITIONS[room.settings.prizeFormat || 'Format 1'];
-    const delay = room.settings.gameMode === 'easy' ? 1000 : 0; // 1s for easy, 0 for medium/hard
+    const delay = room.settings.gameMode === 'easy' ? 1000 : 0; // 1s for easy, 0 for other modes
 
     setTimeout(() => {
         const currentRoomState = getRoomStore(roomId);
@@ -390,7 +391,7 @@ export function callNextNumberStore(roomId: string): Room | { error: string; num
 
         for (const bot of bots) {
             for (const prizeType of prizes) {
-                // Check if prize is already claimed by anyone in this single-winner context for bots
+                // Check if prize is already claimed by anyone. In online/bot games, usually first claim wins.
                 if ((currentRoomState.prizeStatus[prizeType]?.claimedBy.length ?? 0) > 0) {
                     continue; 
                 }
