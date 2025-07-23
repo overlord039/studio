@@ -24,7 +24,7 @@ export default function CreateOrJoinRoomPage() {
   const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
   
   // Create Room State
-  const [ticketPrice, setTicketPrice] = useState(10);
+  const [ticketPrice, setTicketPrice] = useState(0);
   const [lobbySize, setLobbySize] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -36,7 +36,7 @@ export default function CreateOrJoinRoomPage() {
     playSound('cards.mp3');
     setTicketPrice(prev => {
       const newPrice = prev + increment;
-      return newPrice < 5 ? 5 : newPrice;
+      return newPrice < 0 ? 0 : newPrice;
     });
   };
 
@@ -161,7 +161,7 @@ export default function CreateOrJoinRoomPage() {
                 <div className="space-y-2 text-center">
                   <label className="text-sm font-semibold text-muted-foreground uppercase">Entry Fee</label>
                   <div className="flex items-center justify-center gap-4">
-                    <Button size="icon" variant="secondary" className="rounded-full w-10 h-10" onClick={() => handlePriceChange(-5)} disabled={ticketPrice <= 5}>
+                    <Button size="icon" variant="secondary" className="rounded-full w-10 h-10" onClick={() => handlePriceChange(-5)} disabled={ticketPrice <= 0}>
                       <Minus className="h-6 w-6" />
                     </Button>
                     <div className="flex flex-col items-center justify-center w-28 h-20 rounded-lg border-2 border-accent bg-accent/10">
