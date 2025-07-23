@@ -377,10 +377,10 @@ export function callNextNumberStore(roomId: string): Room | { error: string; num
   rooms.set(roomId, room);
 
   // Bot logic
-  if ((room.settings.gameMode === 'easy' || room.settings.gameMode === 'hard') && !room.isGameOver) {
+  if ((room.settings.gameMode === 'easy' || room.settings.gameMode === 'medium' || room.settings.gameMode === 'hard') && !room.isGameOver) {
     const bots = room.players.filter(p => p.isBot);
     const prizes = PRIZE_DEFINITIONS[room.settings.prizeFormat || 'Format 1'];
-    const delay = room.settings.gameMode === 'easy' ? 1000 : 0; // 1s for easy, 0 for hard
+    const delay = room.settings.gameMode === 'easy' ? 1000 : 0; // 1s for easy, 0 for medium/hard
 
     setTimeout(() => {
         const currentRoomState = getRoomStore(roomId);
