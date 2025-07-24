@@ -62,6 +62,12 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
     }
 };
 
+const BOT_GAME_MODE_NAMES = {
+    easy: "Easy",
+    medium: "Classic",
+    hard: "Rush",
+};
+
 
 export default function GameRoomPage() {
   const router = useRouter();
@@ -656,7 +662,7 @@ export default function GameRoomPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-             <h3 className="text-xl font-semibold text-center mb-2 flex items-center justify-center">
+            <h3 className="text-xl font-semibold text-center mb-2 flex items-center justify-center">
                 <Award className="mr-2 h-5 w-5 text-accent"/>
                 Final Prize Summary
             </h3>
@@ -773,14 +779,14 @@ export default function GameRoomPage() {
           <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
             <div className="flex-grow">
                <div className="flex items-center gap-2 mb-1">
-                  {isBotGame ? (
+                  {isBotGame && roomData.settings.gameMode ? (
                       <div className={cn(
                           "px-2 py-1 text-xs font-bold text-white rounded-md capitalize",
                           roomData.settings.gameMode === 'easy' && "bg-green-600",
                           roomData.settings.gameMode === 'medium' && "bg-yellow-600",
                           roomData.settings.gameMode === 'hard' && "bg-red-600",
                       )}>
-                          {roomData.settings.gameMode} Mode
+                          {BOT_GAME_MODE_NAMES[roomData.settings.gameMode as keyof typeof BOT_GAME_MODE_NAMES] || 'Bot Game'} Mode
                       </div>
                   ) : (
                       <div className="text-white capitalize">
