@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import type { Player, Room } from "@/types";
-import { Bot, Smile, Loader2 } from "lucide-react";
+import { Bot, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
 import { playSound } from "@/lib/sounds";
@@ -78,8 +78,7 @@ export default function EasyModePage() {
       <Card className="w-full max-w-md shadow-xl border-accent">
         <CardHeader className="text-center">
            <div className="flex justify-center items-center gap-2 mb-4">
-            <Bot className="h-12 w-12 text-primary" />
-            <Smile className="h-10 w-10 text-green-500" />
+            <Bot className="h-12 w-12 text-green-500" />
           </div>
           <CardTitle className="text-3xl font-bold">Easy Mode</CardTitle>
           <CardDescription>Choose your tickets and start the game.</CardDescription>
