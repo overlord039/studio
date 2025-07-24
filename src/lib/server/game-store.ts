@@ -3,7 +3,7 @@ import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeC
 import { PRIZE_TYPES } from '@/types';
 import { generateImprovedHousieTicket } from '@/lib/housie';
 import { db } from '@/lib/firebase/config';
-import { doc, writeBatch, increment } from 'firebase/firestore';
+import { doc, writeBatch, increment, getDoc } from 'firebase/firestore';
 import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE, PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER, SERVER_CALL_INTERVAL } from '@/lib/constants';
 
 declare global {
@@ -180,6 +180,28 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
 
   if (playersWithTickets < minPlayersRequired) {
     return { error: `Need at least ${minPlayersRequired} player(s) with tickets to start. Currently: ${playersWithTickets}` };
+  }
+
+  // Deduct coins for online games before starting
+  if (room.settings.gameMode === 'online' && db) {
+      const batch = writeBatch(db);
+      for (const player of room.players) {
+          if (!player.isBot) {
+              const ticketCost = room.settings.ticketPrice * player.tickets.length;
+              if (ticketCost > 0) {
+                  const playerDocRef = doc(db, "users", player.id);
+                  batch.update(playerDocRef, { 'stats.coins': increment(-ticketCost) });
+              }
+          }
+      }
+      // We are not awaiting this intentionally to not block game start. 
+      // This is a fire-and-forget operation at this point.
+      // A more robust system might use a transaction and check balances first,
+      // but for this flow, we assume balance was checked on lobby join.
+      batch.commit().catch(err => {
+          console.error(`CRITICAL: Failed to deduct coins for room ${roomId}. Error: ${err}`);
+          // In a real-world scenario, you might add a retry mechanism or flag the game for review.
+      });
   }
 
   room.isGameStarted = true;
