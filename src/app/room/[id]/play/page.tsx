@@ -252,15 +252,15 @@ export default function GameRoomPage() {
             throw new Error(result.message || "Failed to trigger stat update.");
           }
           
-          if (result.coinsEarned > 0) {
+          if (result.coinsEarned >= 0) {
             setCoinsWonThisGame(result.coinsEarned);
-            toast({
-                title: "Coins Rewarded!",
-                description: `You earned ${result.coinsEarned} coins for playing.`,
-                className: "bg-yellow-500 text-white",
-            })
-          } else {
-             setCoinsWonThisGame(0);
+             if (result.coinsEarned > 0) {
+                toast({
+                    title: "Coins Rewarded!",
+                    description: `You earned ${result.coinsEarned} coins for playing.`,
+                    className: "bg-yellow-500 text-white",
+                })
+             }
           }
         } catch (error) {
           console.error("Failed to trigger stats update:", error);
@@ -616,12 +616,14 @@ export default function GameRoomPage() {
 
   if (roomData.isGameOver) {
     let currentUserWinnings = 0;
+    const currentUserPrizeNames: string[] = [];
 
     if (currentUser) {
         if (isOnlineGame) {
             prizesForFormat.forEach(prize => {
                 const claimInfo = roomData.prizeStatus[prize];
                 if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
+                    currentUserPrizeNames.push(prize);
                     const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
                     const prizeAmount = (totalPrizePool * percentage) / 100;
                     const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
@@ -630,10 +632,20 @@ export default function GameRoomPage() {
             });
         } else if (coinsWonThisGame !== null) {
             currentUserWinnings = coinsWonThisGame;
+            const prizesWon = roomData.prizeStatus;
+            for (const prize in prizesWon) {
+                if(prizesWon[prize as PrizeType]?.claimedBy.some(c => c.id === currentUser.uid)) {
+                    currentUserPrizeNames.push(prize);
+                }
+            }
         }
     }
     
     const playAgainButtonText = isBotGame ? "Play Again" : isOnlineGame ? "Find New Match" : (isCurrentUserHost ? "New Game" : "To Lobby");
+
+    const userHasPrizes = currentUserPrizeNames.length > 0;
+    const isParticipationWinner = !userHasPrizes && currentUserWinnings > 0;
+
 
     return (
       <div className="flex-grow p-4 flex flex-col items-center justify-center">
@@ -644,12 +656,14 @@ export default function GameRoomPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-             {currentUserWinnings > 0 && (
+             {(userHasPrizes || isParticipationWinner) && (
                 <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
                     <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
                     <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
                         You won a total of <Coins className="h-6 w-6 text-yellow-500" /> {formatCoins(currentUserWinnings)}!
                     </div>
+                    {isParticipationWinner && <p className="text-sm text-muted-foreground">(Participation Reward)</p>}
+                    {userHasPrizes && <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>}
                 </div>
             )}
             
