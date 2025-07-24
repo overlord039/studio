@@ -656,18 +656,7 @@ export default function GameRoomPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-             {(userHasPrizes || isParticipationWinner) && (
-                <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
-                    <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
-                    <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
-                        You won a total of <Coins className="h-6 w-6 text-yellow-500" /> {formatCoins(currentUserWinnings)}!
-                    </div>
-                    {isParticipationWinner && <p className="text-sm text-muted-foreground">(Participation Reward)</p>}
-                    {userHasPrizes && <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>}
-                </div>
-            )}
-            
-            <h3 className="text-xl font-semibold text-center mb-2 flex items-center justify-center">
+             <h3 className="text-xl font-semibold text-center mb-2 flex items-center justify-center">
                 <Award className="mr-2 h-5 w-5 text-accent"/>
                 Final Prize Summary
             </h3>
@@ -728,6 +717,18 @@ export default function GameRoomPage() {
                 })}
               </ul>
             </div>
+
+            {(userHasPrizes || isParticipationWinner) && (
+                <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
+                    <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
+                    <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
+                        You won a total of <Coins className="h-6 w-6 text-yellow-500" /> {formatCoins(currentUserWinnings)}!
+                    </div>
+                    {isParticipationWinner && <p className="text-sm text-muted-foreground">(Participation Reward)</p>}
+                    {userHasPrizes && <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>}
+                </div>
+            )}
+
             <div className="flex flex-row gap-4 mt-6">
               <Button onClick={handlePlayAgain} className="flex-1" size="lg" disabled={isResetting}>
                 {isResetting ? (
