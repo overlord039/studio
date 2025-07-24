@@ -475,14 +475,24 @@ export default function LobbyPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-3 md:p-4 pt-0 space-y-4 md:space-y-6">
-          <div className="flex flex-row justify-between items-center text-base md:text-lg">
-            <div className="flex items-center gap-1">
-              <strong>Ticket Price:</strong>
-              <Coins className="h-4 w-4 text-yellow-500" />
-              <span>{gameSettings.ticketPrice}</span>
-            </div>
-            <p><strong>Room Size:</strong> {gameSettings.lobbySize}</p>
-          </div>
+          <Card className="bg-secondary/20">
+            <CardContent className="p-3 flex justify-around items-center text-center">
+              <div className="flex flex-col items-center">
+                <span className="text-xs text-muted-foreground">Ticket Price</span>
+                <div className="flex items-center gap-1 font-bold text-lg">
+                  <Coins className="h-5 w-5 text-yellow-500" />
+                  <span>{gameSettings.ticketPrice}</span>
+                </div>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-xs text-muted-foreground">Room Size</span>
+                <div className="flex items-center gap-1 font-bold text-lg">
+                  <Users className="h-5 w-5 text-primary" />
+                  <span>{gameSettings.lobbySize}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {showTicketSelectionUI && !roomData.isGameOver && (
             <Card className="bg-secondary/20">
