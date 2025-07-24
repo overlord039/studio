@@ -86,7 +86,7 @@ export default function HomePage() {
             >
             <CardContent className="flex flex-col items-center justify-center p-3 text-center">
                 <Bot className="h-8 w-8 mb-1" />
-                <p className="text-sm font-bold">vs Computer</p>
+                <p className="text-sm font-bold">Offline</p>
             </CardContent>
             </Card>
 
