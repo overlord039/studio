@@ -1,7 +1,7 @@
 
 import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid, CallingMode } from '@/types';
 import { PRIZE_TYPES } from '@/types';
-import { generateImprovedHousieTicket } from '@/lib/housie';
+import { generateMultipleUniqueTickets } from '@/lib/housie';
 import { db } from '@/lib/firebase/config';
 import { doc, writeBatch, increment, getDoc } from 'firebase/firestore';
 import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE, PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER, SERVER_CALL_INTERVAL } from '@/lib/constants';
@@ -131,7 +131,7 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberO
         const numTicketsToGenerate = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
 
         if (existingPlayer.tickets.length !== numTicketsToGenerate) {
-            existingPlayer.tickets = Array.from({ length: numTicketsToGenerate }, () => generateImprovedHousieTicket());
+            existingPlayer.tickets = generateMultipleUniqueTickets(numTicketsToGenerate);
             console.log(`Player ${playerInfo.name} (${playerInfo.id}) in room ${roomId} updated tickets to ${numTicketsToGenerate}.`);
         } else {
             console.log(`Player ${playerInfo.name} (${playerInfo.id}) re-confirmed ${numTicketsToGenerate} tickets in room ${roomId}. No changes.`);
@@ -152,7 +152,7 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberO
             email: playerInfo.email || `${playerInfo.id}@housiehub.guest`, // Fallback email
             isHost: playerInfo.id === room.host.id,
             isBot: !!playerInfo.isBot,
-            tickets: Array.from({ length: numTicketsToGenerate }, () => generateImprovedHousieTicket()),
+            tickets: generateMultipleUniqueTickets(numTicketsToGenerate),
         };
         room.players.push(newPlayer);
         console.log(`New player ${playerInfo.name} (${playerInfo.id}) joined room ${roomId} with ${numTicketsToGenerate} tickets.`);

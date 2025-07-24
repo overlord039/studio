@@ -1,6 +1,6 @@
 
 import type { HousieTicketGrid, HousieTicketNumber } from '@/types';
-import { TICKET_ROWS, TICKET_COLS, NUMBERS_PER_ROW, TOTAL_NUMBERS_PER_TICKET } from './constants';
+import { TICKET_ROWS, TICKET_COLS, NUMBERS_PER_ROW, TOTAL_NUMBERS_PER_TICKET, NUMBERS_RANGE_MAX } from './constants';
 
 // Helper function to shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
@@ -18,7 +18,39 @@ const getColRange = (colIndex: number): [number, number] => {
   return [colIndex * 10, colIndex * 10 + 9];
 };
 
-export function generateImprovedHousieTicket(): HousieTicketGrid {
+/**
+ * Generates a set of Housie tickets with unique numbers across all tickets in the set.
+ * @param count The number of unique tickets to generate.
+ * @returns An array of Housie ticket grids.
+ */
+export function generateMultipleUniqueTickets(count: number): HousieTicketGrid[] {
+  const allTickets: HousieTicketGrid[] = [];
+  const usedNumbersGlobally = new Set<number>();
+
+  for (let i = 0; i < count; i++) {
+    // Check if we have enough numbers left to generate a new ticket.
+    if (usedNumbersGlobally.size > NUMBERS_RANGE_MAX - TOTAL_NUMBERS_PER_TICKET) {
+        console.warn(`Not enough unique numbers remaining to generate ticket ${i + 1}. Stopping at ${i} tickets.`);
+        break; 
+    }
+
+    const newTicket = generateImprovedHousieTicket(usedNumbersGlobally);
+    
+    // Add numbers from the newly generated ticket to the global used set.
+    newTicket.flat().forEach(num => {
+      if (num !== null) {
+        usedNumbersGlobally.add(num);
+      }
+    });
+    
+    allTickets.push(newTicket);
+  }
+
+  return allTickets;
+}
+
+
+export function generateImprovedHousieTicket(excludedNumbers: Set<number> = new Set()): HousieTicketGrid {
   let ticket: HousieTicketGrid;
   let isValidTicket = false;
   let attempts = 0;
@@ -51,7 +83,9 @@ export function generateImprovedHousieTicket(): HousieTicketGrid {
       const [min, max] = getColRange(c);
       const numbers_in_range: number[] = [];
       for (let i = min; i <= max; i++) {
-        numbers_in_range.push(i);
+        if (!excludedNumbers.has(i)) {
+          numbers_in_range.push(i);
+        }
       }
       shuffleArray(numbers_in_range);
       const selected_numbers_for_col = numbers_in_range.slice(0, col_populations[c]);
