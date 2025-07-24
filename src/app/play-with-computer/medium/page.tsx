@@ -81,7 +81,7 @@ export default function MediumModePage() {
             <Bot className="h-12 w-12 text-primary" />
             <Meh className="h-10 w-10 text-yellow-500" />
           </div>
-          <CardTitle className="text-3xl font-bold">Medium Mode</CardTitle>
+          <CardTitle className="text-3xl font-bold">Classic</CardTitle>
           <CardDescription>Choose your tickets. The bots' tickets will be random.</CardDescription>
         </CardHeader>
         <CardContent>
