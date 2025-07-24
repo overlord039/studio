@@ -227,8 +227,8 @@ export default function ProfilePage() {
                       {currentUser.isGuest && <Badge variant="secondary">Guest Account</Badge>}
                       <div className="text-xs text-muted-foreground font-mono bg-background/50 px-2 py-1 rounded-full">ID: {currentUser.uid}</div>
                   </div>
-                  <div className="flex flex-row items-center justify-center gap-4 text-center w-full">
-                      <div className="relative flex-shrink-0">
+                  <div className="flex flex-row items-start justify-center gap-4 text-center w-full">
+                       <div className="relative flex-shrink-0">
                           <Avatar className="h-24 w-24 sm:h-28 sm:w-28 border-4 border-background shadow-lg">
                               <AvatarImage src={currentUser.photoURL || `https://placehold.co/128x128.png?text=${avatarFallback}`} alt={displayName} data-ai-hint="profile avatar"/>
                               <AvatarFallback className="text-3xl sm:text-4xl">{avatarFallback}</AvatarFallback>
@@ -245,7 +245,7 @@ export default function ProfilePage() {
                             </Button>
                           </AvatarSelectionDialog>
                        </div>
-                       <div className="space-y-1 flex-grow">
+                       <div className="space-y-1 flex-grow flex flex-col items-start mt-2">
                         {isEditingName ? (
                           <div className="w-full flex flex-col items-start">
                               <div className="flex w-full max-w-xs items-center gap-2">
@@ -285,7 +285,7 @@ export default function ProfilePage() {
                             </Button>
                           </div>
                         )}
-                        <div className="flex items-center justify-center gap-1.5">
+                        <div className="flex items-center gap-1.5 p-2 rounded-md bg-background/50">
                             <Coins className="h-5 w-5 text-yellow-500" />
                             <span className="text-xl font-bold text-foreground">{currentUser.stats?.coins || 0}</span>
                         </div>
