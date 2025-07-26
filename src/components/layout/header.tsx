@@ -351,7 +351,7 @@ export default function Header() {
     return (
         <div className="flex items-center gap-2">
             <Link href="/profile" passHref>
-                <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm p-1 pr-3 rounded-full border border-white/20 hover:bg-black/50 transition-colors cursor-pointer">
+                <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm p-1 pr-4 rounded-full border border-white/20 hover:bg-black/50 transition-colors cursor-pointer">
                     <Avatar className="h-10 w-10 border-2 border-primary">
                         <AvatarImage 
                             src={currentUser.photoURL || `https://placehold.co/48x48.png?text=${avatarFallback}`} 
@@ -360,9 +360,9 @@ export default function Header() {
                         />
                         <AvatarFallback>{avatarFallback}</AvatarFallback>
                     </Avatar>
-                     <div className="flex items-center gap-1 text-white">
-                        <Image src="/coin.png" alt="Coins" width={16} height={16} />
-                        <span className="font-bold text-sm">{currentUser.stats.coins ?? 0}</span>
+                     <div className="flex items-center gap-1.5 text-white">
+                        <Image src="/coin.png" alt="Coins" width={24} height={24} />
+                        <span className="font-bold text-lg">{currentUser.stats.coins ?? 0}</span>
                     </div>
                 </div>
             </Link>
