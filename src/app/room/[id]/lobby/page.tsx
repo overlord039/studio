@@ -646,7 +646,7 @@ export default function LobbyPage() {
                       <span>{prizeName}:</span>
                       <div className="font-semibold flex items-center gap-1">
                         <Image src="/coin.png" alt="Coins" width={18} height={18} />
-                        <span>{prizeAmount.toFixed(0)} ({percentage}%)</span>
+                        <span>{prizeAmount.toFixed(0)}</span>
                       </div>
                     </div>
                   );
