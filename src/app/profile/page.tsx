@@ -297,11 +297,11 @@ export default function ProfilePage() {
                             <div className="mt-2 space-y-3">
                                 <Card className="bg-secondary">
                                     <CardContent className="p-3 flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <Image src="/coin.png" alt="Coins" width={16} height={16} />
-                                            <span className="font-semibold text-sm">Total Coins</span>
+                                        <span className="font-semibold text-sm">Total Coins</span>
+                                        <div className="flex items-center gap-1 font-bold text-lg text-primary">
+                                            <Image src="/coin.png" alt="Coins" width={20} height={20} />
+                                            <span>{currentUser.stats?.coins || 0}</span>
                                         </div>
-                                        <span className="font-bold text-lg text-primary">{currentUser.stats?.coins || 0}</span>
                                     </CardContent>
                                 </Card>
                                 <Card className="bg-secondary">
