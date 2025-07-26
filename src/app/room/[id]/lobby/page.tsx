@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter, useParams } from "next/navigation";
-import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangle, Edit, RotateCcw, Crown, UserX, Bot, Coins } from "lucide-react";
+import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangle, Edit, RotateCcw, Crown, UserX, Bot } from "lucide-react";
 import type { Room, GameSettings, PrizeType, BackendPlayerInRoom } from "@/types";
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE } from "@/lib/constants";
 import React, { useEffect, useState, useCallback, useRef } from "react";
@@ -24,6 +24,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 const MAX_TICKETS_PER_PLAYER = 4;
 
@@ -480,7 +481,7 @@ export default function LobbyPage() {
                 <CardContent className="p-3 flex flex-col items-center justify-center text-center">
                     <span className="text-xs text-muted-foreground">Ticket Price</span>
                     <div className="flex items-center gap-1 font-bold text-lg">
-                      <Coins className="h-5 w-5 text-yellow-500" />
+                      <Image src="/coin.png" alt="Coins" width={20} height={20} />
                       <span>{gameSettings.ticketPrice}</span>
                     </div>
                 </CardContent>
@@ -568,7 +569,7 @@ export default function LobbyPage() {
                       {player.tickets?.length > 0 
                         ? <>
                             <span>{player.tickets.length} ticket{player.tickets.length === 1 ? '' : 's'}</span>
-                            <div className="flex items-center gap-0.5">(<Coins className="h-3 w-3 text-yellow-500" />{player.tickets.length * gameSettings.ticketPrice})</div>
+                            <div className="flex items-center gap-0.5">(<Image src="/coin.png" alt="Coins" width={12} height={12} />{player.tickets.length * gameSettings.ticketPrice})</div>
                           </>
                         : (roomData.isGameOver ? "Game Over" : "No tickets yet")}
                     </span>
@@ -631,7 +632,7 @@ export default function LobbyPage() {
               <CardContent className="p-2 md:p-4 space-y-2 text-xs md:text-sm">
                  <div className="font-semibold flex items-center gap-1">
                   <span>Potential Prize Pool:</span>
-                  <Coins className="h-4 w-4 text-yellow-500" />
+                  <Image src="/coin.png" alt="Coins" width={16} height={16} />
                   <span>{currentTotalPrizePool.toFixed(0)}</span>
                  </div>
                  <p className="text-xs text-muted-foreground">
@@ -644,7 +645,7 @@ export default function LobbyPage() {
                     <div key={prizeName} className="flex justify-between items-center text-xs md:text-sm">
                       <span>{prizeName}:</span>
                       <div className="font-semibold flex items-center gap-1">
-                        <Coins className="h-4 w-4 text-yellow-500" />
+                        <Image src="/coin.png" alt="Coins" width={16} height={16} />
                         <span>{prizeAmount.toFixed(0)} ({percentage}%)</span>
                       </div>
                     </div>

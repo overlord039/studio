@@ -25,11 +25,12 @@ import { useToast } from '@/hooks/use-toast';
 import type { User, UserStats, PrizeType } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import LoginSelectionScreen from '@/components/auth/login-selection-screen';
-import { Loader2, AlertTriangle, Coins } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { ToastAction } from '@/components/ui/toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import Image from 'next/image';
 
 export interface User {
   uid: string;
@@ -651,7 +652,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center justify-center gap-2 p-4">
-              <Coins className="h-10 w-10 text-yellow-500" />
+              <Image src="/coin.png" alt="Coins" width={40} height={40} />
               <span className="text-4xl font-bold text-yellow-500">+{reward?.amount}</span>
           </div>
           <DialogFooter>

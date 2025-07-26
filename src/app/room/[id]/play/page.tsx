@@ -11,7 +11,7 @@ import type { HousieTicketGrid, PrizeType, Room, GameSettings, CallingMode, Priz
 import { PRIZE_TYPES } from '@/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause, Menu, Ticket, Coins } from 'lucide-react';
+import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause, Menu, Ticket } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
@@ -41,6 +41,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import Footer from '@/components/layout/footer';
+import Image from 'next/image';
 
 
 const MemoizedHousieTicket = React.memo(HousieTicket);
@@ -671,7 +672,7 @@ export default function GameRoomPage() {
               <div className="flex justify-between items-center text-lg font-bold mb-2 pb-2 border-b">
                 <span>Total Prize Pool:</span>
                 <div className="flex items-center gap-1">
-                  <Coins className="h-5 w-5 text-yellow-500" />
+                  <Image src="/coin.png" alt="Coins" width={20} height={20} />
                   <span>{formatCoins(totalPrizePool)}</span>
                 </div>
               </div>
@@ -710,7 +711,7 @@ export default function GameRoomPage() {
                              <span className="text-xs text-muted-foreground">({percentage}%)</span>
                            </div>
                            <div className="font-semibold flex items-center gap-1">
-                             <Coins className="h-4 w-4 text-yellow-500" />
+                             <Image src="/coin.png" alt="Coins" width={16} height={16} />
                              <span>{formatCoins(prizeAmount)}</span>
                            </div>
                         </div>
@@ -728,7 +729,7 @@ export default function GameRoomPage() {
                 <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
                     <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
                     <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
-                        You won a total of <Coins className="h-6 w-6 text-yellow-500" /> {formatCoins(currentUserWinnings)}!
+                        You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(currentUserWinnings)}!
                     </div>
                     {isParticipationWinner && <p className="text-sm text-muted-foreground">(Participation Reward)</p>}
                     {userHasPrizes && <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>}
@@ -828,7 +829,7 @@ export default function GameRoomPage() {
                                   <Award className="mr-2 h-4 w-4 text-primary" />
                                   {(isBotGame || isOnlineGame) ? 'Prize Status' : 'Prize Pool'}
                               </CardTitle>
-                              {(!isBotGame && !isOnlineGame) && <div className="text-xs text-muted-foreground flex items-center gap-1">Total: <Coins className="h-3 w-3 text-yellow-500" />{formatCoins(totalPrizePool)}</div>}
+                              {(!isBotGame && !isOnlineGame) && <div className="text-xs text-muted-foreground flex items-center gap-1">Total: <Image src="/coin.png" alt="Coins" width={12} height={12} />{formatCoins(totalPrizePool)}</div>}
                           </CardHeader>
                           <CardContent className="p-3 pt-0">
                               {isLoading ? (
@@ -878,7 +879,7 @@ export default function GameRoomPage() {
                                                     <span className="text-muted-foreground/80">({percentage}%)</span>
                                                   </div>
                                                   <div className="font-semibold flex items-center gap-1">
-                                                    <Coins className="h-3 w-3 text-yellow-500" />
+                                                    <Image src="/coin.png" alt="Coins" width={12} height={12} />
                                                     {prizeValueText}
                                                   </div>
                                               </div>
@@ -916,7 +917,7 @@ export default function GameRoomPage() {
                                             <span>{ticketCount} {ticketsText(ticketCount)}</span>
                                             {(!isBotGame) && 
                                               <div className="flex items-center gap-0.5">
-                                                (<Coins className="h-3 w-3 text-yellow-500" />{formatCoins(ticketCost)})
+                                                (<Image src="/coin.png" alt="Coins" width={12} height={12} />{formatCoins(ticketCost)})
                                               </div>
                                             }
                                           </div>

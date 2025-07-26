@@ -18,10 +18,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PRIZE_DISTRIBUTION_PERCENTAGES, PRIZE_DEFINITIONS, DEFAULT_GAME_SETTINGS } from "@/lib/constants";
 import type { PrizeType } from "@/types";
 import { PRIZE_TYPES } from "@/types";
-import { Calculator, Ticket, Users, Percent, Gift, Coins, AlertTriangle, Settings2, EyeOff, Speaker, Home } from "lucide-react";
+import { Calculator, Ticket, Users, Percent, Gift, AlertTriangle, Settings2, EyeOff, Speaker, Home } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import Image from "next/image";
 
 const prizeCategories = PRIZE_DEFINITIONS[DEFAULT_GAME_SETTINGS.prizeFormat];
 const defaultPercentages = PRIZE_DISTRIBUTION_PERCENTAGES[DEFAULT_GAME_SETTINGS.prizeFormat];
@@ -261,7 +262,7 @@ export default function PrizeCalculatorPage() {
                     <div className="flex justify-between items-center text-lg font-semibold">
                         <span className="flex items-center">Total Collection:</span>
                         <div className="flex items-center gap-1">
-                          <Coins className="h-5 w-5 text-yellow-500" />
+                          <Image src="/coin.png" alt="Coins" width={20} height={20} />
                           <span>{formatCoins(calculatedPrizes.totalCollection)}</span>
                         </div>
                     </div>
@@ -270,7 +271,7 @@ export default function PrizeCalculatorPage() {
                     <div key={prize} className="flex justify-between items-center">
                       <span className="text-muted-foreground">{prize}:</span>
                       <div className="flex items-center gap-1">
-                        <Coins className="h-4 w-4 text-yellow-500"/>
+                        <Image src="/coin.png" alt="Coins" width={16} height={16} />
                         <span className="font-medium">{formatCoins(calculatedPrizes[prize] || 0)}</span>
                       </div>
                     </div>

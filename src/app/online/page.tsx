@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Coins, Lock, Play, Users, ArrowLeft, Loader2, Link as LinkIcon, Ticket } from 'lucide-react';
+import { Lock, Play, Users, ArrowLeft, Loader2, Link as LinkIcon, Ticket } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import type { OnlineGameTier, TierConfig } from '@/types';
@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { playSound } from '@/lib/sounds';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import Image from 'next/image';
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
@@ -91,7 +92,7 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
                         <CardDescription>
                             <div className="flex items-center gap-4 text-xs mt-1">
                                 <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {tierConfig.roomSize} Players</span>
-                                <span className="flex items-center gap-1"><Coins className="h-3 w-3" /> {tierConfig.ticketPrice} / ticket</span>
+                                <span className="flex items-center gap-1"><Image src="/coin.png" alt="Coins" width={12} height={12} /> {tierConfig.ticketPrice} / ticket</span>
                             </div>
                         </CardDescription>
                     </div>

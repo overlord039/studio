@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertTriangle, Calendar, Mail, LogOut, X, Fingerprint, Gamepad2, Award, Loader2, Pencil, Check, Coins } from "lucide-react";
+import { AlertTriangle, Calendar, Mail, LogOut, X, Fingerprint, Gamepad2, Award, Loader2, Pencil, Check } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -227,69 +227,71 @@ export default function ProfilePage() {
                       {currentUser.isGuest && <Badge variant="secondary">Guest Account</Badge>}
                       <div className="text-xs text-muted-foreground font-mono bg-background/50 px-2 py-1 rounded-full">ID: {currentUser.uid}</div>
                   </div>
-                  <div className="flex flex-row items-start justify-center gap-4 text-center w-full">
-                       <div className="relative flex-shrink-0">
-                          <Avatar className="h-24 w-24 sm:h-28 sm:w-28 border-4 border-background shadow-lg">
-                              <AvatarImage src={currentUser.photoURL || `https://placehold.co/128x128.png?text=${avatarFallback}`} alt={displayName} data-ai-hint="profile avatar"/>
-                              <AvatarFallback className="text-3xl sm:text-4xl">{avatarFallback}</AvatarFallback>
-                          </Avatar>
-                           <AvatarSelectionDialog onSelect={handleAvatarSelect}>
-                            <Button 
-                              size="icon" 
-                              variant="secondary" 
-                              className="absolute bottom-0 right-0 rounded-full h-7 w-7 border-2 border-background"
-                              title="Change avatar"
-                            >
-                              <Pencil className="h-3.5 w-3.5"/>
-                              <span className="sr-only">Edit profile picture</span>
-                            </Button>
-                          </AvatarSelectionDialog>
-                       </div>
-                       <div className="space-y-1 flex-grow flex flex-col items-start mt-2">
-                        {isEditingName ? (
-                          <div className="w-full flex flex-col items-start">
-                              <div className="flex w-full max-w-xs items-center gap-2">
-                                <Input 
-                                    value={newDisplayName}
-                                    onChange={(e) => {
-                                        setNewDisplayName(e.target.value);
-                                        if (usernameError) setUsernameError(null);
-                                    }}
-                                    className={cn(
-                                        "text-2xl font-bold h-12",
-                                        usernameError && "border-destructive focus-visible:ring-destructive"
-                                    )}
-                                    maxLength={20}
-                                />
-                                <Button size="icon" onClick={handleNameChange} disabled={isSavingName}>
-                                    {isSavingName ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4"/>}
-                                </Button>
-                                <Button size="icon" variant="ghost" onClick={() => setIsEditingName(false)}>
-                                    <X className="h-4 w-4"/>
-                                </Button>
-                              </div>
-                              {usernameError && <p className="text-xs text-destructive mt-1">{usernameError}</p>}
-                          </div>
-                        ) : (
-                          <div className="flex items-baseline gap-1">
-                            <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="h-6 w-6" 
-                              onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); setUsernameError(null); }}
-                              disabled={!canChangeName}
-                              title={canChangeName ? "Edit username" : "Username can only be changed once"}
-                            >
-                              <Pencil className="h-3.5 w-3.5"/>
-                            </Button>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1.5 p-2 rounded-md bg-background/50">
-                            <Coins className="h-5 w-5 text-yellow-500" />
-                            <span className="text-xl font-bold text-foreground">{currentUser.stats?.coins || 0}</span>
-                        </div>
-                       </div>
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-center w-full">
+                      <div className="flex items-center gap-4">
+                         <div className="relative flex-shrink-0">
+                            <Avatar className="h-24 w-24 sm:h-28 sm:w-28 border-4 border-background shadow-lg">
+                                <AvatarImage src={currentUser.photoURL || `https://placehold.co/128x128.png?text=${avatarFallback}`} alt={displayName} data-ai-hint="profile avatar"/>
+                                <AvatarFallback className="text-3xl sm:text-4xl">{avatarFallback}</AvatarFallback>
+                            </Avatar>
+                             <AvatarSelectionDialog onSelect={handleAvatarSelect}>
+                              <Button 
+                                size="icon" 
+                                variant="secondary" 
+                                className="absolute bottom-0 right-0 rounded-full h-7 w-7 border-2 border-background"
+                                title="Change avatar"
+                              >
+                                <Pencil className="h-3.5 w-3.5"/>
+                                <span className="sr-only">Edit profile picture</span>
+                              </Button>
+                            </AvatarSelectionDialog>
+                         </div>
+                         <div className="space-y-1 flex-grow flex flex-col items-start mt-2">
+                          {isEditingName ? (
+                            <div className="w-full flex flex-col items-start">
+                                <div className="flex w-full max-w-xs items-center gap-2">
+                                  <Input 
+                                      value={newDisplayName}
+                                      onChange={(e) => {
+                                          setNewDisplayName(e.target.value);
+                                          if (usernameError) setUsernameError(null);
+                                      }}
+                                      className={cn(
+                                          "text-2xl font-bold h-12",
+                                          usernameError && "border-destructive focus-visible:ring-destructive"
+                                      )}
+                                      maxLength={20}
+                                  />
+                                  <Button size="icon" onClick={handleNameChange} disabled={isSavingName}>
+                                      {isSavingName ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4"/>}
+                                  </Button>
+                                  <Button size="icon" variant="ghost" onClick={() => setIsEditingName(false)}>
+                                      <X className="h-4 w-4"/>
+                                  </Button>
+                                </div>
+                                {usernameError && <p className="text-xs text-destructive mt-1">{usernameError}</p>}
+                            </div>
+                          ) : (
+                            <div className="flex items-baseline gap-1">
+                              <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
+                              <Button 
+                                size="icon" 
+                                variant="ghost" 
+                                className="h-6 w-6" 
+                                onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); setUsernameError(null); }}
+                                disabled={!canChangeName}
+                                title={canChangeName ? "Edit username" : "Username can only be changed once"}
+                              >
+                                <Pencil className="h-3.5 w-3.5"/>
+                              </Button>
+                            </div>
+                          )}
+                         </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 p-2 rounded-md bg-background/50">
+                          <Image src="/coin.png" alt="Coins" width={20} height={20} />
+                          <span className="text-xl font-bold text-foreground">{currentUser.stats?.coins || 0}</span>
+                      </div>
                   </div>
                 </div>
               </div>

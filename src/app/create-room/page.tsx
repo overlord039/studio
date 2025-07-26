@@ -9,10 +9,11 @@ import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Minus, Plus, LogOut, Coins } from 'lucide-react';
+import { Minus, Plus, LogOut } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import type { Player, GameSettings, Room } from '@/types';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const LOBBY_SIZES = [5, 10, 15, 20, 25, 50];
 
@@ -166,7 +167,7 @@ export default function CreateOrJoinRoomPage() {
                     </Button>
                     <div className="flex flex-col items-center justify-center w-28 h-20 rounded-lg border-2 border-accent bg-accent/10">
                       <div className="flex items-center gap-1">
-                        <Coins className="h-7 w-7 text-yellow-500" />
+                        <Image src="/coin.png" alt="Coins" width={28} height={28} />
                         <span className="text-3xl font-bold text-foreground">{ticketPrice}</span>
                       </div>
                       <span className="text-xs text-accent uppercase">ticket prize</span>
