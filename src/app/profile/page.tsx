@@ -246,7 +246,7 @@ export default function ProfilePage() {
                           </AvatarSelectionDialog>
                       </div>
 
-                      <div className="flex flex-col items-center sm:items-start gap-1">
+                      <div className="flex flex-col items-center sm:items-start gap-2">
                           {isEditingName ? (
                             <div className="w-full flex flex-col items-start">
                                 <div className="flex w-full max-w-xs items-center gap-2">
@@ -272,7 +272,7 @@ export default function ProfilePage() {
                                 {usernameError && <p className="text-xs text-destructive mt-1">{usernameError}</p>}
                             </div>
                           ) : (
-                            <div className="flex flex-col items-center sm:items-start">
+                            <div className="flex flex-col items-center sm:items-start gap-2">
                               <div className="flex items-baseline gap-1">
                                 <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
                                 <Button 
@@ -286,9 +286,9 @@ export default function ProfilePage() {
                                   <Pencil className="h-3.5 w-3.5"/>
                                 </Button>
                               </div>
-                               <div className="flex items-center gap-1 font-bold text-lg text-primary">
-                                  <Image src="/coin.png" alt="Coins" width={20} height={20} />
-                                  <span>{currentUser.stats?.coins || 0}</span>
+                               <div className="bg-amber-400/20 border border-amber-500/30 text-amber-800 dark:text-amber-300 px-3 py-1 rounded-full flex items-center gap-2">
+                                <Image src="/coin.png" alt="Coins" width={20} height={20} />
+                                <span className="font-bold text-lg">{currentUser.stats?.coins || 0}</span>
                               </div>
                             </div>
                           )}
