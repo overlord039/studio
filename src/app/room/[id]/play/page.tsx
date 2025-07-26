@@ -798,6 +798,24 @@ export default function GameRoomPage() {
               <div className="font-semibold text-white">{currentUser.displayName} ({myTickets.length} {ticketsText(myTickets.length)})</div>
             </div>
             <div className="flex-shrink-0 flex items-center gap-2">
+                 <div className="hidden sm:flex items-center gap-4 text-white">
+                    <div className="flex flex-col items-center">
+                        <span className="text-xs opacity-80">Room Size</span>
+                        <div className="font-bold flex items-center gap-1">
+                            <Users className="h-4 w-4" />
+                            {gameSettings.lobbySize}
+                        </div>
+                    </div>
+                    {!isBotGame && (
+                        <div className="flex flex-col items-center">
+                            <span className="text-xs opacity-80">Prize Pool</span>
+                            <div className="font-bold flex items-center gap-1">
+                                <Image src="/coin.png" alt="Coins" width={16} height={16} />
+                                {formatCoins(totalPrizePool)}
+                            </div>
+                        </div>
+                    )}
+                </div>
               {isCurrentUserHost && !isOnlineGame && !isBotGame && !roomData.isGameOver && (
                 <div className="flex items-center gap-1 p-1 rounded-md border bg-card/80 backdrop-blur-sm">
                     <Label htmlFor="calling-mode-switch" className="text-xs font-medium text-foreground cursor-pointer">
