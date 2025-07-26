@@ -8,7 +8,7 @@ import { PRIZE_TYPES } from '@/types';
 
 // Define coin rewards for offline games
 const OFFLINE_COIN_REWARDS: Record<PrizeType, number> = {
-  [PRIZE_TYPES.EARLY_5]: 1,
+  [PRIZE_TYPES.EARLY_5]: 2, // Corrected from 1 to 2
   [PRIZE_TYPES.FIRST_LINE]: 2,
   [PRIZE_TYPES.SECOND_LINE]: 2,
   [PRIZE_TYPES.THIRD_LINE]: 2,
@@ -55,12 +55,22 @@ export async function POST(
 
     const batch = writeBatch(db);
 
-    // This API is only for offline games. Online game stats are updated in game-store.ts
-    const isOfflineGame = room.settings.gameMode !== 'online';
+    const isFriendsGame = room.settings.gameMode === 'multiplayer';
+    if (isFriendsGame) {
+      // Friends games don't have coin rewards, just track match played
+      const statsUpdate = { 'stats.matchesPlayed': increment(1) };
+      batch.update(playerDocRef, statsUpdate);
+      await batch.commit();
+      return NextResponse.json({ success: true, message: 'Stats updated for multiplayer game.', coinsEarned: 0 });
+    }
+
+    // This API is only for offline games now. Online game stats are updated in game-store.ts
+    const isOfflineGame = room.settings.gameMode !== 'online' && !isFriendsGame;
     if (!isOfflineGame) {
         return NextResponse.json({ success: true, message: 'Stats for online games are handled separately.' });
     }
-
+    
+    // Logic for OFFLINE (BOT) games
     const statsUpdate: { [key: string]: any } = {
         'stats.matchesPlayed': increment(1)
     };
@@ -77,6 +87,7 @@ export async function POST(
         }
     }
 
+    // Only give participation reward if NO other prize was won
     if (totalPrizesWon === 0) {
         coinsEarned = PARTICIPATION_REWARD;
     }
