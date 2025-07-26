@@ -300,7 +300,7 @@ export default function ProfilePage() {
                         <div>
                             <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">Statistics</h3>
                             <div className="mt-2 space-y-3">
-                                <Card className="bg-secondary/30">
+                                <Card className="bg-secondary">
                                     <CardContent className="p-3 flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <Gamepad2 className="h-4 w-4 text-primary" />
@@ -311,7 +311,7 @@ export default function ProfilePage() {
                                 </Card>
                                 
                                 {prizesWonArray.length > 0 ? (
-                                    <Card className="bg-secondary/30">
+                                    <Card className="bg-secondary">
                                         <CardHeader className="p-3 pb-1">
                                             <CardTitle className="text-sm font-semibold flex items-center gap-2 text-primary">
                                                 <Award className="h-4 w-4" /> Prizes Won
