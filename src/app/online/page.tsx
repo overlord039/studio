@@ -92,7 +92,7 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
                         <CardDescription>
                             <div className="flex items-center gap-4 text-xs mt-1">
                                 <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {tierConfig.roomSize} Players</span>
-                                <span className="flex items-center gap-1"><Image src="/coin.png" alt="Coins" width={12} height={12} /> {tierConfig.ticketPrice} / ticket</span>
+                                <span className="flex items-center gap-1"><Image src="/coin.png" alt="Coins" width={14} height={14} /> {tierConfig.ticketPrice} / ticket</span>
                             </div>
                         </CardDescription>
                     </div>

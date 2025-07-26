@@ -481,7 +481,7 @@ export default function LobbyPage() {
                 <CardContent className="p-3 flex flex-col items-center justify-center text-center">
                     <span className="text-xs text-muted-foreground">Ticket Price</span>
                     <div className="flex items-center gap-1 font-bold text-lg">
-                      <Image src="/coin.png" alt="Coins" width={20} height={20} />
+                      <Image src="/coin.png" alt="Coins" width={22} height={22} />
                       <span>{gameSettings.ticketPrice}</span>
                     </div>
                 </CardContent>
@@ -569,7 +569,7 @@ export default function LobbyPage() {
                       {player.tickets?.length > 0 
                         ? <>
                             <span>{player.tickets.length} ticket{player.tickets.length === 1 ? '' : 's'}</span>
-                            <div className="flex items-center gap-0.5">(<Image src="/coin.png" alt="Coins" width={12} height={12} />{player.tickets.length * gameSettings.ticketPrice})</div>
+                            <div className="flex items-center gap-0.5">(<Image src="/coin.png" alt="Coins" width={14} height={14} />{player.tickets.length * gameSettings.ticketPrice})</div>
                           </>
                         : (roomData.isGameOver ? "Game Over" : "No tickets yet")}
                     </span>
@@ -632,7 +632,7 @@ export default function LobbyPage() {
               <CardContent className="p-2 md:p-4 space-y-2 text-xs md:text-sm">
                  <div className="font-semibold flex items-center gap-1">
                   <span>Potential Prize Pool:</span>
-                  <Image src="/coin.png" alt="Coins" width={16} height={16} />
+                  <Image src="/coin.png" alt="Coins" width={18} height={18} />
                   <span>{currentTotalPrizePool.toFixed(0)}</span>
                  </div>
                  <p className="text-xs text-muted-foreground">
@@ -645,7 +645,7 @@ export default function LobbyPage() {
                     <div key={prizeName} className="flex justify-between items-center text-xs md:text-sm">
                       <span>{prizeName}:</span>
                       <div className="font-semibold flex items-center gap-1">
-                        <Image src="/coin.png" alt="Coins" width={16} height={16} />
+                        <Image src="/coin.png" alt="Coins" width={18} height={18} />
                         <span>{prizeAmount.toFixed(0)} ({percentage}%)</span>
                       </div>
                     </div>

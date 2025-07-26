@@ -167,7 +167,7 @@ export default function CreateOrJoinRoomPage() {
                     </Button>
                     <div className="flex flex-col items-center justify-center w-28 h-20 rounded-lg border-2 border-accent bg-accent/10">
                       <div className="flex items-center gap-1">
-                        <Image src="/coin.png" alt="Coins" width={28} height={28} />
+                        <Image src="/coin.png" alt="Coins" width={32} height={32} />
                         <span className="text-3xl font-bold text-foreground">{ticketPrice}</span>
                       </div>
                       <span className="text-xs text-accent uppercase">ticket prize</span>
