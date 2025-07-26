@@ -286,11 +286,6 @@ export default function ProfilePage() {
                               </Button>
                             </div>
                           )}
-
-                          <div className="flex items-center gap-1.5 p-2 rounded-md bg-background/50">
-                              <Image src="/coin.png" alt="Coins" width={20} height={20} />
-                              <span className="text-xl font-bold text-foreground">{currentUser.stats?.coins || 0}</span>
-                          </div>
                       </div>
                   </div>
                 </div>
@@ -300,6 +295,15 @@ export default function ProfilePage() {
                         <div>
                             <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">Statistics</h3>
                             <div className="mt-2 space-y-3">
+                                <Card className="bg-secondary">
+                                    <CardContent className="p-3 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Image src="/coin.png" alt="Coins" width={16} height={16} />
+                                            <span className="font-semibold text-sm">Total Coins</span>
+                                        </div>
+                                        <span className="font-bold text-lg text-primary">{currentUser.stats?.coins || 0}</span>
+                                    </CardContent>
+                                </Card>
                                 <Card className="bg-secondary">
                                     <CardContent className="p-3 flex items-center justify-between">
                                         <div className="flex items-center gap-2">
