@@ -8,7 +8,7 @@ import { PRIZE_TYPES } from '@/types';
 
 // Define coin rewards for offline games
 const OFFLINE_COIN_REWARDS: Record<PrizeType, number> = {
-  [PRIZE_TYPES.EARLY_5]: 2, // Corrected from 1 to 2
+  [PRIZE_TYPES.EARLY_5]: 2,
   [PRIZE_TYPES.FIRST_LINE]: 2,
   [PRIZE_TYPES.SECOND_LINE]: 2,
   [PRIZE_TYPES.THIRD_LINE]: 2,
@@ -75,23 +75,26 @@ export async function POST(
         'stats.matchesPlayed': increment(1)
     };
 
-    let totalPrizesWon = 0;
+    let totalPrizesWonCount = 0;
     let coinsEarned = 0;
 
     for (const prizeType in room.prizeStatus) {
         const prizeInfo = room.prizeStatus[prizeType as PrizeType];
         if (prizeInfo && prizeInfo.claimedBy.some(c => c.id === userId)) {
             statsUpdate[`stats.prizesWon.${prizeType}`] = increment(1);
-            totalPrizesWon++;
+            totalPrizesWonCount++;
             coinsEarned += OFFLINE_COIN_REWARDS[prizeType as PrizeType] || 0;
         }
     }
 
     // Only give participation reward if NO other prize was won
-    if (totalPrizesWon === 0) {
+    if (totalPrizesWonCount === 0) {
         coinsEarned = PARTICIPATION_REWARD;
     }
-    statsUpdate['stats.coins'] = increment(coinsEarned);
+    
+    if (coinsEarned > 0) {
+      statsUpdate['stats.coins'] = increment(coinsEarned);
+    }
     
     batch.update(playerDocRef, statsUpdate);
     await batch.commit();
