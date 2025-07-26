@@ -34,7 +34,7 @@ export default function NumberCallerPage() {
   const [isAutoCalling, setIsAutoCalling] = useState(false);
   const autoCallSpeed = 6; // Fixed speed in seconds
   const { isSfxMuted, toggleSfxMute } = useSound();
-  const autoCallIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const autoCallTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   const [animationKey, setAnimationKey] = useState(0);
 
@@ -53,7 +53,7 @@ export default function NumberCallerPage() {
     if (availableNumbers.length === 0) {
       setIsAutoCalling(false); // Stop auto-calling if all numbers are out
       toast({ title: "All numbers called!", description: "The game is over. Reset to start a new game." });
-      return;
+      return false; // Indicate no more numbers
     }
 
     const nextNumber = availableNumbers[0]; // Get the first number from the shuffled list
@@ -62,11 +62,12 @@ export default function NumberCallerPage() {
     setCalledNumbers(prev => [nextNumber, ...prev]);
     speakNumber(nextNumber);
     setAnimationKey(prev => prev + 1);
+    return true; // Indicate a number was called
   }, [availableNumbers, speakNumber, toast]);
 
   const resetGame = () => {
-    if (autoCallIntervalRef.current) {
-      clearInterval(autoCallIntervalRef.current);
+    if (autoCallTimeoutRef.current) {
+      clearTimeout(autoCallTimeoutRef.current);
     }
     setIsAutoCalling(false);
     setCurrentNumber(null);
@@ -80,26 +81,34 @@ export default function NumberCallerPage() {
   };
 
   useEffect(() => {
-    if (isAutoCalling) {
-      // If starting auto-call and no number is currently shown, call one immediately.
-      if (currentNumber === null) {
-        callNextNumber();
-      }
-      autoCallIntervalRef.current = setInterval(() => {
-        callNextNumber();
+    const scheduleNextCall = () => {
+      autoCallTimeoutRef.current = setTimeout(() => {
+        if (callNextNumber()) {
+          scheduleNextCall(); // Schedule the next one after this one is called
+        }
       }, autoCallSpeed * 1000);
+    };
+
+    if (isAutoCalling) {
+      // If starting, call one immediately then start the timer loop
+      if (callNextNumber()) {
+        scheduleNextCall();
+      }
     } else {
-      if (autoCallIntervalRef.current) {
-        clearInterval(autoCallIntervalRef.current);
+      // If stopping, clear any scheduled call
+      if (autoCallTimeoutRef.current) {
+        clearTimeout(autoCallTimeoutRef.current);
       }
     }
-    // Cleanup function to clear interval when component unmounts or dependencies change
+
+    // Cleanup function
     return () => {
-      if (autoCallIntervalRef.current) {
-        clearInterval(autoCallIntervalRef.current);
+      if (autoCallTimeoutRef.current) {
+        clearTimeout(autoCallTimeoutRef.current);
       }
     };
-  }, [isAutoCalling, autoCallSpeed, callNextNumber, currentNumber]);
+  }, [isAutoCalling, callNextNumber]);
+
 
   const sortedCalledNumbers = [...calledNumbers].sort((a,b) => a - b);
 
