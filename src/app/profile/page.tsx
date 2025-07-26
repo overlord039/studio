@@ -223,30 +223,30 @@ export default function ProfilePage() {
               </Button>
               <div className="bg-gradient-to-br from-primary/10 to-secondary/10 p-6 sm:p-8">
                 <div className="flex flex-col items-center gap-4">
-                  <div className="flex items-center gap-2">
+                   <div className="flex items-center gap-2">
                       {currentUser.isGuest && <Badge variant="secondary">Guest Account</Badge>}
                       <div className="text-xs text-muted-foreground font-mono bg-background/50 px-2 py-1 rounded-full">ID: {currentUser.uid}</div>
                   </div>
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-center w-full">
-                      <div className="flex items-center gap-4">
-                         <div className="relative flex-shrink-0">
-                            <Avatar className="h-24 w-24 sm:h-28 sm:w-28 border-4 border-background shadow-lg">
-                                <AvatarImage src={currentUser.photoURL || `https://placehold.co/128x128.png?text=${avatarFallback}`} alt={displayName} data-ai-hint="profile avatar"/>
-                                <AvatarFallback className="text-3xl sm:text-4xl">{avatarFallback}</AvatarFallback>
-                            </Avatar>
-                             <AvatarSelectionDialog onSelect={handleAvatarSelect}>
-                              <Button 
-                                size="icon" 
-                                variant="secondary" 
-                                className="absolute bottom-0 right-0 rounded-full h-7 w-7 border-2 border-background"
-                                title="Change avatar"
-                              >
-                                <Pencil className="h-3.5 w-3.5"/>
-                                <span className="sr-only">Edit profile picture</span>
-                              </Button>
-                            </AvatarSelectionDialog>
-                         </div>
-                         <div className="space-y-1 flex-grow flex flex-col items-start mt-2">
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-center w-full">
+                      <div className="relative flex-shrink-0">
+                          <Avatar className="h-24 w-24 sm:h-28 sm:w-28 border-4 border-background shadow-lg">
+                              <AvatarImage src={currentUser.photoURL || `https://placehold.co/128x128.png?text=${avatarFallback}`} alt={displayName} data-ai-hint="profile avatar"/>
+                              <AvatarFallback className="text-3xl sm:text-4xl">{avatarFallback}</AvatarFallback>
+                          </Avatar>
+                           <AvatarSelectionDialog onSelect={handleAvatarSelect}>
+                            <Button 
+                              size="icon" 
+                              variant="secondary" 
+                              className="absolute bottom-0 right-0 rounded-full h-7 w-7 border-2 border-background"
+                              title="Change avatar"
+                            >
+                              <Pencil className="h-3.5 w-3.5"/>
+                              <span className="sr-only">Edit profile picture</span>
+                            </Button>
+                          </AvatarSelectionDialog>
+                      </div>
+
+                      <div className="flex flex-col items-center sm:items-start gap-1">
                           {isEditingName ? (
                             <div className="w-full flex flex-col items-start">
                                 <div className="flex w-full max-w-xs items-center gap-2">
@@ -286,11 +286,11 @@ export default function ProfilePage() {
                               </Button>
                             </div>
                           )}
-                         </div>
-                      </div>
-                      <div className="flex items-center gap-1.5 p-2 rounded-md bg-background/50">
-                          <Image src="/coin.png" alt="Coins" width={20} height={20} />
-                          <span className="text-xl font-bold text-foreground">{currentUser.stats?.coins || 0}</span>
+
+                          <div className="flex items-center gap-1.5 p-2 rounded-md bg-background/50">
+                              <Image src="/coin.png" alt="Coins" width={20} height={20} />
+                              <span className="text-xl font-bold text-foreground">{currentUser.stats?.coins || 0}</span>
+                          </div>
                       </div>
                   </div>
                 </div>
