@@ -272,18 +272,24 @@ export default function ProfilePage() {
                                 {usernameError && <p className="text-xs text-destructive mt-1">{usernameError}</p>}
                             </div>
                           ) : (
-                            <div className="flex items-baseline gap-1">
-                              <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
-                                className="h-6 w-6" 
-                                onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); setUsernameError(null); }}
-                                disabled={!canChangeName}
-                                title={canChangeName ? "Edit username" : "Username can only be changed once"}
-                              >
-                                <Pencil className="h-3.5 w-3.5"/>
-                              </Button>
+                            <div className="flex flex-col items-center sm:items-start">
+                              <div className="flex items-baseline gap-1">
+                                <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost" 
+                                  className="h-6 w-6" 
+                                  onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); setUsernameError(null); }}
+                                  disabled={!canChangeName}
+                                  title={canChangeName ? "Edit username" : "Username can only be changed once"}
+                                >
+                                  <Pencil className="h-3.5 w-3.5"/>
+                                </Button>
+                              </div>
+                               <div className="flex items-center gap-1 font-bold text-lg text-primary">
+                                  <Image src="/coin.png" alt="Coins" width={20} height={20} />
+                                  <span>{currentUser.stats?.coins || 0}</span>
+                              </div>
                             </div>
                           )}
                       </div>
@@ -295,15 +301,6 @@ export default function ProfilePage() {
                         <div>
                             <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">Statistics</h3>
                             <div className="mt-2 space-y-3">
-                                <Card className="bg-secondary">
-                                    <CardContent className="p-3 flex items-center justify-between">
-                                        <span className="font-semibold text-sm">Total Coins</span>
-                                        <div className="flex items-center gap-1 font-bold text-lg text-primary">
-                                            <Image src="/coin.png" alt="Coins" width={20} height={20} />
-                                            <span>{currentUser.stats?.coins || 0}</span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
                                 <Card className="bg-secondary">
                                     <CardContent className="p-3 flex items-center justify-between">
                                         <div className="flex items-center gap-2">
