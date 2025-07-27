@@ -77,18 +77,24 @@ export async function POST(
 
     let totalPrizesWonCount = 0;
     let coinsEarned = 0;
+    const prizesWonByPlayer: PrizeType[] = [];
 
     for (const prizeType in room.prizeStatus) {
         const prizeInfo = room.prizeStatus[prizeType as PrizeType];
         if (prizeInfo && prizeInfo.claimedBy.some(c => c.id === userId)) {
-            statsUpdate[`stats.prizesWon.${prizeType}`] = increment(1);
-            totalPrizesWonCount++;
-            coinsEarned += OFFLINE_COIN_REWARDS[prizeType as PrizeType] || 0;
+            prizesWonByPlayer.push(prizeType as PrizeType);
         }
     }
+    
+    totalPrizesWonCount = prizesWonByPlayer.length;
 
-    // Only give participation reward if NO other prize was won
-    if (totalPrizesWonCount === 0) {
+    if (totalPrizesWonCount > 0) {
+        prizesWonByPlayer.forEach(prize => {
+            statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
+            coinsEarned += OFFLINE_COIN_REWARDS[prize] || 0;
+        });
+    } else {
+        // Only give participation reward if NO other prize was won
         coinsEarned = PARTICIPATION_REWARD;
     }
     
