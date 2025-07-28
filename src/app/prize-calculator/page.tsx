@@ -23,6 +23,7 @@ import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
+import { useSound } from "@/contexts/sound-context";
 
 const prizeCategories = PRIZE_DEFINITIONS[DEFAULT_GAME_SETTINGS.prizeFormat];
 const defaultPercentages = PRIZE_DISTRIBUTION_PERCENTAGES[DEFAULT_GAME_SETTINGS.prizeFormat];
@@ -56,6 +57,7 @@ interface CalculatedPrizes {
 export default function PrizeCalculatorPage() {
   const [calculatedPrizes, setCalculatedPrizes] = useState<CalculatedPrizes | null>(null);
   const [isPercentageCustomizationVisible, setIsPercentageCustomizationVisible] = useState(false);
+  const { playSound } = useSound();
 
   const form = useForm<PrizeCalculatorFormValues>({
     resolver: zodResolver(prizeCalculatorFormSchema),

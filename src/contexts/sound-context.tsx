@@ -2,43 +2,62 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 
 const SFX_MUTED_KEY = 'housiehub-sfx-muted';
 const BGM_ENABLED_KEY = 'housiehub-bgm-enabled';
+
+const ALL_SOUND_EFFECTS = [
+    'buy.mp3',
+    'cards.mp3',
+    'error.wav',
+    'gameover.wav',
+    'gamestarting.wav',
+    'marking number.wav',
+    'notification.wav',
+    'start.wav',
+    'win.wav'
+];
 
 interface SoundContextType {
   isSfxMuted: boolean;
   toggleSfxMute: () => void;
   isBgmEnabled: boolean;
   toggleBgm: () => void;
+  playSound: (soundFile: string) => void;
 }
 
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
 
 export function SoundProvider({ children }: { children: ReactNode }) {
-  // Default to SFX on (not muted) and BGM on. Client-side useEffect will override this.
   const [isSfxMuted, setIsSfxMuted] = useState(false);
   const [isBgmEnabled, setIsBgmEnabled] = useState(true);
+  const audioCache = useRef<Map<string, HTMLAudioElement>>(new Map());
+
+  // Preload all sound effects on initial mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && typeof Audio !== 'undefined') {
+        ALL_SOUND_EFFECTS.forEach(soundFile => {
+            const audio = new Audio(`/${soundFile}`);
+            audio.preload = 'auto';
+            audio.load();
+            audioCache.current.set(soundFile, audio);
+        });
+    }
+  }, []);
 
   useEffect(() => {
-    // This effect runs only on the client to sync with localStorage
     try {
-      // For SFX: default is ON (muted is false). We check if a setting is stored.
       const storedSfxMuteState = localStorage.getItem(SFX_MUTED_KEY);
       if (storedSfxMuteState !== null) {
         setIsSfxMuted(storedSfxMuteState === 'true');
       }
-
-      // For BGM: default is ON (enabled is true). We check if a setting is stored.
       const storedBgmEnabledState = localStorage.getItem(BGM_ENABLED_KEY);
       if (storedBgmEnabledState !== null) {
         setIsBgmEnabled(storedBgmEnabledState === 'true');
       }
-
     } catch (error) {
       console.error("Could not read sound settings from localStorage", error);
-      // On error, the component will use the default useState values: SFX on, BGM on.
     }
   }, []);
 
@@ -66,12 +85,29 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const playSound = useCallback((soundFile: string) => {
+    if (isSfxMuted) return;
+
+    const audio = audioCache.current.get(soundFile);
+    if (audio) {
+        audio.currentTime = 0; // Rewind to start
+        audio.volume = 0.5;
+        audio.play().catch(error => {
+            console.warn(`Sound playback for "${soundFile}" was prevented by the browser.`, error);
+        });
+    } else {
+        console.warn(`Sound "${soundFile}" not found in cache.`);
+    }
+  }, [isSfxMuted]);
+
+
   const value = React.useMemo(() => ({ 
     isSfxMuted, 
     toggleSfxMute,
     isBgmEnabled,
-    toggleBgm
-  }), [isSfxMuted, toggleSfxMute, isBgmEnabled, toggleBgm]);
+    toggleBgm,
+    playSound
+  }), [isSfxMuted, toggleSfxMute, isBgmEnabled, toggleBgm, playSound]);
 
   return (
     <SoundContext.Provider value={value}>

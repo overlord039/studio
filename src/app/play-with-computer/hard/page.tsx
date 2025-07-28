@@ -9,12 +9,13 @@ import type { Player, Room } from "@/types";
 import { Bot, Skull, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
-import { playSound } from "@/lib/sounds";
+import { useSound } from "@/contexts/sound-context";
 
 export default function HardModePage() {
   const { toast } = useToast();
   const router = useRouter();
   const { currentUser, loading: authLoading } = useAuth();
+  const { playSound } = useSound();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleStartGame = async () => {

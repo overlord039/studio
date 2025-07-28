@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/auth-context';
 import type { OnlineGameTier, TierConfig } from '@/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { playSound } from '@/lib/sounds';
+import { useSound } from '@/contexts/sound-context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import Image from 'next/image';
@@ -43,6 +43,7 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
     const router = useRouter();
     const { currentUser } = useAuth();
     const { toast } = useToast();
+    const { playSound } = useSound();
     const [selectedTickets, setSelectedTickets] = useState(1);
 
     if (!currentUser) return null;

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Smile, Zap, Scaling, LogOut, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { playSound } from '@/lib/sounds';
+import { useSound } from '@/contexts/sound-context';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
@@ -17,6 +17,7 @@ export default function PlayWithComputerModesPage() {
   const router = useRouter();
   const { currentUser } = useAuth();
   const { toast } = useToast();
+  const { playSound } = useSound();
   const [isCreatingHardGame, setIsCreatingHardGame] = useState(false);
 
   const handleModeSelection = (path: string) => {

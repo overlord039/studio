@@ -15,13 +15,14 @@ import {
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/auth-context';
-import { playSound } from '@/lib/sounds';
+import { useSound } from '@/contexts/sound-context';
 import FeedbackForm from '@/components/layout/feedback-form';
 
 export default function HomePage() {
   const router = useRouter();
   const { toast } = useToast();
   const { currentUser, loading } = useAuth();
+  const { playSound } = useSound();
 
   const handleNavigateWithAuth = (path: string) => {
     playSound('cards.mp3');

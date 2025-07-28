@@ -14,7 +14,7 @@ import type { Player, Room } from "@/types";
 import { Bot, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
-import { playSound } from "@/lib/sounds";
+import { useSound } from "@/contexts/sound-context";
 
 const easyModeFormSchema = z.object({
   numberOfTickets: z.coerce.number().min(1).max(4),
@@ -26,6 +26,7 @@ export default function EasyModePage() {
   const { toast } = useToast();
   const router = useRouter();
   const { currentUser, loading: authLoading } = useAuth();
+  const { playSound } = useSound();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<EasyModeFormValues>({

@@ -10,7 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { playSound } from '@/lib/sounds';
+import { useSound } from '@/contexts/sound-context';
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
@@ -32,6 +32,7 @@ function MatchmakingContent() {
     const searchParams = useSearchParams();
     const { currentUser } = useAuth();
     const { toast } = useToast();
+    const { playSound } = useSound();
     
     const [tier, setTier] = useState<OnlineGameTier | null>(null);
     const [tickets, setTickets] = useState(1);
@@ -88,7 +89,7 @@ function MatchmakingContent() {
         setIsFindingMatch(false);
       }
 
-    }, [currentUser, tier, tickets, router, toast]);
+    }, [currentUser, tier, tickets, router, toast, playSound]);
 
     useEffect(() => {
         if (error || !tierConfig || isFindingMatch) return;

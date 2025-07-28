@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Minus, Plus, LogOut } from 'lucide-react';
-import { playSound } from '@/lib/sounds';
+import { useSound } from '@/contexts/sound-context';
 import type { Player, GameSettings, Room } from '@/types';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -21,6 +21,7 @@ export default function CreateOrJoinRoomPage() {
   const { currentUser, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  const { playSound } = useSound();
 
   const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
   
