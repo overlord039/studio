@@ -537,7 +537,7 @@ export default function GameRoomPage() {
   };
 
   const handleToggleCallingMode = async () => {
-    if (!currentUser || !isCurrentUserHost || !roomData || roomData.isGameOver || roomData.settings.gameMode !== 'multiplayer') return;
+    if (!currentUser || !isCurrentUserHost || !roomData || roomData.isGameOver || roomData.settings.gameMode === 'online') return;
 
     setIsUpdatingMode(true);
     const newMode = roomData.settings.callingMode === 'auto' ? 'manual' : 'auto';
@@ -866,9 +866,13 @@ export default function GameRoomPage() {
                       )}>
                           {BOT_GAME_MODE_NAMES[roomData.settings.gameMode as keyof typeof BOT_GAME_MODE_NAMES] || 'Bot Game'} Mode
                       </div>
+                  ) : roomData.settings.gameMode === 'online' && roomData.settings.tier ? (
+                      <div className="px-2 py-1 text-xs font-bold text-white rounded-md capitalize bg-blue-600">
+                          Online: {TIERS[roomData.settings.tier]?.name || 'Mode'}
+                      </div>
                   ) : (
                       <div className="text-white capitalize">
-                          {roomData.settings.gameMode === 'online' && roomData.settings.tier ? `Online: ${TIERS[roomData.settings.tier]?.name || 'Mode'}` : `Room ID: #${roomId}`}
+                          Room ID: #{roomId}
                       </div>
                   )}
               </div>
