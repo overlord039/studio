@@ -21,7 +21,13 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
     }
 };
 
-const BOT_NAMES = ["Chip", "Glitch", "Byte", "Pixel", "Unit 734", "Rookie", "Vector", "Domino", "Riff", "Echo", "Zeta", "Omega"];
+// Bot names for ONLINE mode - more human-like or generic
+const ONLINE_BOT_NAMES = ["Alex", "Sam", "Jordan", "Taylor", "Casey", "Riley", "Jessie", "Morgan", "Skyler", "Drew"];
+
+function generateGuestBotName(): string {
+  const guestId = Math.floor(1000 + Math.random() * 9000); // e.g., 1234
+  return `Guest#${guestId}`;
+}
 
 function shuffleArray<T>(array: T[]): T[] {
   const newArray = [...array];
@@ -82,11 +88,14 @@ export async function POST(request: NextRequest) {
     addPlayerToRoomStore(newRoom.id, { ...player, isHost: true }, tickets);
 
     // 4. Add bot players to fill the room
-    const shuffledBotNames = shuffleArray([...BOT_NAMES]);
+    // Create a mixed pool of bot names for online mode
+    const guestBotNames = Array.from({ length: 5 }, () => generateGuestBotName()); // Generate 5 Guest#xxxx names
+    const onlineNamePool = shuffleArray([...ONLINE_BOT_NAMES, ...guestBotNames]);
+
     const botsToAdd = tierConfig.roomSize - 1;
     for (let i = 0; i < botsToAdd; i++) {
         const botId = `bot-${i+1}-${Date.now()}`;
-        const botName = shuffledBotNames[i];
+        const botName = onlineNamePool[i % onlineNamePool.length]; // Use modulo to prevent running out of names
         const botPlayer: Player = { id: botId, name: botName, isBot: true };
         // Bots in online mode also get a random number of tickets to make it interesting
         const botTickets = 1 + Math.floor(Math.random() * 4);

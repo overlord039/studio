@@ -3,7 +3,9 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createRoomStore, addPlayerToRoomStore, getRoomStateForClient, startGameInRoomStore } from '@/lib/server/game-store';
 import type { Player, GameSettings, Room } from '@/types';
 
-const BOT_NAMES = ["Chip", "Glitch", "Byte", "Pixel", "Unit 734", "Rookie", "Vector", "Domino"];
+// Bot names for OFFLINE mode - more tech-themed
+const OFFLINE_BOT_NAMES = ["Chip", "Glitch", "Byte", "Pixel", "Vector", "Domino", "Rookie", "Unit 734", "Signal", "Apex"];
+
 
 function shuffleArray<T>(array: T[]): T[] {
   const newArray = [...array];
@@ -47,7 +49,7 @@ export async function POST(request: NextRequest) {
     addPlayerToRoomStore(newRoom.id, { ...host, isHost: true }, hostTickets);
 
     // 3. Add bot players
-    const shuffledBotNames = shuffleArray([...BOT_NAMES]);
+    const shuffledBotNames = shuffleArray([...OFFLINE_BOT_NAMES]);
     for (let i = 0; i < 4; i++) {
         const botId = `bot-${i+1}-${Date.now()}`;
         const botName = shuffledBotNames[i];
