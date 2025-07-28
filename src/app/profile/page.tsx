@@ -227,11 +227,11 @@ export default function ProfilePage() {
                       {currentUser.isGuest && <Badge variant="secondary">Guest Account</Badge>}
                       <div className="text-xs text-muted-foreground font-mono bg-background/50 px-2 py-1 rounded-full">ID: {currentUser.uid}</div>
                   </div>
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-center w-full">
+                  <div className="flex items-center justify-center gap-4 text-center w-full">
                       <div className="relative flex-shrink-0">
-                          <Avatar className="h-24 w-24 sm:h-28 sm:w-28 border-4 border-background shadow-lg">
+                          <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
                               <AvatarImage src={currentUser.photoURL || `https://placehold.co/128x128.png?text=${avatarFallback}`} alt={displayName} data-ai-hint="profile avatar"/>
-                              <AvatarFallback className="text-3xl sm:text-4xl">{avatarFallback}</AvatarFallback>
+                              <AvatarFallback className="text-3xl">{avatarFallback}</AvatarFallback>
                           </Avatar>
                            <AvatarSelectionDialog onSelect={handleAvatarSelect}>
                             <Button 
@@ -246,7 +246,7 @@ export default function ProfilePage() {
                           </AvatarSelectionDialog>
                       </div>
 
-                      <div className="flex flex-col items-center sm:items-start gap-2">
+                      <div className="flex flex-col items-start gap-2">
                           {isEditingName ? (
                             <div className="w-full flex flex-col items-start">
                                 <div className="flex w-full max-w-xs items-center gap-2">
@@ -272,9 +272,9 @@ export default function ProfilePage() {
                                 {usernameError && <p className="text-xs text-destructive mt-1">{usernameError}</p>}
                             </div>
                           ) : (
-                            <div className="flex flex-col items-center sm:items-start gap-2">
+                            <div className="flex flex-col items-start gap-2">
                               <div className="flex items-baseline gap-1">
-                                <h1 className="text-3xl sm:text-4xl font-bold">{displayName}</h1>
+                                <h1 className="text-3xl font-bold">{displayName}</h1>
                                 <Button 
                                   size="icon" 
                                   variant="ghost" 
