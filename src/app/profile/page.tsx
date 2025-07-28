@@ -229,7 +229,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex items-center justify-center gap-4 text-center w-full">
                       <div className="relative flex-shrink-0">
-                          <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
+                          <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-background shadow-lg">
                               <AvatarImage src={currentUser.photoURL || `https://placehold.co/128x128.png?text=${avatarFallback}`} alt={displayName} data-ai-hint="profile avatar"/>
                               <AvatarFallback className="text-3xl">{avatarFallback}</AvatarFallback>
                           </Avatar>
@@ -274,11 +274,11 @@ export default function ProfilePage() {
                           ) : (
                             <div className="flex flex-col items-start gap-2">
                               <div className="flex items-baseline gap-1">
-                                <h1 className="text-3xl font-bold">{displayName}</h1>
+                                <h1 className="text-2xl sm:text-3xl font-bold">{displayName}</h1>
                                 <Button 
                                   size="icon" 
                                   variant="ghost" 
-                                  className="h-6 w-6" 
+                                  className="h-5 w-5 sm:h-6 sm:w-6" 
                                   onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); setUsernameError(null); }}
                                   disabled={!canChangeName}
                                   title={canChangeName ? "Edit username" : "Username can only be changed once"}
@@ -391,3 +391,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
