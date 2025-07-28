@@ -200,8 +200,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await signInWithEmailLink(auth, email, window.location.href);
         }
         window.localStorage.removeItem('emailForSignIn');
-        window.history.replaceState({}, document.title, '/'); // Clean URL after sign-in
-        router.push('/');
+        window.history.replaceState({}, document.title, '/profile'); // Clean URL after sign-in
+        router.push('/profile');
       } catch (error: any) {
         toast({ title: "Link/Sign-in Failed", description: error.message, variant: "destructive" });
       } finally {
@@ -412,9 +412,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         batch.set(usernameRef, { userId: firebaseUser.uid, username: displayName });
         await batch.commit();
         setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
+        router.push('/profile');
+      } else {
+        toast({ title: "Signed In Successfully", description: `Welcome back!` });
+        router.push('/');
       }
-      toast({ title: "Signed In Successfully", description: `Welcome!` });
-      router.push('/');
     } catch (error: any) {
       if (error.code === 'auth/account-exists-with-different-credential') {
         toast({ title: "Account Exists", description: "An account with this email already exists. Please sign in with the original method.", variant: "destructive" });
@@ -567,7 +569,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const guestName = `Guest#${result.user.uid.substring(0,5)}`;
         // Don't write to DB for guests, handle locally
         localStorage.setItem('isNewGuest', 'true');
-        router.push('/');
+        router.push('/profile');
     } catch (error: any) {
         console.error("Guest Sign-In Error:", error);
         toast({ title: "Guest Sign-in Failed", description: error.message, variant: "destructive" });
