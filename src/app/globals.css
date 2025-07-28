@@ -33,8 +33,8 @@ body {
     --destructive: 350 89% 60%; /* Rose Red #F43F5E */
     --destructive-foreground: 0 0% 100%; /* White #FFFFFF */
 
-    --border: 215 28% 90%; /* Light Slate Gray #E2E8F0 */
-    --input: 215 28% 90%; /* Light Slate Gray #E2E8F0 */
+    --border: 220 17% 97%; /* Light Slate Gray #E2E8F0 */
+    --input: 220 17% 97%; /* Light Slate Gray #E2E8F0 */
     --ring: 239 85% 67%; /* Indigo #6366F1 */
     
     --chart-1: 12 76% 61%;
@@ -51,7 +51,7 @@ body {
     --sidebar-primary-foreground: 0 0% 100%; /* Same as main primary-foreground */
     --sidebar-accent: 247 88% 95%; /* Similar to secondary for subtle accents */
     --sidebar-accent-foreground: 244 57% 50%; /* Darker Indigo for text on sidebar accent */
-    --sidebar-border: 215 28% 90%; /* Same as main border */
+    --sidebar-border: 220 17% 97%; /* Same as main border */
     --sidebar-ring: 239 85% 67%; /* Same as main ring */
   }
 
