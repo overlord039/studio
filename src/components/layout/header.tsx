@@ -56,7 +56,7 @@ const SettingsModal = ({ activeTab, setActiveTab }: { activeTab: string; setActi
   };
 
   const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
+    <svg role="img" viewBox="0 0 24" xmlns="http://www.w3.org/2000/svg" {...props}>
       <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.854 3.187-1.782 4.133-1.147 1.147-2.933 2.4-5.11 2.4-4.333 0-7.84-3.52-7.84-7.84s3.507-7.84 7.84-7.84c2.44 0 4.007 1.013 4.907 1.947l2.6-2.6C18.067.733 15.447 0 12.48 0 5.867 0 .333 5.393.333 12s5.534 12 12.147 12c3.553 0 6.227-1.173 8.24-3.253 2.133-2.133 2.84-5.24 2.84-7.667 0-.76-.053-1.467-.173-2.133H12.48z" />
     </svg>
   );
@@ -136,7 +136,7 @@ const SettingsModal = ({ activeTab, setActiveTab }: { activeTab: string; setActi
               <nav className="md:hidden flex-shrink-0 flex p-1 border-b justify-around bg-card">
                   <MobileTabButton id="general" label="General" icon={Settings} />
                   <MobileTabButton id="how-to-play" label="How to Play" icon={HelpCircle} />
-                  <MobileTabButton id="developer" label="Developer" icon={FileCode} />
+                  <MobileTabButton id="developer-note" label="Developer" icon={FileCode} />
                   <MobileTabButton id="about" label="About" icon={Info} />
               </nav>
 
@@ -395,5 +395,3 @@ export default function Header() {
     </header>
   );
 }
-
-    
