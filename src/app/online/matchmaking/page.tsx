@@ -39,6 +39,7 @@ function MatchmakingContent() {
     const [tierConfig, setTierConfig] = useState<TierConfig | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isFindingMatch, setIsFindingMatch] = useState(false);
+    const [countdown, setCountdown] = useState<number | null>(null);
 
     useEffect(() => {
         const tierParam = searchParams.get('tier') as OnlineGameTier;
@@ -47,6 +48,7 @@ function MatchmakingContent() {
             setTier(tierParam);
             const config = TIERS[tierParam];
             setTierConfig(config);
+            setCountdown(config.matchmakingTime);
             setTickets(parseInt(ticketsParam, 10));
         } else {
             setError("Invalid game tier or ticket count specified.");
@@ -88,18 +90,21 @@ function MatchmakingContent() {
       }
 
     }, [currentUser, tier, tickets, router, toast, playSound]);
-
+    
     useEffect(() => {
-        if (error || !tierConfig || isFindingMatch) return;
+        if (countdown === null || error || isFindingMatch) return;
 
-        // Instead of a countdown, we set a timeout for the matchmaking duration
-        const matchmakingTimeout = setTimeout(() => {
+        if (countdown <= 0) {
             findMatch();
-        }, tierConfig.matchmakingTime * 1000);
+            return;
+        }
 
-        // Cleanup the timeout if the component unmounts or dependencies change
-        return () => clearTimeout(matchmakingTimeout);
-    }, [tierConfig, error, findMatch, isFindingMatch]);
+        const timer = setInterval(() => {
+            setCountdown(prev => (prev !== null ? prev - 1 : 0));
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [countdown, error, findMatch, isFindingMatch]);
     
     if (!currentUser || !tierConfig) {
         return <Loader2 className="h-8 w-8 animate-spin text-white" />;
@@ -122,6 +127,13 @@ function MatchmakingContent() {
         );
     }
 
+    const formatTime = (seconds: number | null) => {
+        if (seconds === null) return '00:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    };
+
     return (
         <Card className="w-full max-w-md shadow-xl bg-card/80 backdrop-blur-sm border-primary/20">
             <CardHeader className="text-center">
@@ -129,6 +141,9 @@ function MatchmakingContent() {
                 <CardDescription className="text-white/80">Tier: {tierConfig.name} ({tickets} {tickets === 1 ? 'ticket' : 'tickets'})</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+                 <div className="text-center font-mono text-2xl text-white/90">
+                    {formatTime(countdown)}
+                 </div>
                  <div className="flex justify-center items-center gap-4 text-white h-20">
                     <Search className="h-12 w-12 text-primary animate-pulse" />
                     <span className="text-xl font-semibold">Searching for players...</span>
