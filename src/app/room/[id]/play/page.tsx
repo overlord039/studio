@@ -244,8 +244,9 @@ export default function GameRoomPage() {
           return;
         }
 
-        const isOfflineGame = roomData.settings.gameMode !== 'online';
-        if (!isOfflineGame) return; // Online games are handled by backend claim logic
+        // Only call this API for offline or friends games. Online stats are updated differently.
+        const isGameApplicableForStatsUpdate = roomData.settings.gameMode !== 'online';
+        if (!isGameApplicableForStatsUpdate) return; 
 
         try {
           const response = await fetch(`/api/rooms/${roomId}/update-stats`, {
@@ -639,9 +640,13 @@ export default function GameRoomPage() {
             });
         } else if (coinsWonThisGame !== null) {
             currentUserWinnings = coinsWonThisGame;
-            const prizesWon = roomData.prizeStatus;
-            for (const prize in prizesWon) {
-                if(prizesWon[prize as PrizeType]?.claimedBy.some(c => c.id === currentUser.uid)) {
+        }
+
+        // Common logic to find out names of prizes won for all modes
+        const prizesWon = roomData.prizeStatus;
+        for (const prize in prizesWon) {
+            if(prizesWon[prize as PrizeType]?.claimedBy.some(c => c.id === currentUser.uid)) {
+                if (!currentUserPrizeNames.includes(prize)) { // Avoid duplicates if already added
                     currentUserPrizeNames.push(prize);
                 }
             }
@@ -649,7 +654,6 @@ export default function GameRoomPage() {
     }
     
     const playAgainButtonText = isBotGame ? "Play Again" : isOnlineGame ? "Find New Match" : (isCurrentUserHost ? "New Game" : "To Lobby");
-
     const userHasPrizes = currentUserPrizeNames.length > 0;
     const isParticipationWinner = !userHasPrizes && currentUserWinnings > 0;
 
@@ -668,7 +672,7 @@ export default function GameRoomPage() {
                 Final Prize Summary
             </h3>
             <div className="border rounded-md p-3">
-              {(isOnlineGame) && (
+              {isOnlineGame && (
               <div className="flex justify-between items-center text-lg font-bold mb-2 pb-2 border-b">
                 <span>Total Prize Pool:</span>
                 <div className="flex items-center gap-1">
@@ -683,12 +687,12 @@ export default function GameRoomPage() {
                   const isClaimed = claimInfo && claimInfo.claimedBy.length > 0;
                   
                   let prizeStatusText = "Not Claimed";
-                  if (claimInfo && claimInfo.claimedBy.length > 0) {
+                  if (isClaimed) {
                     const winnerNames = claimInfo.claimedBy.map(c => c.id === currentUser?.uid ? 'You' : c.name).join(', ');
                     prizeStatusText = `Claimed by ${winnerNames}`;
                   }
                   
-                  if (isBotGame) {
+                  if (!isOnlineGame) {
                      return (
                          <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
                             <span className="font-medium">{prize}</span>
@@ -728,11 +732,21 @@ export default function GameRoomPage() {
             {(userHasPrizes || isParticipationWinner) && (
                 <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
                     <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
-                    <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
-                        You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(currentUserWinnings)}!
-                    </div>
-                    {isParticipationWinner && <p className="text-sm text-muted-foreground">(Participation Reward)</p>}
-                    {userHasPrizes && <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>}
+                    {isOnlineGame || (isBotGame && userHasPrizes) ? (
+                      <>
+                        <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
+                            You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(currentUserWinnings)}!
+                        </div>
+                        <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
+                      </>
+                    ) : isParticipationWinner ? (
+                        <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
+                           You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(currentUserWinnings)}!
+                           <span className="text-sm text-muted-foreground">(Participation Reward)</span>
+                        </div>
+                    ) : userHasPrizes ? (
+                         <p className="text-lg text-muted-foreground">You claimed: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
+                    ) : null}
                 </div>
             )}
 
@@ -845,9 +859,9 @@ export default function GameRoomPage() {
                           <CardHeader className="p-3 pb-2">
                               <CardTitle className="text-sm font-semibold flex items-center">
                                   <Award className="mr-2 h-4 w-4 text-primary" />
-                                  {(isBotGame || isOnlineGame) ? 'Prize Status' : 'Prize Pool'}
+                                  Prize Status
                               </CardTitle>
-                              {(!isBotGame && !isOnlineGame) && <div className="text-xs text-muted-foreground flex items-center gap-1">Total: <Image src="/coin.png" alt="Coins" width={12} height={12} />{formatCoins(totalPrizePool)}</div>}
+                              {isOnlineGame && <div className="text-xs text-muted-foreground flex items-center gap-1">Total Pool: <Image src="/coin.png" alt="Coins" width={12} height={12} />{formatCoins(totalPrizePool)}</div>}
                           </CardHeader>
                           <CardContent className="p-3 pt-0">
                               {isLoading ? (
@@ -867,7 +881,7 @@ export default function GameRoomPage() {
                                           claimantText = `Claimed by ${claimantNames}`;
                                       }
                                       
-                                      if (isBotGame) {
+                                      if (!isOnlineGame) {
                                           return (
                                               <li key={prize} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
                                                   <span>{prize}</span>
@@ -878,7 +892,7 @@ export default function GameRoomPage() {
                                           );
                                       }
 
-                                      // Logic for non-bot games (with money)
+                                      // Logic for online games (with money)
                                       const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
                                       const prizeAmount = (totalPrizePool * percentage) / 100;
                                       const winnerCount = claimInfo?.claimedBy.length ?? 0;
@@ -1083,3 +1097,4 @@ export default function GameRoomPage() {
     </>
   );
 }
+
