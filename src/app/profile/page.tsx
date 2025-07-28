@@ -203,7 +203,6 @@ export default function ProfilePage() {
     const prizesWonArray = prizesWon
         ? orderedPrizeTypes
             .map(prize => [prize, prizesWon[prize] ?? 0] as [string, number])
-            .filter(([_, count]) => count > 0)
         : [];
     
     const canChangeName = !currentUser.stats?.usernameChanged;
