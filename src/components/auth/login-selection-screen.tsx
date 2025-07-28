@@ -9,6 +9,10 @@ import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/auth-context';
 import { Loader2, AlertTriangle, Mail } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" {...props}>
@@ -20,8 +24,11 @@ export default function LoginSelectionScreen() {
   const { loginWithGoogle, loginAsGuest, loginWithEmailLink, isSigningIn } = useAuth();
   const [email, setEmail] = useState('');
   const [linkSent, setLinkSent] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   
   const anySignInInProgress = !!isSigningIn;
+  const canProceed = agreedToTerms && agreedToPrivacy;
 
   const handleEmailSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -41,7 +48,7 @@ export default function LoginSelectionScreen() {
           <h1 className="text-2xl font-bold text-white">Welcome to HousieHub</h1>
           
           <div className="space-y-3 pt-4">
-            <Button variant="outline" size="lg" className="w-full bg-white text-black hover:bg-gray-200" onClick={loginWithGoogle} disabled={anySignInInProgress}>
+            <Button variant="outline" size="lg" className="w-full bg-white text-black hover:bg-gray-200" onClick={loginWithGoogle} disabled={anySignInInProgress || !canProceed}>
               {isSigningIn === 'google' && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
               <GoogleIcon className="mr-2 h-5 w-5 fill-current" />
               {isSigningIn === 'google' ? "Signing in..." : "Continue with Google"}
@@ -55,12 +62,12 @@ export default function LoginSelectionScreen() {
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    disabled={anySignInInProgress || linkSent}
+                    disabled={anySignInInProgress || linkSent || !canProceed}
                     required
                     className="bg-black/20 border-white/30 text-white placeholder:text-gray-400 focus:border-primary pl-10"
                 />
               </div>
-              <Button type="submit" variant="secondary" size="lg" className="w-full" disabled={anySignInInProgress || !email || linkSent}>
+              <Button type="submit" variant="secondary" size="lg" className="w-full" disabled={anySignInInProgress || !email || linkSent || !canProceed}>
                   {isSigningIn === 'email' && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                   {isSigningIn === 'email' 
                     ? 'Sending link...' 
@@ -75,21 +82,30 @@ export default function LoginSelectionScreen() {
                 <span className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-black/50 px-2 text-xs uppercase text-gray-300">OR</span>
             </div>
 
-            <Button variant="default" size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={loginAsGuest} disabled={anySignInInProgress}>
+            <Button variant="default" size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={loginAsGuest} disabled={anySignInInProgress || !canProceed}>
               {isSigningIn === 'guest' && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
               {isSigningIn === 'guest' ? "Entering..." : "Play as Guest"}
             </Button>
           </div>
           
-          <p className="text-xs text-gray-300 px-4 pt-4">
-            By continuing, you agree to our{' '}
-            <Link href="/legal/user-agreement" className="underline hover:text-primary">
-              User Agreement
-            </Link> and {' '}
-            <Link href="/legal/privacy-policy" className="underline hover:text-primary">
-              Privacy Policy
-            </Link>.
-          </p>
+           <div className="space-y-3 pt-4 text-left">
+            <ScrollArea className="h-24 w-full rounded-md border border-white/20 bg-black/20 p-3 text-xs text-gray-300">
+              <p className="font-bold mb-2">Terms of Service & Privacy Policy</p>
+              <p>By using HousieHub, you agree to our Terms of Service and Privacy Policy. You must be at least 13 years old. We collect your display name, email, and gameplay statistics to improve your experience. We do not allow real money gambling. Please play fairly. For full details, please visit the links below.</p>
+               <div className="mt-2 flex gap-4">
+                 <Link href="/legal/user-agreement" target="_blank" className="underline hover:text-primary">User Agreement</Link>
+                 <Link href="/legal/privacy-policy" target="_blank" className="underline hover:text-primary">Privacy Policy</Link>
+               </div>
+            </ScrollArea>
+            <div className="flex items-center space-x-2">
+                <Checkbox id="terms" checked={agreedToTerms} onCheckedChange={(checked) => setAgreedToTerms(!!checked)} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                <Label htmlFor="terms" className="text-xs text-gray-300">I agree to the User Agreement.</Label>
+            </div>
+             <div className="flex items-center space-x-2">
+                <Checkbox id="privacy" checked={agreedToPrivacy} onCheckedChange={(checked) => setAgreedToPrivacy(!!checked)} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                <Label htmlFor="privacy" className="text-xs text-gray-300">I agree to the Privacy Policy.</Label>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
