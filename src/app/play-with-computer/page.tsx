@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Smile, Zap, BrainCircuit, LogOut, Loader2, Bot, Skull } from 'lucide-react';
+import { Smile, Zap, Target, LogOut, Loader2, Bot, Skull } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useSound } from '@/contexts/sound-context';
@@ -101,7 +101,7 @@ export default function PlayWithComputerModesPage() {
           className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer border-2 border-yellow-500/50 hover:border-yellow-500 bg-card"
         >
           <CardHeader className="p-4 flex flex-row items-center gap-4">
-            <BrainCircuit className="h-10 w-10 text-yellow-500 flex-shrink-0" />
+            <Target className="h-10 w-10 text-yellow-500 flex-shrink-0" />
             <div>
               <CardTitle className="text-xl font-bold">Classic</CardTitle>
               <CardDescription>You choose your tickets, bots get random tickets for a balanced match.</CardDescription>
