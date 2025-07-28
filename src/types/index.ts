@@ -81,6 +81,7 @@ export interface Room {
   numberPool: number[]; // Numbers 1-90, shuffled, numbers are removed as they are called
   prizeStatus: Record<PrizeType, PrizeClaim | null >; // Tracks who claimed what
   lastNumberCalledTimestamp?: Date | string; // Timestamp of the last number call
+  totalPrizePool?: number;
 }
 
 // A Housie ticket is a 3x9 grid. Each cell can be a number or null (empty).

@@ -76,6 +76,7 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
     numberPool: initializeNumberPool(),
     prizeStatus: initializePrizeStatus(gameSettings),
     lastNumberCalledTimestamp: undefined,
+    totalPrizePool: 0,
   };
   rooms.set(roomId, newRoom);
   console.log(`Room created: ${roomId} by host ${host.id}.`);
@@ -183,6 +184,10 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
     return { error: `Need at least ${minPlayersRequired} player(s) with tickets to start. Currently: ${playersWithTickets}` };
   }
 
+  // Calculate and set the total prize pool
+  const totalTicketsInGame = room.players.reduce((sum, player) => sum + (player.tickets?.length || 0), 0);
+  room.totalPrizePool = room.settings.ticketPrice * totalTicketsInGame;
+
   // Deduct coins for online games before starting
   if (room.settings.gameMode === 'online' && db) {
       const batch = writeBatch(db);
@@ -266,6 +271,7 @@ export function resetRoomStore(roomId: string, hostId: string): Room | { error: 
   room.numberPool = initializeNumberPool();
   room.prizeStatus = initializePrizeStatus(room.settings);
   room.lastNumberCalledTimestamp = undefined;
+  room.totalPrizePool = 0;
 
   // Clear tickets for all players so they have to re-confirm
   room.players.forEach(player => {
@@ -499,8 +505,7 @@ export function claimPrizeStore(
     if (room.settings.gameMode === 'online' && db) {
         const batch = writeBatch(db);
         const prizeDistribution = PRIZE_DISTRIBUTION_PERCENTAGES[room.settings.prizeFormat];
-        const totalTickets = room.players.reduce((acc, p) => acc + p.tickets.length, 0);
-        const totalPrizePool = totalTickets * room.settings.ticketPrice;
+        const totalPrizePool = room.totalPrizePool || 0;
         const allPrizes = PRIZE_DEFINITIONS[room.settings.prizeFormat];
         
         // Update matches played stats for all human players
@@ -650,6 +655,7 @@ export function getRoomStateForClient(roomId: string): Omit<Room, 'numberPool'> 
       calledNumbers: room.calledNumbers,
       prizeStatus: prizeStatusForClient,
       lastNumberCalledTimestamp: room.lastNumberCalledTimestamp ? (typeof room.lastNumberCalledTimestamp === 'string' ? room.lastNumberCalledTimestamp : new Date(room.lastNumberCalledTimestamp).toISOString()) : undefined,
+      totalPrizePool: room.totalPrizePool,
     };
     return clientRoomData as Omit<Room, 'numberPool'>;
 

@@ -613,9 +613,8 @@ export default function GameRoomPage() {
   const currentPrizeFormat = gameSettings.prizeFormat;
   const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
   const prizeDistributionPercentages = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat] || {};
-
-  const totalTicketsInGame = roomData.players.reduce((sum, player) => sum + (player.tickets?.length || 0), 0);
-  const totalPrizePool = gameSettings.ticketPrice * totalTicketsInGame;
+  const totalPrizePool = roomData.totalPrizePool || 0;
+  
   const ticketsText = (count: number) => count === 1 ? 'ticket' : 'tickets';
   
   const formatCoins = (amount: number) => {
