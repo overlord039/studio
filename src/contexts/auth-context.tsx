@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { ReactNode } from 'react';
@@ -45,7 +46,7 @@ export interface User {
 interface AuthContextType {
   currentUser: User | null;
   updateUserProfile: (data: Partial<Pick<User, 'displayName' | 'photoURL'>>) => Promise<void>;
-  updateUserStats: (newStats: Partial<UserStats>) => Promise<void>;
+  updateUserStats: (newStats: Partial<UserStats>) => void;
   loginWithGoogle: () => Promise<void>;
   loginWithEmailLink: (email: string) => Promise<boolean>;
   linkGoogleAccount: () => Promise<void>;
@@ -230,6 +231,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const guestName = localStorage.getItem('guestUsername');
               const guestUsernameChanged = localStorage.getItem('guestUsernameChanged') === 'true';
 
+              const guestStatsString = localStorage.getItem('guestStats');
+              const guestStats = guestStatsString ? JSON.parse(guestStatsString) : { ...createDefaultStats(), coins: 10 };
+
+
               const newUserProfile: User = {
                   uid: firebaseUser.uid,
                   displayName: guestName || `Guest#${firebaseUser.uid.substring(0,5)}`,
@@ -237,11 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   photoURL: guestAvatar,
                   isGuest: true,
                   createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-                  stats: {
-                    ...createDefaultStats(),
-                    usernameChanged: guestUsernameChanged,
-                    coins: 10, // Guest reward
-                  },
+                  stats: guestStats,
               };
               if (localStorage.getItem('isNewGuest') === 'true') {
                  setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
@@ -363,22 +364,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateUserStats = async (newStats: Partial<UserStats>) => {
-    if (!currentUser || currentUser.isGuest || !db) return;
-    const userDocRef = doc(db, "users", currentUser.uid);
-    try {
-        await updateDoc(userDocRef, { 
-            stats: {
-                ...currentUser.stats,
-                ...newStats,
-                prizesWon: {
-                    ...currentUser.stats.prizesWon,
-                    ...newStats.prizesWon,
-                }
-            }
+  const updateUserStats = (newStats: Partial<UserStats>) => {
+    if (!currentUser) return;
+
+    const updatedStats = {
+        ...currentUser.stats,
+        ...newStats,
+        prizesWon: {
+            ...(currentUser.stats?.prizesWon || {}),
+            ...(newStats.prizesWon || {}),
+        },
+    };
+
+    if (currentUser.isGuest) {
+        localStorage.setItem('guestStats', JSON.stringify(updatedStats));
+        setCurrentUser(prev => prev ? ({ ...prev, stats: updatedStats as UserStats }) : null);
+    } else if (db) {
+        const userDocRef = doc(db, "users", currentUser.uid);
+        updateDoc(userDocRef, { stats: updatedStats }).catch(err => {
+            console.error("Failed to update user stats in Firestore:", err);
         });
-    } catch(err) {
-        console.error("Failed to update user stats:", err)
     }
   };
 
@@ -412,11 +417,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         batch.set(usernameRef, { userId: firebaseUser.uid, username: displayName });
         await batch.commit();
         setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
-        router.push('/profile');
       } else {
         toast({ title: "Signed In Successfully", description: `Welcome back!` });
-        router.push('/');
       }
+      router.push('/profile');
     } catch (error: any) {
       if (error.code === 'auth/account-exists-with-different-credential') {
         toast({ title: "Account Exists", description: "An account with this email already exists. Please sign in with the original method.", variant: "destructive" });
@@ -529,9 +533,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('guestAvatar');
       localStorage.removeItem('guestUsername');
       localStorage.removeItem('guestUsernameChanged');
+      localStorage.removeItem('guestStats');
+
 
       setReward({ amount: 10, message: 'Thanks for linking your account!' });
-      router.push('/');
+      router.push('/profile');
 
     } catch (error: any) {
       if (error.code === 'auth/credential-already-in-use') {

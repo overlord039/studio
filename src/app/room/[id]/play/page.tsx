@@ -76,7 +76,7 @@ export default function GameRoomPage() {
   const params = useParams();
   const roomId = Array.isArray(params.id) ? params.id[0] ?? '' : params.id ?? '';
   const { toast } = useToast();
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser, loading: authLoading, updateUserStats: updateContextUserStats } = useAuth();
   const { isSfxMuted, playSound } = useSound();
 
   const [roomData, setRoomData] = useState<Room | null>(null);
@@ -241,14 +241,23 @@ export default function GameRoomPage() {
       statsUpdateInitiatedRef.current = true;
 
       const updateMyStats = async () => {
-        if (currentUser.isGuest) {
-          console.log("Guest user, skipping stat update.");
-          return;
-        }
-
-        // Only call this API for offline or friends games. Online stats are updated differently.
+        
         const isGameApplicableForStatsUpdate = roomData.settings.gameMode !== 'online';
         if (!isGameApplicableForStatsUpdate) return; 
+
+        if (currentUser.isGuest) {
+            const newStats = { ...currentUser.stats };
+            newStats.matchesPlayed += 1;
+            
+            const prizesWon = roomData.prizeStatus;
+            for (const prize in prizesWon) {
+                if(prizesWon[prize as PrizeType]?.claimedBy.some(c => c.id === currentUser.uid)) {
+                   newStats.prizesWon[prize as PrizeType] = (newStats.prizesWon[prize as PrizeType] || 0) + 1;
+                }
+            }
+            updateContextUserStats(newStats);
+            return;
+        }
 
         try {
           const response = await fetch(`/api/rooms/${roomId}/update-stats`, {
@@ -284,7 +293,7 @@ export default function GameRoomPage() {
 
       updateMyStats();
     }
-  }, [roomData?.isGameOver, currentUser, roomId, toast]);
+  }, [roomData?.isGameOver, currentUser, roomId, toast, updateContextUserStats]);
 
   useEffect(() => {
     if (currentUser && roomId && !authLoading) {
