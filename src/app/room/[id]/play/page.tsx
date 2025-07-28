@@ -239,6 +239,7 @@ export default function GameRoomPage() {
   useEffect(() => {
     if (roomData?.isGameOver && currentUser && !statsUpdateInitiatedRef.current) {
       statsUpdateInitiatedRef.current = true;
+      localStorage.removeItem(`markedNumbers-${roomId}-${currentUser.uid}`);
 
       const updateMyStats = async () => {
         
@@ -294,6 +295,33 @@ export default function GameRoomPage() {
       updateMyStats();
     }
   }, [roomData?.isGameOver, currentUser, roomId, toast, updateContextUserStats]);
+
+  // This effect loads marked numbers from localStorage on mount
+  useEffect(() => {
+    if (!roomId || !currentUser) return;
+
+    try {
+      const storedMarkedNumbers = localStorage.getItem(`markedNumbers-${roomId}-${currentUser.uid}`);
+      if (storedMarkedNumbers) {
+        setMarkedNumbers(new Set(JSON.parse(storedMarkedNumbers)));
+      }
+    } catch (e) {
+      console.error("Failed to load marked numbers from local storage", e);
+    }
+  }, [roomId, currentUser]);
+
+  // This effect saves marked numbers to localStorage whenever they change
+  useEffect(() => {
+    if (!roomId || !currentUser || roomData?.isGameOver) return;
+    try {
+        localStorage.setItem(
+            `markedNumbers-${roomId}-${currentUser.uid}`,
+            JSON.stringify(Array.from(markedNumbers))
+        );
+    } catch (e) {
+        console.error("Failed to save marked numbers to local storage", e);
+    }
+  }, [markedNumbers, roomId, currentUser, roomData?.isGameOver]);
 
   useEffect(() => {
     if (currentUser && roomId && !authLoading) {
