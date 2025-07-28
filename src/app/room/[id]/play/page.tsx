@@ -694,7 +694,7 @@ export default function GameRoomPage() {
                     prizeStatusText = `Claimed by ${winnerNames}`;
                   }
                   
-                  if (!showCoinInfo) {
+                  if (isBotGame) {
                      return (
                          <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
                             <span className="font-medium">{prize}</span>
@@ -714,7 +714,6 @@ export default function GameRoomPage() {
                         <div className="flex justify-between items-center w-full">
                            <div className="flex items-center gap-1">
                              <span>{prize}</span>
-                             <span className="text-xs text-muted-foreground">({percentage}%)</span>
                            </div>
                            <div className="font-semibold flex items-center gap-1">
                              <Image src="/coin.png" alt="Coins" width={16} height={16} />
@@ -830,7 +829,7 @@ export default function GameRoomPage() {
                             {gameSettings.lobbySize}
                         </div>
                     </div>
-                    {!isBotGame && (
+                    {showCoinInfo && (
                         <div className="flex flex-col items-center">
                             <span className="text-xs opacity-80">Prize Pool</span>
                             <div className="font-bold flex items-center gap-1">
@@ -871,7 +870,7 @@ export default function GameRoomPage() {
                                   <Award className="mr-2 h-4 w-4 text-primary" />
                                   Prize Status
                               </CardTitle>
-                              {!isBotGame && <div className="text-xs text-muted-foreground flex items-center gap-1">Total Pool: <Image src="/coin.png" alt="Coins" width={12} height={12} />{formatCoins(totalPrizePool)}</div>}
+                              {showCoinInfo && <div className="text-xs text-muted-foreground flex items-center gap-1">Total Pool: <Image src="/coin.png" alt="Coins" width={12} height={12} />{formatCoins(totalPrizePool)}</div>}
                           </CardHeader>
                           <CardContent className="p-3 pt-0">
                               {isLoading ? (
@@ -918,7 +917,6 @@ export default function GameRoomPage() {
                                               <div className="flex justify-between items-center w-full">
                                                   <div className="flex items-center gap-1">
                                                     <span>{prize}</span>
-                                                    <span className="text-muted-foreground/80">({percentage}%)</span>
                                                   </div>
                                                   <div className="font-semibold flex items-center gap-1">
                                                     <Image src="/coin.png" alt="Coins" width={12} height={12} />
@@ -1107,5 +1105,3 @@ export default function GameRoomPage() {
     </>
   );
 }
-
-
