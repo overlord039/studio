@@ -141,9 +141,11 @@ function MatchmakingContent() {
                 <CardDescription className="text-white/80">Tier: {tierConfig.name} ({tickets} {tickets === 1 ? 'ticket' : 'tickets'})</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                 <div className="text-center font-mono text-2xl text-white/90">
-                    {formatTime(countdown)}
-                 </div>
+                <div className="bg-primary/10 rounded-lg p-2">
+                    <div className="text-center font-mono text-2xl text-white/90">
+                        {formatTime(countdown)}
+                    </div>
+                </div>
                  <div className="flex justify-center items-center gap-4 text-white h-20">
                     <Search className="h-12 w-12 text-primary animate-pulse" />
                     <span className="text-xl font-semibold">Searching for players...</span>
