@@ -22,7 +22,6 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import LiveNumberBoard from '@/components/game/live-number-board';
-import { playSound } from '@/lib/sounds';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -78,7 +77,7 @@ export default function GameRoomPage() {
   const roomId = Array.isArray(params.id) ? params.id[0] ?? '' : params.id ?? '';
   const { toast } = useToast();
   const { currentUser, loading: authLoading } = useAuth();
-  const { isSfxMuted, toggleSfxMute } = useSound();
+  const { isSfxMuted, toggleSfxMute, playSound } = useSound();
 
   const [roomData, setRoomData] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -116,7 +115,7 @@ export default function GameRoomPage() {
     if (roomData && !roomData.isGameOver) {
         gameOverSoundPlayedRef.current = false;
     }
-  }, [roomData?.isGameOver]);
+  }, [roomData?.isGameOver, playSound]);
 
   const announce = useCallback((num: number) => {
     if (isSfxMuted || typeof window === 'undefined' || !window.speechSynthesis) return;
@@ -232,7 +231,7 @@ export default function GameRoomPage() {
         setIsLoading(false);
       }
     }
-  }, [roomId, currentUser, searchParams, toast]);
+  }, [roomId, currentUser, searchParams, toast, playSound]);
 
   // This effect runs ONCE when the game is over to trigger the stat update.
   useEffect(() => {

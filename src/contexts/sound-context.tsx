@@ -51,10 +51,14 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       const storedSfxMuteState = localStorage.getItem(SFX_MUTED_KEY);
       if (storedSfxMuteState !== null) {
         setIsSfxMuted(storedSfxMuteState === 'true');
+      } else {
+        setIsSfxMuted(false); // Default to not muted if nothing is stored
       }
       const storedBgmEnabledState = localStorage.getItem(BGM_ENABLED_KEY);
       if (storedBgmEnabledState !== null) {
         setIsBgmEnabled(storedBgmEnabledState === 'true');
+      } else {
+        setIsBgmEnabled(true); // Default to enabled if nothing is stored
       }
     } catch (error) {
       console.error("Could not read sound settings from localStorage", error);
