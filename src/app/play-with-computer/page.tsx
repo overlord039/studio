@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Smile, Zap, Scaling, LogOut, Loader2 } from 'lucide-react';
+import { Smile, Zap, Scaling, LogOut, Loader2, Bot, Skull, BrainCircuit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useSound } from '@/contexts/sound-context';
@@ -82,38 +82,47 @@ export default function PlayWithComputerModesPage() {
         <h1 className="text-3xl font-bold text-white">Play with Computer</h1>
         <p className="text-white/80 mt-2">Choose your difficulty.</p>
       </div>
-      <div className="w-full max-w-md space-y-6">
+      <div className="w-full max-w-md space-y-4">
         <Card
           onClick={() => handleModeSelection('/play-with-computer/easy')}
-          className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer bg-green-500 text-white hover:bg-green-600"
+          className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer border-2 border-green-500/50 hover:border-green-500 bg-card"
         >
-          <CardHeader className="p-6">
-            <CardTitle className="text-xl font-bold">Easy</CardTitle>
-            <CardDescription className="text-green-100">You choose how many tickets you want. Play at your pace.</CardDescription>
+          <CardHeader className="p-4 flex flex-row items-center gap-4">
+            <Smile className="h-10 w-10 text-green-500 flex-shrink-0" />
+            <div>
+              <CardTitle className="text-xl font-bold">Easy</CardTitle>
+              <CardDescription>You choose how many tickets you want. Play at your pace.</CardDescription>
+            </div>
           </CardHeader>
         </Card>
 
         <Card
           onClick={() => handleModeSelection('/play-with-computer/medium')}
-          className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer bg-accent text-accent-foreground hover:bg-accent/90"
+          className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer border-2 border-yellow-500/50 hover:border-yellow-500 bg-card"
         >
-          <CardHeader className="p-6">
-            <CardTitle className="text-xl font-bold">Classic</CardTitle>
-            <CardDescription className="text-accent-foreground/80">You choose your tickets, bots get random tickets for a balanced match.</CardDescription>
+          <CardHeader className="p-4 flex flex-row items-center gap-4">
+            <BrainCircuit className="h-10 w-10 text-yellow-500 flex-shrink-0" />
+            <div>
+              <CardTitle className="text-xl font-bold">Classic</CardTitle>
+              <CardDescription>You choose your tickets, bots get random tickets for a balanced match.</CardDescription>
+            </div>
           </CardHeader>
         </Card>
 
         <Card
           onClick={() => handleModeSelection('/play-with-computer/hard')}
           className={cn(
-            "shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90",
+            "shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 cursor-pointer border-2 border-destructive/50 hover:border-destructive bg-card",
             isCreatingHardGame && "opacity-50 cursor-not-allowed"
           )}
         >
-          <CardHeader className="p-6">
-            {isCreatingHardGame ? <Loader2 className="absolute top-4 right-4 h-6 w-6 animate-spin" /> : null}
-            <CardTitle className="text-xl font-bold">Rush</CardTitle>
-            <CardDescription className="text-destructive-foreground/80">Ticket counts are random for everyone. Fast-paced and challenging!</CardDescription>
+          <CardHeader className="p-4 flex flex-row items-center gap-4 relative">
+            {isCreatingHardGame && <Loader2 className="absolute top-2 right-2 h-5 w-5 animate-spin" />}
+            <Skull className="h-10 w-10 text-destructive flex-shrink-0" />
+            <div>
+                <CardTitle className="text-xl font-bold">Rush</CardTitle>
+                <CardDescription>Ticket counts are random for everyone. Fast-paced and challenging!</CardDescription>
+            </div>
           </CardHeader>
         </Card>
       </div>
