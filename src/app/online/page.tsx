@@ -167,9 +167,8 @@ export default function OnlineModePage() {
                 ))}
             </div>
              <div className="mt-8 w-full max-w-md">
-                <Button variant="outline" onClick={() => router.push('/')}>
-                    <LogOut className="mr-2 h-4 w-4 rotate-180" />
-                    Back to Home
+                <Button variant="destructive" size="icon" onClick={() => router.push('/')}>
+                    <LogOut className="h-4 w-4 rotate-180" />
                 </Button>
             </div>
         </div>
