@@ -223,7 +223,7 @@ export default function ProfilePage() {
               <div className="bg-gradient-to-br from-primary/10 to-secondary/10 p-6 sm:p-8">
                 <div className="flex flex-col items-center gap-4">
                    <div className="flex items-center gap-2">
-                      {currentUser.isGuest && <Badge variant="secondary" className="text-[10px] px-2 py-0.5 h-auto">Guest Account</Badge>}
+                      {currentUser.isGuest && <Badge variant="secondary" className="text-[10px] px-2 py-0.5 h-auto">Guest</Badge>}
                       <div className="text-xs text-muted-foreground font-mono bg-background/50 px-2 py-1 rounded-full">ID: {currentUser.uid}</div>
                   </div>
                   <div className="flex items-center justify-center gap-4 text-center w-full">
