@@ -138,17 +138,17 @@ function MatchmakingContent() {
     const progressPercentage = countdown !== null ? (countdown / tierConfig.matchmakingTime) * 100 : 0;
 
     return (
-        <Card className="w-full max-w-md shadow-xl bg-card/80 backdrop-blur-sm border-primary/20">
+        <Card className="w-full max-w-md shadow-xl bg-card/80 backdrop-blur-sm border-accent/20">
             <CardHeader className="text-center">
-                <CardTitle className="text-2xl text-white">Finding a Match...</CardTitle>
-                <CardDescription className="text-white/80">Tier: {tierConfig.name} ({tickets} {tickets === 1 ? 'ticket' : 'tickets'})</CardDescription>
+                <CardTitle className="text-2xl text-foreground">Finding a Match...</CardTitle>
+                <CardDescription className="text-foreground/80">Tier: {tierConfig.name} ({tickets} {tickets === 1 ? 'ticket' : 'tickets'})</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 flex flex-col items-center">
                  <div className="relative h-40 w-40">
                     <svg className="h-full w-full" viewBox="0 0 100 100">
                         {/* Background circle */}
                         <circle
-                            className="text-primary/20"
+                            className="text-accent/20"
                             strokeWidth="7"
                             stroke="currentColor"
                             fill="transparent"
@@ -158,7 +158,7 @@ function MatchmakingContent() {
                         />
                         {/* Progress circle */}
                         <circle
-                            className="text-primary"
+                            className="text-accent"
                             strokeWidth="7"
                             strokeLinecap="round"
                             stroke="currentColor"
@@ -173,18 +173,18 @@ function MatchmakingContent() {
                         />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-4xl font-bold font-mono text-white">
+                        <span className="text-4xl font-bold font-mono text-foreground">
                             {formatTime(countdown)}
                         </span>
-                        <p className="text-xs uppercase text-white/70">Estimated Time</p>
+                        <p className="text-xs uppercase text-foreground/70">Estimated Time</p>
                     </div>
                 </div>
 
-                 <div className="flex justify-center items-center gap-2 text-white/90">
-                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                 <div className="flex justify-center items-center gap-2 text-foreground/90">
+                    <Loader2 className="h-5 w-5 animate-spin text-accent" />
                     <span className="text-lg font-semibold">Searching for players...</span>
                 </div>
-                <div className="text-center text-sm text-white/70">
+                <div className="text-center text-sm text-foreground/70">
                     <Users className="inline-block h-4 w-4 mr-2" />
                     <span>Looking for {tierConfig.roomSize} players</span>
                 </div>
