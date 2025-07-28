@@ -5,12 +5,13 @@ import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import type { OnlineGameTier, TierConfig, Player, Room } from '@/types';
-import { Loader2, Users, Search, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Loader2, Users, Search, ArrowLeft, AlertTriangle, Clock } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/contexts/sound-context';
+import { cn } from '@/lib/utils';
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
@@ -134,21 +135,54 @@ function MatchmakingContent() {
         return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     };
 
+    const progressPercentage = countdown !== null ? (countdown / tierConfig.matchmakingTime) * 100 : 0;
+
     return (
         <Card className="w-full max-w-md shadow-xl bg-card/80 backdrop-blur-sm border-primary/20">
             <CardHeader className="text-center">
                 <CardTitle className="text-2xl text-white">Finding a Match...</CardTitle>
                 <CardDescription className="text-white/80">Tier: {tierConfig.name} ({tickets} {tickets === 1 ? 'ticket' : 'tickets'})</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="bg-primary/10 rounded-lg p-2">
-                    <div className="text-center font-mono text-2xl text-white/90">
-                        {formatTime(countdown)}
+            <CardContent className="space-y-6 flex flex-col items-center">
+                 <div className="relative h-40 w-40">
+                    <svg className="h-full w-full" viewBox="0 0 100 100">
+                        {/* Background circle */}
+                        <circle
+                            className="text-primary/20"
+                            strokeWidth="7"
+                            stroke="currentColor"
+                            fill="transparent"
+                            r="45"
+                            cx="50"
+                            cy="50"
+                        />
+                        {/* Progress circle */}
+                        <circle
+                            className="text-primary"
+                            strokeWidth="7"
+                            strokeLinecap="round"
+                            stroke="currentColor"
+                            fill="transparent"
+                            r="45"
+                            cx="50"
+                            cy="50"
+                            strokeDasharray={2 * Math.PI * 45}
+                            strokeDashoffset={(2 * Math.PI * 45) * (1 - progressPercentage / 100)}
+                            style={{ transition: 'stroke-dashoffset 1s linear' }}
+                            transform="rotate(-90 50 50)"
+                        />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-4xl font-bold font-mono text-white">
+                            {formatTime(countdown)}
+                        </span>
+                        <p className="text-xs uppercase text-white/70">Estimated Time</p>
                     </div>
                 </div>
-                 <div className="flex justify-center items-center gap-4 text-white h-20">
-                    <Search className="h-12 w-12 text-primary animate-pulse" />
-                    <span className="text-xl font-semibold">Searching for players...</span>
+
+                 <div className="flex justify-center items-center gap-2 text-white/90">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    <span className="text-lg font-semibold">Searching for players...</span>
                 </div>
                 <div className="text-center text-sm text-white/70">
                     <Users className="inline-block h-4 w-4 mr-2" />
