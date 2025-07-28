@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Smile, Zap, Scaling, LogOut, Loader2, Bot, Skull, BrainCircuit } from 'lucide-react';
+import { Smile, Zap, BrainCircuit, LogOut, Loader2, Bot, Skull } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useSound } from '@/contexts/sound-context';
