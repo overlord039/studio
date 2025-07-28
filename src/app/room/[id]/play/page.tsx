@@ -711,16 +711,18 @@ export default function GameRoomPage() {
                         <div className="flex justify-between items-center w-full">
                            <div className="flex items-center gap-1">
                              <span>{prize}</span>
-                             <span className="text-xs text-muted-foreground">({percentage}%)</span>
+                             {isOnlineGame && <span className="text-xs text-muted-foreground">({percentage}%)</span>}
                            </div>
+                           {isOnlineGame && 
                            <div className="font-semibold flex items-center gap-1">
                              <Image src="/coin.png" alt="Coins" width={16} height={16} />
                              <span>{formatCoins(prizeAmount)}</span>
                            </div>
+                           }
                         </div>
                         <span className={cn("text-xs text-right w-full", isClaimed ? "text-green-600 font-medium" : "text-muted-foreground/80")}>
                            {prizeStatusText}
-                           {prizePerWinner > 0 && claimInfo && claimInfo.claimedBy.length > 1 && ` (${formatCoins(prizePerWinner)} each)`}
+                           {isOnlineGame && prizePerWinner > 0 && claimInfo && claimInfo.claimedBy.length > 1 && ` (${formatCoins(prizePerWinner)} each)`}
                         </span>
                      </li>
                   );
@@ -728,7 +730,7 @@ export default function GameRoomPage() {
               </ul>
             </div>
 
-            {(userHasPrizes || isParticipationWinner) && (
+            {(userHasPrizes || isParticipationWinner) ? (
                 <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
                     <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
                     {isOnlineGame || (isBotGame && userHasPrizes) ? (
@@ -746,6 +748,11 @@ export default function GameRoomPage() {
                     ) : userHasPrizes ? (
                          <p className="text-lg text-muted-foreground">You claimed: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
                     ) : null}
+                </div>
+            ) : (
+                 <div className="text-center p-4 bg-secondary/50 rounded-lg">
+                    <p className="font-semibold text-muted-foreground">You didn't win a prize this time, but well played!</p>
+                    <p className="text-sm text-muted-foreground">Better luck next game!</p>
                 </div>
             )}
 
@@ -1096,4 +1103,3 @@ export default function GameRoomPage() {
     </>
   );
 }
-
