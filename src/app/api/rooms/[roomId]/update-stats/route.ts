@@ -54,31 +54,24 @@ export async function POST(
     }
 
     const batch = writeBatch(db);
-
-    const isFriendsGame = room.settings.gameMode === 'multiplayer';
-    if (isFriendsGame) {
-      // Friends games don't have coin rewards, just track match played
-      const statsUpdate = { 'stats.matchesPlayed': increment(1) };
-      batch.update(playerDocRef, statsUpdate);
-      await batch.commit();
-      return NextResponse.json({ success: true, message: 'Stats updated for multiplayer game.', coinsEarned: 0 });
-    }
-
-    // This API is only for offline games now. Online game stats are updated in game-store.ts
-    const isOfflineGame = room.settings.gameMode !== 'online' && !isFriendsGame;
-    if (!isOfflineGame) {
+    
+    // Online game stats (including coins & prizes) are handled separately in game-store.ts upon game completion.
+    const isOnlineGame = room.settings.gameMode === 'online';
+    if (isOnlineGame) {
         return NextResponse.json({ success: true, message: 'Stats for online games are handled separately.' });
     }
+
+    // Logic for OFFLINE (BOT) & FRIENDS (MULTIPLAYER) games
+    const isFriendsGame = room.settings.gameMode === 'multiplayer';
     
-    // Logic for OFFLINE (BOT) games
     const statsUpdate: { [key: string]: any } = {
         'stats.matchesPlayed': increment(1)
     };
 
-    let totalPrizesWonCount = 0;
     let coinsEarned = 0;
     const prizesWonByPlayer: PrizeType[] = [];
 
+    // Determine which prizes the player won
     for (const prizeType in room.prizeStatus) {
         const prizeInfo = room.prizeStatus[prizeType as PrizeType];
         if (prizeInfo && prizeInfo.claimedBy.some(c => c.id === userId)) {
@@ -86,19 +79,26 @@ export async function POST(
         }
     }
     
-    totalPrizesWonCount = prizesWonByPlayer.length;
+    const totalPrizesWonCount = prizesWonByPlayer.length;
 
+    // Update stats for prizes won
     if (totalPrizesWonCount > 0) {
         prizesWonByPlayer.forEach(prize => {
             statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
-            coinsEarned += OFFLINE_COIN_REWARDS[prize] || 0;
+            // Only add coin rewards for offline (bot) games
+            if (!isFriendsGame) {
+              coinsEarned += OFFLINE_COIN_REWARDS[prize] || 0;
+            }
         });
     } else {
-        // Only give participation reward if NO other prize was won
-        coinsEarned = PARTICIPATION_REWARD;
+        // Only give participation reward if NO other prize was won in an offline game
+        if (!isFriendsGame) {
+          coinsEarned = PARTICIPATION_REWARD;
+        }
     }
     
-    if (coinsEarned > 0) {
+    // Only update coins for offline games
+    if (!isFriendsGame && coinsEarned > 0) {
       statsUpdate['stats.coins'] = increment(coinsEarned);
     }
     
