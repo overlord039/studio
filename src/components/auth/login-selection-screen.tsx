@@ -47,6 +47,25 @@ export default function LoginSelectionScreen() {
         <CardContent className="p-8 space-y-4">
           <h1 className="text-2xl font-bold text-white">Welcome to HousieHub</h1>
           
+           <div className="space-y-3 pt-4 text-left">
+            <ScrollArea className="h-24 w-full rounded-md border border-white/20 bg-black/20 p-3 text-xs text-gray-300">
+              <p className="font-bold mb-2">Terms of Service & Privacy Policy</p>
+              <p>By using HousieHub, you agree to our Terms of Service and Privacy Policy. You must be at least 13 years old. We collect your display name, email, and gameplay statistics to improve your experience. We do not allow real money gambling. Please play fairly. For full details, please visit the links below.</p>
+               <div className="mt-2 flex gap-4">
+                 <Link href="/legal/user-agreement" target="_blank" className="underline hover:text-primary">User Agreement</Link>
+                 <Link href="/legal/privacy-policy" target="_blank" className="underline hover:text-primary">Privacy Policy</Link>
+               </div>
+            </ScrollArea>
+            <div className="flex items-center space-x-2">
+                <Checkbox id="terms" checked={agreedToTerms} onCheckedChange={(checked) => setAgreedToTerms(!!checked)} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                <Label htmlFor="terms" className="text-xs text-gray-300">I agree to the User Agreement.</Label>
+            </div>
+             <div className="flex items-center space-x-2">
+                <Checkbox id="privacy" checked={agreedToPrivacy} onCheckedChange={(checked) => setAgreedToPrivacy(!!checked)} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                <Label htmlFor="privacy" className="text-xs text-gray-300">I agree to the Privacy Policy.</Label>
+            </div>
+          </div>
+
           <div className="space-y-3 pt-4">
             <Button variant="outline" size="lg" className="w-full bg-white text-black hover:bg-gray-200" onClick={loginWithGoogle} disabled={anySignInInProgress || !canProceed}>
               {isSigningIn === 'google' && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
@@ -86,25 +105,6 @@ export default function LoginSelectionScreen() {
               {isSigningIn === 'guest' && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
               {isSigningIn === 'guest' ? "Entering..." : "Play as Guest"}
             </Button>
-          </div>
-          
-           <div className="space-y-3 pt-4 text-left">
-            <ScrollArea className="h-24 w-full rounded-md border border-white/20 bg-black/20 p-3 text-xs text-gray-300">
-              <p className="font-bold mb-2">Terms of Service & Privacy Policy</p>
-              <p>By using HousieHub, you agree to our Terms of Service and Privacy Policy. You must be at least 13 years old. We collect your display name, email, and gameplay statistics to improve your experience. We do not allow real money gambling. Please play fairly. For full details, please visit the links below.</p>
-               <div className="mt-2 flex gap-4">
-                 <Link href="/legal/user-agreement" target="_blank" className="underline hover:text-primary">User Agreement</Link>
-                 <Link href="/legal/privacy-policy" target="_blank" className="underline hover:text-primary">Privacy Policy</Link>
-               </div>
-            </ScrollArea>
-            <div className="flex items-center space-x-2">
-                <Checkbox id="terms" checked={agreedToTerms} onCheckedChange={(checked) => setAgreedToTerms(!!checked)} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
-                <Label htmlFor="terms" className="text-xs text-gray-300">I agree to the User Agreement.</Label>
-            </div>
-             <div className="flex items-center space-x-2">
-                <Checkbox id="privacy" checked={agreedToPrivacy} onCheckedChange={(checked) => setAgreedToPrivacy(!!checked)} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
-                <Label htmlFor="privacy" className="text-xs text-gray-300">I agree to the Privacy Policy.</Label>
-            </div>
           </div>
         </CardContent>
       </Card>
