@@ -509,7 +509,7 @@ export default function GameRoomPage() {
   };
 
   const handleToggleCallingMode = async () => {
-    if (!currentUser || !isCurrentUserHost || !roomData || roomData.isGameOver || roomData.settings.isPublic) return;
+    if (!currentUser || !isCurrentUserHost || !roomData || roomData.isGameOver || roomData.settings.gameMode !== 'multiplayer') return;
 
     setIsUpdatingMode(true);
     const newMode = roomData.settings.callingMode === 'auto' ? 'manual' : 'auto';
@@ -865,7 +865,7 @@ export default function GameRoomPage() {
                         </div>
                     )}
                 </div>
-              {isCurrentUserHost && !isBotGame && !roomData.isGameOver && (
+              {isCurrentUserHost && roomData.settings.gameMode === 'multiplayer' && !roomData.isGameOver && (
                 <div className="flex items-center gap-1 p-1 rounded-md border bg-card/80 backdrop-blur-sm">
                     <Label htmlFor="calling-mode-switch" className="text-xs font-medium text-foreground cursor-pointer">
                         Auto
