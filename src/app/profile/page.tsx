@@ -110,26 +110,28 @@ export default function ProfilePage() {
     setUsernameError(null);
 
     try {
-      const checkResponse = await fetch('/api/users/check-username', {
-          method: 'POST',
-          headers: { 'Content-Type': 'json' },
-          body: JSON.stringify({ username: trimmedName }),
-      });
-      const checkData = await checkResponse.json();
+      if (!currentUser.isGuest) {
+        const checkResponse = await fetch('/api/users/check-username', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: trimmedName }),
+        });
+        const checkData = await checkResponse.json();
 
-      if (!checkResponse.ok || !checkData.isAvailable) {
-          throw new Error(checkData.message || "This username is already taken.");
-      }
+        if (!checkResponse.ok || !checkData.isAvailable) {
+            throw new Error(checkData.message || "This username is already taken.");
+        }
 
-      const updateResponse = await fetch('/api/users/check-username', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'json' },
-          body: JSON.stringify({ username: trimmedName, userId: currentUser.uid, oldUsername: currentUser.displayName }),
-      });
+        const updateResponse = await fetch('/api/users/check-username', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: trimmedName, userId: currentUser.uid, oldUsername: currentUser.displayName }),
+        });
 
-      const updateData = await updateResponse.json();
-      if (!updateResponse.ok || !updateData.success) {
-          throw new Error(updateData.message || "Could not reserve username.");
+        const updateData = await updateResponse.json();
+        if (!updateResponse.ok || !updateData.success) {
+            throw new Error(updateData.message || "Could not reserve username.");
+        }
       }
       
       if (currentUser.isGuest) {

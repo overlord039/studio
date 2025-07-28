@@ -172,6 +172,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             const oldGuestUsername = localStorage.getItem('guestUsername') || guestUser.displayName;
             const oldUid = guestUser.uid;
+            const guestStatsString = localStorage.getItem('guestStats');
+            const guestStats = guestStatsString ? JSON.parse(guestStatsString) : createDefaultStats();
+            guestStats.coins = (guestStats.coins || 0) + 10; // Linking reward
 
             await linkWithCredential(guestUser, credential);
 
@@ -184,9 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 email: email,
                 isGuest: false,
                 displayName: oldGuestUsername || email.split('@')[0],
-                stats: {
-                    coins: increment(10) // Linking reward
-                }
+                stats: guestStats,
             }, { merge: true });
 
             if(oldGuestUsername) {
@@ -505,6 +506,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const oldGuestUsername = guestData.displayName || '';
       const newDisplayName = firebaseUser.displayName || oldGuestUsername;
       
+      const guestStats = guestData.stats || createDefaultStats();
+      guestStats.coins = (guestStats.coins || 0) + 10; // Linking reward
+
       const batch = writeBatch(db);
       
       const userDocRef = doc(db, "users", firebaseUser.uid);
@@ -518,10 +522,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         photoURL: firebaseUser.photoURL || guestData.photoURL,
         isGuest: false,
         createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-        stats: {
-          ...guestData.stats,
-          coins: (guestData.stats.coins || 0) + 10 // Linking reward
-        }
+        stats: guestStats,
       };
 
       batch.set(userDocRef, newUserProfile);
