@@ -286,9 +286,9 @@ export default function ProfilePage() {
                                   <Pencil className="h-3.5 w-3.5"/>
                                 </Button>
                               </div>
-                               <div className="bg-amber-400/20 border border-amber-500/30 text-amber-800 dark:text-amber-300 px-3 py-1 rounded-full flex items-center gap-2">
-                                <Image src="/coin.png" alt="Coins" width={20} height={20} />
-                                <span className="font-bold text-lg">{currentUser.stats?.coins || 0}</span>
+                               <div className="bg-amber-400/20 border border-amber-500/30 text-amber-800 dark:text-amber-300 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full flex items-center gap-2">
+                                <Image src="/coin.png" alt="Coins" width={16} height={16} className="sm:w-5 sm:h-5" />
+                                <span className="font-bold text-base sm:text-lg">{currentUser.stats?.coins || 0}</span>
                               </div>
                             </div>
                           )}
@@ -391,5 +391,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
