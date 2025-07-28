@@ -741,7 +741,7 @@ export default function GameRoomPage() {
                         <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
                             You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(currentUserWinnings)}!
                         </div>
-                         <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
+                        <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
                         {isOnlineGame && (
                             <p className="text-sm text-muted-foreground">You spent {formatCoins(totalCost)} and won {formatCoins(currentUserWinnings)}</p>
                         )}
@@ -1109,3 +1109,4 @@ export default function GameRoomPage() {
     </>
   );
 }
+
