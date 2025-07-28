@@ -19,33 +19,17 @@ const getColRange = (colIndex: number): [number, number] => {
 };
 
 /**
- * Generates a set of Housie tickets with unique numbers across all tickets in the set.
- * @param count The number of unique tickets to generate.
+ * Generates a set of Housie tickets. Numbers can be repeated across different tickets.
+ * @param count The number of tickets to generate.
  * @returns An array of Housie ticket grids.
  */
 export function generateMultipleUniqueTickets(count: number): HousieTicketGrid[] {
   const allTickets: HousieTicketGrid[] = [];
-  const usedNumbersGlobally = new Set<number>();
-
   for (let i = 0; i < count; i++) {
-    // Check if we have enough numbers left to generate a new ticket.
-    if (usedNumbersGlobally.size > NUMBERS_RANGE_MAX - TOTAL_NUMBERS_PER_TICKET) {
-        console.warn(`Not enough unique numbers remaining to generate ticket ${i + 1}. Stopping at ${i} tickets.`);
-        break; 
-    }
-
-    const newTicket = generateImprovedHousieTicket(usedNumbersGlobally);
-    
-    // Add numbers from the newly generated ticket to the global used set.
-    newTicket.flat().forEach(num => {
-      if (num !== null) {
-        usedNumbersGlobally.add(num);
-      }
-    });
-    
+    // Generate each ticket independently, without tracking numbers used in other tickets.
+    const newTicket = generateImprovedHousieTicket();
     allTickets.push(newTicket);
   }
-
   return allTickets;
 }
 
