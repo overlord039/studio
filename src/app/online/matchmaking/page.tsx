@@ -5,7 +5,7 @@ import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import type { OnlineGameTier, TierConfig, Player, Room } from '@/types';
-import { Loader2, Users, Clock, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Loader2, Users, Search, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -37,7 +37,6 @@ function MatchmakingContent() {
     const [tier, setTier] = useState<OnlineGameTier | null>(null);
     const [tickets, setTickets] = useState(1);
     const [tierConfig, setTierConfig] = useState<TierConfig | null>(null);
-    const [timeLeft, setTimeLeft] = useState(0);
     const [error, setError] = useState<string | null>(null);
     const [isFindingMatch, setIsFindingMatch] = useState(false);
 
@@ -48,7 +47,6 @@ function MatchmakingContent() {
             setTier(tierParam);
             const config = TIERS[tierParam];
             setTierConfig(config);
-            setTimeLeft(config.matchmakingTime);
             setTickets(parseInt(ticketsParam, 10));
         } else {
             setError("Invalid game tier or ticket count specified.");
@@ -94,19 +92,14 @@ function MatchmakingContent() {
     useEffect(() => {
         if (error || !tierConfig || isFindingMatch) return;
 
-        if (timeLeft <= 0) {
+        // Instead of a countdown, we set a timeout for the matchmaking duration
+        const matchmakingTimeout = setTimeout(() => {
             findMatch();
-            return;
-        }
+        }, tierConfig.matchmakingTime * 1000);
 
-        const timer = setInterval(() => {
-            setTimeLeft(prevTime => prevTime - 1);
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, [timeLeft, tierConfig, error, findMatch, isFindingMatch]);
-
-    const progressPercentage = tierConfig ? ((tierConfig.matchmakingTime - timeLeft) / tierConfig.matchmakingTime) * 100 : 0;
+        // Cleanup the timeout if the component unmounts or dependencies change
+        return () => clearTimeout(matchmakingTimeout);
+    }, [tierConfig, error, findMatch, isFindingMatch]);
     
     if (!currentUser || !tierConfig) {
         return <Loader2 className="h-8 w-8 animate-spin text-white" />;
@@ -136,11 +129,10 @@ function MatchmakingContent() {
                 <CardDescription className="text-white/80">Tier: {tierConfig.name} ({tickets} {tickets === 1 ? 'ticket' : 'tickets'})</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="flex justify-center items-end gap-2 text-white">
-                    <Clock className="h-10 w-10 text-primary" />
-                    <span className="text-5xl font-bold">{timeLeft}s</span>
+                 <div className="flex justify-center items-center gap-4 text-white h-20">
+                    <Search className="h-12 w-12 text-primary animate-pulse" />
+                    <span className="text-xl font-semibold">Searching for players...</span>
                 </div>
-                <Progress value={progressPercentage} className="w-full" />
                 <div className="text-center text-sm text-white/70">
                     <Users className="inline-block h-4 w-4 mr-2" />
                     <span>Looking for {tierConfig.roomSize} players</span>
