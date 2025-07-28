@@ -15,7 +15,7 @@ import type { Player, GameSettings, Room } from '@/types';
 import Link from 'next/link';
 import Image from 'next/image';
 
-const LOBBY_SIZES = [5, 10, 15, 20, 25, 50];
+const LOBBY_SIZES = [3, 5, 10, 20];
 
 export default function CreateOrJoinRoomPage() {
   const { currentUser, loading: authLoading } = useAuth();
