@@ -106,10 +106,9 @@ export default function LobbyPage() {
         }
       }
       
-      const currentUserIsHostInFetchedData = data.host.id === currentUser?.uid;
-      if (data.isGameStarted && previousIsGameStartedRef.current === false && !currentUserIsHostInFetchedData) {
+      if (data.isGameStarted && previousIsGameStartedRef.current === false) {
         const currentPlayerServerData = data.players.find(p => p.id === currentUser.uid);
-        const ticketsToTake = currentPlayerServerData?.tickets.length || 0; 
+        const ticketsToTake = currentPlayerServerData?.tickets.length || 0;
         playSound('gamestarting.wav');
         toast({ title: "Game Started!", description: "Joining the game..." });
         router.push(`/room/${roomId}/play?playerTickets=${ticketsToTake}`);
@@ -204,8 +203,6 @@ export default function LobbyPage() {
       return;
     }
 
-    playSound('start.wav');
-
     const hostPlayerWithTickets = roomData.players.find(p => p.id === currentUser.uid && p.isHost && p.tickets.length > 0);
     if (!hostPlayerWithTickets) {
         toast({ title: "Cannot Start", description: "Host must confirm their tickets before starting.", variant: "destructive"});
@@ -231,10 +228,7 @@ export default function LobbyPage() {
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to start game.");
       }
-      const updatedRoom: Room = await response.json();
-      const ticketsToTake = updatedRoom.players.find(p => p.id === currentUser.uid)?.tickets.length || 0;
-      toast({ title: "Game Starting!", description: `Navigating to game room ${roomId}.` });
-      router.push(`/room/${roomId}/play?playerTickets=${ticketsToTake}`);
+      // No need to handle routing or sound here, the effect will pick up the change
     } catch (err) {
       console.error("Error starting game:", err);
       toast({ title: "Error Starting Game", description: (err as Error).message, variant: "destructive" });
@@ -706,5 +700,3 @@ export default function LobbyPage() {
     </div>
   );
 }
-
-    
