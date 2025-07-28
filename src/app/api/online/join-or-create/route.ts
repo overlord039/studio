@@ -1,4 +1,5 @@
 
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { createRoomStore, addPlayerToRoomStore, getRoomStateForClient, startGameInRoomStore } from '@/lib/server/game-store';
 import type { Player, GameSettings, OnlineGameTier, TierConfig } from '@/types';
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { player, tier, tickets } = (await request.json()) as { player: Player & { isGuest?: boolean }; tier: OnlineGameTier, tickets: number };
+    const { player, tier, tickets } = (await request.json()) as { player: Player; tier: OnlineGameTier, tickets: number };
 
     if (!player || !player.id || !player.name) {
       return NextResponse.json({ message: 'Player details are required' }, { status: 400 });
@@ -53,17 +54,16 @@ export async function POST(request: NextRequest) {
     const tierConfig = TIERS[tier];
     const totalCost = tierConfig.ticketPrice * tickets;
 
-    // 1. Check if the player has enough coins (don't deduct yet)
-    if (!player.isGuest) {
-      const playerDocRef = doc(db, "users", player.id);
-      const playerDoc = await getDoc(playerDocRef);
-      if (!playerDoc.exists()) {
-          return NextResponse.json({ message: "Player data not found." }, { status: 404 });
-      }
-      const currentCoins = playerDoc.data().stats?.coins || 0;
-      if (currentCoins < totalCost) {
-          return NextResponse.json({ message: "Not enough coins to buy these tickets." }, { status: 400 });
-      }
+    // 1. Check if the player has enough coins
+    const playerDocRef = doc(db, "users", player.id);
+    const playerDoc = await getDoc(playerDocRef);
+    if (!playerDoc.exists()) {
+        return NextResponse.json({ message: "Player data not found." }, { status: 404 });
+    }
+    const playerData = playerDoc.data();
+    const currentCoins = playerData.stats?.coins || 0;
+    if (currentCoins < totalCost) {
+        return NextResponse.json({ message: "Not enough coins to buy these tickets." }, { status: 400 });
     }
     
     // 2. Create the room with online-specific settings

@@ -1,4 +1,5 @@
 
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { getRoomStore } from '@/lib/server/game-store';
 import { db } from '@/lib/firebase/config';
@@ -52,6 +53,8 @@ export async function POST(
     if (!playerDoc.exists()) {
         return NextResponse.json({ message: 'User data not found in database.' }, { status: 404 });
     }
+    
+    const isGuest = playerDoc.data().isGuest || false;
 
     const batch = writeBatch(db);
     
@@ -97,7 +100,8 @@ export async function POST(
         }
     }
     
-    // Only update coins for offline games
+    // Only update coins for non-friends games (i.e., bot games for now)
+    // This applies to both guests and registered users
     if (!isFriendsGame && coinsEarned > 0) {
       statsUpdate['stats.coins'] = increment(coinsEarned);
     }

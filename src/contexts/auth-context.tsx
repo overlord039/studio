@@ -169,11 +169,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (auth.currentUser && auth.currentUser.isAnonymous) {
             const guestUser = auth.currentUser;
             const credential = EmailAuthProvider.credentialWithLink(email, window.location.href);
+            
+            const guestUserDocRef = doc(db, "users", guestUser.uid);
+            const guestUserDoc = await getDoc(guestUserDocRef);
+            const guestData = guestUserDoc.exists() ? guestUserDoc.data() : null;
 
-            const oldGuestUsername = localStorage.getItem('guestUsername') || guestUser.displayName;
+            const oldGuestUsername = guestData?.displayName || guestUser.displayName;
             const oldUid = guestUser.uid;
-            const guestStatsString = localStorage.getItem('guestStats');
-            const guestStats = guestStatsString ? JSON.parse(guestStatsString) : createDefaultStats();
+            
+            const guestStats = guestData?.stats || createDefaultStats();
             guestStats.coins = (guestStats.coins || 0) + 10; // Linking reward
 
             await linkWithCredential(guestUser, credential);
@@ -227,33 +231,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (firebaseUser) {
-            if (firebaseUser.isAnonymous) {
-              const guestAvatar = localStorage.getItem('guestAvatar');
-              const guestName = localStorage.getItem('guestUsername');
-              const guestUsernameChanged = localStorage.getItem('guestUsernameChanged') === 'true';
-
-              const guestStatsString = localStorage.getItem('guestStats');
-              const guestStats = guestStatsString ? JSON.parse(guestStatsString) : { ...createDefaultStats(), coins: 10 };
-
-
-              const newUserProfile: User = {
-                  uid: firebaseUser.uid,
-                  displayName: guestName || `Guest#${firebaseUser.uid.substring(0,5)}`,
-                  email: null,
-                  photoURL: guestAvatar,
-                  isGuest: true,
-                  createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-                  stats: guestStats,
-              };
-              if (localStorage.getItem('isNewGuest') === 'true') {
-                 setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
-                 localStorage.removeItem('isNewGuest');
-              }
-              setCurrentUser(newUserProfile);
-              setLoading(false);
-              return;
-            }
-
             const userDocRef = doc(db, "users", firebaseUser.uid);
             
             userDocUnsubscribe = onSnapshot(userDocRef, async (docSnap) => {
@@ -277,24 +254,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         return newUser;
                     });
                 } else {
-                    const displayName = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || `User#${firebaseUser.uid.substring(0,5)}`;
+                    const isNewGuest = firebaseUser.isAnonymous;
+                    const displayName = isNewGuest 
+                      ? `Guest#${firebaseUser.uid.substring(0,5)}` 
+                      : firebaseUser.displayName || firebaseUser.email?.split('@')[0] || `User#${firebaseUser.uid.substring(0,5)}`;
+
                     const newUserProfile: User = {
                         uid: firebaseUser.uid,
                         displayName: displayName,
                         email: firebaseUser.email,
                         photoURL: firebaseUser.photoURL,
-                        isGuest: firebaseUser.isAnonymous,
+                        isGuest: isNewGuest,
                         createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
                         stats: { ...createDefaultStats(), coins: 10 }, // New account reward
                     };
-                    if (!newUserProfile.isGuest) {
-                        const batch = writeBatch(db);
-                        const userRef = doc(db, "users", firebaseUser.uid);
-                        const usernameRef = doc(db, "usernames", displayName.toLowerCase());
+                    
+                    const batch = writeBatch(db);
+                    const userRef = doc(db, "users", firebaseUser.uid);
+                    const usernameRef = doc(db, "usernames", displayName.toLowerCase());
+                    batch.set(userRef, newUserProfile);
+                    batch.set(usernameRef, { userId: firebaseUser.uid, username: displayName });
+                    
+                    await batch.commit();
 
-                        batch.set(userRef, newUserProfile);
-                        batch.set(usernameRef, { userId: firebaseUser.uid, username: displayName });
-                        await batch.commit();
+                    if(isNewGuest || !docSnap.exists()){
                         setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
                     }
                     setCurrentUser(newUserProfile);
@@ -320,30 +303,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [toast, handleEmailLinkSignIn]);
 
-  const setLocalGuestAvatar = (url: string) => {
-    if (currentUser && currentUser.isGuest) {
-        localStorage.setItem('guestAvatar', url);
-        setCurrentUser(prevUser => prevUser ? { ...prevUser, photoURL: url } : null);
+  const setLocalGuestAvatar = async (url: string) => {
+    if (currentUser) {
+       await updateUserProfile({ photoURL: url });
     }
   };
 
-  const setLocalGuestUsername = (name: string) => {
-    if (currentUser && currentUser.isGuest) {
-        localStorage.setItem('guestUsername', name);
-        localStorage.setItem('guestUsernameChanged', 'true');
-        setCurrentUser(prevUser => {
-          if (!prevUser) return null;
-          return { 
-            ...prevUser, 
-            displayName: name, 
-            stats: { ...prevUser.stats, usernameChanged: true }
-          };
-        });
+  const setLocalGuestUsername = async (name: string) => {
+    if (currentUser) {
+       await updateUserProfile({ displayName: name });
     }
   };
 
   const updateUserProfile = async (data: Partial<Pick<User, 'displayName' | 'photoURL'>>) => {
-    if (!currentUser || currentUser.isGuest || !db) return;
+    if (!currentUser || !db) return;
 
     const userDocRef = doc(db, "users", currentUser.uid);
     const updates: { [key: string]: any } = { ...data };
@@ -366,7 +339,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const updateUserStats = (newStats: Partial<UserStats>) => {
-    if (!currentUser) return;
+    if (!currentUser || !db) return;
 
     const updatedStats = {
         ...currentUser.stats,
@@ -376,16 +349,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             ...(newStats.prizesWon || {}),
         },
     };
-
-    if (currentUser.isGuest) {
-        localStorage.setItem('guestStats', JSON.stringify(updatedStats));
-        setCurrentUser(prev => prev ? ({ ...prev, stats: updatedStats as UserStats }) : null);
-    } else if (db) {
-        const userDocRef = doc(db, "users", currentUser.uid);
-        updateDoc(userDocRef, { stats: updatedStats }).catch(err => {
-            console.error("Failed to update user stats in Firestore:", err);
-        });
-    }
+    
+    const userDocRef = doc(db, "users", currentUser.uid);
+    updateDoc(userDocRef, { stats: updatedStats }).catch(err => {
+        console.error("Failed to update user stats in Firestore:", err);
+    });
   };
 
   const loginWithGoogle = async () => {
@@ -531,12 +499,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       await batch.commit();
 
-      localStorage.removeItem('guestAvatar');
-      localStorage.removeItem('guestUsername');
-      localStorage.removeItem('guestUsernameChanged');
-      localStorage.removeItem('guestStats');
-
-
       setReward({ amount: 10, message: 'Thanks for linking your account!' });
       router.push('/profile');
 
@@ -572,11 +534,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth) return;
     setIsSigningIn('guest');
     try {
-        const result = await signInAnonymously(auth);
-        const guestName = `Guest#${result.user.uid.substring(0,5)}`;
-        // Don't write to DB for guests, handle locally
-        localStorage.setItem('isNewGuest', 'true');
-        router.push('/profile');
+        await signInAnonymously(auth);
+        router.push('/');
     } catch (error: any) {
         console.error("Guest Sign-In Error:", error);
         toast({ title: "Guest Sign-in Failed", description: error.message, variant: "destructive" });
@@ -600,7 +559,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const usernameToDelete = userToDelete.displayName;
 
     try {
-      if (!userToDelete.isAnonymous && db) {
+      if (db) {
         const batch = writeBatch(db);
         const userDocRef = doc(db, "users", userToDelete.uid);
         batch.delete(userDocRef);
