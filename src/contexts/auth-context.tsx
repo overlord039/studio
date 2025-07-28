@@ -283,7 +283,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         photoURL: firebaseUser.photoURL,
                         isGuest: firebaseUser.isAnonymous,
                         createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-                        stats: { ...createDefaultStats(), coins: 20 }, // Full account reward
+                        stats: { ...createDefaultStats(), coins: 10 }, // New account reward
                     };
                     if (!newUserProfile.isGuest) {
                         const batch = writeBatch(db);
@@ -293,7 +293,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         batch.set(userRef, newUserProfile);
                         batch.set(usernameRef, { userId: firebaseUser.uid, username: displayName });
                         await batch.commit();
-                        setReward({ amount: 20, message: 'Account created! Here are your welcome coins.' });
+                        setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
                     }
                     setCurrentUser(newUserProfile);
                 }
@@ -403,7 +403,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           photoURL: firebaseUser.photoURL,
           isGuest: false,
           createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-          stats: { ...createDefaultStats(), coins: 20 },
+          stats: { ...createDefaultStats(), coins: 10 },
         };
 
         const batch = writeBatch(db);
@@ -411,7 +411,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         batch.set(userDocRef, userProfile);
         batch.set(usernameRef, { userId: firebaseUser.uid, username: displayName });
         await batch.commit();
-        setReward({ amount: 20, message: 'Account created! Here are your welcome coins.' });
+        setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
       }
       toast({ title: "Signed In Successfully", description: `Welcome!` });
       router.push('/');
@@ -643,8 +643,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-       <Dialog open={!!reward} onOpenChange={() => setReward(null)}>
-        <DialogContent>
+       <Dialog open={!!reward} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="text-center text-2xl">Reward!</DialogTitle>
             <DialogDescription className="text-center pt-2">
@@ -656,7 +656,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               <span className="text-4xl font-bold text-yellow-500">+{reward?.amount}</span>
           </div>
           <DialogFooter>
-            <Button onClick={() => setReward(null)} className="w-full">OK</Button>
+            <Button onClick={() => setReward(null)} className="w-full">Claim</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
