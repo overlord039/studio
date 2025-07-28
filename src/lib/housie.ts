@@ -19,16 +19,33 @@ const getColRange = (colIndex: number): [number, number] => {
 };
 
 /**
- * Generates a set of Housie tickets. Numbers can be repeated across different tickets.
+ * Generates a set of Housie tickets, limiting number repetitions across them.
+ * A number can appear on a maximum of two tickets within the generated set.
  * @param count The number of tickets to generate.
  * @returns An array of Housie ticket grids.
  */
 export function generateMultipleUniqueTickets(count: number): HousieTicketGrid[] {
   const allTickets: HousieTicketGrid[] = [];
+  const numberUsageCount = new Map<number, number>();
+
   for (let i = 0; i < count; i++) {
-    // Generate each ticket independently, without tracking numbers used in other tickets.
-    const newTicket = generateImprovedHousieTicket();
+    // Determine which numbers have already been used twice and should be excluded.
+    const excludedNumbers = new Set<number>();
+    for (const [num, usage] of numberUsageCount.entries()) {
+      if (usage >= 2) {
+        excludedNumbers.add(num);
+      }
+    }
+
+    const newTicket = generateImprovedHousieTicket(excludedNumbers);
     allTickets.push(newTicket);
+
+    // Update the usage count with numbers from the newly generated ticket.
+    newTicket.flat().forEach(num => {
+      if (num !== null) {
+        numberUsageCount.set(num, (numberUsageCount.get(num) || 0) + 1);
+      }
+    });
   }
   return allTickets;
 }
