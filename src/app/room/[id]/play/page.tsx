@@ -517,6 +517,7 @@ export default function GameRoomPage() {
     if (!currentUser || !roomData) return;
 
     const isBotGame = roomData.settings.gameMode !== 'multiplayer' && roomData.settings.gameMode !== 'online';
+    const isOnlineGame = roomData.settings.gameMode === 'online';
     setIsResetting(true);
 
     if (isBotGame) {
@@ -609,6 +610,8 @@ export default function GameRoomPage() {
 
   const isBotGame = roomData.settings.gameMode !== 'multiplayer' && roomData.settings.gameMode !== 'online';
   const isOnlineGame = roomData.settings.gameMode === 'online';
+  const showCoinInfo = isOnlineGame || roomData.settings.gameMode === 'multiplayer';
+
   const gameSettings: GameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
   const currentPrizeFormat = gameSettings.prizeFormat;
   const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
@@ -634,8 +637,7 @@ export default function GameRoomPage() {
                 const claimInfo = roomData.prizeStatus[prize];
                 if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
                     currentUserPrizeNames.push(prize);
-                    const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
-                    const prizeAmount = (totalPrizePool * percentage) / 100;
+                    const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[prize as PrizeType] || 0)) / 100;
                     const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
                     currentUserWinnings += prizePerWinner;
                 }
@@ -658,7 +660,6 @@ export default function GameRoomPage() {
     const playAgainButtonText = isBotGame ? "Play Again" : isOnlineGame ? "Find New Match" : (isCurrentUserHost ? "New Game" : "To Lobby");
     const userHasPrizes = currentUserPrizeNames.length > 0;
     const isParticipationWinner = !userHasPrizes && currentUserWinnings > 0;
-    const showCoinInfo = isOnlineGame || roomData.settings.gameMode === 'multiplayer';
 
     return (
       <div className="flex-grow p-4 flex flex-col items-center justify-center">
@@ -705,8 +706,7 @@ export default function GameRoomPage() {
                       );
                   }
 
-                  const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
-                  const prizeAmount = (totalPrizePool * percentage) / 100;
+                  const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[prize as PrizeType] || 0)) / 100;
                   const prizePerWinner = (claimInfo && claimInfo.claimedBy.length > 0) ? prizeAmount / claimInfo.claimedBy.length : 0;
                   
                   return (
@@ -733,7 +733,7 @@ export default function GameRoomPage() {
             {(userHasPrizes || isParticipationWinner) ? (
                 <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
                     <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
-                    {showCoinInfo || (isBotGame && userHasPrizes) ? (
+                    {(showCoinInfo || (isBotGame && userHasPrizes)) ? (
                       <>
                         <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
                             You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(currentUserWinnings)}!
@@ -902,8 +902,7 @@ export default function GameRoomPage() {
                                       }
 
                                       // Logic for online/friends games (with money)
-                                      const percentage = prizeDistributionPercentages[prize as PrizeType] || 0;
-                                      const prizeAmount = (totalPrizePool * percentage) / 100;
+                                      const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[prize as PrizeType] || 0)) / 100;
                                       const winnerCount = claimInfo?.claimedBy.length ?? 0;
 
                                       let prizeValueText = formatCoins(prizeAmount);
@@ -1105,3 +1104,4 @@ export default function GameRoomPage() {
     </>
   );
 }
+
