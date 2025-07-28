@@ -11,7 +11,7 @@ import type { Room, GameSettings, PrizeType, BackendPlayerInRoom } from "@/types
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE } from "@/lib/constants";
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { playSound } from "@/lib/sounds";
+import { useSound } from "@/contexts/sound-context";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +35,7 @@ export default function LobbyPage() {
   const roomIdParam = params.id;
   const roomId = Array.isArray(roomIdParam) ? roomIdParam[0] ?? '' : roomIdParam ?? '';
   const { currentUser, loading: authLoading } = useAuth();
+  const { playSound } = useSound();
 
   const [roomData, setRoomData] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -134,7 +135,7 @@ export default function LobbyPage() {
     } finally {
       if(isInitialLoad) setIsLoading(false);
     }
-  }, [roomId, currentUser, authLoading, router, toast]); 
+  }, [roomId, currentUser, authLoading, router, toast, playSound]); 
 
   useEffect(() => {
     if (currentUser && roomId && !authLoading) { 
@@ -705,3 +706,5 @@ export default function LobbyPage() {
     </div>
   );
 }
+
+    
