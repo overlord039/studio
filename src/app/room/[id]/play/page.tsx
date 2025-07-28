@@ -95,6 +95,7 @@ export default function GameRoomPage() {
   const previousCurrentNumberRef = useRef<number | null>(null);
   const roomDataRef = useRef(roomData);
   const previousPrizeStatusRef = useRef<Room['prizeStatus'] | null>(null);
+  const previousCallingModeRef = useRef<CallingMode | undefined>();
   const gameOverSoundPlayedRef = useRef(false);
   const statsUpdateInitiatedRef = useRef(false);
 
@@ -294,10 +295,25 @@ export default function GameRoomPage() {
     }
   }, [currentUser, roomId, authLoading, fetchGameDetails]);
 
-  // Polling for game updates
+  // Polling for game updates and handling notifications for changes
   useEffect(() => {
-    if (!roomId || !currentUser || roomData?.isGameOver || isLoading) return;
+    if (!roomId || !currentUser || roomData?.isGameOver || isLoading) {
+        if (previousCallingModeRef.current && roomData?.isGameOver) {
+            previousCallingModeRef.current = undefined; // Reset on game over
+        }
+        return;
+    }
     
+    // Check for calling mode change
+    if (previousCallingModeRef.current && roomData && roomData.settings.callingMode !== previousCallingModeRef.current) {
+        playSound('notification.wav');
+        toast({
+            title: "Mode Switched by Host",
+            description: `Number calling is now ${roomData.settings.callingMode}.`
+        });
+    }
+    previousCallingModeRef.current = roomData?.settings.callingMode;
+
     const isManualMode = roomData?.settings.callingMode === 'manual';
     const isHost = roomData?.host.id === currentUser.uid;
     const pollInterval = isManualMode && !isHost ? 7000 : 5000;
@@ -307,8 +323,11 @@ export default function GameRoomPage() {
         fetchGameDetails(false);
       }
     }, pollInterval); 
-    return () => clearInterval(intervalId);
-  }, [roomId, currentUser, roomData?.isGameOver, roomData?.settings.callingMode, roomData?.host.id, isLoading, fetchGameDetails]);
+    
+    return () => {
+        clearInterval(intervalId);
+    };
+  }, [roomId, currentUser, roomData, isLoading, fetchGameDetails, playSound, toast]);
 
 
   // Announce new numbers
@@ -497,11 +516,7 @@ export default function GameRoomPage() {
             throw new Error(data.message || `Failed to switch to ${newMode} mode.`);
         }
         setRoomData(data);
-        playSound('notification.wav');
-        toast({
-            title: "Mode Switched",
-            description: `Number calling is now ${newMode}.`,
-        });
+        // Do not toast here. Let the useEffect handle it for all players.
     } catch (error) {
         toast({
             title: "Error Switching Mode",
