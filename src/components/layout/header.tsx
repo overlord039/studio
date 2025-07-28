@@ -351,8 +351,8 @@ export default function Header() {
     return (
         <div className="flex items-center gap-2">
             <Link href="/profile" passHref>
-                <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm p-1 pr-4 rounded-full border border-white/20 hover:bg-black/50 transition-colors cursor-pointer">
-                    <Avatar className="h-10 w-10 border-2 border-primary">
+                <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm p-1 pr-3 sm:pr-4 rounded-full border border-white/20 hover:bg-black/50 transition-colors cursor-pointer">
+                    <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-primary">
                         <AvatarImage 
                             src={currentUser.photoURL || `https://placehold.co/48x48.png?text=${avatarFallback}`} 
                             alt={displayName} 
@@ -360,9 +360,9 @@ export default function Header() {
                         />
                         <AvatarFallback>{avatarFallback}</AvatarFallback>
                     </Avatar>
-                     <div className="flex items-center gap-1.5 text-white">
-                        <Image src="/coin.png" alt="Coins" width={24} height={24} />
-                        <span className="font-bold text-lg">{currentUser.stats.coins ?? 0}</span>
+                     <div className="flex items-center gap-1 sm:gap-1.5 text-white">
+                        <Image src="/coin.png" alt="Coins" width={24} height={24} className="h-5 w-5 sm:h-6 sm:w-6" />
+                        <span className="font-bold text-base sm:text-lg">{currentUser.stats.coins ?? 0}</span>
                     </div>
                 </div>
             </Link>
@@ -383,8 +383,8 @@ export default function Header() {
         <nav className="flex items-center gap-2">
           <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-white h-16 w-16">
-                <Settings className="h-10 w-10" />
+              <Button variant="ghost" size="icon" className="text-white h-12 w-12 sm:h-16 sm:w-16">
+                <Settings className="h-8 w-8 sm:h-10 sm:w-10" />
                 <span className="sr-only">Settings</span>
               </Button>
             </DialogTrigger>
@@ -395,3 +395,5 @@ export default function Header() {
     </header>
   );
 }
+
+    
