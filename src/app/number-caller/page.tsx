@@ -33,13 +33,13 @@ export default function NumberCallerPage() {
   const [availableNumbers, setAvailableNumbers] = useState<number[]>(shuffleArray(ALL_NUMBERS));
   const [isAutoCalling, setIsAutoCalling] = useState(false);
   const autoCallSpeed = 6; // Fixed speed in seconds
-  const { isSfxMuted, toggleSfxMute } = useSound();
+  const [isVoiceMuted, setIsVoiceMuted] = useState(false);
   const autoCallTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   const [animationKey, setAnimationKey] = useState(0);
 
   const speakNumber = useCallback((num: number) => {
-    if (isSfxMuted || typeof window === 'undefined' || !window.speechSynthesis) return;
+    if (isVoiceMuted || typeof window === 'undefined' || !window.speechSynthesis) return;
 
     window.speechSynthesis.cancel();
     
@@ -47,7 +47,7 @@ export default function NumberCallerPage() {
     utterance.rate = 0.9;
     utterance.pitch = 1.1;
     window.speechSynthesis.speak(utterance);
-  }, [isSfxMuted]);
+  }, [isVoiceMuted]);
 
   const callNextNumber = useCallback(() => {
     if (availableNumbers.length === 0) {
@@ -141,8 +141,8 @@ export default function NumberCallerPage() {
           <CalledNumberDisplay 
             currentNumber={currentNumber}
             calledNumbers={calledNumbers}
-            isMuted={isSfxMuted}
-            onToggleMute={toggleSfxMute}
+            isMuted={isVoiceMuted}
+            onToggleMute={() => setIsVoiceMuted(prev => !prev)}
             animationKey={animationKey}
           />
           {!isAutoCalling && (

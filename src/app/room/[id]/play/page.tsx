@@ -77,7 +77,7 @@ export default function GameRoomPage() {
   const roomId = Array.isArray(params.id) ? params.id[0] ?? '' : params.id ?? '';
   const { toast } = useToast();
   const { currentUser, loading: authLoading } = useAuth();
-  const { isSfxMuted, toggleSfxMute, playSound } = useSound();
+  const { isSfxMuted, playSound } = useSound();
 
   const [roomData, setRoomData] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,6 +90,7 @@ export default function GameRoomPage() {
   const [isResetting, setIsResetting] = useState(false);
   const [animationKey, setAnimationKey] = useState(0);
   const [coinsWonThisGame, setCoinsWonThisGame] = useState<number | null>(null);
+  const [isVoiceMuted, setIsVoiceMuted] = useState(false);
 
   const previousCurrentNumberRef = useRef<number | null>(null);
   const roomDataRef = useRef(roomData);
@@ -118,7 +119,7 @@ export default function GameRoomPage() {
   }, [roomData?.isGameOver, playSound]);
 
   const announce = useCallback((num: number) => {
-    if (isSfxMuted || typeof window === 'undefined' || !window.speechSynthesis) return;
+    if (isVoiceMuted || typeof window === 'undefined' || !window.speechSynthesis) return;
     
     window.speechSynthesis.cancel();
 
@@ -126,7 +127,7 @@ export default function GameRoomPage() {
     utterance.rate = 0.9;
     utterance.pitch = 1.1;
     window.speechSynthesis.speak(utterance);
-  }, [isSfxMuted]);
+  }, [isVoiceMuted]);
 
   const fetchGameDetails = useCallback(async (isInitialLoad = false) => {
     const playerTicketsParam = searchParams.get('playerTickets');
@@ -1005,8 +1006,8 @@ export default function GameRoomPage() {
               <MemoizedCalledNumberDisplay 
                   currentNumber={roomData.currentNumber}
                   calledNumbers={roomData.calledNumbers}
-                  isMuted={isSfxMuted}
-                  onToggleMute={toggleSfxMute}
+                  isMuted={isVoiceMuted}
+                  onToggleMute={() => setIsVoiceMuted(prev => !prev)}
                   animationKey={animationKey}
               />
           </div>
