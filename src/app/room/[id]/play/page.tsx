@@ -416,6 +416,7 @@ export default function GameRoomPage() {
       const result = await response.json();
 
       if (response.ok) {
+        playSound('win.wav');
         const updatedRoom: Room = result;
         setRoomData(updatedRoom); 
         previousPrizeStatusRef.current = updatedRoom.prizeStatus;
