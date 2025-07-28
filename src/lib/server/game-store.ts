@@ -1,4 +1,5 @@
 
+
 import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid, CallingMode } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { generateMultipleUniqueTickets } from '@/lib/housie';
@@ -502,7 +503,7 @@ export function claimPrizeStore(
         const totalPrizePool = totalTickets * room.settings.ticketPrice;
         const allPrizes = PRIZE_DEFINITIONS[room.settings.prizeFormat];
         
-        // Update stats for all human players
+        // Update matches played stats for all human players
         room.players.forEach(p => {
           if (!p.isBot) {
             const playerDocRef = doc(db, "users", p.id);
@@ -510,7 +511,7 @@ export function claimPrizeStore(
           }
         });
 
-        // Distribute winnings
+        // Distribute winnings and update prizesWon stats
         allPrizes.forEach(prize => {
             const claimInfo = room.prizeStatus[prize];
             if (claimInfo && claimInfo.claimedBy.length > 0) {
@@ -521,7 +522,10 @@ export function claimPrizeStore(
                 claimInfo.claimedBy.forEach(winner => {
                     if (!room.players.find(p => p.id === winner.id)?.isBot) {
                         const playerDocRef = doc(db, "users", winner.id);
-                        batch.update(playerDocRef, { 'stats.coins': increment(prizePerWinner) });
+                        batch.update(playerDocRef, { 
+                            'stats.coins': increment(prizePerWinner),
+                            [`stats.prizesWon.${prize}`]: increment(1)
+                        });
                     }
                 });
             }
