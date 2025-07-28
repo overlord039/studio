@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -609,8 +610,7 @@ export default function GameRoomPage() {
   }
 
   const isBotGame = roomData.settings.gameMode !== 'multiplayer' && roomData.settings.gameMode !== 'online';
-  const isOnlineGame = roomData.settings.gameMode === 'online';
-  const showCoinInfo = isOnlineGame || roomData.settings.gameMode === 'multiplayer';
+  const showCoinInfo = !isBotGame;
 
   const gameSettings: GameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
   const currentPrizeFormat = gameSettings.prizeFormat;
@@ -632,32 +632,33 @@ export default function GameRoomPage() {
     const totalCost = ticketPrice * ticketsBought;
 
     if (currentUser) {
-        if (isOnlineGame) {
+        if (showCoinInfo) { // For Online and Friends modes
             prizesForFormat.forEach(prize => {
                 const claimInfo = roomData.prizeStatus[prize];
                 if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
-                    currentUserPrizeNames.push(prize);
+                    if (!currentUserPrizeNames.includes(prize)) {
+                        currentUserPrizeNames.push(prize);
+                    }
                     const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[prize as PrizeType] || 0)) / 100;
                     const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
                     currentUserWinnings += prizePerWinner;
                 }
             });
-        } else if (coinsWonThisGame !== null) {
+        } else if (coinsWonThisGame !== null) { // For bot games
             currentUserWinnings = coinsWonThisGame;
-        }
-
-        // Common logic to find out names of prizes won for all modes
-        const prizesWon = roomData.prizeStatus;
-        for (const prize in prizesWon) {
-            if(prizesWon[prize as PrizeType]?.claimedBy.some(c => c.id === currentUser.uid)) {
-                if (!currentUserPrizeNames.includes(prize)) { // Avoid duplicates if already added
-                    currentUserPrizeNames.push(prize);
+            // Common logic to find out names of prizes won for all modes
+            const prizesWon = roomData.prizeStatus;
+            for (const prize in prizesWon) {
+                if(prizesWon[prize as PrizeType]?.claimedBy.some(c => c.id === currentUser.uid)) {
+                    if (!currentUserPrizeNames.includes(prize)) { 
+                        currentUserPrizeNames.push(prize);
+                    }
                 }
             }
         }
     }
     
-    const playAgainButtonText = isBotGame ? "Play Again" : isOnlineGame ? "Find New Match" : (isCurrentUserHost ? "New Game" : "To Lobby");
+    const playAgainButtonText = isBotGame ? "Play Again" : (roomData.settings.gameMode === 'online' ? "Find New Match" : (isCurrentUserHost ? "New Game" : "To Lobby"));
     const userHasPrizes = currentUserPrizeNames.length > 0;
     const isParticipationWinner = !userHasPrizes && currentUserWinnings > 0;
 
@@ -814,7 +815,7 @@ export default function GameRoomPage() {
                       </div>
                   ) : (
                       <div className="text-white capitalize">
-                          {isOnlineGame && roomData.settings.tier ? `Online: ${TIERS[roomData.settings.tier]?.name || 'Mode'}` : `Room ID: #${roomId}`}
+                          {roomData.settings.gameMode === 'online' && roomData.settings.tier ? `Online: ${TIERS[roomData.settings.tier]?.name || 'Mode'}` : `Room ID: #${roomId}`}
                       </div>
                   )}
               </div>
@@ -839,7 +840,7 @@ export default function GameRoomPage() {
                         </div>
                     )}
                 </div>
-              {isCurrentUserHost && !isOnlineGame && !isBotGame && !roomData.isGameOver && (
+              {isCurrentUserHost && !isBotGame && !roomData.isGameOver && (
                 <div className="flex items-center gap-1 p-1 rounded-md border bg-card/80 backdrop-blur-sm">
                     <Label htmlFor="calling-mode-switch" className="text-xs font-medium text-foreground cursor-pointer">
                         Auto
@@ -954,7 +955,7 @@ export default function GameRoomPage() {
                                           </span>
                                           <div className="text-muted-foreground flex items-center gap-1">
                                             <span>{ticketCount} {ticketsText(ticketCount)}</span>
-                                            {(!isBotGame) && 
+                                            {(showCoinInfo) && 
                                               <div className="flex items-center gap-0.5">
                                                 (<Image src="/coin.png" alt="Coins" width={12} height={12} />{formatCoins(ticketCost)})
                                               </div>
@@ -1104,4 +1105,3 @@ export default function GameRoomPage() {
     </>
   );
 }
-
