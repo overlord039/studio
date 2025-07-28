@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Lock, Play, Users, ArrowLeft, Loader2, Link as LinkIcon, Ticket } from 'lucide-react';
+import { Lock, Play, Users, ArrowLeft, Loader2, Link as LinkIcon, Ticket, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import type { OnlineGameTier, TierConfig } from '@/types';
@@ -168,7 +168,7 @@ export default function OnlineModePage() {
             </div>
              <div className="mt-8 w-full max-w-md">
                 <Button variant="outline" onClick={() => router.push('/')}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    <LogOut className="mr-2 h-4 w-4 rotate-180" />
                     Back to Home
                 </Button>
             </div>
