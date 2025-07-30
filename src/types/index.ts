@@ -27,6 +27,7 @@ export interface Player {
 export interface BackendPlayerInRoom extends Player {
   tickets: HousieTicketGrid[];
   isBot: boolean;
+  confirmedTicketCost?: number;
 }
 
 export type TicketPrice = 5 | 10 | 20 | 25 | 50 | 100;

@@ -4,7 +4,7 @@ import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeC
 import { PRIZE_TYPES } from '@/types';
 import { generateMultipleUniqueTickets } from '@/lib/housie';
 import { db } from '@/lib/firebase/config';
-import { doc, writeBatch, increment, getDoc } from 'firebase/firestore';
+import { doc, writeBatch, increment, getDoc, runTransaction } from 'firebase/firestore';
 import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE, PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER, SERVER_CALL_INTERVAL } from '@/lib/constants';
 
 declare global {
@@ -60,6 +60,7 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
     isHost: true,
     tickets: [], 
     isBot: false,
+    confirmedTicketCost: 0,
   };
 
   const newRoom: Room = {
@@ -99,7 +100,6 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberO
     if (!room) {
         return { error: "Room not found." };
     }
-
     if (room.isGameStarted && !room.isGameOver) {
         const existingPlayer = room.players.find(p => p.id === playerInfo.id);
         if (existingPlayer) {
@@ -110,51 +110,63 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberO
     }
     
     const normalizedPlayerName = playerInfo.name.trim().toLowerCase();
-    // Find player by unique ID first.
     const existingPlayerIndex = room.players.findIndex(p => p.id === playerInfo.id);
+    const numTicketsToBuy = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
+    const newCost = room.settings.ticketPrice * numTicketsToBuy;
 
+    // --- COIN DEDUCTION LOGIC ---
+    if (db && !playerInfo.isBot && room.settings.ticketPrice > 0) {
+        runTransaction(db, async (transaction) => {
+            const playerDocRef = doc(db, "users", playerInfo.id);
+            const playerDoc = await transaction.get(playerDocRef);
+            if (!playerDoc.exists()) {
+                throw new Error("Your user profile could not be found.");
+            }
+            const currentCoins = playerDoc.data().stats?.coins || 0;
+            const existingPlayerInRoom = room.players.find(p => p.id === playerInfo.id);
+            const oldCost = existingPlayerInRoom?.confirmedTicketCost || 0;
+            const costDifference = newCost - oldCost;
+
+            if (currentCoins < costDifference) {
+                throw new Error(`Not enough coins. You need ${costDifference} more coins.`);
+            }
+            
+            transaction.update(playerDocRef, { 'stats.coins': increment(-costDifference) });
+        }).catch(err => {
+            console.error(`Transaction failed for ${playerInfo.id} in room ${roomId}: ${(err as Error).message}`);
+            return { error: (err as Error).message };
+        });
+    }
+    // --- END COIN DEDUCTION ---
+    
     if (existingPlayerIndex !== -1) {
         const existingPlayer = room.players[existingPlayerIndex];
-        
-        // Check if they are trying to use a username that is now taken by *another* player
         const isUsernameTaken = room.players.some(p => p.id !== playerInfo.id && p.name.toLowerCase() === normalizedPlayerName);
-        if (isUsernameTaken) {
-            return { error: `Display name "${playerInfo.name}" is already taken in this room.` };
-        }
+        if (isUsernameTaken) return { error: `Display name "${playerInfo.name}" is already taken in this room.` };
         
         existingPlayer.name = playerInfo.name;
         existingPlayer.isHost = playerInfo.id === room.host.id;
         existingPlayer.isBot = !!playerInfo.isBot;
-
-        const numTicketsToGenerate = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
-
-        if (existingPlayer.tickets.length !== numTicketsToGenerate) {
-            existingPlayer.tickets = generateMultipleUniqueTickets(numTicketsToGenerate);
-            console.log(`Player ${playerInfo.name} (${playerInfo.id}) in room ${roomId} updated tickets to ${numTicketsToGenerate}.`);
-        } else {
-            console.log(`Player ${playerInfo.name} (${playerInfo.id}) re-confirmed ${numTicketsToGenerate} tickets in room ${roomId}. No changes.`);
-        }
+        existingPlayer.tickets = generateMultipleUniqueTickets(numTicketsToBuy);
+        existingPlayer.confirmedTicketCost = newCost;
     } else {
-        // New player joining
         const isUsernameTaken = room.players.some(p => p.name.toLowerCase() === normalizedPlayerName);
-        if (isUsernameTaken) {
-            return { error: `Display name "${playerInfo.name}" is already taken. Please choose another.` };
-        }
-        if (room.players.length >= room.settings.lobbySize) {
-            return { error: "Room is full." };
-        }
-        const numTicketsToGenerate = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
+        if (isUsernameTaken) return { error: `Display name "${playerInfo.name}" is already taken. Please choose another.` };
+        if (room.players.length >= room.settings.lobbySize) return { error: "Room is full." };
+
         const newPlayer: BackendPlayerInRoom = {
             id: playerInfo.id,
             name: playerInfo.name,
             isHost: playerInfo.id === room.host.id,
             isBot: !!playerInfo.isBot,
-            tickets: generateMultipleUniqueTickets(numTicketsToGenerate),
+            tickets: generateMultipleUniqueTickets(numTicketsToBuy),
+            confirmedTicketCost: newCost
         };
         room.players.push(newPlayer);
-        console.log(`New player ${playerInfo.name} (${playerInfo.id}) joined room ${roomId} with ${numTicketsToGenerate} tickets.`);
     }
 
+    // Recalculate total prize pool based on confirmed tickets
+    room.totalPrizePool = room.players.reduce((sum, player) => sum + (player.confirmedTicketCost || 0), 0);
     rooms.set(roomId, room);
     return room;
 }
@@ -178,29 +190,7 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
   if (playersWithTickets < minPlayersRequired) {
     return { error: `Need at least ${minPlayersRequired} player(s) with tickets to start. Currently: ${playersWithTickets}` };
   }
-
-  // Calculate and set the total prize pool
-  const totalTicketsInGame = room.players.reduce((sum, player) => sum + (player.tickets?.length || 0), 0);
-  room.totalPrizePool = room.settings.ticketPrice * totalTicketsInGame;
-
-  // Deduct coins for online or friends games before starting
-  const isPaidGame = room.settings.ticketPrice > 0 && (room.settings.gameMode === 'online' || room.settings.gameMode === 'multiplayer');
-  if (isPaidGame && db) {
-      const batch = writeBatch(db);
-      for (const player of room.players) {
-          if (!player.isBot) {
-              const ticketCost = room.settings.ticketPrice * player.tickets.length;
-              if (ticketCost > 0) {
-                  const playerDocRef = doc(db, "users", player.id);
-                  batch.update(playerDocRef, { 'stats.coins': increment(-ticketCost) });
-              }
-          }
-      }
-      batch.commit().catch(err => {
-          console.error(`CRITICAL: Failed to deduct coins for room ${roomId}. Error: ${err}`);
-      });
-  }
-
+  
   room.isGameStarted = true;
   room.isGameOver = false;
   room.numberPool = initializeNumberPool();
@@ -267,6 +257,7 @@ export function resetRoomStore(roomId: string, hostId: string): Room | { error: 
   // Clear tickets for all players so they have to re-confirm
   room.players.forEach(player => {
     player.tickets = [];
+    player.confirmedTicketCost = 0; // Reset confirmed cost
   });
   
   stopRoomTimer(roomId, "Room was reset by the host for a new game.");
@@ -288,6 +279,15 @@ export function removePlayerFromRoomStore(roomId: string, playerId: string): { s
   }
 
   const leavingPlayer = room.players[playerIndex];
+  
+  // REFUND COINS if player leaves before game starts
+  if (db && !leavingPlayer.isBot && !room.isGameStarted && leavingPlayer.confirmedTicketCost && leavingPlayer.confirmedTicketCost > 0) {
+      const playerDocRef = doc(db, "users", leavingPlayer.id);
+      updateDoc(playerDocRef, { 'stats.coins': increment(leavingPlayer.confirmedTicketCost) })
+          .then(() => console.log(`Refunded ${leavingPlayer.confirmedTicketCost} coins to ${leavingPlayer.name} from room ${roomId}.`))
+          .catch(err => console.error(`Failed to refund coins to ${leavingPlayer.name}: ${err}`));
+  }
+  
   room.players.splice(playerIndex, 1);
   console.log(`Player ${playerId} has left room ${roomId}.`);
 
@@ -304,6 +304,8 @@ export function removePlayerFromRoomStore(roomId: string, playerId: string): { s
   }
   
   if(room.players.length > 0) {
+    // Recalculate prize pool after a player leaves
+    room.totalPrizePool = room.players.reduce((sum, player) => sum + (player.confirmedTicketCost || 0), 0);
     rooms.set(roomId, room);
   }
   return { success: true };
@@ -347,16 +349,26 @@ export function kickPlayerStore(
   if (hostId === playerIdToKick) return { error: "Host cannot kick themselves." };
   if (room.isGameStarted) return { error: "Cannot kick players once the game has started." };
   
-  const playerToKick = room.players.find(p => p.id === playerIdToKick);
-  if(playerToKick?.isBot) return { error: "Cannot kick a bot player." };
-
-  const playerIndex = room.players.findIndex(p => p.id === playerIdToKick);
-  if (playerIndex === -1) {
+  const playerToKickIndex = room.players.findIndex(p => p.id === playerIdToKick);
+  if (playerToKickIndex === -1) {
     return { error: "Player to kick not found in room." };
   }
-
-  const kickedPlayerName = room.players[playerIndex].name;
-  room.players.splice(playerIndex, 1);
+  const playerToKick = room.players[playerToKickIndex];
+  if(playerToKick.isBot) return { error: "Cannot kick a bot player." };
+  
+  // REFUND COINS for kicked player
+  if (db && !playerToKick.isBot && playerToKick.confirmedTicketCost && playerToKick.confirmedTicketCost > 0) {
+      const playerDocRef = doc(db, "users", playerToKick.id);
+      updateDoc(playerDocRef, { 'stats.coins': increment(playerToKick.confirmedTicketCost) })
+          .then(() => console.log(`Refunded ${playerToKick.confirmedTicketCost} coins to kicked player ${playerToKick.name} from room ${roomId}.`))
+          .catch(err => console.error(`Failed to refund coins to kicked player ${playerToKick.name}: ${err}`));
+  }
+  
+  const kickedPlayerName = playerToKick.name;
+  room.players.splice(playerToKickIndex, 1);
+  
+  // Recalculate prize pool after kicking
+  room.totalPrizePool = room.players.reduce((sum, player) => sum + (player.confirmedTicketCost || 0), 0);
   
   rooms.set(roomId, room);
   console.log(`Player ${kickedPlayerName} (${playerIdToKick}) was kicked from room ${roomId} by host ${hostId}.`);
@@ -572,7 +584,7 @@ export function updateCallingModeStore(roomId: string, hostId: string, newMode: 
       console.log(`Room ${roomId}: Starting server-side auto-calling due to mode change.`);
       const intervalId = setInterval(() => {
         const currentRoomState = getRoomStore(roomId);
-        if (!currentRoomState || !currentRoomState.isGameStarted || currentRoomState.isGameOver) {
+        if (!currentRoomState || !currentRoomState.isGameStarted || !currentRoomState.isGameOver) {
           stopRoomTimer(roomId, !currentRoomState ? "Room no longer exists" : "Game not started or already over");
           return;
         }
