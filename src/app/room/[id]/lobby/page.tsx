@@ -45,6 +45,7 @@ export default function LobbyPage() {
   const [isJoiningOrUpdating, setIsJoiningOrUpdating] = useState(false);
   const [isEditingTickets, setIsEditingTickets] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [showNoCoinsDialog, setShowNoCoinsDialog] = useState(false);
   const previousIsGameStartedRef = useRef<boolean | undefined>(undefined);
   const roomDataRef = useRef(roomData);
 
@@ -168,11 +169,7 @@ export default function LobbyPage() {
 
     const totalCost = roomData.settings.ticketPrice * selectedTicketsToBuy;
     if (totalCost > 0 && currentUser.stats.coins < totalCost) {
-        toast({
-            title: "Not Enough Coins",
-            description: `You need ${totalCost} coins for ${selectedTicketsToBuy} tickets. You have ${currentUser.stats.coins}.`,
-            variant: "destructive"
-        });
+        setShowNoCoinsDialog(true);
         return;
     }
     if (totalCost > 0 && currentUser.isGuest) {
@@ -440,6 +437,7 @@ export default function LobbyPage() {
 
 
   return (
+    <>
     <div className="flex flex-grow flex-col items-center justify-center p-4">
       <Card className="w-full max-w-2xl shadow-xl">
         <CardHeader className="p-2 md:p-3">
@@ -713,5 +711,22 @@ export default function LobbyPage() {
         </CardContent>
       </Card>
     </div>
+    <AlertDialog open={showNoCoinsDialog} onOpenChange={setShowNoCoinsDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Not Enough Coins</AlertDialogTitle>
+            <AlertDialogDescription>
+              You don't have enough coins to buy these tickets. Play offline games against bots to earn more!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => router.push('/play-with-computer')}>
+              Play Offline
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

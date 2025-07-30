@@ -70,15 +70,7 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
         }
 
         if (!hasEnoughCoins) {
-            if (currentUser.stats.coins === 0) {
-                setShowNoCoinsDialog(true);
-            } else {
-                toast({
-                    title: "Not Enough Coins",
-                    description: `You need ${totalCost} coins to buy ${selectedTickets} ticket(s) for this tier.`,
-                    variant: "destructive"
-                });
-            }
+            setShowNoCoinsDialog(true);
             return;
         }
 
@@ -130,7 +122,7 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
                                 </SelectContent>
                             </Select>
                         </div>
-                        <Button className="w-full" disabled={!hasEnoughCoins} onClick={handleJoinTier}>
+                        <Button className="w-full" onClick={handleJoinTier}>
                             <Play className="mr-2 h-4 w-4" />
                             {hasEnoughCoins ? `Join for ${totalCost} Coins` : "Not enough coins"}
                         </Button>
@@ -150,9 +142,9 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
             <AlertDialog open={showNoCoinsDialog} onOpenChange={setShowNoCoinsDialog}>
                 <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Out of Coins?</AlertDialogTitle>
+                    <AlertDialogTitle>Not Enough Coins</AlertDialogTitle>
                     <AlertDialogDescription>
-                    You have 0 coins. Play offline games against bots to earn more coins and get back into the action!
+                    You don't have enough coins to join this match. Play offline games against bots to earn more!
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

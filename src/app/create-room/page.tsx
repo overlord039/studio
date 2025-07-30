@@ -14,6 +14,7 @@ import { useSound } from '@/contexts/sound-context';
 import type { Player, GameSettings, Room } from '@/types';
 import Link from 'next/link';
 import Image from 'next/image';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const LOBBY_SIZES = [3, 5, 10, 20];
 
@@ -29,6 +30,7 @@ export default function CreateOrJoinRoomPage() {
   const [ticketPrice, setTicketPrice] = useState(0);
   const [lobbySize, setLobbySize] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showNoCoinsDialog, setShowNoCoinsDialog] = useState(false);
 
   // Join Room State
   const [joinRoomId, setJoinRoomId] = useState('');
@@ -54,11 +56,7 @@ export default function CreateOrJoinRoomPage() {
     
     // Check if the user has enough coins to create the room (at least for one ticket)
     if (ticketPrice > 0 && currentUser.stats.coins < ticketPrice) {
-      toast({
-        title: "Not Enough Coins",
-        description: `You need at least ${ticketPrice} coins to create a room with this entry fee, as you will need to buy at least one ticket.`,
-        variant: "destructive",
-      });
+      setShowNoCoinsDialog(true);
       return;
     }
 
@@ -159,6 +157,7 @@ export default function CreateOrJoinRoomPage() {
   );
 
   return (
+    <>
     <div className="flex flex-col items-center justify-center flex-grow p-4">
       <Card className="w-full max-w-md bg-transparent border-none shadow-none">
         <div className="flex">
@@ -252,5 +251,22 @@ export default function CreateOrJoinRoomPage() {
         </Link>
       </div>
     </div>
+     <AlertDialog open={showNoCoinsDialog} onOpenChange={setShowNoCoinsDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Not Enough Coins</AlertDialogTitle>
+            <AlertDialogDescription>
+              You don't have enough coins to create a room with this entry fee. Play offline games against bots to earn more!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => router.push('/play-with-computer')}>
+              Play Offline
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
