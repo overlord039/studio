@@ -508,10 +508,17 @@ export default function LobbyPage() {
           {showTicketSelectionUI && !roomData.isGameOver && (
             <Card className="bg-secondary/20">
               <CardHeader className="p-2 md:p-3 pb-2">
-                <CardTitle className="text-base md:text-lg flex items-center">
-                    <Ticket className="mr-2 h-5 w-5 text-primary"/>
-                    {cardTitleForTickets}
-                </CardTitle>
+                 <div className="flex justify-between items-center">
+                    <CardTitle className="text-base md:text-lg flex items-center">
+                        <Ticket className="mr-2 h-5 w-5 text-primary"/>
+                        {cardTitleForTickets}
+                    </CardTitle>
+                    <div className="flex items-center gap-1 text-sm font-semibold">
+                        <span className="text-xs text-muted-foreground mr-1">Your Coins:</span>
+                        <Image src="/coin.png" alt="Coins" width={18} height={18} />
+                        <span>{currentUser.stats.coins}</span>
+                    </div>
+                </div>
                 <CardDescription className="text-xs md:text-sm">Select how many tickets you want to buy for the next game.</CardDescription>
               </CardHeader>
               <CardContent className="p-2 md:p-3 pt-0 flex flex-row items-stretch gap-2 md:gap-4">
@@ -542,10 +549,17 @@ export default function LobbyPage() {
           {!showTicketSelectionUI && doesCurrentUserHaveTickets && !roomData.isGameStarted && !roomData.isGameOver && (
             <Card className="bg-secondary/20">
               <CardHeader className="p-2 md:p-3 pb-2">
-                <CardTitle className="text-base md:text-lg flex items-center">
-                  <Ticket className="mr-2 h-5 w-5 text-primary"/>
-                  Your Confirmed Tickets
-                </CardTitle>
+                <div className="flex justify-between items-center">
+                    <CardTitle className="text-base md:text-lg flex items-center">
+                    <Ticket className="mr-2 h-5 w-5 text-primary"/>
+                    Your Confirmed Tickets
+                    </CardTitle>
+                    <div className="flex items-center gap-1 text-sm font-semibold">
+                         <span className="text-xs text-muted-foreground mr-1">Your Coins:</span>
+                        <Image src="/coin.png" alt="Coins" width={18} height={18} />
+                        <span>{currentUser.stats.coins}</span>
+                    </div>
+                </div>
               </CardHeader>
               <CardContent className="p-2 md:p-3 pt-0 flex flex-row items-center justify-between gap-2 md:gap-4">
                 <p className="font-medium text-xs md:text-sm">
