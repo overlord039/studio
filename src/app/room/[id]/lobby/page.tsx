@@ -169,6 +169,7 @@ export default function LobbyPage() {
 
     const totalCost = roomData.settings.ticketPrice * selectedTicketsToBuy;
     if (totalCost > 0 && currentUser.stats.coins < totalCost) {
+        playSound('error.wav');
         setShowNoCoinsDialog(true);
         return;
     }

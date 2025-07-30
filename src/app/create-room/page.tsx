@@ -56,6 +56,7 @@ export default function CreateOrJoinRoomPage() {
     
     // Check if the user has enough coins to create the room (at least for one ticket)
     if (ticketPrice > 0 && currentUser.stats.coins < ticketPrice) {
+      playSound('error.wav');
       setShowNoCoinsDialog(true);
       return;
     }

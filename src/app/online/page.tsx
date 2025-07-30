@@ -70,6 +70,7 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
         }
 
         if (!hasEnoughCoins) {
+            playSound('error.wav');
             setShowNoCoinsDialog(true);
             return;
         }
