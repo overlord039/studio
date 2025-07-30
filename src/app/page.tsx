@@ -139,7 +139,7 @@ export default function HomePage() {
         <FeedbackForm />
       </div>
       {currentUser && !loading && currentUser.stats.coins === 0 && (
-        <Card className="w-full max-w-md bg-accent/20 border-accent/50 text-accent-foreground p-4 my-2">
+        <Card className="w-full max-w-md bg-accent/20 border-accent/50 p-4 my-2">
           <CardContent className="p-0 flex flex-col items-center text-center space-y-3">
             <div className="flex items-center gap-2">
                 <Image src="/coin.png" alt="Coins" width={24} height={24} />
