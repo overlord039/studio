@@ -38,12 +38,13 @@ export default function LoginSelectionScreen() {
            <div className="space-y-4 pt-4 text-left bg-black/20 p-4 rounded-lg border border-white/10">
             <ScrollArea className="h-24 w-full rounded-md border border-white/20 bg-black/20 p-3 text-xs text-gray-300">
               <p className="font-bold mb-2">Terms of Service & Privacy Policy</p>
-              <p>By using HousieHub, you agree to our Terms of Service and Privacy Policy. You must be at least 13 years old. We collect your display name, email, and gameplay statistics to improve your experience. We do not allow real money gambling. Please play fairly. For full details, please visit the links below.</p>
+              <p>By using HousieHub, you agree to our Terms of Service and Privacy Policy. You must be at least 13 years old. We collect your display name and gameplay statistics to improve your experience. We do not allow real money gambling. Please play fairly. For full details, please visit the links below.</p>
                <div className="mt-2 flex gap-4">
                  <Link href="/legal/user-agreement" target="_blank" className="underline hover:text-primary">User Agreement</Link>
                  <Link href="/legal/privacy-policy" target="_blank" className="underline hover:text-primary">Privacy Policy</Link>
                </div>
             </ScrollArea>
+            <p className="text-xs text-center text-gray-400">Please review and agree to the terms to continue.</p>
             <div className="flex items-center space-x-2">
                 <Checkbox id="terms" checked={agreedToTerms} onCheckedChange={(checked) => setAgreedToTerms(!!checked)} className="border-white/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
                 <Label htmlFor="terms" className="text-xs text-gray-300">I agree to the User Agreement.</Label>
