@@ -1,9 +1,12 @@
 
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { addPlayerToRoomStore, getRoomStateForClient } from '@/lib/server/game-store';
+import { addPlayerToRoomStore, getRoomStateForClient, getRoomStore } from '@/lib/server/game-store';
 import type { Player } from '@/types';
 import { DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER } from '@/lib/constants';
+import { db } from '@/lib/firebase/config';
+import { doc, getDoc, runTransaction, increment } from 'firebase/firestore';
+
 
 export async function POST(
   request: NextRequest,
@@ -22,6 +25,30 @@ export async function POST(
     }
 
     const numTickets = typeof ticketsToBuy === 'number' && ticketsToBuy > 0 ? ticketsToBuy : DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER;
+    
+    // Server-side validation of coin balance before adding/updating player
+    if(db) {
+        const room = getRoomStore(roomId);
+        if (room && room.settings.ticketPrice > 0 && room.settings.gameMode === 'multiplayer') {
+            const ticketCost = room.settings.ticketPrice * numTickets;
+            
+            const playerDocRef = doc(db, "users", playerId);
+            const playerDoc = await getDoc(playerDocRef);
+
+            if (!playerDoc.exists()) {
+                return NextResponse.json({ message: "Player data not found." }, { status: 404 });
+            }
+            if (playerDoc.data().isGuest) {
+                 return NextResponse.json({ message: "Guests cannot join rooms with an entry fee." }, { status: 403 });
+            }
+
+            const currentCoins = playerDoc.data().stats?.coins || 0;
+            if (currentCoins < ticketCost) {
+                return NextResponse.json({ message: `Not enough coins. You need ${ticketCost} coins but have ${currentCoins}.` }, { status: 400 });
+            }
+        }
+    }
+
 
     const result = addPlayerToRoomStore(roomId, { id: playerId, name: playerName, email: playerEmail }, numTickets);
 

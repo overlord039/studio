@@ -188,8 +188,9 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
   const totalTicketsInGame = room.players.reduce((sum, player) => sum + (player.tickets?.length || 0), 0);
   room.totalPrizePool = room.settings.ticketPrice * totalTicketsInGame;
 
-  // Deduct coins for online games before starting
-  if (room.settings.gameMode === 'online' && db) {
+  // Deduct coins for online or friends games before starting
+  const isPaidGame = room.settings.ticketPrice > 0 && (room.settings.gameMode === 'online' || room.settings.gameMode === 'multiplayer');
+  if (isPaidGame && db) {
       const batch = writeBatch(db);
       for (const player of room.players) {
           if (!player.isBot) {
@@ -200,13 +201,8 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
               }
           }
       }
-      // We are not awaiting this intentionally to not block game start. 
-      // This is a fire-and-forget operation at this point.
-      // A more robust system might use a transaction and check balances first,
-      // but for this flow, we assume balance was checked on lobby join.
       batch.commit().catch(err => {
           console.error(`CRITICAL: Failed to deduct coins for room ${roomId}. Error: ${err}`);
-          // In a real-world scenario, you might add a retry mechanism or flag the game for review.
       });
   }
 
@@ -501,8 +497,9 @@ export function claimPrizeStore(
     console.log(`Room ${roomId}: Full House claimed by ${playerId}. Game Over.`);
     stopRoomTimer(roomId, "Full House claimed");
     
-    // Distribute winnings for online games
-    if (room.settings.gameMode === 'online' && db) {
+    // Distribute winnings for online and friends games
+    const isPaidGame = room.settings.ticketPrice > 0 && (room.settings.gameMode === 'online' || room.settings.gameMode === 'multiplayer');
+    if (isPaidGame && db) {
         const batch = writeBatch(db);
         const prizeDistribution = PRIZE_DISTRIBUTION_PERCENTAGES[room.settings.prizeFormat];
         const totalPrizePool = room.totalPrizePool || 0;

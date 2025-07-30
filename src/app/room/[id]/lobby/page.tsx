@@ -165,6 +165,21 @@ export default function LobbyPage() {
         toast({title: "Cannot proceed", description: "Game is active, user not logged in, or no room data.", variant: "destructive"});
         return;
     }
+
+    const totalCost = roomData.settings.ticketPrice * selectedTicketsToBuy;
+    if (totalCost > 0 && currentUser.stats.coins < totalCost) {
+        toast({
+            title: "Not Enough Coins",
+            description: `You need ${totalCost} coins for ${selectedTicketsToBuy} tickets. You have ${currentUser.stats.coins}.`,
+            variant: "destructive"
+        });
+        return;
+    }
+    if (totalCost > 0 && currentUser.isGuest) {
+        toast({ title: "Guests Cannot Join", description: "Rooms with an entry fee are for registered users only.", variant: "destructive" });
+        return;
+    }
+
     setIsJoiningOrUpdating(true);
     try {
       const response = await fetch(`/api/rooms/${roomId}/join`, {
