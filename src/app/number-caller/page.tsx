@@ -81,18 +81,17 @@ export default function NumberCallerPage() {
   };
 
   useEffect(() => {
-    const scheduleNextCall = () => {
-      autoCallTimeoutRef.current = setTimeout(() => {
-        if (callNextNumber()) {
-          scheduleNextCall(); // Schedule the next one after this one is called
-        }
-      }, autoCallSpeed * 1000);
-    };
-
     if (isAutoCalling) {
-      // If starting, call one immediately then start the timer loop
+      // Start the loop. Call one immediately, then the timeout will handle the rest.
       if (callNextNumber()) {
-        scheduleNextCall();
+        autoCallTimeoutRef.current = setTimeout(() => {
+            const scheduleNextCall = () => {
+                if (callNextNumber()) {
+                    autoCallTimeoutRef.current = setTimeout(scheduleNextCall, autoCallSpeed * 1000);
+                }
+            };
+            scheduleNextCall();
+        }, autoCallSpeed * 1000);
       }
     } else {
       // If stopping, clear any scheduled call
