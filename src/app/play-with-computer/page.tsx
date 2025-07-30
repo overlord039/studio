@@ -58,30 +58,30 @@ const RewardInfoTab = ({ mode, title }: { mode: 'easy' | 'medium' | 'hard', titl
     const maxReward = prizeOrder.reduce((sum, prize) => sum + rewards[prize], 0) + PARTICIPATION_REWARD;
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-1">
             {prizeOrder.map(prize => (
-                <div key={prize} className="flex justify-between items-center p-2 bg-secondary/30 rounded-md">
-                    <p className="font-semibold">{prize}</p>
-                    <div className="flex items-center gap-1 font-bold text-lg">
-                        <Image src="/coin.png" alt="Coin" width={20} height={20} />
+                <div key={prize} className="flex justify-between items-center p-1.5 bg-secondary/30 rounded-md">
+                    <p className="font-semibold text-xs">{prize}</p>
+                    <div className="flex items-center gap-1 font-bold text-sm">
+                        <Image src="/coin.png" alt="Coin" width={16} height={16} />
                         <span>{rewards[prize]}</span>
                     </div>
                 </div>
             ))}
-             <div className="flex justify-between items-center p-2 bg-green-500/10 rounded-md border border-green-500/20">
+             <div className="flex justify-between items-center p-1.5 bg-green-500/10 rounded-md border border-green-500/20">
                 <div>
-                    <p className="font-semibold">Participation Reward</p>
+                    <p className="font-semibold text-xs">Participation Reward</p>
                     <p className="text-xs text-muted-foreground">(Awarded for every game played)</p>
                 </div>
-                <div className="flex items-center gap-1 font-bold text-lg text-green-600">
-                    <Image src="/coin.png" alt="Coin" width={20} height={20} />
+                <div className="flex items-center gap-1 font-bold text-sm text-green-600">
+                    <Image src="/coin.png" alt="Coin" width={16} height={16} />
                     <span>{PARTICIPATION_REWARD}</span>
                 </div>
             </div>
-             <div className="flex justify-between items-center p-2 mt-4 bg-primary/20 rounded-md border border-primary/30">
-                <p className="font-bold">Max Reward</p>
-                <div className="flex items-center gap-1 font-bold text-lg text-primary">
-                    <Image src="/coin.png" alt="Coin" width={20} height={20} />
+             <div className="flex justify-between items-center p-1.5 mt-2 bg-primary/20 rounded-md border border-primary/30">
+                <p className="font-bold text-xs">Max Reward</p>
+                <div className="flex items-center gap-1 font-bold text-sm text-primary">
+                    <Image src="/coin.png" alt="Coin" width={16} height={16} />
                     <span>{maxReward}</span>
                 </div>
             </div>
@@ -163,26 +163,26 @@ export default function PlayWithComputerModesPage() {
                         <Info className="h-6 w-6" />
                     </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
+                <DialogContent className="sm:max-w-md p-4">
+                    <DialogHeader className="p-2">
                         <DialogTitle className="flex items-center gap-2"><Award className="text-primary"/>Offline Game Rewards</DialogTitle>
                         <DialogDescription>
                             Earn coins by playing against bots. Use coins to join online games with entry fees.
                         </DialogDescription>
                     </DialogHeader>
-                     <Tabs defaultValue="medium" className="w-full pt-2">
-                        <TabsList className="grid w-full grid-cols-3">
+                     <Tabs defaultValue="medium" className="w-full">
+                        <TabsList className="grid w-full grid-cols-3 h-12">
                             <TabsTrigger value="easy">Easy</TabsTrigger>
                             <TabsTrigger value="medium">Classic</TabsTrigger>
                             <TabsTrigger value="hard">Rush</TabsTrigger>
                         </TabsList>
-                        <TabsContent value="easy">
+                        <TabsContent value="easy" className="p-1">
                            <RewardInfoTab mode="easy" title="Easy Mode Rewards" />
                         </TabsContent>
-                        <TabsContent value="medium">
+                        <TabsContent value="medium" className="p-1">
                            <RewardInfoTab mode="medium" title="Classic Mode Rewards" />
                         </TabsContent>
-                        <TabsContent value="hard">
+                        <TabsContent value="hard" className="p-1">
                            <RewardInfoTab mode="hard" title="Rush Mode Rewards" />
                         </TabsContent>
                     </Tabs>
