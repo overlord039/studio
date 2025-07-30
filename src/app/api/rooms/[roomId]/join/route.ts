@@ -29,19 +29,31 @@ export async function POST(
     // Server-side validation of coin balance before adding/updating player
     if(db) {
         const room = getRoomStore(roomId);
-        if (room && room.settings.ticketPrice > 0 && room.settings.gameMode === 'multiplayer') {
-            const ticketCost = room.settings.ticketPrice * numTickets;
+        if (room && room.settings.ticketPrice > 0) {
             
-            const playerDocRef = doc(db, "users", playerId);
-            const playerDoc = await getDoc(playerDocRef);
+            try {
+              await runTransaction(db, async (transaction) => {
+                  const playerDocRef = doc(db, "users", playerId);
+                  const playerDoc = await transaction.get(playerDocRef);
 
-            if (!playerDoc.exists()) {
-                return NextResponse.json({ message: "Player data not found." }, { status: 404 });
-            }
+                  if (!playerDoc.exists()) {
+                      throw new Error("Player data not found.");
+                  }
 
-            const currentCoins = playerDoc.data().stats?.coins || 0;
-            if (currentCoins < ticketCost) {
-                return NextResponse.json({ message: `Not enough coins. You need ${ticketCost} coins but have ${currentCoins}.` }, { status: 400 });
+                  const currentCoins = playerDoc.data().stats?.coins || 0;
+                  const existingPlayerInRoom = room.players.find(p => p.id === playerId);
+                  const oldCost = existingPlayerInRoom?.confirmedTicketCost || 0;
+                  const newCost = room.settings.ticketPrice * numTickets;
+                  const costDifference = newCost - oldCost;
+
+                  if (currentCoins < costDifference) {
+                      throw new Error(`Not enough coins. You need ${costDifference} more coins.`);
+                  }
+                  
+                  transaction.update(playerDocRef, { 'stats.coins': increment(-costDifference) });
+              });
+            } catch (err) {
+              return NextResponse.json({ message: (err as Error).message }, { status: 400 });
             }
         }
     }

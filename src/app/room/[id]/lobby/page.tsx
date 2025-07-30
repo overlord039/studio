@@ -34,7 +34,7 @@ export default function LobbyPage() {
   const params = useParams();
   const roomIdParam = params.id;
   const roomId = Array.isArray(roomIdParam) ? roomIdParam[0] ?? '' : roomIdParam ?? '';
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser, loading: authLoading, fetchUser } = useAuth();
   const { playSound } = useSound();
 
   const [roomData, setRoomData] = useState<Room | null>(null);
@@ -167,13 +167,6 @@ export default function LobbyPage() {
         return;
     }
 
-    const totalCost = roomData.settings.ticketPrice * selectedTicketsToBuy;
-    if (totalCost > 0 && currentUser.stats.coins < totalCost) {
-        playSound('error.wav');
-        setShowNoCoinsDialog(true);
-        return;
-    }
-
     setIsJoiningOrUpdating(true);
     try {
       const response = await fetch(`/api/rooms/${roomId}/join`, {
@@ -185,20 +178,27 @@ export default function LobbyPage() {
           ticketsToBuy: selectedTicketsToBuy 
         }),
       });
+      const updatedRoom: Room | { message: string } = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to confirm tickets or join room.");
+        throw new Error((updatedRoom as {message: string}).message || "Failed to confirm tickets or join room.");
       }
+      
+      await fetchUser(); // Manually refresh user data from Auth context
+
       playSound('buy.mp3');
-      const updatedRoom: Room = await response.json();
-      setRoomData(updatedRoom); 
-      const userInUpdatedRoom = updatedRoom.players.find(p => p.id === currentUser.uid);
+      setRoomData(updatedRoom as Room); 
+      const userInUpdatedRoom = (updatedRoom as Room).players.find(p => p.id === currentUser.uid);
       const finalTicketCount = userInUpdatedRoom?.tickets.length || selectedTicketsToBuy;
       setSelectedTicketsToBuy(finalTicketCount);
       toast({ title: "Tickets Confirmed!", description: `You now have ${finalTicketCount} ${finalTicketCount === 1 ? 'ticket' : 'tickets'}.` });
       setIsEditingTickets(false);
     } catch (err) {
       console.error("Error confirming/joining tickets:", err);
+      if ((err as Error).message.includes('Not enough coins')) {
+          playSound('error.wav');
+          setShowNoCoinsDialog(true);
+      }
       toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
     } finally {
       setIsJoiningOrUpdating(false);
@@ -420,13 +420,11 @@ export default function LobbyPage() {
     (!doesCurrentUserHaveTickets || isEditingTickets);
   
   const ticketsText = (count: number) => count === 1 ? 'ticket' : 'tickets';
-  const buttonTextForConfirm = "Confirm";
-  
   let cardTitleForTickets = "Buy Your Tickets";
   if (doesCurrentUserHaveTickets && isEditingTickets) {
-    cardTitleForTickets = "Update Your Tickets";
-  } else if (!currentUserInRoom) { 
-    cardTitleForTickets = "Join & Buy Tickets";
+      cardTitleForTickets = "Update Your Tickets";
+  } else if (!currentUserInRoom) {
+      cardTitleForTickets = "Join & Buy Tickets";
   }
 
 
@@ -462,7 +460,7 @@ export default function LobbyPage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      If you are the host, another player will become the host. You can rejoin later if the game hasn't started.
+                      If you are the host, another player will become the host. You can rejoin later if the game hasn't started. Any coins spent on tickets will be refunded.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -507,7 +505,7 @@ export default function LobbyPage() {
                         <Ticket className="mr-2 h-5 w-5 text-primary"/>
                         {cardTitleForTickets}
                     </CardTitle>
-                     <div className="flex items-center gap-1 text-sm font-semibold bg-background/50 px-2 py-1 rounded-full">
+                    <div className="flex items-center gap-1 text-sm font-semibold bg-background/50 px-2 py-1 rounded-full">
                         <span className="text-xs text-muted-foreground mr-1">Your Coins:</span>
                         <Image src="/coin.png" alt="Coins" width={18} height={18} />
                         <span>{currentUser.stats.coins}</span>
@@ -534,7 +532,7 @@ export default function LobbyPage() {
                 </Select>
                 <Button onClick={handleConfirmOrJoinTickets} className="flex-shrink-0 text-xs md:text-sm h-9 md:h-10" disabled={isJoiningOrUpdating}>
                   {isJoiningOrUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  {buttonTextForConfirm}
+                  Confirm
                 </Button>
               </CardContent>
             </Card>

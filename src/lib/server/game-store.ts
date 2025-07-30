@@ -114,32 +114,8 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberO
     const numTicketsToBuy = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
     const newCost = room.settings.ticketPrice * numTicketsToBuy;
 
-    // --- COIN DEDUCTION LOGIC ---
-    if (db && !playerInfo.isBot && room.settings.ticketPrice > 0) {
-        runTransaction(db, async (transaction) => {
-            const playerDocRef = doc(db, "users", playerInfo.id);
-            const playerDoc = await transaction.get(playerDocRef);
-            if (!playerDoc.exists()) {
-                throw new Error("Your user profile could not be found.");
-            }
-            const currentCoins = playerDoc.data().stats?.coins || 0;
-            const existingPlayerInRoom = room.players.find(p => p.id === playerInfo.id);
-            const oldCost = existingPlayerInRoom?.confirmedTicketCost || 0;
-            const costDifference = newCost - oldCost;
-
-            if (currentCoins < costDifference) {
-                throw new Error(`Not enough coins. You need ${costDifference} more coins.`);
-            }
-            
-            transaction.update(playerDocRef, { 'stats.coins': increment(-costDifference) });
-        }).catch(err => {
-            console.error(`Transaction failed for ${playerInfo.id} in room ${roomId}: ${(err as Error).message}`);
-            return { error: (err as Error).message };
-        });
-    }
-    // --- END COIN DEDUCTION ---
-    
     if (existingPlayerIndex !== -1) {
+        // Player is already in the room, just updating their info/tickets
         const existingPlayer = room.players[existingPlayerIndex];
         const isUsernameTaken = room.players.some(p => p.id !== playerInfo.id && p.name.toLowerCase() === normalizedPlayerName);
         if (isUsernameTaken) return { error: `Display name "${playerInfo.name}" is already taken in this room.` };
@@ -150,6 +126,7 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberO
         existingPlayer.tickets = generateMultipleUniqueTickets(numTicketsToBuy);
         existingPlayer.confirmedTicketCost = newCost;
     } else {
+        // New player joining
         const isUsernameTaken = room.players.some(p => p.name.toLowerCase() === normalizedPlayerName);
         if (isUsernameTaken) return { error: `Display name "${playerInfo.name}" is already taken. Please choose another.` };
         if (room.players.length >= room.settings.lobbySize) return { error: "Room is full." };

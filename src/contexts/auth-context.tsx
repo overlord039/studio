@@ -42,6 +42,7 @@ interface AuthContextType {
   currentUser: User | null;
   updateUserProfile: (data: Partial<Pick<User, 'displayName' | 'photoURL'>>) => Promise<void>;
   updateUserStats: (newStats: Partial<UserStats>) => void;
+  fetchUser: () => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   linkGoogleAccount: () => Promise<void>;
   loginAsGuest: () => Promise<void>;
@@ -141,6 +142,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const router = useRouter();
   const [reward, setReward] = useState<{ amount: number; message: string } | null>(null);
+
+  const fetchUser = useCallback(async () => {
+    if (!auth || !auth.currentUser) return;
+    try {
+      const userDocRef = doc(db, "users", auth.currentUser.uid);
+      const docSnap = await getDoc(userDocRef);
+      if (docSnap.exists()) {
+        const firestoreData = docSnap.data();
+        const newUser: User = {
+          uid: firestoreData.uid,
+          displayName: firestoreData.displayName,
+          email: firestoreData.email,
+          photoURL: firestoreData.photoURL || null,
+          isGuest: firestoreData.isGuest,
+          createdAt: firestoreData.createdAt?.toDate ? firestoreData.createdAt.toDate().toISOString() : firestoreData.createdAt,
+          stats: firestoreData.stats || createDefaultStats(),
+        };
+        setCurrentUser(prevUser => areUsersEqual(prevUser, newUser) ? prevUser : newUser);
+      }
+    } catch (error) {
+      console.error("Error manually fetching user data:", error);
+      toast({title: "Sync Error", description: "Could not refresh user data.", variant: "destructive"});
+    }
+  }, [toast]);
+
 
   useEffect(() => {
     if (!auth || !db) {
@@ -460,6 +486,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       currentUser, 
       updateUserProfile,
       updateUserStats, 
+      fetchUser,
       loginWithGoogle,
       linkGoogleAccount, 
       loginAsGuest, 
