@@ -21,24 +21,12 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   );
 
 export default function LoginSelectionScreen() {
-  const { loginWithGoogle, loginAsGuest, loginWithEmailLink, isSigningIn } = useAuth();
-  const [email, setEmail] = useState('');
-  const [linkSent, setLinkSent] = useState(false);
+  const { loginWithGoogle, loginAsGuest, isSigningIn } = useAuth();
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   
   const anySignInInProgress = !!isSigningIn;
   const canProceed = agreedToTerms && agreedToPrivacy;
-
-  const handleEmailSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (email && !linkSent) {
-      const success = await loginWithEmailLink(email);
-      if (success) {
-        setLinkSent(true);
-      }
-    }
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-cover bg-center" style={{ backgroundImage: "url('/bgpc2.png')" }}>
@@ -73,29 +61,6 @@ export default function LoginSelectionScreen() {
               {isSigningIn === 'google' ? "Signing in..." : "Continue with Google"}
             </Button>
             
-            <form onSubmit={handleEmailSubmit} className="space-y-3 pt-3">
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input 
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={anySignInInProgress || linkSent || !canProceed}
-                    required
-                    className="bg-black/20 border-white/30 text-white placeholder:text-gray-400 focus:border-primary pl-10"
-                />
-              </div>
-              <Button type="submit" variant="secondary" size="lg" className="w-full" disabled={anySignInInProgress || !email || linkSent || !canProceed}>
-                  {isSigningIn === 'email' && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-                  {isSigningIn === 'email' 
-                    ? 'Sending link...' 
-                    : linkSent 
-                      ? 'Link Sent! Check your inbox.'
-                      : 'Sign in with Email Link'}
-              </Button>
-            </form>
-
             <div className="relative">
                 <Separator className="my-4" />
                 <span className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-black/50 px-2 text-xs uppercase text-gray-300">OR</span>

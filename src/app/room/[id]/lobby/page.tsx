@@ -186,7 +186,6 @@ export default function LobbyPage() {
         body: JSON.stringify({ 
           playerId: currentUser.uid, 
           playerName: currentUser.displayName || 'Guest',
-          playerEmail: currentUser.email,
           ticketsToBuy: selectedTicketsToBuy 
         }),
       });

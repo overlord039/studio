@@ -15,7 +15,7 @@ export async function POST(
   const { roomId } = params; 
 
   try {
-    const { playerId, playerName, playerEmail, ticketsToBuy } = (await request.json()) as { playerId: string; playerName: string; playerEmail: string | null; ticketsToBuy?: number };
+    const { playerId, playerName, ticketsToBuy } = (await request.json()) as { playerId: string; playerName: string; ticketsToBuy?: number };
 
     if (!roomId) {
       return NextResponse.json({ message: 'Room ID is required' }, { status: 400 });
@@ -50,7 +50,7 @@ export async function POST(
     }
 
 
-    const result = addPlayerToRoomStore(roomId, { id: playerId, name: playerName, email: playerEmail }, numTickets);
+    const result = addPlayerToRoomStore(roomId, { id: playerId, name: playerName }, numTickets);
 
     if (result && 'error' in result) {
         if (result.error === "Room not found.") return NextResponse.json({ message: result.error }, { status: 404 });

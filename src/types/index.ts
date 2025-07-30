@@ -21,13 +21,11 @@ export interface Player {
   id: string; // Will typically be derived from username or a unique auth ID
   name: string;
   isHost?: boolean;
-  email?: string | null;
   isBot?: boolean;
 }
 
 export interface BackendPlayerInRoom extends Player {
   tickets: HousieTicketGrid[];
-  email: string; // Make it mandatory for backend (will have a fallback)
   isBot: boolean;
 }
 

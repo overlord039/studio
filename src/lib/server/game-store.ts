@@ -57,7 +57,6 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
   const hostPlayerInRoom: BackendPlayerInRoom = {
     id: host.id,
     name: host.name,
-    email: host.email || `${host.id}@housiehub.guest`, // Fallback email
     isHost: true,
     tickets: [], 
     isBot: false,
@@ -65,7 +64,7 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
 
   const newRoom: Room = {
     id: roomId,
-    host: { id: host.id, name: host.name, email: host.email, isHost: true },
+    host: { id: host.id, name: host.name, isHost: true },
     players: [hostPlayerInRoom],
     settings: gameSettings,
     createdAt: new Date(),
@@ -126,9 +125,6 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberO
         existingPlayer.name = playerInfo.name;
         existingPlayer.isHost = playerInfo.id === room.host.id;
         existingPlayer.isBot = !!playerInfo.isBot;
-        if (playerInfo.email) {
-            existingPlayer.email = playerInfo.email;
-        }
 
         const numTicketsToGenerate = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
 
@@ -151,7 +147,6 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberO
         const newPlayer: BackendPlayerInRoom = {
             id: playerInfo.id,
             name: playerInfo.name,
-            email: playerInfo.email || `${playerInfo.id}@housiehub.guest`, // Fallback email
             isHost: playerInfo.id === room.host.id,
             isBot: !!playerInfo.isBot,
             tickets: generateMultipleUniqueTickets(numTicketsToGenerate),
@@ -304,7 +299,7 @@ export function removePlayerFromRoomStore(roomId: string, playerId: string): { s
     // Host migration
     const newHost = room.players.find(p => !p.isBot) || room.players[0]; // Prefer a human host
     newHost.isHost = true;
-    room.host = { id: newHost.id, name: newHost.name, email: newHost.email, isHost: true };
+    room.host = { id: newHost.id, name: newHost.name, isHost: true };
     console.log(`Host migration in room ${roomId}: ${newHost.id} is the new host.`);
   }
   
@@ -334,7 +329,7 @@ export function transferHostStore(
   // Swap host status
   currentHost.isHost = false;
   newHost.isHost = true;
-  room.host = { id: newHost.id, name: newHost.name, email: newHost.email, isHost: true };
+  room.host = { id: newHost.id, name: newHost.name, isHost: true };
 
   rooms.set(roomId, room);
   console.log(`Host for room ${roomId} transferred from ${currentHostId} to ${newHostId}.`);

@@ -58,27 +58,15 @@ const AvatarSelectionDialog = ({ onSelect, children, disabled }: { onSelect: (sr
 
 
 export default function ProfilePage() {
-  const { currentUser, loading, logout, linkGoogleAccount, isSigningIn, linkWithEmailLink, updateUserProfile, setLocalGuestAvatar, setLocalGuestUsername } = useAuth();
+  const { currentUser, loading, logout, linkGoogleAccount, isSigningIn, updateUserProfile, setLocalGuestAvatar, setLocalGuestUsername } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
-  const [emailForLink, setEmailForLink] = React.useState('');
-  const [linkSent, setLinkSent] = React.useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState(currentUser?.displayName || '');
   const [isSavingName, setIsSavingName] = useState(false);
   const [usernameError, setUsernameError] = useState<string | null>(null);
 
-
-  const handleLinkEmailSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (emailForLink && !linkSent) {
-      const success = await linkWithEmailLink(emailForLink);
-      if (success) {
-        setLinkSent(true);
-      }
-    }
-  };
 
   const handleAvatarSelect = async (src: string) => {
     if (currentUser) {
@@ -343,25 +331,6 @@ export default function ProfilePage() {
                                 {isSigningIn === 'google' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
                                 Continue with Google
                             </Button>
-                            
-                            <form onSubmit={handleLinkEmailSubmit} className="flex gap-2">
-                                <div className="relative flex-grow">
-                                    <Mail className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                                    <Input
-                                        type="email"
-                                        placeholder="your@email.com"
-                                        value={emailForLink}
-                                        onChange={(e) => setEmailForLink(e.target.value)}
-                                        disabled={!!isSigningIn || linkSent}
-                                        required
-                                        className="bg-background/50 border-input pl-8 text-xs h-9 focus:ring-1 focus:ring-ring"
-                                    />
-                                </div>
-                                <Button type="submit" variant="secondary" className="h-9 text-xs px-3" disabled={!!isSigningIn || !emailForLink || linkSent}>
-                                    {isSigningIn === 'email' && <Loader2 className="h-4 w-4 animate-spin" />}
-                                    {linkSent ? 'Sent!' : 'Link Email'}
-                                </Button>
-                            </form>
                         </div>
                     </div>
                    )}

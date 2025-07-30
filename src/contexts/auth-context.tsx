@@ -14,11 +14,6 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   linkWithPopup,
-  sendSignInLinkToEmail,
-  isSignInWithEmailLink,
-  signInWithEmailLink,
-  EmailAuthProvider,
-  linkWithCredential,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, deleteDoc, updateDoc, onSnapshot, type Unsubscribe, runTransaction, writeBatch, increment } from 'firebase/firestore';
 import { auth, db, allConfigValuesPresent } from '@/lib/firebase/config';
@@ -48,14 +43,12 @@ interface AuthContextType {
   updateUserProfile: (data: Partial<Pick<User, 'displayName' | 'photoURL'>>) => Promise<void>;
   updateUserStats: (newStats: Partial<UserStats>) => void;
   loginWithGoogle: () => Promise<void>;
-  loginWithEmailLink: (email: string) => Promise<boolean>;
   linkGoogleAccount: () => Promise<void>;
-  linkWithEmailLink: (email: string) => Promise<boolean>;
   loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   loading: boolean;
-  isSigningIn: null | 'guest' | 'google' | 'email';
+  isSigningIn: null | 'guest' | 'google';
   setLocalGuestAvatar: (url: string) => void;
   setLocalGuestUsername: (name: string) => void;
 }
@@ -144,84 +137,16 @@ const FirebaseConfigErrorScreen = () => (
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isSigningIn, setIsSigningIn] = useState<null | 'guest' | 'google' | 'email'>(null);
+  const [isSigningIn, setIsSigningIn] = useState<null | 'guest' | 'google'>(null);
   const { toast } = useToast();
   const router = useRouter();
   const [reward, setReward] = useState<{ amount: number; message: string } | null>(null);
-
-  const handleEmailLinkSignIn = useCallback(async () => {
-      if (!auth || !isSignInWithEmailLink(auth, window.location.href)) return;
-
-      let email = window.localStorage.getItem('emailForSignIn');
-      if (!email) {
-        toast({
-          title: "Sign-in link error",
-          description: "Please use the sign-in link on the same device and browser you used to request it.",
-          variant: "destructive",
-          duration: 7000,
-        });
-        window.history.replaceState({}, document.title, window.location.pathname);
-        return;
-      }
-
-      setIsSigningIn('email');
-      try {
-        if (auth.currentUser && auth.currentUser.isAnonymous) {
-            const guestUser = auth.currentUser;
-            const credential = EmailAuthProvider.credentialWithLink(email, window.location.href);
-            
-            const guestUserDocRef = doc(db, "users", guestUser.uid);
-            const guestUserDoc = await getDoc(guestUserDocRef);
-            const guestData = guestUserDoc.exists() ? guestUserDoc.data() : null;
-
-            const oldGuestUsername = guestData?.displayName || guestUser.displayName;
-            const oldUid = guestUser.uid;
-            
-            const guestStats = guestData?.stats || createDefaultStats();
-            guestStats.coins = (guestStats.coins || 0) + 10; // Linking reward
-
-            await linkWithCredential(guestUser, credential);
-
-            const userDocRef = doc(db, "users", guestUser.uid);
-            const usernameDocRef = doc(db, "usernames", (oldGuestUsername || '').toLowerCase());
-            const oldUsernameDocRef = doc(db, "usernames", `guest:${oldUid}`);
-
-            const batch = writeBatch(db);
-            batch.set(userDocRef, {
-                email: email,
-                isGuest: false,
-                displayName: oldGuestUsername || email.split('@')[0],
-                stats: guestStats,
-            }, { merge: true });
-
-            if(oldGuestUsername) {
-                batch.set(usernameDocRef, { userId: guestUser.uid, username: oldGuestUsername });
-            }
-            batch.delete(oldUsernameDocRef);
-            
-            await batch.commit();
-
-            setReward({ amount: 10, message: 'Thanks for linking your account!' });
-        } else {
-          await signInWithEmailLink(auth, email, window.location.href);
-        }
-        window.localStorage.removeItem('emailForSignIn');
-        window.history.replaceState({}, document.title, '/profile'); // Clean URL after sign-in
-        router.push('/profile');
-      } catch (error: any) {
-        toast({ title: "Link/Sign-in Failed", description: error.message, variant: "destructive" });
-      } finally {
-        setIsSigningIn(null);
-      }
-    }, [router, toast]);
 
   useEffect(() => {
     if (!auth || !db) {
         setLoading(false);
         return;
     }
-
-    handleEmailLinkSignIn();
 
     let userDocUnsubscribe: Unsubscribe | undefined;
 
@@ -257,7 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     const isNewGuest = firebaseUser.isAnonymous;
                     const displayName = isNewGuest 
                       ? `Guest#${firebaseUser.uid.substring(0,5)}` 
-                      : firebaseUser.displayName || firebaseUser.email?.split('@')[0] || `User#${firebaseUser.uid.substring(0,5)}`;
+                      : firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`;
 
                     const newUserProfile: User = {
                         uid: firebaseUser.uid,
@@ -301,7 +226,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             userDocUnsubscribe();
         }
     };
-  }, [toast, handleEmailLinkSignIn]);
+  }, [toast]);
 
   const setLocalGuestAvatar = async (url: string) => {
     if (currentUser) {
@@ -397,59 +322,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("Google Sign-In Error:", error);
         toast({ title: "Google Sign-in Failed", description: error.message, variant: "destructive" });
       }
-    } finally {
-      setIsSigningIn(null);
-    }
-  };
-
-  const loginWithEmailLink = async (email: string): Promise<boolean> => {
-    if (!auth) return false;
-    setIsSigningIn('email');
-    const actionCodeSettings = {
-        url: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/`,
-        handleCodeInApp: true,
-    };
-    try {
-      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-      window.localStorage.setItem('emailForSignIn', email);
-      toast({
-        title: "Check your email",
-        description: `A sign-in link has been sent to ${email}.`,
-        duration: 7000,
-      });
-      return true;
-    } catch (error: any) {
-      console.error("Error sending email link:", error);
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-      return false;
-    } finally {
-      setIsSigningIn(null);
-    }
-  };
-
-  const linkWithEmailLink = async (email: string): Promise<boolean> => {
-    if (!auth || !auth.currentUser?.isAnonymous) {
-      toast({ title: "Error", description: "Only guest accounts can be linked.", variant: "destructive" });
-      return false;
-    }
-    setIsSigningIn('email');
-    const actionCodeSettings = {
-        url: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/profile`,
-        handleCodeInApp: true,
-    };
-    try {
-      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-      window.localStorage.setItem('emailForSignIn', email);
-      toast({
-        title: "Check your email",
-        description: `A verification link has been sent to ${email}.`,
-        duration: 7000,
-      });
-      return true;
-    } catch (error: any) {
-      console.error("Error sending email link for linking:", error);
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-      return false;
     } finally {
       setIsSigningIn(null);
     }
@@ -589,9 +461,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateUserProfile,
       updateUserStats, 
       loginWithGoogle,
-      loginWithEmailLink,
       linkGoogleAccount, 
-      linkWithEmailLink,
       loginAsGuest, 
       logout, 
       deleteAccount, 
