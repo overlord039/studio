@@ -32,10 +32,10 @@ export default function LoginSelectionScreen() {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-cover bg-center" style={{ backgroundImage: "url('/bgpc2.png')" }}>
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
       <Card className="w-full max-w-sm text-center animate-fade-in-up bg-black/50 backdrop-blur-md border border-white/20 relative">
-        <CardContent className="p-8 space-y-4">
+        <CardContent className="p-8 space-y-6">
           <h1 className="text-2xl font-bold text-white">Welcome to HousieHub</h1>
           
-           <div className="space-y-3 pt-4 text-left">
+           <div className="space-y-4 pt-4 text-left bg-black/20 p-4 rounded-lg border border-white/10">
             <ScrollArea className="h-24 w-full rounded-md border border-white/20 bg-black/20 p-3 text-xs text-gray-300">
               <p className="font-bold mb-2">Terms of Service & Privacy Policy</p>
               <p>By using HousieHub, you agree to our Terms of Service and Privacy Policy. You must be at least 13 years old. We collect your display name, email, and gameplay statistics to improve your experience. We do not allow real money gambling. Please play fairly. For full details, please visit the links below.</p>
@@ -54,7 +54,7 @@ export default function LoginSelectionScreen() {
             </div>
           </div>
 
-          <div className="space-y-3 pt-4">
+          <div className="space-y-3 pt-2">
             <Button variant="outline" size="lg" className="w-full bg-white text-black hover:bg-gray-200" onClick={loginWithGoogle} disabled={anySignInInProgress || !canProceed}>
               {isSigningIn === 'google' && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
               <GoogleIcon className="mr-2 h-5 w-5 fill-current" />
