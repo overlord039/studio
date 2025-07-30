@@ -710,6 +710,16 @@ export default function GameRoomPage() {
             }
         }
     }
+
+    if (isBotGame && currentUserWinnings === 0 && coinsWonThisGame !== null) {
+      router.replace('/play-with-computer');
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="mt-4 text-xl">Loading next game...</p>
+        </div>
+      );
+    }
     
     const playAgainButtonText = isBotGame ? "Play Again" : (roomData.settings.gameMode === 'online' ? "Find New Match" : (isCurrentUserHost ? "New Game" : "To Lobby"));
     const userHasPrizes = currentUserPrizeNames.length > 0;
