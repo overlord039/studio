@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import type { Player, Room } from "@/types";
-import { Bot, Loader2 } from "lucide-react";
+import { Bot, Loader2, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
 import { useSound } from "@/contexts/sound-context";
@@ -121,6 +120,11 @@ export default function EasyModePage() {
           </Form>
         </CardContent>
       </Card>
+      <div className="mt-8 w-full max-w-md">
+        <Button variant="outline" onClick={() => router.push('/play-with-computer')}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+        </Button>
+      </div>
     </div>
   );
 }
