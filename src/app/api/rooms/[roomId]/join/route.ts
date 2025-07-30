@@ -38,9 +38,6 @@ export async function POST(
             if (!playerDoc.exists()) {
                 return NextResponse.json({ message: "Player data not found." }, { status: 404 });
             }
-            if (playerDoc.data().isGuest) {
-                 return NextResponse.json({ message: "Guests cannot join rooms with an entry fee." }, { status: 403 });
-            }
 
             const currentCoins = playerDoc.data().stats?.coins || 0;
             if (currentCoins < ticketCost) {
