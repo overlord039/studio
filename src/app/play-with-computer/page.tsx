@@ -189,7 +189,7 @@ export default function PlayWithComputerModesPage() {
                 </DialogContent>
             </Dialog>
         </div>
-        <p className="text-white/80 mt-2">Choose your difficulty.</p>
+        <p className="text-white/80 mt-2">Choose your difficulty and earn coins!</p>
       </div>
       <div className="w-full max-w-md space-y-4">
         <Card
@@ -200,7 +200,7 @@ export default function PlayWithComputerModesPage() {
             <Smile className="h-10 w-10 text-green-500 flex-shrink-0" />
             <div>
               <CardTitle className="text-xl font-bold">Easy</CardTitle>
-              <CardDescription>You choose how many tickets you want. Play at your pace.</CardDescription>
+              <CardDescription>Play at your pace and earn coins for each prize you win.</CardDescription>
             </div>
           </CardHeader>
         </Card>
@@ -213,7 +213,7 @@ export default function PlayWithComputerModesPage() {
             <Target className="h-10 w-10 text-yellow-500 flex-shrink-0" />
             <div>
               <CardTitle className="text-xl font-bold">Classic</CardTitle>
-              <CardDescription>You choose your tickets, bots get random tickets for a balanced match.</CardDescription>
+              <CardDescription>A balanced match against bots with bigger coin rewards.</CardDescription>
             </div>
           </CardHeader>
         </Card>
@@ -230,7 +230,7 @@ export default function PlayWithComputerModesPage() {
             <Skull className="h-10 w-10 text-destructive flex-shrink-0" />
             <div>
                 <CardTitle className="text-xl font-bold">Rush</CardTitle>
-                <CardDescription>Ticket counts are random for everyone. Fast-paced and challenging!</CardDescription>
+                <CardDescription>High risk, high reward! Fast-paced game with the largest coin prizes.</CardDescription>
             </div>
           </CardHeader>
         </Card>
