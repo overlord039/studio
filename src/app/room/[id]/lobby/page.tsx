@@ -421,14 +421,12 @@ export default function LobbyPage() {
   
   const ticketsText = (count: number) => count === 1 ? 'ticket' : 'tickets';
   const buttonTextForConfirm = "Confirm";
-  let cardTitleForTickets = "Join Game & Buy Tickets";
-
+  
+  let cardTitleForTickets = "Buy Your Tickets";
   if (doesCurrentUserHaveTickets && isEditingTickets) {
     cardTitleForTickets = "Update Your Tickets";
-  } else if (isCurrentUserHost && !doesCurrentUserHaveTickets) {
-    cardTitleForTickets = "Buy Your Host Tickets";
-  } else if (currentUserInRoom && !doesCurrentUserHaveTickets) { 
-    cardTitleForTickets = "Confirm Your Tickets";
+  } else if (!currentUserInRoom) { 
+    cardTitleForTickets = "Join & Buy Tickets";
   }
 
 
