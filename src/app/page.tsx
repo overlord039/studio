@@ -145,7 +145,7 @@ export default function HomePage() {
                 <Image src="/coin.png" alt="Coins" width={24} height={24} />
                 <p className="font-bold text-lg">You have 0 coins!</p>
             </div>
-            <p className="text-sm">Play offline games against bots to earn more rewards.</p>
+            <p className="text-sm">Play offline games against bots to earn coins</p>
             <Button 
                 onClick={() => handleNavigateWithAuth('/play-with-computer')}
                 variant="secondary"
