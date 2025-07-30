@@ -173,10 +173,6 @@ export default function LobbyPage() {
         setShowNoCoinsDialog(true);
         return;
     }
-    if (totalCost > 0 && currentUser.isGuest) {
-        toast({ title: "Guests Cannot Join", description: "Rooms with an entry fee are for registered users only.", variant: "destructive" });
-        return;
-    }
 
     setIsJoiningOrUpdating(true);
     try {
@@ -312,7 +308,7 @@ export default function LobbyPage() {
   
   const handleTransferHost = async (newHostId: string) => {
     if (!currentUser || !isCurrentUserHost) {
-        toast({ title: "Unauthorized", description: "Only the host can transfer ownership.", variant: "destructive" });
+        toast({ title: "Unauthorized", description: "Only the current host can transfer ownership.", variant: "destructive" });
         return;
     }
     try {
