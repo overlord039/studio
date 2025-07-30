@@ -35,7 +35,7 @@ const OFFLINE_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType | 'PA
     'PARTICIPATION': 1,
   },
   medium: {
-    [PRIZE_TYPES.EARLY_5]: 2,
+    [PRIZE_TYPES.EARLY_5]: 1,
     [PRIZE_TYPES.FIRST_LINE]: 2,
     [PRIZE_TYPES.SECOND_LINE]: 2,
     [PRIZE_TYPES.THIRD_LINE]: 2,
@@ -43,7 +43,7 @@ const OFFLINE_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType | 'PA
     'PARTICIPATION': 1,
   },
   hard: {
-    [PRIZE_TYPES.EARLY_5]: 3,
+    [PRIZE_TYPES.EARLY_5]: 2,
     [PRIZE_TYPES.FIRST_LINE]: 3,
     [PRIZE_TYPES.SECOND_LINE]: 3,
     [PRIZE_TYPES.THIRD_LINE]: 3,
