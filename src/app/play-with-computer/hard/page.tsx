@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import type { Player, Room } from "@/types";
-import { Bot, Skull, Loader2, ArrowLeft } from "lucide-react";
+import { Bot, Skull, Loader2, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useState } from "react";
 import { useSound } from "@/contexts/sound-context";
@@ -79,8 +78,8 @@ export default function HardModePage() {
         </CardContent>
       </Card>
        <div className="mt-8 w-full max-w-md">
-        <Button variant="outline" onClick={() => router.push('/play-with-computer')}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+        <Button variant="destructive" size="icon" onClick={() => router.push('/play-with-computer')}>
+            <LogOut className="h-4 w-4 rotate-180" />
         </Button>
       </div>
     </div>
