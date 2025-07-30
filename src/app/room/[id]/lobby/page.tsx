@@ -509,7 +509,7 @@ export default function LobbyPage() {
                         <Ticket className="mr-2 h-5 w-5 text-primary"/>
                         {cardTitleForTickets}
                     </CardTitle>
-                    <div className="flex items-center gap-1 text-sm font-semibold">
+                     <div className="flex items-center gap-1 text-sm font-semibold bg-background/50 px-2 py-1 rounded-full">
                         <span className="text-xs text-muted-foreground mr-1">Your Coins:</span>
                         <Image src="/coin.png" alt="Coins" width={18} height={18} />
                         <span>{currentUser.stats.coins}</span>
@@ -550,7 +550,7 @@ export default function LobbyPage() {
                     <Ticket className="mr-2 h-5 w-5 text-primary"/>
                     Your Confirmed Tickets
                     </CardTitle>
-                    <div className="flex items-center gap-1 text-sm font-semibold">
+                    <div className="flex items-center gap-1 text-sm font-semibold bg-background/50 px-2 py-1 rounded-full">
                          <span className="text-xs text-muted-foreground mr-1">Your Coins:</span>
                         <Image src="/coin.png" alt="Coins" width={18} height={18} />
                         <span>{currentUser.stats.coins}</span>
