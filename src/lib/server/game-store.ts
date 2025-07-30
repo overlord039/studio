@@ -245,47 +245,57 @@ export function resetRoomStore(roomId: string, hostId: string): Room | { error: 
 }
 
 export function removePlayerFromRoomStore(roomId: string, playerId: string): { success: boolean; error?: string } {
-  const room = rooms.get(roomId);
-  if (!room) {
-    return { success: false, error: "Room not found." };
-  }
+    const room = rooms.get(roomId);
+    if (!room) {
+        return { success: false, error: "Room not found." };
+    }
 
-  const playerIndex = room.players.findIndex(p => p.id === playerId);
-  if (playerIndex === -1) {
-    return { success: false, error: "Player not found in room." };
-  }
+    const playerIndex = room.players.findIndex(p => p.id === playerId);
+    if (playerIndex === -1) {
+        return { success: false, error: "Player not found in room." };
+    }
 
-  const leavingPlayer = room.players[playerIndex];
-  
-  // REFUND COINS if player leaves before game starts
-  if (db && !leavingPlayer.isBot && !room.isGameStarted && leavingPlayer.confirmedTicketCost && leavingPlayer.confirmedTicketCost > 0) {
-      const playerDocRef = doc(db, "users", leavingPlayer.id);
-      updateDoc(playerDocRef, { 'stats.coins': increment(leavingPlayer.confirmedTicketCost) })
-          .then(() => console.log(`Refunded ${leavingPlayer.confirmedTicketCost} coins to ${leavingPlayer.name} from room ${roomId}.`))
-          .catch(err => console.error(`Failed to refund coins to ${leavingPlayer.name}: ${err}`));
-  }
-  
-  room.players.splice(playerIndex, 1);
-  console.log(`Player ${playerId} has left room ${roomId}.`);
+    const leavingPlayer = room.players[playerIndex];
 
-  if (room.players.length === 0) {
-    stopRoomTimer(roomId, "Room is empty.");
-    rooms.delete(roomId);
-    console.log(`Room ${roomId} is empty and has been deleted.`);
-  } else if (leavingPlayer.isHost) {
-    // Host migration
-    const newHost = room.players.find(p => !p.isBot) || room.players[0]; // Prefer a human host
-    newHost.isHost = true;
-    room.host = { id: newHost.id, name: newHost.name, isHost: true };
-    console.log(`Host migration in room ${roomId}: ${newHost.id} is the new host.`);
-  }
-  
-  if(room.players.length > 0) {
-    // Recalculate prize pool after a player leaves
-    room.totalPrizePool = room.players.reduce((sum, player) => sum + (player.confirmedTicketCost || 0), 0);
-    rooms.set(roomId, room);
-  }
-  return { success: true };
+    // REFUND COINS if player leaves before game starts (using a transaction)
+    if (db && !leavingPlayer.isBot && !room.isGameStarted && leavingPlayer.confirmedTicketCost && leavingPlayer.confirmedTicketCost > 0) {
+        try {
+            runTransaction(db, async (transaction) => {
+                const playerDocRef = doc(db, "users", leavingPlayer.id);
+                // No need to get the doc first if we're just incrementing
+                transaction.update(playerDocRef, { 'stats.coins': increment(leavingPlayer.confirmedTicketCost!) });
+            }).then(() => {
+                console.log(`Refunded ${leavingPlayer.confirmedTicketCost} coins to ${leavingPlayer.name} from room ${roomId}.`);
+            }).catch(err => {
+                 console.error(`Failed to refund coins to ${leavingPlayer.name}: ${err}`);
+                 // Decide if you want to prevent the player from leaving if refund fails.
+                 // For now, we'll log the error and let them leave anyway.
+            });
+        } catch (err) {
+            console.error(`Error initiating refund transaction for ${leavingPlayer.name}:`, err);
+        }
+    }
+
+    room.players.splice(playerIndex, 1);
+    console.log(`Player ${playerId} has left room ${roomId}.`);
+
+    if (room.players.length === 0) {
+        stopRoomTimer(roomId, "Room is empty.");
+        rooms.delete(roomId);
+        console.log(`Room ${roomId} is empty and has been deleted.`);
+    } else if (leavingPlayer.isHost) {
+        const newHost = room.players.find(p => !p.isBot) || room.players[0];
+        newHost.isHost = true;
+        room.host = { id: newHost.id, name: newHost.name, isHost: true };
+        console.log(`Host migration in room ${roomId}: ${newHost.id} is the new host.`);
+    }
+    
+    if (room.players.length > 0) {
+        room.totalPrizePool = room.players.reduce((sum, player) => sum + (player.confirmedTicketCost || 0), 0);
+        rooms.set(roomId, room);
+    }
+
+    return { success: true };
 }
 
 export function transferHostStore(
@@ -336,9 +346,10 @@ export function kickPlayerStore(
   // REFUND COINS for kicked player
   if (db && !playerToKick.isBot && playerToKick.confirmedTicketCost && playerToKick.confirmedTicketCost > 0) {
       const playerDocRef = doc(db, "users", playerToKick.id);
-      updateDoc(playerDocRef, { 'stats.coins': increment(playerToKick.confirmedTicketCost) })
-          .then(() => console.log(`Refunded ${playerToKick.confirmedTicketCost} coins to kicked player ${playerToKick.name} from room ${roomId}.`))
-          .catch(err => console.error(`Failed to refund coins to kicked player ${playerToKick.name}: ${err}`));
+      runTransaction(db, async (transaction) => {
+        transaction.update(playerDocRef, { 'stats.coins': increment(playerToKick.confirmedTicketCost!) });
+      }).then(() => console.log(`Refunded ${playerToKick.confirmedTicketCost} coins to kicked player ${playerToKick.name}.`))
+        .catch(err => console.error(`Failed to refund coins to kicked player ${playerToKick.name}: ${err}`));
   }
   
   const kickedPlayerName = playerToKick.name;
