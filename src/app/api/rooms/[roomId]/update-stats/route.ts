@@ -8,14 +8,32 @@ import type { PrizeType } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 
 // Define coin rewards for offline games
-const OFFLINE_COIN_REWARDS: Record<PrizeType, number> = {
-  [PRIZE_TYPES.EARLY_5]: 2,
-  [PRIZE_TYPES.FIRST_LINE]: 2,
-  [PRIZE_TYPES.SECOND_LINE]: 2,
-  [PRIZE_TYPES.THIRD_LINE]: 2,
-  [PRIZE_TYPES.FULL_HOUSE]: 3,
+const OFFLINE_COIN_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType | 'PARTICIPATION', number>> = {
+  easy: {
+    [PRIZE_TYPES.EARLY_5]: 1,
+    [PRIZE_TYPES.FIRST_LINE]: 1,
+    [PRIZE_TYPES.SECOND_LINE]: 1,
+    [PRIZE_TYPES.THIRD_LINE]: 1,
+    [PRIZE_TYPES.FULL_HOUSE]: 2,
+    'PARTICIPATION': 1,
+  },
+  medium: {
+    [PRIZE_TYPES.EARLY_5]: 2,
+    [PRIZE_TYPES.FIRST_LINE]: 2,
+    [PRIZE_TYPES.SECOND_LINE]: 2,
+    [PRIZE_TYPES.THIRD_LINE]: 2,
+    [PRIZE_TYPES.FULL_HOUSE]: 3,
+    'PARTICIPATION': 1,
+  },
+  hard: {
+    [PRIZE_TYPES.EARLY_5]: 3,
+    [PRIZE_TYPES.FIRST_LINE]: 3,
+    [PRIZE_TYPES.SECOND_LINE]: 3,
+    [PRIZE_TYPES.THIRD_LINE]: 3,
+    [PRIZE_TYPES.FULL_HOUSE]: 5,
+    'PARTICIPATION': 2,
+  }
 };
-const PARTICIPATION_REWARD = 1;
 
 
 export async function POST(
@@ -83,25 +101,28 @@ export async function POST(
     }
     
     const totalPrizesWonCount = prizesWonByPlayer.length;
-
-    // Update stats for prizes won
-    if (totalPrizesWonCount > 0) {
+    
+    if (!isFriendsGame && room.settings.gameMode) {
+        const gameMode = room.settings.gameMode as 'easy' | 'medium' | 'hard';
+        const modeRewards = OFFLINE_COIN_REWARDS[gameMode];
+        
+        if (modeRewards) {
+            if (totalPrizesWonCount > 0) {
+                prizesWonByPlayer.forEach(prize => {
+                    statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
+                    coinsEarned += modeRewards[prize] || 0;
+                });
+            } else {
+                coinsEarned = modeRewards['PARTICIPATION'] || 1;
+            }
+        }
+    } else if (totalPrizesWonCount > 0) { // For friends game, only update prize count, no coins
         prizesWonByPlayer.forEach(prize => {
             statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
-            // Only add coin rewards for offline (bot) games
-            if (!isFriendsGame) {
-              coinsEarned += OFFLINE_COIN_REWARDS[prize] || 0;
-            }
         });
-    } else {
-        // Only give participation reward if NO other prize was won in an offline game
-        if (!isFriendsGame) {
-          coinsEarned = PARTICIPATION_REWARD;
-        }
     }
     
-    // Only update coins for non-friends games (i.e., bot games for now)
-    // This applies to both guests and registered users
+    // Only update coins for non-friends games (i.e., bot games)
     if (!isFriendsGame && coinsEarned > 0) {
       statsUpdate['stats.coins'] = increment(coinsEarned);
     }

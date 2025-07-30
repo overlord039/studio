@@ -11,7 +11,8 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
-import type { Player, Room } from '@/types';
+import type { Player, Room, PrizeType } from '@/types';
+import { PRIZE_TYPES } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -21,15 +22,64 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import Image from 'next/image';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const OFFLINE_REWARDS = [
-    { name: "Early 5", coins: 2 },
-    { name: "First Line", coins: 2 },
-    { name: "Second Line", coins: 2 },
-    { name: "Third Line", coins: 2 },
-    { name: "Full House", coins: 3 },
-    { name: "Participation", coins: 1, note: "(if no other prize is won)" },
-];
+
+const OFFLINE_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType | 'PARTICIPATION', number>> = {
+  easy: {
+    [PRIZE_TYPES.EARLY_5]: 1,
+    [PRIZE_TYPES.FIRST_LINE]: 1,
+    [PRIZE_TYPES.SECOND_LINE]: 1,
+    [PRIZE_TYPES.THIRD_LINE]: 1,
+    [PRIZE_TYPES.FULL_HOUSE]: 2,
+    'PARTICIPATION': 1,
+  },
+  medium: {
+    [PRIZE_TYPES.EARLY_5]: 2,
+    [PRIZE_TYPES.FIRST_LINE]: 2,
+    [PRIZE_TYPES.SECOND_LINE]: 2,
+    [PRIZE_TYPES.THIRD_LINE]: 2,
+    [PRIZE_TYPES.FULL_HOUSE]: 3,
+    'PARTICIPATION': 1,
+  },
+  hard: {
+    [PRIZE_TYPES.EARLY_5]: 3,
+    [PRIZE_TYPES.FIRST_LINE]: 3,
+    [PRIZE_TYPES.SECOND_LINE]: 3,
+    [PRIZE_TYPES.THIRD_LINE]: 3,
+    [PRIZE_TYPES.FULL_HOUSE]: 5,
+    'PARTICIPATION': 2,
+  }
+};
+const prizeOrder = [PRIZE_TYPES.EARLY_5, PRIZE_TYPES.FIRST_LINE, PRIZE_TYPES.SECOND_LINE, PRIZE_TYPES.THIRD_LINE, PRIZE_TYPES.FULL_HOUSE];
+
+
+const RewardInfoTab = ({ mode, title }: { mode: 'easy' | 'medium' | 'hard', title: string }) => {
+    const rewards = OFFLINE_REWARDS[mode];
+    return (
+        <div className="space-y-2">
+            {prizeOrder.map(prize => (
+                <div key={prize} className="flex justify-between items-center p-2 bg-secondary/30 rounded-md">
+                    <p className="font-semibold">{prize}</p>
+                    <div className="flex items-center gap-1 font-bold text-lg">
+                        <Image src="/coin.png" alt="Coin" width={20} height={20} />
+                        <span>{rewards[prize]}</span>
+                    </div>
+                </div>
+            ))}
+             <div className="flex justify-between items-center p-2 bg-secondary/30 rounded-md">
+                <div>
+                    <p className="font-semibold">Participation</p>
+                    <p className="text-xs text-muted-foreground">(if no other prize is won)</p>
+                </div>
+                <div className="flex items-center gap-1 font-bold text-lg">
+                    <Image src="/coin.png" alt="Coin" width={20} height={20} />
+                    <span>{rewards['PARTICIPATION']}</span>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export default function PlayWithComputerModesPage() {
   const router = useRouter();
@@ -112,20 +162,22 @@ export default function PlayWithComputerModesPage() {
                             Earn coins by playing against bots. Use coins to join online games with entry fees.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-2 py-4">
-                        {OFFLINE_REWARDS.map(reward => (
-                            <div key={reward.name} className="flex justify-between items-center p-2 bg-secondary/30 rounded-md">
-                                <div>
-                                  <p className="font-semibold">{reward.name}</p>
-                                  {reward.note && <p className="text-xs text-muted-foreground">{reward.note}</p>}
-                                </div>
-                                <div className="flex items-center gap-1 font-bold text-lg">
-                                    <Image src="/coin.png" alt="Coin" width={20} height={20} />
-                                    <span>{reward.coins}</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                     <Tabs defaultValue="medium" className="w-full pt-2">
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="easy">Easy</TabsTrigger>
+                            <TabsTrigger value="medium">Classic</TabsTrigger>
+                            <TabsTrigger value="hard">Rush</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="easy">
+                           <RewardInfoTab mode="easy" title="Easy Mode Rewards" />
+                        </TabsContent>
+                        <TabsContent value="medium">
+                           <RewardInfoTab mode="medium" title="Classic Mode Rewards" />
+                        </TabsContent>
+                        <TabsContent value="hard">
+                           <RewardInfoTab mode="hard" title="Rush Mode Rewards" />
+                        </TabsContent>
+                    </Tabs>
                 </DialogContent>
             </Dialog>
         </div>
