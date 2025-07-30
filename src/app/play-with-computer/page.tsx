@@ -159,8 +159,8 @@ export default function PlayWithComputerModesPage() {
             <h1 className="text-3xl font-bold text-white">Play with Computer</h1>
              <Dialog>
                 <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="text-white hover:text-white/80 h-8 w-8">
-                        <Info className="h-6 w-6" />
+                    <Button variant="ghost" size="icon" className="text-white hover:text-white/80 h-10 w-10">
+                        <Info className="h-7 w-7" />
                     </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md p-4">
