@@ -51,6 +51,17 @@ export default function CreateOrJoinRoomPage() {
       });
       return;
     }
+    
+    // Check if the user has enough coins to create the room (at least for one ticket)
+    if (ticketPrice > 0 && currentUser.stats.coins < ticketPrice) {
+      toast({
+        title: "Not Enough Coins",
+        description: `You need at least ${ticketPrice} coins to create a room with this entry fee, as you will need to buy at least one ticket.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     playSound('start.wav');
 
