@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,14 +26,13 @@ import Image from 'next/image';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
-const OFFLINE_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType | 'PARTICIPATION', number>> = {
+const OFFLINE_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType, number>> = {
   easy: {
     [PRIZE_TYPES.EARLY_5]: 1,
     [PRIZE_TYPES.FIRST_LINE]: 1,
     [PRIZE_TYPES.SECOND_LINE]: 1,
     [PRIZE_TYPES.THIRD_LINE]: 1,
     [PRIZE_TYPES.FULL_HOUSE]: 2,
-    'PARTICIPATION': 1,
   },
   medium: {
     [PRIZE_TYPES.EARLY_5]: 1,
@@ -40,7 +40,6 @@ const OFFLINE_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType | 'PA
     [PRIZE_TYPES.SECOND_LINE]: 2,
     [PRIZE_TYPES.THIRD_LINE]: 2,
     [PRIZE_TYPES.FULL_HOUSE]: 3,
-    'PARTICIPATION': 1,
   },
   hard: {
     [PRIZE_TYPES.EARLY_5]: 2,
@@ -48,10 +47,10 @@ const OFFLINE_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType | 'PA
     [PRIZE_TYPES.SECOND_LINE]: 3,
     [PRIZE_TYPES.THIRD_LINE]: 3,
     [PRIZE_TYPES.FULL_HOUSE]: 5,
-    'PARTICIPATION': 2,
   }
 };
 const prizeOrder = [PRIZE_TYPES.EARLY_5, PRIZE_TYPES.FIRST_LINE, PRIZE_TYPES.SECOND_LINE, PRIZE_TYPES.THIRD_LINE, PRIZE_TYPES.FULL_HOUSE];
+const PARTICIPATION_REWARD = 1;
 
 
 const RewardInfoTab = ({ mode, title }: { mode: 'easy' | 'medium' | 'hard', title: string }) => {
@@ -67,14 +66,14 @@ const RewardInfoTab = ({ mode, title }: { mode: 'easy' | 'medium' | 'hard', titl
                     </div>
                 </div>
             ))}
-             <div className="flex justify-between items-center p-2 bg-secondary/30 rounded-md">
+             <div className="flex justify-between items-center p-2 bg-green-500/10 rounded-md border border-green-500/20">
                 <div>
-                    <p className="font-semibold">Participation</p>
-                    <p className="text-xs text-muted-foreground">(if no other prize is won)</p>
+                    <p className="font-semibold">Participation Reward</p>
+                    <p className="text-xs text-muted-foreground">(Awarded for every game played)</p>
                 </div>
-                <div className="flex items-center gap-1 font-bold text-lg">
+                <div className="flex items-center gap-1 font-bold text-lg text-green-600">
                     <Image src="/coin.png" alt="Coin" width={20} height={20} />
-                    <span>{rewards['PARTICIPATION']}</span>
+                    <span>+{PARTICIPATION_REWARD}</span>
                 </div>
             </div>
         </div>

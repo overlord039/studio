@@ -8,14 +8,13 @@ import type { PrizeType } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 
 // Define coin rewards for offline games
-const OFFLINE_COIN_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType | 'PARTICIPATION', number>> = {
+const OFFLINE_COIN_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType, number>> = {
   easy: {
     [PRIZE_TYPES.EARLY_5]: 1,
     [PRIZE_TYPES.FIRST_LINE]: 1,
     [PRIZE_TYPES.SECOND_LINE]: 1,
     [PRIZE_TYPES.THIRD_LINE]: 1,
     [PRIZE_TYPES.FULL_HOUSE]: 2,
-    'PARTICIPATION': 1,
   },
   medium: {
     [PRIZE_TYPES.EARLY_5]: 1,
@@ -23,7 +22,6 @@ const OFFLINE_COIN_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType 
     [PRIZE_TYPES.SECOND_LINE]: 2,
     [PRIZE_TYPES.THIRD_LINE]: 2,
     [PRIZE_TYPES.FULL_HOUSE]: 3,
-    'PARTICIPATION': 1,
   },
   hard: {
     [PRIZE_TYPES.EARLY_5]: 2,
@@ -31,9 +29,10 @@ const OFFLINE_COIN_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType 
     [PRIZE_TYPES.SECOND_LINE]: 3,
     [PRIZE_TYPES.THIRD_LINE]: 3,
     [PRIZE_TYPES.FULL_HOUSE]: 5,
-    'PARTICIPATION': 2,
   }
 };
+
+const PARTICIPATION_REWARD = 1;
 
 
 export async function POST(
@@ -100,23 +99,21 @@ export async function POST(
         }
     }
     
-    const totalPrizesWonCount = prizesWonByPlayer.length;
-    
     if (!isFriendsGame && room.settings.gameMode) {
+        // For bot games, calculate prize winnings and add participation reward
         const gameMode = room.settings.gameMode as 'easy' | 'medium' | 'hard';
         const modeRewards = OFFLINE_COIN_REWARDS[gameMode];
         
-        if (modeRewards) {
-            if (totalPrizesWonCount > 0) {
-                prizesWonByPlayer.forEach(prize => {
-                    statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
-                    coinsEarned += modeRewards[prize] || 0;
-                });
-            } else {
-                coinsEarned = modeRewards['PARTICIPATION'] || 1;
-            }
+        coinsEarned += PARTICIPATION_REWARD; // Always award participation coins
+
+        if (modeRewards && prizesWonByPlayer.length > 0) {
+            prizesWonByPlayer.forEach(prize => {
+                statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
+                coinsEarned += modeRewards[prize] || 0;
+            });
         }
-    } else if (totalPrizesWonCount > 0) { // For friends game, only update prize count, no coins
+    } else if (isFriendsGame && prizesWonByPlayer.length > 0) { 
+        // For friends game, only update prize count, no coins
         prizesWonByPlayer.forEach(prize => {
             statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
         });
