@@ -73,7 +73,7 @@ const RewardInfoTab = ({ mode, title }: { mode: 'easy' | 'medium' | 'hard', titl
                 </div>
                 <div className="flex items-center gap-1 font-bold text-lg text-green-600">
                     <Image src="/coin.png" alt="Coin" width={20} height={20} />
-                    <span>+{PARTICIPATION_REWARD}</span>
+                    <span>{PARTICIPATION_REWARD}</span>
                 </div>
             </div>
         </div>
