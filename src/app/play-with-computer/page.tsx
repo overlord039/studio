@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Smile, Zap, Target, LogOut, Loader2, Bot, Skull } from 'lucide-react';
+import { Smile, Zap, Target, LogOut, Loader2, Bot, Skull, Info, Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useSound } from '@/contexts/sound-context';
@@ -12,6 +12,24 @@ import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import type { Player, Room } from '@/types';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import Image from 'next/image';
+
+const OFFLINE_REWARDS = [
+    { name: "Early 5", coins: 2 },
+    { name: "First Line", coins: 2 },
+    { name: "Second Line", coins: 2 },
+    { name: "Third Line", coins: 2 },
+    { name: "Full House", coins: 3 },
+    { name: "Participation", coins: 1, note: "(if no other prize is won)" },
+];
 
 export default function PlayWithComputerModesPage() {
   const router = useRouter();
@@ -79,7 +97,38 @@ export default function PlayWithComputerModesPage() {
   return (
     <div className="flex flex-col items-center justify-center flex-grow p-4">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-white">Play with Computer</h1>
+        <div className="flex items-center justify-center gap-2">
+            <h1 className="text-3xl font-bold text-white">Play with Computer</h1>
+             <Dialog>
+                <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="text-white hover:text-white/80 h-8 w-8">
+                        <Info className="h-6 w-6" />
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2"><Award className="text-primary"/>Offline Game Rewards</DialogTitle>
+                        <DialogDescription>
+                            Earn coins by playing against bots. Use coins to join online games with entry fees.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-2 py-4">
+                        {OFFLINE_REWARDS.map(reward => (
+                            <div key={reward.name} className="flex justify-between items-center p-2 bg-secondary/30 rounded-md">
+                                <div>
+                                  <p className="font-semibold">{reward.name}</p>
+                                  {reward.note && <p className="text-xs text-muted-foreground">{reward.note}</p>}
+                                </div>
+                                <div className="flex items-center gap-1 font-bold text-lg">
+                                    <Image src="/coin.png" alt="Coin" width={20} height={20} />
+                                    <span>{reward.coins}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </div>
         <p className="text-white/80 mt-2">Choose your difficulty.</p>
       </div>
       <div className="w-full max-w-md space-y-4">
