@@ -61,6 +61,25 @@ export default function HomePage() {
           <p className="text-xl font-semibold text-white">Welcome, {currentUser.displayName || 'Guest'}!</p>
         </div>
       )}
+      
+      {currentUser && !loading && currentUser.stats.coins === 0 && (
+        <Card className="w-full max-w-md bg-yellow-500/20 border-yellow-500/50 text-yellow-100 p-4 my-2">
+          <CardContent className="p-0 flex flex-col items-center text-center space-y-3">
+            <div className="flex items-center gap-2">
+                <Image src="/coin.png" alt="Coins" width={24} height={24} />
+                <p className="font-bold text-lg">You have 0 coins!</p>
+            </div>
+            <p className="text-sm">Play offline games against bots to earn more rewards.</p>
+            <Button 
+                onClick={() => handleNavigateWithAuth('/play-with-computer')}
+                variant="secondary"
+                size="sm"
+            >
+                Play Offline
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Action Buttons */}
       <div className="w-full max-w-md space-y-4">
