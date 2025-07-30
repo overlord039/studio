@@ -55,6 +55,8 @@ const PARTICIPATION_REWARD = 1;
 
 const RewardInfoTab = ({ mode, title }: { mode: 'easy' | 'medium' | 'hard', title: string }) => {
     const rewards = OFFLINE_REWARDS[mode];
+    const maxReward = prizeOrder.reduce((sum, prize) => sum + rewards[prize], 0) + PARTICIPATION_REWARD;
+
     return (
         <div className="space-y-2">
             {prizeOrder.map(prize => (
@@ -74,6 +76,13 @@ const RewardInfoTab = ({ mode, title }: { mode: 'easy' | 'medium' | 'hard', titl
                 <div className="flex items-center gap-1 font-bold text-lg text-green-600">
                     <Image src="/coin.png" alt="Coin" width={20} height={20} />
                     <span>{PARTICIPATION_REWARD}</span>
+                </div>
+            </div>
+             <div className="flex justify-between items-center p-2 mt-4 bg-primary/20 rounded-md border border-primary/30">
+                <p className="font-bold">Max Reward</p>
+                <div className="flex items-center gap-1 font-bold text-lg text-primary">
+                    <Image src="/coin.png" alt="Coin" width={20} height={20} />
+                    <span>{maxReward}</span>
                 </div>
             </div>
         </div>
