@@ -406,7 +406,13 @@ export function callNextNumberStore(roomId: string): Room | { error: string; num
   if (isBotGameMode && !room.isGameOver) {
     const bots = room.players.filter(p => p.isBot);
     const prizes = PRIZE_DEFINITIONS[room.settings.prizeFormat || 'Format 1'];
-    const delay = room.settings.gameMode === 'easy' ? 1000 : 0; // 1s for easy, 0 for other modes
+    
+    let delay = 0;
+    if (room.settings.gameMode === 'easy') {
+        delay = 1000;
+    } else if (room.settings.gameMode === 'online') {
+        delay = 2000; // 2-second delay for online mode
+    }
 
     setTimeout(() => {
         const currentRoomState = getRoomStore(roomId);
