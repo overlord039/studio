@@ -1064,7 +1064,10 @@ export default function GameRoomPage() {
                               <AlertDialogHeader>
                                   <AlertDialogTitle>Are you sure you want to leave the game?</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                      This will remove you from the current game session. If you are the host, a new host will be assigned.
+                                    {roomData.settings.gameMode === 'online'
+                                        ? "Leaving an online match will forfeit your entry fee. Are you sure?"
+                                        : "This will remove you from the current game session. If you are the host, a new host will be assigned."
+                                    }
                                   </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
