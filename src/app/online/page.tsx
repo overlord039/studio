@@ -19,7 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
-        name: "Quick Play",
+        name: "Quick",
         ticketPrice: 5,
         roomSize: 4,
         matchmakingTime: 15,
@@ -176,7 +176,7 @@ export default function OnlineModePage() {
     return (
         <div className="flex flex-col items-center justify-center flex-grow p-4">
             <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold text-white">Online Play</h1>
+                <h1 className="text-3xl font-bold text-white">Online</h1>
                 <p className="text-white/80 mt-2">Join a game and play with others online!</p>
                 <div className="flex items-center justify-center gap-2 pt-2">
                     <span className="text-sm font-semibold text-white">Your Coins:</span>

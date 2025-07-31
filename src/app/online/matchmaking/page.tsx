@@ -16,7 +16,7 @@ import Image from 'next/image';
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
-        name: "Quick Play", ticketPrice: 5, roomSize: 4, matchmakingTime: 15,
+        name: "Quick", ticketPrice: 5, roomSize: 4, matchmakingTime: 15,
         unlockRequirements: { matches: 0, coins: 0 },
     },
     classic: {

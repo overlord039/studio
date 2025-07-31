@@ -8,7 +8,7 @@ import { doc, runTransaction, increment, updateDoc, getDoc } from 'firebase/fire
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
-        name: "Quick Play", ticketPrice: 5, roomSize: 4, matchmakingTime: 15,
+        name: "Quick", ticketPrice: 5, roomSize: 4, matchmakingTime: 15,
         unlockRequirements: { matches: 0, coins: 0 },
     },
     classic: {
@@ -108,7 +108,15 @@ export async function POST(request: NextRequest) {
         addPlayerToRoomStore(newRoom.id, botPlayer, botTickets);
     }
     
-    // 5. Get the final state and return it
+    // 5. Start the game immediately
+    const startResult = startGameInRoomStore(newRoom.id, player.id);
+    if (startResult && 'error' in startResult) {
+        console.error(`Failed to start online game ${newRoom.id}:`, startResult.error);
+        // We don't return an error to the client here, because the room is created
+        // and they can still join, but we log it. The game might not auto-start.
+    }
+    
+    // 6. Get the final state and return it
     const roomForClient = getRoomStateForClient(newRoom.id);
     if (!roomForClient) {
         return NextResponse.json({ message: 'Failed to retrieve online room after creation' }, { status: 500 });
