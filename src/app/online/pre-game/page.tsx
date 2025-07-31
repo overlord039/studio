@@ -68,7 +68,7 @@ function PreGameContent() {
 
     }, [countdown, roomData, error, router, roomId, currentUser, toast]);
     
-    if (isLoading) {
+    if (isLoading || !currentUser) {
         return <Loader2 className="h-8 w-8 animate-spin text-white" />;
     }
 
@@ -109,6 +109,13 @@ function PreGameContent() {
                  <div className="text-5xl font-bold text-primary">{countdown}</div>
             </CardHeader>
             <CardContent className="space-y-4">
+                <div className="flex items-center justify-center gap-2 pt-2">
+                    <span className="text-sm font-semibold">Your Coins:</span>
+                     <div className="flex items-center gap-1 font-bold text-lg text-amber-500">
+                        <Image src="/coin.png" alt="Coins" width={20} height={20} />
+                        <span>{currentUser.stats.coins}</span>
+                    </div>
+                </div>
                 <div className="text-center p-3 rounded-lg bg-primary/10">
                     <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Total Prize Pool</h3>
                     <div className="text-3xl font-bold flex items-center justify-center gap-2">

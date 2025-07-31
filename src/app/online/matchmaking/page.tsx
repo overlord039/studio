@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/contexts/sound-context';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
@@ -31,7 +32,7 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
 function MatchmakingContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { currentUser } = useAuth();
+    const { currentUser, fetchUser } = useAuth();
     const { toast } = useToast();
     const { playSound } = useSound();
     
@@ -41,6 +42,8 @@ function MatchmakingContent() {
     const [error, setError] = useState<string | null>(null);
     const [isFindingMatch, setIsFindingMatch] = useState(false);
     const [countdown, setCountdown] = useState<number | null>(null);
+    const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
+
 
     useEffect(() => {
         const tierParam = searchParams.get('tier') as OnlineGameTier;
@@ -82,6 +85,9 @@ function MatchmakingContent() {
           throw new Error(newRoom.message || 'Failed to create online match.');
         }
 
+        setCreatedRoomId(newRoom.id);
+        await fetchUser(); // Fetch latest user data to update coin balance on this screen
+
         toast({ title: "Match Found!", description: "Let's check the prize pool..." });
         router.push(`/online/pre-game?roomId=${newRoom.id}`);
 
@@ -90,7 +96,7 @@ function MatchmakingContent() {
         setIsFindingMatch(false);
       }
 
-    }, [currentUser, tier, tickets, router, toast, playSound]);
+    }, [currentUser, tier, tickets, router, toast, playSound, fetchUser]);
     
     useEffect(() => {
         if (countdown === null || error || isFindingMatch) return;
@@ -106,6 +112,21 @@ function MatchmakingContent() {
 
         return () => clearInterval(timer);
     }, [countdown, error, findMatch, isFindingMatch]);
+
+    const handleCancel = async () => {
+        if (createdRoomId && currentUser) {
+            try {
+                await fetch(`/api/rooms/${createdRoomId}/leave`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ playerId: currentUser.uid }),
+                });
+            } catch (err) {
+                console.error("Error leaving created room on cancel:", err);
+            }
+        }
+        router.push('/online');
+    };
     
     if (!currentUser || !tierConfig) {
         return <Loader2 className="h-8 w-8 animate-spin text-white" />;
@@ -142,6 +163,13 @@ function MatchmakingContent() {
             <CardHeader className="text-center">
                 <CardTitle className="text-2xl text-foreground">Finding a Match...</CardTitle>
                 <CardDescription className="text-foreground/80">Tier: {tierConfig.name} ({tickets} {tickets === 1 ? 'ticket' : 'tickets'})</CardDescription>
+                <div className="flex items-center justify-center gap-2 pt-2">
+                    <span className="text-sm font-semibold">Your Coins:</span>
+                     <div className="flex items-center gap-1 font-bold text-lg text-amber-500">
+                        <Image src="/coin.png" alt="Coins" width={20} height={20} />
+                        <span>{currentUser.stats.coins}</span>
+                    </div>
+                </div>
             </CardHeader>
             <CardContent className="space-y-6 flex flex-col items-center">
                  <div className="relative h-40 w-40">
@@ -194,7 +222,7 @@ function MatchmakingContent() {
                         Joining Match...
                     </Button>
                 ) : (
-                    <Button variant="outline" onClick={() => router.push('/online')} className="w-full">
+                    <Button variant="outline" onClick={handleCancel} className="w-full">
                         <ArrowLeft className="mr-2 h-4 w-4" /> Cancel
                     </Button>
                 )}
