@@ -117,44 +117,48 @@ function PreGameContent() {
                         {formatCoins(totalPrizePool)}
                     </div>
                 </div>
-                <div className="space-y-2">
-                    {prizesForFormat.map(prizeName => {
-                        const percentage = prizeDistribution[prizeName as PrizeType] || 0;
-                        const prizeAmount = (totalPrizePool * percentage) / 100;
-                        return (
-                            <div key={prizeName} className="flex justify-between items-center text-sm p-2 bg-secondary/20 rounded-md">
-                                <span className="font-semibold text-secondary-foreground">{prizeName}</span>
-                                <div className="font-bold flex items-center gap-1">
-                                    <Image src="/coin.png" alt="Coins" width={16} height={16} />
-                                    <span>{formatCoins(prizeAmount)}</span>
-                                    <span className="text-xs text-muted-foreground">({percentage}%)</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                         <h3 className="text-sm font-semibold text-center mb-2 flex items-center justify-center uppercase tracking-wider">
+                            <Gift className="mr-2 h-4 w-4"/> Prizes
+                        </h3>
+                        {prizesForFormat.map(prizeName => {
+                            const percentage = prizeDistribution[prizeName as PrizeType] || 0;
+                            const prizeAmount = (totalPrizePool * percentage) / 100;
+                            return (
+                                <div key={prizeName} className="flex justify-between items-center text-xs p-1.5 bg-secondary/20 rounded-md">
+                                    <span className="font-semibold text-secondary-foreground">{prizeName} ({percentage}%)</span>
+                                    <div className="font-bold flex items-center gap-1">
+                                        <Image src="/coin.png" alt="Coins" width={14} height={14} />
+                                        <span>{formatCoins(prizeAmount)}</span>
+                                    </div>
                                 </div>
-                            </div>
-                        );
-                    })}
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-center mb-2 flex items-center justify-center uppercase tracking-wider">
-                      <Users className="mr-2 h-4 w-4"/> Players ({roomData.players.length}/{gameSettings.lobbySize})
-                  </h3>
-                   <ScrollArea className="h-32 w-full rounded-md border p-2">
-                    <div className="space-y-1">
-                        {roomData.players.map((player: Player & { tickets: any[], isBot?: boolean }) => (
-                            <div key={player.id} className="flex justify-between items-center text-sm p-1.5 bg-secondary/20 rounded-md">
-                                <div className="flex items-center gap-2">
-                                    <span className={cn("font-semibold", player.id === currentUser.uid && "text-primary")}>
-                                        {player.name}
-                                    </span>
-                                    {player.isBot && <Bot className="h-4 w-4 text-muted-foreground" />}
-                                </div>
-                                <div className="flex items-center gap-1 font-medium text-muted-foreground">
-                                    <TicketIcon className="h-4 w-4" />
-                                    <span>{player.tickets.length}</span>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
-                  </ScrollArea>
+                     <div>
+                        <h3 className="text-sm font-semibold text-center mb-2 flex items-center justify-center uppercase tracking-wider">
+                            <Users className="mr-2 h-4 w-4"/> Players ({roomData.players.length}/{gameSettings.lobbySize})
+                        </h3>
+                        <ScrollArea className="h-36 w-full rounded-md border p-1">
+                            <div className="space-y-1">
+                                {roomData.players.map((player: Player & { tickets: any[], isBot?: boolean }) => (
+                                    <div key={player.id} className="flex justify-between items-center text-xs p-1.5 bg-secondary/20 rounded-md">
+                                        <div className="flex items-center gap-1.5 truncate">
+                                            <span className={cn("font-semibold truncate", player.id === currentUser.uid && "text-primary")}>
+                                                {player.name}
+                                            </span>
+                                            {player.isBot && <Bot className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />}
+                                        </div>
+                                        <div className="flex items-center gap-1 font-medium text-muted-foreground flex-shrink-0">
+                                            <TicketIcon className="h-3.5 w-3.5" />
+                                            <span>{player.tickets.length}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </ScrollArea>
+                    </div>
                 </div>
             </CardContent>
         </Card>
@@ -170,3 +174,5 @@ export default function PreGamePage() {
         </div>
     );
 }
+
+    
