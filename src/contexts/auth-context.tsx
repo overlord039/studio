@@ -184,36 +184,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (firebaseUser) {
             const userDocRef = doc(db, "users", firebaseUser.uid);
             
-            // Ensure the user document exists before setting up the listener.
-            // This prevents race conditions on new user sign-up.
-            const docSnap = await getDoc(userDocRef);
-            if (!docSnap.exists()) {
-                const isNewGuest = firebaseUser.isAnonymous;
-                const displayName = isNewGuest 
-                    ? `Guest#${firebaseUser.uid.substring(0,5)}` 
-                    : firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`;
-
-                const newUserProfile: User = {
-                    uid: firebaseUser.uid,
-                    displayName: displayName,
-                    email: firebaseUser.email,
-                    photoURL: firebaseUser.photoURL,
-                    isGuest: isNewGuest,
-                    createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-                    stats: { ...createDefaultStats(), coins: 10 }, // New account reward
-                };
-                
-                const batch = writeBatch(db);
-                const usernameRef = doc(db, "usernames", displayName.toLowerCase());
-                batch.set(userDocRef, newUserProfile);
-                batch.set(usernameRef, { userId: firebaseUser.uid, username: displayName });
-                
-                await batch.commit();
-
-                setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
-            }
-
-            userDocUnsubscribe = onSnapshot(userDocRef, (docSnap) => {
+            // This is a more robust way to handle new user creation.
+            // We set up the listener first, and if the document doesn't exist,
+            // the listener's first snapshot will be empty, which we can handle.
+            userDocUnsubscribe = onSnapshot(userDocRef, async (docSnap) => {
                 if (docSnap.exists()) {
                     const firestoreData = docSnap.data();
                     
@@ -233,8 +207,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         }
                         return newUser;
                     });
+                    setLoading(false);
+                } else {
+                    // Document does not exist, so this is a new user. Create their profile.
+                    const isNewGuest = firebaseUser.isAnonymous;
+                    const displayName = isNewGuest 
+                        ? `Guest#${firebaseUser.uid.substring(0,5)}` 
+                        : firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`;
+
+                    const newUserProfile: User = {
+                        uid: firebaseUser.uid,
+                        displayName: displayName,
+                        email: firebaseUser.email,
+                        photoURL: firebaseUser.photoURL,
+                        isGuest: isNewGuest,
+                        createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+                        stats: { ...createDefaultStats(), coins: 10 }, // New account reward
+                    };
+                    
+                    try {
+                        const batch = writeBatch(db);
+                        const usernameRef = doc(db, "usernames", displayName.toLowerCase());
+                        batch.set(userDocRef, newUserProfile);
+                        batch.set(usernameRef, { userId: firebaseUser.uid, username: displayName });
+                        await batch.commit();
+
+                        // After creating, the onSnapshot listener will fire again with the new data.
+                        // We don't need to call setCurrentUser here.
+                        setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
+
+                    } catch (error) {
+                        console.error("Error creating new user profile:", error);
+                        toast({title: "Setup Error", description: "Could not create your user profile.", variant: "destructive"});
+                        setLoading(false);
+                    }
                 }
-                setLoading(false);
             }, (error) => {
                 console.error("Error listening to user document:", error);
                 toast({ title: "Error", description: "Could not load user profile.", variant: "destructive" });
