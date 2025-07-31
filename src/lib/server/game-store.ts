@@ -151,12 +151,15 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberO
 export function startGameInRoomStore(roomId: string, hostId: string): Room | { error: string } {
   const room = rooms.get(roomId);
   if (!room) return { error: "Room not found." };
-  if (room.host.id !== hostId) return { error: "Only the host can start the game." };
+  
+  if (room.settings.gameMode !== 'online' && room.host.id !== hostId) {
+    return { error: "Only the host can start this game." };
+  }
+  
   if (room.isGameStarted) return { error: "Game has already started." };
   if (room.isGameOver) return { error: "Game is over. Reset the room to start a new game." };
 
-
-  const hostPlayer = room.players.find(p => p.id === hostId && p.isHost);
+  const hostPlayer = room.players.find(p => p.id === room.host.id);
   if (!hostPlayer || hostPlayer.tickets.length === 0) {
     return { error: `Host must have tickets before starting.` };
   }

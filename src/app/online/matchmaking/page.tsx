@@ -82,8 +82,8 @@ function MatchmakingContent() {
           throw new Error(newRoom.message || 'Failed to create online match.');
         }
 
-        toast({ title: "Match Found!", description: "Joining the game..." });
-        router.push(`/room/${newRoom.id}/play?playerTickets=${tickets}`);
+        toast({ title: "Match Found!", description: "Let's check the prize pool..." });
+        router.push(`/online/pre-game?roomId=${newRoom.id}`);
 
       } catch (err) {
         setError((err as Error).message);
