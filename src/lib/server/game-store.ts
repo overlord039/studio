@@ -408,10 +408,13 @@ export function callNextNumberStore(roomId: string): Room | { error: string; num
     const prizes = PRIZE_DEFINITIONS[room.settings.prizeFormat || 'Format 1'];
     
     let delay = 0;
+    let botMissChance = 0; // 0% chance to miss by default
+
     if (room.settings.gameMode === 'easy') {
         delay = 1000;
     } else if (room.settings.gameMode === 'online') {
-        delay = 2000; // 2-second delay for online mode
+        delay = 3500; // Increased delay for online bots
+        botMissChance = 0.4; // 40% chance for bot to "miss" a claim
     }
 
     setTimeout(() => {
@@ -425,6 +428,12 @@ export function callNextNumberStore(roomId: string): Room | { error: string; num
                     continue; 
                 }
                 
+                // Bot has a chance to "miss" the claim
+                if (Math.random() < botMissChance) {
+                    console.log(`Bot ${bot.name} "missed" a potential claim for ${prizeType}.`);
+                    continue; // Skip to the next prize or bot
+                }
+
                 // Check if this bot has a valid claim
                 for (let i = 0; i < bot.tickets.length; i++) {
                     const ticket = bot.tickets[i];
