@@ -316,38 +316,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      const result = await signInWithPopup(auth, provider);
-      
-      const firebaseUser = result.user;
-      const userDocRef = doc(db, "users", firebaseUser.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        const displayName = firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`;
-        const userProfile: User = {
-          uid: firebaseUser.uid,
-          displayName: displayName,
-          email: firebaseUser.email,
-          photoURL: firebaseUser.photoURL,
-          isGuest: false,
-          createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-          stats: { ...createDefaultStats(), coins: 10 },
-        };
-
-        const batch = writeBatch(db);
-        const usernameRef = doc(db, "usernames", displayName.toLowerCase());
-        batch.set(userDocRef, userProfile);
-        batch.set(usernameRef, { userId: firebaseUser.uid, username: displayName });
-        await batch.commit();
-        setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
-      } else {
-        toast({ title: "Signed In Successfully", description: `Welcome back!` });
-      }
-      router.push('/profile');
+      await signInWithPopup(auth, provider);
+      // The onAuthStateChanged listener will handle profile creation and state updates.
+      // This keeps the logic centralized and avoids race conditions.
     } catch (error: any) {
-      if (error.code === 'auth/account-exists-with-different-credential') {
-        toast({ title: "Account Exists", description: "An account with this email already exists. Please sign in with the original method.", variant: "destructive" });
-      } else if (error.code !== 'auth/popup-closed-by-user') {
+      if (error.code !== 'auth/popup-closed-by-user') {
         console.error("Google Sign-In Error:", error);
         toast({ title: "Google Sign-in Failed", description: error.message, variant: "destructive" });
       }
