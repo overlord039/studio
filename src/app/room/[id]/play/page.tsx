@@ -907,20 +907,6 @@ export default function GameRoomPage() {
                         </div>
                     )}
                 </div>
-              {isCurrentUserHost && roomData.settings.gameMode === 'multiplayer' && !roomData.isGameOver && (
-                <div className="flex items-center gap-1 p-1 rounded-md border bg-card/80 backdrop-blur-sm">
-                    <Label htmlFor="calling-mode-switch" className="text-xs font-medium text-foreground cursor-pointer">
-                        Auto
-                    </Label>
-                    <Switch
-                        id="calling-mode-switch"
-                        checked={isAutoCalling}
-                        onCheckedChange={handleToggleCallingMode}
-                        disabled={isUpdatingMode || roomData.isGameOver}
-                        aria-label="Toggle automatic number calling"
-                    />
-                </div>
-              )}
               <Sheet>
                 <SheetTrigger asChild>
                   <Button variant="outline" size="icon" aria-label="Game Info &amp; Players">
@@ -932,6 +918,30 @@ export default function GameRoomPage() {
                       <SheetTitle className="text-base">Game Info &amp; Players</SheetTitle>
                   </SheetHeader>
                   <div className="py-2 space-y-4 flex-grow overflow-y-auto">
+                      {isCurrentUserHost && roomData.settings.gameMode === 'multiplayer' && !roomData.isGameOver && (
+                        <Card className="bg-secondary/30">
+                          <CardHeader className="p-3 pb-2">
+                              <CardTitle className="text-sm font-semibold flex items-center">
+                                  <Settings2 className="mr-2 h-4 w-4 text-primary" />
+                                  Host Controls
+                              </CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-3 pt-0">
+                             <div className="flex items-center justify-between">
+                                <Label htmlFor="calling-mode-switch" className="text-sm font-medium cursor-pointer">
+                                    Auto-Call
+                                </Label>
+                                <Switch
+                                    id="calling-mode-switch"
+                                    checked={isAutoCalling}
+                                    onCheckedChange={handleToggleCallingMode}
+                                    disabled={isUpdatingMode || roomData.isGameOver}
+                                    aria-label="Toggle automatic number calling"
+                                />
+                              </div>
+                          </CardContent>
+                        </Card>
+                      )}
                       <Card className="bg-secondary/30">
                           <CardHeader className="p-3 pb-2">
                               <CardTitle className="text-sm font-semibold flex items-center">
