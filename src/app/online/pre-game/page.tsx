@@ -55,22 +55,7 @@ function PreGameContent() {
     useEffect(() => {
         if (!roomData || error) return;
 
-        const startTheGame = async () => {
-             if (!currentUser) return;
-             try {
-                await fetch(`/api/rooms/${roomId}/start`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ hostId: currentUser.uid }),
-                });
-             } catch (err) {
-                console.error("Failed to auto-start game:", err);
-                toast({title: "Start Error", description: "Could not start the game automatically.", variant: "destructive"});
-             }
-        };
-
         if (countdown <= 0) {
-            startTheGame();
             router.push(`/room/${roomId}/play`);
             return;
         }
