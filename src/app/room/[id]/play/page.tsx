@@ -711,7 +711,7 @@ export default function GameRoomPage() {
         }
     }
 
-    if (isBotGame && currentUserWinnings === 0 && coinsWonThisGame !== null) {
+    if (isBotGame && coinsWonThisGame === 0 && currentUserWinnings === 0) {
       router.replace('/play-with-computer');
       return (
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
@@ -864,20 +864,6 @@ export default function GameRoomPage() {
     <>
       <div className="container mx-auto p-4 space-y-4">
         <Card className="shadow-none border-none bg-transparent relative">
-             {isCurrentUserHost && roomData.settings.gameMode === 'multiplayer' && !roomData.isGameOver && (
-              <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5 p-1 rounded-md border bg-card/80 backdrop-blur-sm">
-                  <Label htmlFor="calling-mode-switch" className="text-xs font-medium text-foreground pl-1 cursor-pointer">
-                      Auto
-                  </Label>
-                  <Switch
-                      id="calling-mode-switch"
-                      checked={isAutoCalling}
-                      onCheckedChange={handleToggleCallingMode}
-                      disabled={isUpdatingMode || roomData.isGameOver}
-                      aria-label="Toggle automatic number calling"
-                  />
-              </div>
-            )}
           <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
             <div className="flex-grow">
                <div className="flex items-center gap-2 mb-1">
@@ -1068,7 +1054,7 @@ export default function GameRoomPage() {
         </Card>
 
         <div className="flex flex-col items-center space-y-4">
-          <div className="w-full max-w-md">
+          <div className="w-full max-w-md relative">
               <MemoizedCalledNumberDisplay 
                   currentNumber={roomData.currentNumber}
                   calledNumbers={roomData.calledNumbers}
@@ -1076,6 +1062,20 @@ export default function GameRoomPage() {
                   onToggleMute={() => setIsVoiceMuted(prev => !prev)}
                   animationKey={animationKey}
               />
+              {isCurrentUserHost && roomData.settings.gameMode === 'multiplayer' && !roomData.isGameOver && (
+              <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5 p-1 rounded-md border bg-card/80 backdrop-blur-sm">
+                  <Label htmlFor="calling-mode-switch" className="text-xs font-medium text-foreground pl-1 cursor-pointer">
+                      Auto
+                  </Label>
+                  <Switch
+                      id="calling-mode-switch"
+                      checked={isAutoCalling}
+                      onCheckedChange={handleToggleCallingMode}
+                      disabled={isUpdatingMode || roomData.isGameOver}
+                      aria-label="Toggle automatic number calling"
+                  />
+              </div>
+            )}
           </div>
 
           {isCurrentUserHost && !isAutoCalling && !roomData.isGameOver && (
