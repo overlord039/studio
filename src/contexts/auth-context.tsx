@@ -184,7 +184,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (firebaseUser) {
             const userDocRef = doc(db, "users", firebaseUser.uid);
             
-            userDocUnsubscribe = onSnapshot(userDocRef, async (docSnap) => {
+            // Ensure the user document exists before setting up the listener.
+            // This prevents race conditions on new user sign-up.
+            const docSnap = await getDoc(userDocRef);
+            if (!docSnap.exists()) {
+                const isNewGuest = firebaseUser.isAnonymous;
+                const displayName = isNewGuest 
+                    ? `Guest#${firebaseUser.uid.substring(0,5)}` 
+                    : firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`;
+
+                const newUserProfile: User = {
+                    uid: firebaseUser.uid,
+                    displayName: displayName,
+                    email: firebaseUser.email,
+                    photoURL: firebaseUser.photoURL,
+                    isGuest: isNewGuest,
+                    createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+                    stats: { ...createDefaultStats(), coins: 10 }, // New account reward
+                };
+                
+                const batch = writeBatch(db);
+                const usernameRef = doc(db, "usernames", displayName.toLowerCase());
+                batch.set(userDocRef, newUserProfile);
+                batch.set(usernameRef, { userId: firebaseUser.uid, username: displayName });
+                
+                await batch.commit();
+
+                setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
+            }
+
+            userDocUnsubscribe = onSnapshot(userDocRef, (docSnap) => {
                 if (docSnap.exists()) {
                     const firestoreData = docSnap.data();
                     
@@ -204,34 +233,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         }
                         return newUser;
                     });
-                } else {
-                    const isNewGuest = firebaseUser.isAnonymous;
-                    const displayName = isNewGuest 
-                      ? `Guest#${firebaseUser.uid.substring(0,5)}` 
-                      : firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`;
-
-                    const newUserProfile: User = {
-                        uid: firebaseUser.uid,
-                        displayName: displayName,
-                        email: firebaseUser.email,
-                        photoURL: firebaseUser.photoURL,
-                        isGuest: isNewGuest,
-                        createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-                        stats: { ...createDefaultStats(), coins: 10 }, // New account reward
-                    };
-                    
-                    const batch = writeBatch(db);
-                    const userRef = doc(db, "users", firebaseUser.uid);
-                    const usernameRef = doc(db, "usernames", displayName.toLowerCase());
-                    batch.set(userRef, newUserProfile);
-                    batch.set(usernameRef, { userId: firebaseUser.uid, username: displayName });
-                    
-                    await batch.commit();
-
-                    if(isNewGuest || !docSnap.exists()){
-                        setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
-                    }
-                    setCurrentUser(newUserProfile);
                 }
                 setLoading(false);
             }, (error) => {
