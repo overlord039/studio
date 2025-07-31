@@ -98,7 +98,6 @@ export default function GameRoomPage() {
   const previousCallingModeRef = useRef<CallingMode | undefined>();
   const gameOverSoundPlayedRef = useRef(false);
   const statsUpdateInitiatedRef = useRef(false);
-  const gameStartInitiatedRef = useRef(false);
 
   useEffect(() => {
     if (roomData?.currentNumber !== previousCurrentNumberRef.current) {
@@ -296,43 +295,6 @@ export default function GameRoomPage() {
       updateMyStats();
     }
   }, [roomData?.isGameOver, currentUser, roomId, toast, updateContextUserStats]);
-
-    // Effect to auto-start an online game after a delay
-    useEffect(() => {
-        if (
-            roomData &&
-            !roomData.isGameStarted &&
-            roomData.settings.gameMode === 'online' &&
-            currentUser &&
-            !gameStartInitiatedRef.current
-        ) {
-            gameStartInitiatedRef.current = true; // Prevent re-triggering
-
-            const timer = setTimeout(async () => {
-                try {
-                    await fetch(`/api/rooms/${roomId}/start`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ hostId: currentUser.uid }), // In online, any user can trigger start
-                    });
-                    playSound('gamestarting.wav');
-                    toast({
-                        title: "Game Starting Now!",
-                        description: "Good luck!",
-                    });
-                } catch (err) {
-                    console.error("Failed to auto-start game:", err);
-                    toast({
-                        title: "Start Error",
-                        description: "Could not start the game automatically.",
-                        variant: "destructive",
-                    });
-                }
-            }, 2000); // 2-second delay
-
-            return () => clearTimeout(timer);
-        }
-    }, [roomData, currentUser, roomId, toast, playSound]);
 
   // This effect loads marked numbers from localStorage on mount
   useEffect(() => {
