@@ -175,13 +175,6 @@ function MatchmakingContent() {
             <CardHeader className="text-center">
                 <CardTitle className="text-2xl text-foreground">Finding a Match...</CardTitle>
                 <CardDescription className="text-foreground/80">Tier: {tierConfig.name} ({tickets} {tickets === 1 ? 'ticket' : 'tickets'})</CardDescription>
-                <div className="flex items-center justify-center gap-2 pt-2">
-                    <span className="text-sm font-semibold">Your Coins:</span>
-                     <div className="flex items-center gap-1 font-bold text-lg text-amber-500">
-                        <Image src="/coin.png" alt="Coins" width={20} height={20} />
-                        <span>{currentUser.stats.coins}</span>
-                    </div>
-                </div>
             </CardHeader>
             <CardContent className="space-y-6 flex flex-col items-center">
                  <div className="relative h-40 w-40">

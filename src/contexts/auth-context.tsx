@@ -293,32 +293,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!currentUser) return;
     
     // Create the new stats object by merging old and new
-    const updatedStats: UserStats = {
-      ...currentUser.stats,
-      ...newStats,
-      prizesWon: {
-        ...(currentUser.stats.prizesWon || createDefaultStats().prizesWon),
-        ...(newStats.prizesWon || {}),
-      },
-    };
-
-    // Update the local state immediately for a responsive UI
     setCurrentUser(prevUser => {
         if (!prevUser) return null;
+        const updatedStats: UserStats = {
+          ...prevUser.stats,
+          ...newStats,
+          prizesWon: {
+            ...(prevUser.stats.prizesWon || createDefaultStats().prizesWon),
+            ...(newStats.prizesWon || {}),
+          },
+        };
         return {
             ...prevUser,
             stats: updatedStats
         };
     });
-    
-    // Asynchronously update Firestore without blocking the UI
-    if (db) {
-      const userDocRef = doc(db, "users", currentUser.uid);
-      updateDoc(userDocRef, { stats: updatedStats }).catch(err => {
-          console.error("Failed to update user stats in Firestore:", err);
-          // Optional: You could potentially revert the local state here or show an error toast
-      });
-    }
   };
 
   const loginWithGoogle = async () => {
