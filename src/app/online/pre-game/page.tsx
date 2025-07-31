@@ -4,15 +4,16 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
-import type { Room, PrizeType, GameSettings } from '@/types';
+import type { Room, PrizeType, GameSettings, OnlineGameTier, TierConfig, Player } from '@/types';
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS } from '@/lib/constants';
-import { Loader2, AlertTriangle, Gift, Users, Trophy } from 'lucide-react';
+import { Loader2, AlertTriangle, Gift, Users, Trophy, Bot, Ticket as TicketIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/contexts/sound-context';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 function PreGameContent() {
     const router = useRouter();
@@ -131,6 +132,29 @@ function PreGameContent() {
                             </div>
                         );
                     })}
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-center mb-2 flex items-center justify-center uppercase tracking-wider">
+                      <Users className="mr-2 h-4 w-4"/> Players ({roomData.players.length}/{gameSettings.lobbySize})
+                  </h3>
+                   <ScrollArea className="h-32 w-full rounded-md border p-2">
+                    <div className="space-y-1">
+                        {roomData.players.map((player: Player & { tickets: any[], isBot?: boolean }) => (
+                            <div key={player.id} className="flex justify-between items-center text-sm p-1.5 bg-secondary/20 rounded-md">
+                                <div className="flex items-center gap-2">
+                                    <span className={cn("font-semibold", player.id === currentUser.uid && "text-primary")}>
+                                        {player.name}
+                                    </span>
+                                    {player.isBot && <Bot className="h-4 w-4 text-muted-foreground" />}
+                                </div>
+                                <div className="flex items-center gap-1 font-medium text-muted-foreground">
+                                    <TicketIcon className="h-4 w-4" />
+                                    <span>{player.tickets.length}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                  </ScrollArea>
                 </div>
             </CardContent>
         </Card>
