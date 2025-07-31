@@ -92,8 +92,12 @@ function MatchmakingContent() {
         const newRoom: Room = responseData;
         setCreatedRoomId(newRoom.id);
         
-        toast({ title: "Match Found!", description: "Let's check the prize pool..." });
-        router.push(`/online/pre-game?roomId=${newRoom.id}`);
+        // This brief delay ensures the state update has time to propagate before navigation
+        setTimeout(() => {
+            toast({ title: "Match Found!", description: "Let's check the prize pool..." });
+            router.push(`/online/pre-game?roomId=${newRoom.id}`);
+        }, 100);
+
 
       } catch (err) {
         setError((err as Error).message);
@@ -120,11 +124,15 @@ function MatchmakingContent() {
     const handleCancel = async () => {
         if (createdRoomId && currentUser) {
              try {
-                await fetch(`/api/rooms/${createdRoomId}/leave`, {
+                const response = await fetch(`/api/rooms/${createdRoomId}/leave`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ playerId: currentUser.uid }),
                 });
+                 if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || "Failed to leave room.");
+                }
             } catch (err) {
                 console.error("Error leaving created room on cancel:", err);
             }
