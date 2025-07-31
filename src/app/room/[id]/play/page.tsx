@@ -986,28 +986,6 @@ export default function GameRoomPage() {
                               )}
                           </CardContent>
                       </Card>
-                      {isCurrentUserHost && roomData.settings.gameMode === 'multiplayer' && !roomData.isGameOver && (
-                        <Card className="bg-secondary/30">
-                          <CardHeader className="p-3 pb-2">
-                             <CardTitle className="text-sm font-semibold flex items-center"><Settings2 className="mr-2 h-4 w-4 text-primary" />Host Controls</CardTitle>
-                          </CardHeader>
-                          <CardContent className="p-3 pt-0">
-                             <div className="flex items-center justify-between">
-                                <Label htmlFor="calling-mode-switch" className="text-xs font-medium cursor-pointer">
-                                    Auto-Call Numbers
-                                </Label>
-                                <Switch
-                                    id="calling-mode-switch"
-                                    checked={isAutoCalling}
-                                    onCheckedChange={handleToggleCallingMode}
-                                    disabled={isUpdatingMode}
-                                    aria-label="Toggle automatic number calling"
-                                />
-                              </div>
-                          </CardContent>
-                        </Card>
-                      )}
-
                       <Card className="bg-secondary/30">
                           <CardHeader className="p-3 pb-2">
                               <CardTitle className="text-sm font-semibold flex items-center"><Users className="mr-2 h-4 w-4 text-primary" />Players ({roomData.players.length})</CardTitle>
@@ -1083,6 +1061,20 @@ export default function GameRoomPage() {
                   onToggleMute={() => setIsVoiceMuted(prev => !prev)}
                   animationKey={animationKey}
               />
+              {isCurrentUserHost && roomData.settings.gameMode === 'multiplayer' && !roomData.isGameOver && (
+                <div className="absolute top-2 right-2 flex items-center gap-1.5 p-1 rounded-full border bg-card/80 backdrop-blur-sm">
+                    <Label htmlFor="calling-mode-switch" className="text-xs font-medium text-foreground pl-1 cursor-pointer">
+                        Auto-Call
+                    </Label>
+                    <Switch
+                        id="calling-mode-switch"
+                        checked={isAutoCalling}
+                        onCheckedChange={handleToggleCallingMode}
+                        disabled={isUpdatingMode}
+                        aria-label="Toggle automatic number calling"
+                    />
+                </div>
+              )}
           </div>
 
           {isCurrentUserHost && !isAutoCalling && !roomData.isGameOver && (
