@@ -32,7 +32,7 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
 function MatchmakingContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { currentUser, fetchUser } = useAuth();
+    const { currentUser, updateUserStats } = useAuth();
     const { toast } = useToast();
     const { playSound } = useSound();
     
@@ -43,6 +43,7 @@ function MatchmakingContent() {
     const [isFindingMatch, setIsFindingMatch] = useState(false);
     const [countdown, setCountdown] = useState<number | null>(null);
     const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
+    const [displayedCoins, setDisplayedCoins] = useState<number | null>(null);
 
 
     useEffect(() => {
@@ -57,7 +58,10 @@ function MatchmakingContent() {
         } else {
             setError("Invalid game tier or ticket count specified.");
         }
-    }, [searchParams]);
+        if (currentUser?.stats?.coins !== undefined) {
+          setDisplayedCoins(currentUser.stats.coins);
+        }
+    }, [searchParams, currentUser]);
 
     const findMatch = useCallback(async () => {
       if (!currentUser || !tier) return;
@@ -79,15 +83,23 @@ function MatchmakingContent() {
           body: JSON.stringify({ player, tier, tickets }),
         });
         
-        const newRoom: Room = await response.json();
+        const responseData = await response.json();
 
         if (!response.ok) {
-          throw new Error(newRoom.message || 'Failed to create online match.');
+          throw new Error(responseData.message || 'Failed to create online match.');
+        }
+
+        const newRoom: Room = responseData;
+        const newCoinBalance = responseData.newCoinBalance;
+
+        // Immediately update the coin balance on the screen
+        if (typeof newCoinBalance === 'number') {
+            setDisplayedCoins(newCoinBalance);
+            updateUserStats({ coins: newCoinBalance }); // Also update context without a full refetch
         }
 
         setCreatedRoomId(newRoom.id);
-        await fetchUser(); // Fetch latest user data to update coin balance on this screen
-
+        
         toast({ title: "Match Found!", description: "Let's check the prize pool..." });
         router.push(`/online/pre-game?roomId=${newRoom.id}`);
 
@@ -96,7 +108,7 @@ function MatchmakingContent() {
         setIsFindingMatch(false);
       }
 
-    }, [currentUser, tier, tickets, router, toast, playSound, fetchUser]);
+    }, [currentUser, tier, tickets, router, toast, playSound, updateUserStats]);
     
     useEffect(() => {
         if (countdown === null || error || isFindingMatch) return;
@@ -167,7 +179,7 @@ function MatchmakingContent() {
                     <span className="text-sm font-semibold">Your Coins:</span>
                      <div className="flex items-center gap-1 font-bold text-lg text-amber-500">
                         <Image src="/coin.png" alt="Coins" width={20} height={20} />
-                        <span>{currentUser.stats.coins}</span>
+                        <span>{displayedCoins ?? currentUser.stats.coins}</span>
                     </div>
                 </div>
             </CardHeader>

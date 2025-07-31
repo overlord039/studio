@@ -2,7 +2,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { createRoomStore, addPlayerToRoomStore, getRoomStateForClient, startGameInRoomStore } from '@/lib/server/game-store';
-import type { Player, GameSettings, OnlineGameTier, TierConfig } from '@/types';
+import type { Player, GameSettings, OnlineGameTier, TierConfig, Room } from '@/types';
 import { db } from '@/lib/firebase/config';
 import { doc, runTransaction, increment, updateDoc, getDoc } from 'firebase/firestore';
 
@@ -59,17 +59,25 @@ export async function POST(request: NextRequest) {
 
     const tierConfig = TIERS[tier];
     const totalCost = tierConfig.ticketPrice * tickets;
-
-    // 1. Check if the player has enough coins
     const playerDocRef = doc(db, "users", player.id);
-    const playerDoc = await getDoc(playerDocRef);
-    if (!playerDoc.exists()) {
-        return NextResponse.json({ message: "Player data not found." }, { status: 404 });
-    }
-    const playerData = playerDoc.data();
-    const currentCoins = playerData.stats?.coins || 0;
-    if (currentCoins < totalCost) {
-        return NextResponse.json({ message: "Not enough coins to buy these tickets." }, { status: 400 });
+    let newCoinBalance = 0;
+
+    // 1. Transaction to check coins and deduct them
+    try {
+        await runTransaction(db, async (transaction) => {
+            const playerDoc = await transaction.get(playerDocRef);
+            if (!playerDoc.exists()) {
+                throw new Error("Player data not found.");
+            }
+            const currentCoins = playerDoc.data().stats?.coins || 0;
+            if (currentCoins < totalCost) {
+                throw new Error("Not enough coins to buy these tickets.");
+            }
+            newCoinBalance = currentCoins - totalCost;
+            transaction.update(playerDocRef, { 'stats.coins': increment(-totalCost) });
+        });
+    } catch (err: any) {
+         return NextResponse.json({ message: err.message || "An error occurred during the transaction." }, { status: 400 });
     }
     
     // 2. Create the room with online-specific settings
@@ -88,27 +96,30 @@ export async function POST(request: NextRequest) {
     addPlayerToRoomStore(newRoom.id, { ...player, isHost: true }, tickets);
 
     // 4. Add bot players to fill the room
-    // Create a mixed pool of bot names for online mode
     const guestBotNames = Array.from({ length: 5 }, () => generateGuestBotName()); // Generate 5 Guest#xxxx names
     const onlineNamePool = shuffleArray([...ONLINE_BOT_NAMES, ...guestBotNames]);
 
     const botsToAdd = tierConfig.roomSize - 1;
     for (let i = 0; i < botsToAdd; i++) {
         const botId = `bot-${i+1}-${Date.now()}`;
-        const botName = onlineNamePool[i % onlineNamePool.length]; // Use modulo to prevent running out of names
+        const botName = onlineNamePool[i % onlineNamePool.length];
         const botPlayer: Player = { id: botId, name: botName, isBot: true };
-        // Bots in online mode also get a random number of tickets to make it interesting
         const botTickets = 1 + Math.floor(Math.random() * 4);
         addPlayerToRoomStore(newRoom.id, botPlayer, botTickets);
     }
     
-    // 5. Get the final state and return it (DO NOT START THE GAME)
+    // 5. Get the final state and return it
     const roomForClient = getRoomStateForClient(newRoom.id);
     if (!roomForClient) {
         return NextResponse.json({ message: 'Failed to retrieve online room after creation' }, { status: 500 });
     }
     
-    return NextResponse.json(roomForClient, { status: 201 });
+    const responsePayload: Room & { newCoinBalance: number } = {
+        ...roomForClient,
+        newCoinBalance: newCoinBalance
+    };
+    
+    return NextResponse.json(responsePayload, { status: 201 });
 
   } catch (error) {
     console.error('Error creating online game room:', error);
