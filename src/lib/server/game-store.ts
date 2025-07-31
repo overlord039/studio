@@ -572,7 +572,7 @@ export function updateCallingModeStore(roomId: string, hostId: string, newMode: 
       console.log(`Room ${roomId}: Starting server-side auto-calling due to mode change.`);
       const intervalId = setInterval(() => {
         const currentRoomState = getRoomStore(roomId);
-        if (!currentRoomState || !currentRoomState.isGameStarted || !currentRoomState.isGameOver) {
+        if (!currentRoomState || !currentRoomState.isGameStarted || currentRoomState.isGameOver) {
           stopRoomTimer(roomId, !currentRoomState ? "Room no longer exists" : "Game not started or already over");
           return;
         }
