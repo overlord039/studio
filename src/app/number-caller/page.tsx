@@ -34,7 +34,7 @@ export default function NumberCallerPage() {
   const [isAutoCalling, setIsAutoCalling] = useState(false);
   const autoCallSpeed = 6; // Fixed speed in seconds
   const [isVoiceMuted, setIsVoiceMuted] = useState(false);
-  const autoCallTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const autoCallIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   const [animationKey, setAnimationKey] = useState(0);
 
@@ -50,24 +50,27 @@ export default function NumberCallerPage() {
   }, [isVoiceMuted]);
 
   const callNextNumber = useCallback(() => {
-    if (availableNumbers.length === 0) {
-      setIsAutoCalling(false); // Stop auto-calling if all numbers are out
-      toast({ title: "All numbers called!", description: "The game is over. Reset to start a new game." });
-      return false; // Indicate no more numbers
-    }
+    setAvailableNumbers(prev => {
+        if (prev.length === 0) {
+          setIsAutoCalling(false);
+          toast({ title: "All numbers called!", description: "The game is over. Reset to start a new game." });
+          return prev;
+        }
 
-    const nextNumber = availableNumbers[0]; // Get the first number from the shuffled list
-    setAvailableNumbers(prev => prev.slice(1)); // Remove it from available
-    setCurrentNumber(nextNumber);
-    setCalledNumbers(prev => [nextNumber, ...prev]);
-    speakNumber(nextNumber);
-    setAnimationKey(prev => prev + 1);
-    return true; // Indicate a number was called
-  }, [availableNumbers, speakNumber, toast]);
+        const [nextNumber, ...rest] = prev;
+        setCurrentNumber(nextNumber);
+        setCalledNumbers(called => [nextNumber, ...called]);
+        speakNumber(nextNumber);
+        setAnimationKey(k => k + 1);
+        return rest;
+    });
+  }, [speakNumber, toast]);
+  
 
   const resetGame = () => {
-    if (autoCallTimeoutRef.current) {
-      clearTimeout(autoCallTimeoutRef.current);
+    if (autoCallIntervalRef.current) {
+      clearInterval(autoCallIntervalRef.current);
+      autoCallIntervalRef.current = null;
     }
     setIsAutoCalling(false);
     setCurrentNumber(null);
@@ -82,31 +85,36 @@ export default function NumberCallerPage() {
 
   useEffect(() => {
     if (isAutoCalling) {
-      // Start the loop. Call one immediately, then the timeout will handle the rest.
-      if (callNextNumber()) {
-        autoCallTimeoutRef.current = setTimeout(() => {
-            const scheduleNextCall = () => {
-                if (callNextNumber()) {
-                    autoCallTimeoutRef.current = setTimeout(scheduleNextCall, autoCallSpeed * 1000);
-                }
-            };
-            scheduleNextCall();
-        }, autoCallSpeed * 1000);
-      }
+      // Call the first number immediately when auto-call is turned on
+      callNextNumber();
+      
+      // Then set an interval for subsequent calls
+      autoCallIntervalRef.current = setInterval(() => {
+        callNextNumber();
+      }, autoCallSpeed * 1000);
     } else {
       // If stopping, clear any scheduled call
-      if (autoCallTimeoutRef.current) {
-        clearTimeout(autoCallTimeoutRef.current);
+      if (autoCallIntervalRef.current) {
+        clearInterval(autoCallIntervalRef.current);
+        autoCallIntervalRef.current = null;
       }
     }
 
-    // Cleanup function
+    // Cleanup function to clear interval when component unmounts or isAutoCalling changes
     return () => {
-      if (autoCallTimeoutRef.current) {
-        clearTimeout(autoCallTimeoutRef.current);
+      if (autoCallIntervalRef.current) {
+        clearInterval(autoCallIntervalRef.current);
+        autoCallIntervalRef.current = null;
       }
     };
   }, [isAutoCalling, callNextNumber]);
+  
+  // This separate effect handles the case where the numbers run out during auto-call.
+  useEffect(() => {
+    if (availableNumbers.length === 0 && isAutoCalling) {
+      setIsAutoCalling(false);
+    }
+  }, [availableNumbers, isAutoCalling]);
 
 
   const sortedCalledNumbers = [...calledNumbers].sort((a,b) => a - b);
