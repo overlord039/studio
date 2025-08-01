@@ -82,41 +82,52 @@ export default function NumberCallerPage() {
   const handleToggleAutoCall = () => {
     setIsAutoCalling(prev => !prev);
   };
-
+  
   useEffect(() => {
-    if (isAutoCalling && availableNumbers.length > 0) {
-      callNextNumber(); // Call the first number immediately
+    // Clear any existing interval when the component unmounts or isAutoCalling changes
+    if (autoCallIntervalRef.current) {
+      clearInterval(autoCallIntervalRef.current);
+      autoCallIntervalRef.current = null;
+    }
+
+    if (isAutoCalling) {
+      // Call the first number immediately when auto-calling starts
+      callNextNumber(); 
+      
+      // Then, set an interval for subsequent numbers
       autoCallIntervalRef.current = setInterval(() => {
-        // This check is important inside the interval as well
+        // Use a functional update for setAvailableNumbers to get the latest state
         setAvailableNumbers(currentAvailable => {
-          if (currentAvailable.length > 1) {
+          if (currentAvailable.length > 1) { // If there's more than one number left
             callNextNumber();
-            return currentAvailable; 
-          } else {
-            callNextNumber(); // Call the last number
+            return currentAvailable; // Return value is not used, but good practice
+          } else if (currentAvailable.length === 1) { // If it's the last number
+            callNextNumber();
             setIsAutoCalling(false); // Stop after calling the last one
+            return [];
+          } else { // No numbers left
+            setIsAutoCalling(false); // Should already be false but as a safeguard
             return [];
           }
         });
       }, autoCallSpeed * 1000);
-    } else {
-      if (autoCallIntervalRef.current) {
-        clearInterval(autoCallIntervalRef.current);
-        autoCallIntervalRef.current = null;
-      }
     }
-
+    
+    // Cleanup function
     return () => {
       if (autoCallIntervalRef.current) {
         clearInterval(autoCallIntervalRef.current);
-        autoCallIntervalRef.current = null;
       }
     };
-  }, [isAutoCalling, callNextNumber]); 
+  // We only want this effect to re-run when isAutoCalling changes.
+  // callNextNumber is wrapped in useCallback, so it's stable.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAutoCalling]); 
   
+  // This separate effect handles the case where the numbers run out while auto-calling.
   useEffect(() => {
     if (availableNumbers.length === 0 && isAutoCalling) {
-      setIsAutoCalling(false);
+      setIsAutoCalling(false); // This will trigger the cleanup in the above effect.
     }
   }, [availableNumbers.length, isAutoCalling]);
 
