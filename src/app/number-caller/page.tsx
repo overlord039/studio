@@ -96,20 +96,7 @@ export default function NumberCallerPage() {
       
       // Then, set an interval for subsequent numbers
       autoCallIntervalRef.current = setInterval(() => {
-        // Use a functional update for setAvailableNumbers to get the latest state
-        setAvailableNumbers(currentAvailable => {
-          if (currentAvailable.length > 1) { // If there's more than one number left
-            callNextNumber();
-            return currentAvailable; // Return value is not used, but good practice
-          } else if (currentAvailable.length === 1) { // If it's the last number
-            callNextNumber();
-            setIsAutoCalling(false); // Stop after calling the last one
-            return [];
-          } else { // No numbers left
-            setIsAutoCalling(false); // Should already be false but as a safeguard
-            return [];
-          }
-        });
+        callNextNumber();
       }, autoCallSpeed * 1000);
     }
     
@@ -119,10 +106,7 @@ export default function NumberCallerPage() {
         clearInterval(autoCallIntervalRef.current);
       }
     };
-  // We only want this effect to re-run when isAutoCalling changes.
-  // callNextNumber is wrapped in useCallback, so it's stable.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAutoCalling]); 
+  }, [isAutoCalling, callNextNumber, autoCallSpeed]); 
   
   // This separate effect handles the case where the numbers run out while auto-calling.
   useEffect(() => {
