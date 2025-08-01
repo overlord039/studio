@@ -84,37 +84,41 @@ export default function NumberCallerPage() {
   };
 
   useEffect(() => {
-    if (isAutoCalling) {
-      // Call the first number immediately when auto-call is turned on
-      callNextNumber();
-      
-      // Then set an interval for subsequent calls
+    if (isAutoCalling && availableNumbers.length > 0) {
+      callNextNumber(); // Call the first number immediately
       autoCallIntervalRef.current = setInterval(() => {
-        callNextNumber();
+        // This check is important inside the interval as well
+        setAvailableNumbers(currentAvailable => {
+          if (currentAvailable.length > 1) {
+            callNextNumber();
+            return currentAvailable; 
+          } else {
+            callNextNumber(); // Call the last number
+            setIsAutoCalling(false); // Stop after calling the last one
+            return [];
+          }
+        });
       }, autoCallSpeed * 1000);
     } else {
-      // If stopping, clear any scheduled call
       if (autoCallIntervalRef.current) {
         clearInterval(autoCallIntervalRef.current);
         autoCallIntervalRef.current = null;
       }
     }
 
-    // Cleanup function to clear interval when component unmounts or isAutoCalling changes
     return () => {
       if (autoCallIntervalRef.current) {
         clearInterval(autoCallIntervalRef.current);
         autoCallIntervalRef.current = null;
       }
     };
-  }, [isAutoCalling, callNextNumber]);
+  }, [isAutoCalling, callNextNumber]); 
   
-  // This separate effect handles the case where the numbers run out during auto-call.
   useEffect(() => {
     if (availableNumbers.length === 0 && isAutoCalling) {
       setIsAutoCalling(false);
     }
-  }, [availableNumbers, isAutoCalling]);
+  }, [availableNumbers.length, isAutoCalling]);
 
 
   const sortedCalledNumbers = [...calledNumbers].sort((a,b) => a - b);
