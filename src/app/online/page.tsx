@@ -178,23 +178,11 @@ export default function OnlineModePage() {
             <div className="text-center mb-8">
                 <h1 className="text-3xl font-bold text-white">Online</h1>
                 <p className="text-white/80 mt-2">Join a game and play with others online!</p>
-                <div className="flex items-center justify-center gap-2 pt-2">
-                    <span className="text-sm font-semibold text-white">Your Coins:</span>
-                     <div className="flex items-center gap-1 font-bold text-lg text-amber-500">
-                        <Image src="/coin.png" alt="Coins" width={20} height={20} />
-                        <span>{currentUser.stats.coins}</span>
-                    </div>
-                </div>
             </div>
             <div className="w-full max-w-md space-y-4">
                 {Object.entries(TIERS).map(([tierKey, tierConfig]) => (
                     <TierCard key={tierKey} tierKey={tierKey as OnlineGameTier} tierConfig={tierConfig} />
                 ))}
-            </div>
-             <div className="mt-8 w-full max-w-md">
-                <Button variant="destructive" size="icon" onClick={() => router.push('/')}>
-                    <LogOut className="h-4 w-4 rotate-180" />
-                </Button>
             </div>
         </div>
     );

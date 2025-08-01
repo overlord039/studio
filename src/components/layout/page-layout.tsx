@@ -12,7 +12,7 @@ import type { ReactNode } from 'react';
 export default function PageLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
 
-    const showHeaderAndFooter = pathname === '/';
+    const showHeaderAndFooter = pathname === '/' || pathname.startsWith('/online');
 
     const isSpecialLayoutPage = 
       (pathname?.includes('/room/') && (pathname.endsWith('/play') || pathname.endsWith('/lobby'))) || 
@@ -21,7 +21,8 @@ export default function PageLayout({ children }: { children: ReactNode }) {
       pathname?.startsWith('/create-room') ||
       pathname?.startsWith('/play-with-computer') ||
       pathname?.startsWith('/prize-calculator') ||
-      pathname?.startsWith('/profile');
+      pathname?.startsWith('/profile') ||
+      pathname?.startsWith('/online');
 
     const mainClassName = cn(
         "flex-grow flex flex-col",
