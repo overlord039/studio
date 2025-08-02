@@ -381,7 +381,7 @@ export default function Header() {
           <AuthContent />
         </div>
         
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex items-center gap-2">
           <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
             <DialogTrigger asChild>
               <Button variant="ghost" size="icon" className="text-white h-12 w-12 sm:h-16 sm:w-16">
