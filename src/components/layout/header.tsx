@@ -22,7 +22,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import FeedbackForm from './feedback-form';
 
 
-const SettingsModal = ({ activeTab, setActiveTab }: { activeTab: string; setActiveTab: (tab: string) => void; }) => {
+export const SettingsModal = ({ open, onOpenChange, activeTab, setActiveTab }: { open: boolean, onOpenChange: (open: boolean) => void, activeTab: string; setActiveTab: (tab: string) => void; }) => {
   const { theme, setTheme } = useTheme();
   const { isSfxMuted, toggleSfxMute, isBgmEnabled, toggleBgm } = useSound();
   const { logout } = useAuth();
@@ -114,6 +114,7 @@ const SettingsModal = ({ activeTab, setActiveTab }: { activeTab: string; setActi
   );
 
   return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-h-[85vh] w-[90vw] md:max-w-4xl md:h-[80vh] flex flex-col p-0 overflow-hidden rounded-lg">
         <DialogHeader className="bg-primary text-primary-foreground text-center p-4 relative flex-shrink-0">
             <DialogTitle className="text-2xl font-bold tracking-wider">SETTINGS</DialogTitle>
@@ -288,6 +289,7 @@ const SettingsModal = ({ activeTab, setActiveTab }: { activeTab: string; setActi
             </div>
         </div>
     </DialogContent>
+    </Dialog>
   );
 };
 
@@ -295,27 +297,6 @@ export default function Header() {
   const { currentUser, loading } = useAuth();
   const [isHidden, setIsHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
-
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('general');
-
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const settingsParam = searchParams.get('settings');
-    const tabParam = searchParams.get('tab');
-
-    if (settingsParam === 'open') {
-      setIsSettingsOpen(true);
-      if (tabParam) {
-        setActiveTab(tabParam);
-      }
-    } else {
-      setIsSettingsOpen(false);
-    }
-  }, [searchParams]);
 
   const controlNavbar = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -379,18 +360,6 @@ export default function Header() {
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div className="flex items-center">
           <AuthContent />
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-white h-12 w-12 sm:h-16 sm:w-16">
-                <Settings className="h-8 w-8 sm:h-10 sm:w-10" />
-                <span className="sr-only">Settings</span>
-              </Button>
-            </DialogTrigger>
-            <SettingsModal activeTab={activeTab} setActiveTab={setActiveTab} />
-          </Dialog>
         </div>
       </div>
     </header>
