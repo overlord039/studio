@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/auth-context';
 import { useSound } from '@/contexts/sound-context';
+import FeedbackForm from '@/components/layout/feedback-form';
 
 export default function HomePage() {
   const router = useRouter();
@@ -44,7 +45,7 @@ export default function HomePage() {
   return (
     <div className="flex-grow flex flex-col items-center space-y-2 p-2">
       {/* Hero Section */}
-      <section className="flex justify-center w-full">
+      <section className="flex justify-center items-center w-full gap-2">
          <Image 
             src="/applogo.png" 
             alt="HousieHub Logo" 
@@ -53,6 +54,7 @@ export default function HomePage() {
             className="h-auto w-[180px] md:w-[250px]"
             priority 
           />
+          <FeedbackForm />
       </section>
 
       {currentUser && !loading && (

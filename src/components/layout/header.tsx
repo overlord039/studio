@@ -391,7 +391,6 @@ export default function Header() {
             </DialogTrigger>
             <SettingsModal activeTab={activeTab} setActiveTab={setActiveTab} />
           </Dialog>
-          <FeedbackForm />
         </div>
       </div>
     </header>
