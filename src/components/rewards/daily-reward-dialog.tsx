@@ -15,17 +15,19 @@ interface DailyRewardDialogProps {
   user: User;
   onClaim: (day: number) => void;
   onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export default function DailyRewardDialog({ user, onClaim, onClose }: DailyRewardDialogProps) {
+export default function DailyRewardDialog({ user, onClaim, onClose, open, onOpenChange }: DailyRewardDialogProps) {
   const streak = user.stats.loginStreak || 1;
   const lastClaimed = user.stats.lastClaimedDay || 0;
   
   const canClaimToday = streak > lastClaimed;
 
   return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-md w-[90vw] p-0" onInteractOutside={(e) => { if (canClaimToday) e.preventDefault() }}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md w-[90vw] p-0" onInteractOutside={(e) => { if (canClaimToday && open) e.preventDefault() }}>
         <div className="relative p-6">
           <DialogHeader className="text-center">
             <div className="flex justify-center mb-2">

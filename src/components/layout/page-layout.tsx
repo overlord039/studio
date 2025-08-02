@@ -11,16 +11,21 @@ import type { ReactNode } from 'react';
 import React, { useState, useEffect } from 'react';
 import FeedbackForm from './feedback-form';
 import { Button } from '@/components/ui/button';
-import { Settings, MessageSquare } from 'lucide-react';
+import { Settings, MessageSquare, Calendar } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
 import { SettingsModal } from './header';
+import DailyRewardDialog from '../rewards/daily-reward-dialog';
+import { useAuth } from '@/contexts/auth-context';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 export default function PageLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
+    const { currentUser, handleClaimReward } = useAuth();
 
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('general');
+    const [isRewardDialogOpen, setIsRewardDialogOpen] = useState(false);
 
     useEffect(() => {
         const settingsParam = searchParams.get('settings');
@@ -35,6 +40,11 @@ export default function PageLayout({ children }: { children: ReactNode }) {
         setIsSettingsOpen(false);
         }
     }, [searchParams]);
+
+    const handleClaimAndClose = async (day: number) => {
+        await handleClaimReward(day);
+        setIsRewardDialogOpen(false);
+    }
 
 
     const showHeaderAndFooter = pathname === '/' || pathname.startsWith('/online');
@@ -60,11 +70,37 @@ export default function PageLayout({ children }: { children: ReactNode }) {
             {showHeaderAndFooter && <Header />}
             <main className={mainClassName}>
                  {showActionIcons && (
-                    <div className="fixed top-18 right-4 z-40 flex flex-col gap-2">
+                    <div className="fixed top-18 right-4 z-40 flex flex-col items-center gap-2">
                        <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
                            <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} activeTab={activeTab} setActiveTab={setActiveTab} />
                         </Dialog>
                         <FeedbackForm />
+                         {currentUser && !currentUser.isGuest && (
+                             <Dialog open={isRewardDialogOpen} onOpenChange={setIsRewardDialogOpen}>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <DialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-10 w-10">
+                                                    <Calendar className="h-5 w-5" />
+                                                    <span className="sr-only">Daily Rewards</span>
+                                                </Button>
+                                            </DialogTrigger>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Daily Rewards</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                                {isRewardDialogOpen && (
+                                    <DailyRewardDialog 
+                                        user={currentUser} 
+                                        onClaim={handleClaimAndClose}
+                                        onClose={() => setIsRewardDialogOpen(false)}
+                                    />
+                                )}
+                            </Dialog>
+                        )}
                     </div>
                 )}
                 {children}

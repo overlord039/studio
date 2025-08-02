@@ -56,6 +56,7 @@ interface AuthContextType {
   isSigningIn: null | 'guest' | 'google';
   setLocalGuestAvatar: (url: string) => void;
   setLocalGuestUsername: (name: string) => void;
+  handleClaimReward: (day: number) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -152,7 +153,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const router = useRouter();
   const [reward, setReward] = useState<{ amount: number; message: string } | null>(null);
-  const [showDailyReward, setShowDailyReward] = useState(false);
 
   const fetchUser = useCallback(async () => {
     if (!auth || !auth.currentUser) return;
@@ -211,12 +211,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const updatedUser = { ...user, stats: { ...user.stats, loginStreak: newStreak, lastLogin: today.toISOString() }};
         setCurrentUser(updatedUser);
-        setShowDailyReward(true);
+        
+        // Don't auto-show dialog, just update the state.
+        // The UI will decide when to show the dialog.
+        const canClaimToday = updatedUser.stats.loginStreak > (updatedUser.stats.lastClaimedDay || 0);
+        if (canClaimToday) {
+            toast({
+                title: "Daily Reward Available!",
+                description: "Click the calendar icon to claim your daily login reward.",
+            });
+        }
+
 
     } catch (error) {
         console.error("Error updating daily login stats:", error);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     if (!auth || !db) {
@@ -332,7 +342,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             'stats.lastClaimedDay': day,
         });
         toast({ title: "Reward Claimed!", description: message });
-        setShowDailyReward(false);
     } catch (error) {
         console.error("Failed to claim reward:", error);
         toast({ title: "Error", description: "Could not claim your reward.", variant: "destructive" });
@@ -554,6 +563,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isSigningIn,
       setLocalGuestAvatar,
       setLocalGuestUsername,
+      handleClaimReward
   };
 
   if (!allConfigValuesPresent && !loading) {
@@ -566,13 +576,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-       {showDailyReward && currentUser && !currentUser.isGuest && (
-          <DailyRewardDialog
-              user={currentUser}
-              onClaim={handleClaimReward}
-              onClose={() => setShowDailyReward(false)}
-          />
-       )}
        <Dialog open={!!reward} onOpenChange={() => {}}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
