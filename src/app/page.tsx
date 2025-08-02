@@ -54,7 +54,6 @@ export default function HomePage() {
             className="h-auto w-[180px] md:w-[250px]"
             priority 
           />
-          <FeedbackForm />
       </section>
 
       {currentUser && !loading && (
