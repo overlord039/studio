@@ -11,6 +11,7 @@ import { Star, MessageSquare } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { db } from '@/lib/firebase/config';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 export default function FeedbackForm() {
@@ -99,12 +100,21 @@ export default function FeedbackForm() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-            <MessageSquare className="mr-2 h-4 w-4" />
-            Feedback & Rate Us
-        </Button>
-      </DialogTrigger>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="icon">
+                  <MessageSquare className="h-5 w-5" />
+                  <span className="sr-only">Feedback</span>
+              </Button>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Feedback</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <div className="flex justify-center mb-2">
