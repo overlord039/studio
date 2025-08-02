@@ -10,9 +10,32 @@ import { cn } from '@/lib/utils';
 import type { ReactNode } from 'react';
 import React, { useState, useEffect } from 'react';
 import FeedbackForm from './feedback-form';
+import { Button } from '@/components/ui/button';
+import { Settings, MessageSquare } from 'lucide-react';
+import { Dialog } from '@/components/ui/dialog';
+import { SettingsModal } from './header';
 
 export default function PageLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
+
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('general');
+
+    useEffect(() => {
+        const settingsParam = searchParams.get('settings');
+        const tabParam = searchParams.get('tab');
+
+        if (settingsParam === 'open') {
+        setIsSettingsOpen(true);
+        if (tabParam) {
+            setActiveTab(tabParam);
+        }
+        } else {
+        setIsSettingsOpen(false);
+        }
+    }, [searchParams]);
+
 
     const showHeaderAndFooter = pathname === '/' || pathname.startsWith('/online');
     const showActionIcons = showHeaderAndFooter;
@@ -38,6 +61,9 @@ export default function PageLayout({ children }: { children: ReactNode }) {
             <main className={mainClassName}>
                  {showActionIcons && (
                     <div className="fixed top-18 right-4 z-40 flex flex-col gap-2">
+                       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+                           <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} activeTab={activeTab} setActiveTab={setActiveTab} />
+                        </Dialog>
                         <FeedbackForm />
                     </div>
                 )}

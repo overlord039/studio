@@ -27,6 +27,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Image from 'next/image';
+import { isSameDay, subDays, startOfDay } from 'date-fns';
+import { WEEKLY_REWARDS, PERFECT_STREAK_BONUS } from '@/lib/rewards';
+import DailyRewardDialog from '@/components/rewards/daily-reward-dialog';
+
 
 export interface User {
   uid: string;
@@ -65,6 +69,9 @@ const createDefaultStats = (): UserStats => {
         }, {} as Record<PrizeType, number>),
         usernameChanged: false,
         coins: 0,
+        lastLogin: new Date(0).toISOString(),
+        loginStreak: 0,
+        lastClaimedDay: 0,
     };
 };
 
@@ -96,7 +103,10 @@ function areUsersEqual(a: User | null, b: User | null): boolean {
         a.createdAt !== b.createdAt ||
         a.stats.matchesPlayed !== b.stats.matchesPlayed ||
         a.stats.usernameChanged !== b.stats.usernameChanged ||
-        a.stats.coins !== b.stats.coins
+        a.stats.coins !== b.stats.coins ||
+        a.stats.lastLogin !== b.stats.lastLogin ||
+        a.stats.loginStreak !== b.stats.loginStreak ||
+        a.stats.lastClaimedDay !== b.stats.lastClaimedDay
     ) {
         return false;
     }
@@ -142,6 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const router = useRouter();
   const [reward, setReward] = useState<{ amount: number; message: string } | null>(null);
+  const [showDailyReward, setShowDailyReward] = useState(false);
 
   const fetchUser = useCallback(async () => {
     if (!auth || !auth.currentUser) return;
@@ -168,6 +179,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
 
+  const checkDailyLogin = useCallback(async (user: User) => {
+    if (user.isGuest) return;
+
+    const today = startOfDay(new Date());
+    const lastLoginDate = startOfDay(new Date(user.stats.lastLogin || 0));
+
+    if (isSameDay(today, lastLoginDate)) {
+        return; // Already logged in today
+    }
+
+    const yesterday = startOfDay(subDays(today, 1));
+    let newStreak = user.stats.loginStreak || 0;
+    
+    if (isSameDay(lastLoginDate, yesterday)) {
+        newStreak++; // Continued streak
+    } else {
+        newStreak = 1; // Streak broken, reset to 1
+    }
+    
+    if (newStreak > 7) {
+        newStreak = 1;
+    }
+
+    const userDocRef = doc(db, "users", user.uid);
+    try {
+        await updateDoc(userDocRef, {
+            'stats.loginStreak': newStreak,
+            'stats.lastLogin': today.toISOString(),
+        });
+
+        const updatedUser = { ...user, stats: { ...user.stats, loginStreak: newStreak, lastLogin: today.toISOString() }};
+        setCurrentUser(updatedUser);
+        setShowDailyReward(true);
+
+    } catch (error) {
+        console.error("Error updating daily login stats:", error);
+    }
+  }, []);
+
   useEffect(() => {
     if (!auth || !db) {
         setLoading(false);
@@ -184,10 +234,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (firebaseUser) {
             const userDocRef = doc(db, "users", firebaseUser.uid);
             
-            // This is a more robust way to handle new user creation.
-            // We set up the listener first, and if the document doesn't exist,
-            // the listener's first snapshot will be empty, which we can handle.
             userDocUnsubscribe = onSnapshot(userDocRef, async (docSnap) => {
+                let userForLoginCheck: User | null = null;
                 if (docSnap.exists()) {
                     const firestoreData = docSnap.data();
                     
@@ -200,29 +248,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         createdAt: firestoreData.createdAt?.toDate ? firestoreData.createdAt.toDate().toISOString() : firestoreData.createdAt,
                         stats: firestoreData.stats || createDefaultStats(),
                     };
-
-                    setCurrentUser(prevUser => {
-                        if (areUsersEqual(prevUser, newUser)) {
-                            return prevUser;
-                        }
-                        return newUser;
-                    });
-                    setLoading(false);
+                    
+                    userForLoginCheck = newUser;
+                    setCurrentUser(prevUser => areUsersEqual(prevUser, newUser) ? prevUser : newUser);
                 } else {
-                    // Document does not exist, so this is a new user. Create their profile.
                     const isNewGuest = firebaseUser.isAnonymous;
                     const displayName = isNewGuest 
                         ? `Guest#${firebaseUser.uid.substring(0,5)}` 
                         : firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`;
 
+                    const today = new Date();
                     const newUserProfile: User = {
                         uid: firebaseUser.uid,
                         displayName: displayName,
                         email: firebaseUser.email,
                         photoURL: firebaseUser.photoURL,
                         isGuest: isNewGuest,
-                        createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-                        stats: { ...createDefaultStats(), coins: 10 }, // New account reward
+                        createdAt: firebaseUser.metadata.creationTime || today.toISOString(),
+                        stats: {
+                            ...createDefaultStats(),
+                            coins: 10,
+                            lastLogin: today.toISOString(),
+                            loginStreak: 1,
+                        },
                     };
                     
                     try {
@@ -232,16 +280,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         batch.set(usernameRef, { userId: firebaseUser.uid, username: displayName });
                         await batch.commit();
 
-                        // After creating, the onSnapshot listener will fire again with the new data.
-                        // We don't need to call setCurrentUser here.
+                        userForLoginCheck = newUserProfile;
                         setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
 
                     } catch (error) {
                         console.error("Error creating new user profile:", error);
                         toast({title: "Setup Error", description: "Could not create your user profile.", variant: "destructive"});
-                        setLoading(false);
                     }
                 }
+
+                if (userForLoginCheck && !loading) {
+                    await checkDailyLogin(userForLoginCheck);
+                }
+                setLoading(false);
             }, (error) => {
                 console.error("Error listening to user document:", error);
                 toast({ title: "Error", description: "Could not load user profile.", variant: "destructive" });
@@ -260,7 +311,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             userDocUnsubscribe();
         }
     };
-  }, [toast]);
+  }, [toast, checkDailyLogin, loading]);
+
+  const handleClaimReward = async (day: number) => {
+    if (!currentUser) return;
+    
+    const rewardAmount = WEEKLY_REWARDS[day - 1];
+    let totalReward = rewardAmount;
+    let message = `You claimed ${rewardAmount} coins for Day ${day}!`;
+
+    if (day === 7 && currentUser.stats.loginStreak === 7) {
+        totalReward += PERFECT_STREAK_BONUS;
+        message = `You completed the week and earned a bonus! Total reward: ${totalReward} coins!`;
+    }
+
+    const userDocRef = doc(db, "users", currentUser.uid);
+    try {
+        await updateDoc(userDocRef, {
+            'stats.coins': increment(totalReward),
+            'stats.lastClaimedDay': day,
+        });
+        toast({ title: "Reward Claimed!", description: message });
+        setShowDailyReward(false);
+    } catch (error) {
+        console.error("Failed to claim reward:", error);
+        toast({ title: "Error", description: "Could not claim your reward.", variant: "destructive" });
+    }
+  };
+
 
   const setLocalGuestAvatar = async (url: string) => {
     if (currentUser) {
@@ -280,7 +358,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userDocRef = doc(db, "users", currentUser.uid);
     const updates: { [key: string]: any } = { ...data };
     
-    // If updating displayName, also set the usernameChanged flag
     if (data.displayName && currentUser.stats?.usernameChanged !== true) {
         updates['stats.usernameChanged'] = true;
     }
@@ -300,7 +377,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUserStats = (newStats: Partial<UserStats>) => {
     if (!currentUser) return;
     
-    // Create the new stats object by merging old and new
     setCurrentUser(prevUser => {
         if (!prevUser) return null;
         const updatedStats: UserStats = {
@@ -325,8 +401,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       await signInWithPopup(auth, provider);
-      // The onAuthStateChanged listener will handle profile creation and state updates.
-      // This keeps the logic centralized and avoids race conditions.
     } catch (error: any) {
       if (error.code !== 'auth/popup-closed-by-user') {
         console.error("Google Sign-In Error:", error);
@@ -492,6 +566,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
+       {showDailyReward && currentUser && !currentUser.isGuest && (
+          <DailyRewardDialog
+              user={currentUser}
+              onClaim={handleClaimReward}
+              onClose={() => setShowDailyReward(false)}
+          />
+       )}
        <Dialog open={!!reward} onOpenChange={() => {}}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>

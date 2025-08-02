@@ -5,6 +5,9 @@ export interface UserStats {
   prizesWon: Record<PrizeType, number>;
   usernameChanged?: boolean;
   coins: number;
+  lastLogin?: string; // ISO string
+  loginStreak?: number;
+  lastClaimedDay?: number; // Day of the streak (1-7)
 }
 
 export interface User {
