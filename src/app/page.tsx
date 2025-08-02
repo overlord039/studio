@@ -65,7 +65,7 @@ export default function HomePage() {
       
       {/* Action Buttons */}
       <div className="w-full max-w-md space-y-4">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="flex flex-col md:grid md:grid-cols-3 gap-4">
             <Card 
             className="bg-green-600 text-white hover:bg-green-700 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
             onClick={() => handleNavigateWithAuth('/online')}
