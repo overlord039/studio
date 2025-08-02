@@ -12,7 +12,7 @@ import React, { useState, useEffect } from 'react';
 import FeedbackForm from './feedback-form';
 import { Button } from '@/components/ui/button';
 import { Settings, MessageSquare, Calendar } from 'lucide-react';
-import { Dialog } from '@/components/ui/dialog';
+import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { SettingsModal } from './header';
 import DailyRewardDialog from '../rewards/daily-reward-dialog';
 import { useAuth } from '@/contexts/auth-context';
@@ -97,6 +97,8 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                         user={currentUser} 
                                         onClaim={handleClaimAndClose}
                                         onClose={() => setIsRewardDialogOpen(false)}
+                                        open={isRewardDialogOpen}
+                                        onOpenChange={setIsRewardDialogOpen}
                                     />
                                 )}
                             </Dialog>
