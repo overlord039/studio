@@ -19,8 +19,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import FeedbackForm from './feedback-form';
-
 
 export const SettingsModal = ({ open, onOpenChange, activeTab, setActiveTab }: { open: boolean, onOpenChange: (open: boolean) => void, activeTab: string; setActiveTab: (tab: string) => void; }) => {
   const { theme, setTheme } = useTheme();
@@ -297,6 +295,24 @@ export default function Header() {
   const { currentUser, loading } = useAuth();
   const [isHidden, setIsHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const searchParams = useSearchParams();
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('general');
+
+  useEffect(() => {
+    const settingsParam = searchParams.get('settings');
+    const tabParam = searchParams.get('tab');
+
+    if (settingsParam === 'open') {
+      setIsSettingsOpen(true);
+      if (tabParam) {
+        setActiveTab(tabParam);
+      }
+    } else {
+      setIsSettingsOpen(false);
+    }
+  }, [searchParams]);
 
   const controlNavbar = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -358,8 +374,16 @@ export default function Header() {
       isHidden && "-translate-y-full"
     )}>
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <div className="flex items-center">
-          <AuthContent />
+        <AuthContent />
+        <div className="flex items-center gap-2">
+             <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+                <DialogTrigger asChild>
+                    <Button variant="secondary" size="icon" className="h-10 w-10">
+                        <Settings className="h-5 w-5" />
+                    </Button>
+                </DialogTrigger>
+                <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} activeTab={activeTab} setActiveTab={setActiveTab} />
+            </Dialog>
         </div>
       </div>
     </header>

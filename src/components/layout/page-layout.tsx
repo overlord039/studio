@@ -3,38 +3,16 @@
 "use client";
 
 import { usePathname, useSearchParams } from 'next/navigation';
-import Header, { SettingsModal } from '@/components/layout/header';
+import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import type { ReactNode } from 'react';
 import React, { useState, useEffect } from 'react';
 import FeedbackForm from './feedback-form';
-import { Button } from '@/components/ui/button';
-import { Settings } from 'lucide-react';
-import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 
 export default function PageLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
-    const searchParams = useSearchParams();
-
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('general');
-
-    useEffect(() => {
-        const settingsParam = searchParams.get('settings');
-        const tabParam = searchParams.get('tab');
-
-        if (settingsParam === 'open') {
-        setIsSettingsOpen(true);
-        if (tabParam) {
-            setActiveTab(tabParam);
-        }
-        } else {
-        setIsSettingsOpen(false);
-        }
-    }, [searchParams]);
-
 
     const showHeaderAndFooter = pathname === '/' || pathname.startsWith('/online');
     const showActionIcons = showHeaderAndFooter;
@@ -60,14 +38,6 @@ export default function PageLayout({ children }: { children: ReactNode }) {
             <main className={mainClassName}>
                  {showActionIcons && (
                     <div className="fixed top-24 right-4 z-40 flex flex-col gap-2">
-                        <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-                            <DialogTrigger asChild>
-                                <Button variant="secondary" size="icon" className="h-10 w-10">
-                                    <Settings className="h-5 w-5" />
-                                </Button>
-                            </DialogTrigger>
-                             <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} activeTab={activeTab} setActiveTab={setActiveTab} />
-                        </Dialog>
                         <FeedbackForm />
                     </div>
                 )}
