@@ -155,6 +155,9 @@ export default function GameRoomPage() {
   }, [isVoiceMuted]);
 
   const fetchGameDetails = useCallback(async (isInitialLoad = false) => {
+    if (roomDataRef.current?.isGameOver) {
+      return;
+    }
     const playerTicketsParam = searchParams.get('playerTickets');
     if (!roomId || !currentUser?.uid) {
       if (isInitialLoad) {
