@@ -16,7 +16,6 @@ import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/auth-context';
 import { useSound } from '@/contexts/sound-context';
-import FeedbackForm from '@/components/layout/feedback-form';
 
 export default function HomePage() {
   const router = useRouter();
@@ -134,9 +133,6 @@ export default function HomePage() {
             </Card>
           </section>
         </div>
-      </div>
-      <div className="pt-4 z-50">
-        <FeedbackForm />
       </div>
       {currentUser && !loading && currentUser.stats.coins === 0 && (
         <Card className="w-full max-w-md bg-accent/20 border-accent/50 p-4 my-2">

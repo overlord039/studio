@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import FeedbackForm from './feedback-form';
 
 
 const SettingsModal = ({ activeTab, setActiveTab }: { activeTab: string; setActiveTab: (tab: string) => void; }) => {
@@ -380,7 +381,7 @@ export default function Header() {
           <AuthContent />
         </div>
         
-        <nav className="flex items-center gap-2">
+        <div className="flex flex-col items-center gap-2">
           <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
             <DialogTrigger asChild>
               <Button variant="ghost" size="icon" className="text-white h-12 w-12 sm:h-16 sm:w-16">
@@ -390,7 +391,8 @@ export default function Header() {
             </DialogTrigger>
             <SettingsModal activeTab={activeTab} setActiveTab={setActiveTab} />
           </Dialog>
-        </nav>
+          <FeedbackForm />
+        </div>
       </div>
     </header>
   );
