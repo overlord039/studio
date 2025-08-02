@@ -687,7 +687,8 @@ export default function GameRoomPage() {
     );
   }
   
-  if (!roomData.isGameStarted) {
+  const isFullHouseClaimed = roomData.prizeStatus[PRIZE_TYPES.FULL_HOUSE]?.claimedBy?.length > 0;
+  if (!roomData.isGameStarted && !isFullHouseClaimed) {
     return (
        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
         <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
