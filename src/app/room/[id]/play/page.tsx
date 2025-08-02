@@ -228,6 +228,7 @@ export default function GameRoomPage() {
       if (me && me.tickets) {
         setMyTickets(me.tickets);
       } else if (isInitialLoad && (!me || !me.tickets || me.tickets.length === 0)) {
+        const playerTicketsParam = searchParams.get('playerTickets');
         if (playerTicketsParam) {
             const numTickets = parseInt(playerTicketsParam, 10);
             if (numTickets === 0 && data.isGameStarted && !data.isGameOver) {
@@ -1194,7 +1195,7 @@ export default function GameRoomPage() {
 
               {myTickets.length === 0 && !roomData.isGameOver && roomData.isGameStarted && <p className="text-center text-muted-foreground">You are spectating or have no tickets in this game.</p>}
               
-              <div className={cn("grid gap-x-2 gap-y-4 justify-items-center", getTicketLayoutClass(myTickets.length))}>
+              <div className={cn("grid gap-x-1 gap-y-4 justify-items-center", getTicketLayoutClass(myTickets.length))}>
                 {myTickets.map((ticket, index) => (
                   <div key={index} className={cn(
                     'w-full flex justify-center',
