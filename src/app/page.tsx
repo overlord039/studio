@@ -73,9 +73,9 @@ export default function HomePage() {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/online') }}
             >
-            <CardContent className="flex flex-col items-center justify-center p-3 text-center">
-                <Globe className="h-8 w-8 mb-1" />
-                <p className="text-sm font-bold">Online</p>
+            <CardContent className="flex flex-row items-center justify-center p-4 gap-3 text-center">
+                <Globe className="h-6 w-6" />
+                <p className="text-lg font-bold">Online</p>
             </CardContent>
             </Card>
 
@@ -86,9 +86,9 @@ export default function HomePage() {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/play-with-computer') }}
             >
-            <CardContent className="flex flex-col items-center justify-center p-3 text-center">
-                <Bot className="h-8 w-8 mb-1" />
-                <p className="text-sm font-bold">Offline</p>
+            <CardContent className="flex flex-row items-center justify-center p-4 gap-3 text-center">
+                <Bot className="h-6 w-6" />
+                <p className="text-lg font-bold">Offline</p>
             </CardContent>
             </Card>
 
@@ -99,9 +99,9 @@ export default function HomePage() {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/create-room') }}
             >
-            <CardContent className="flex flex-col items-center justify-center p-3 text-center">
-                <Users className="h-8 w-8 mb-1" />
-                <p className="text-sm font-bold">Friends</p>
+            <CardContent className="flex flex-row items-center justify-center p-4 gap-3 text-center">
+                <Users className="h-6 w-6" />
+                <p className="text-lg font-bold">Friends</p>
             </CardContent>
             </Card>
         </div>
