@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import Image from 'next/image';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import Link from 'next/link';
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
@@ -183,6 +184,13 @@ export default function OnlineModePage() {
                 {Object.entries(TIERS).map(([tierKey, tierConfig]) => (
                     <TierCard key={tierKey} tierKey={tierKey as OnlineGameTier} tierConfig={tierConfig} />
                 ))}
+            </div>
+            <div className="mt-8 w-full max-w-md">
+                <Link href="/" passHref>
+                <Button variant="destructive" size="icon">
+                    <LogOut className="h-4 w-4 rotate-180" />
+                </Button>
+                </Link>
             </div>
         </div>
     );
