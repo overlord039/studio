@@ -408,13 +408,25 @@ export function callNextNumberStore(roomId: string): Room | { error: string; num
     const prizes = PRIZE_DEFINITIONS[room.settings.prizeFormat || 'Format 1'];
     
     let delay = 0;
-    let botMissChance = 0; // 0% chance to miss by default
+    let botMissChance = 0;
 
-    if (room.settings.gameMode === 'easy') {
-        delay = 1000;
-    } else if (room.settings.gameMode === 'online') {
-        delay = 3500; // Increased delay for online bots
-        botMissChance = 0.4; // 40% chance for bot to "miss" a claim
+    switch (room.settings.gameMode) {
+        case 'easy':
+            delay = 3000; // Slower reaction for easy bots
+            botMissChance = 0.6; // 60% chance to miss a claim
+            break;
+        case 'medium':
+            delay = 1500; // Medium reaction time
+            botMissChance = 0.3; // 30% chance to miss
+            break;
+        case 'hard':
+            delay = 500; // Very fast reaction for hard bots
+            botMissChance = 0.05; // 5% chance to miss
+            break;
+        case 'online':
+            delay = 2500; // A bit slower than medium to feel more human
+            botMissChance = 0.4; // 40% chance to miss
+            break;
     }
 
     setTimeout(() => {
