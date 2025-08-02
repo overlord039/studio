@@ -43,6 +43,7 @@ export default function HomePage() {
   };
 
   return (
+    <>
     <div className="flex-grow flex flex-col items-center space-y-2 p-2">
       {/* Hero Section */}
       <section className="flex justify-center items-center w-full gap-2">
@@ -105,7 +106,7 @@ export default function HomePage() {
             </Card>
         </div>
         
-        <div className="flex justify-center">
+        <div className="hidden md:grid justify-center">
           <section className="grid grid-cols-2 gap-4 w-2/3">
             <Card 
               className="bg-accent text-accent-foreground hover:bg-accent/90 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
@@ -154,5 +155,30 @@ export default function HomePage() {
         </Card>
       )}
     </div>
+    {/* Bottom fixed navigation for mobile */}
+      <div className="fixed bottom-4 left-4 right-4 flex justify-between items-center md:hidden">
+        <Card 
+          className="bg-accent text-accent-foreground hover:bg-accent/90 transition-colors cursor-pointer rounded-2xl shadow-lg w-32"
+          onClick={() => handleFreeToolsNavigation('/number-caller')}
+          role="button"
+        >
+          <CardContent className="flex flex-col items-center justify-center p-2 text-center">
+            <Speaker className="h-6 w-6 mb-1" />
+            <p className="text-xs font-bold">Number Caller</p>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="bg-yellow-600 text-white hover:bg-yellow-700 transition-colors cursor-pointer rounded-2xl shadow-lg w-32"
+          onClick={() => handleFreeToolsNavigation('/prize-calculator')}
+          role="button"
+        >
+          <CardContent className="flex flex-col items-center justify-center p-2 text-center">
+            <Calculator className="h-6 w-6 mb-1" />
+            <p className="text-xs font-bold">Prize Calculator</p>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 }
