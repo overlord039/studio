@@ -69,6 +69,30 @@ const BOT_GAME_MODE_NAMES = {
     hard: "Rush",
 };
 
+const OFFLINE_COIN_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType, number>> = {
+  easy: {
+    [PRIZE_TYPES.EARLY_5]: 1,
+    [PRIZE_TYPES.FIRST_LINE]: 1,
+    [PRIZE_TYPES.SECOND_LINE]: 1,
+    [PRIZE_TYPES.THIRD_LINE]: 1,
+    [PRIZE_TYPES.FULL_HOUSE]: 2,
+  },
+  medium: {
+    [PRIZE_TYPES.EARLY_5]: 1,
+    [PRIZE_TYPES.FIRST_LINE]: 2,
+    [PRIZE_TYPES.SECOND_LINE]: 2,
+    [PRIZE_TYPES.THIRD_LINE]: 2,
+    [PRIZE_TYPES.FULL_HOUSE]: 3,
+  },
+  hard: {
+    [PRIZE_TYPES.EARLY_5]: 2,
+    [PRIZE_TYPES.FIRST_LINE]: 3,
+    [PRIZE_TYPES.SECOND_LINE]: 3,
+    [PRIZE_TYPES.THIRD_LINE]: 3,
+    [PRIZE_TYPES.FULL_HOUSE]: 5,
+  }
+};
+
 
 export default function GameRoomPage() {
   const router = useRouter();
@@ -673,8 +697,7 @@ export default function GameRoomPage() {
   }
 
   const isBotGame = roomData.settings.gameMode !== 'multiplayer' && roomData.settings.gameMode !== 'online';
-  const showCoinInfo = !isBotGame;
-
+  
   const gameSettings: GameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
   const currentPrizeFormat = gameSettings.prizeFormat;
   const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
@@ -695,7 +718,7 @@ export default function GameRoomPage() {
     const totalCost = ticketPrice * ticketsBought;
 
     if (currentUser) {
-        if (showCoinInfo) { // For Online and Friends modes
+        if (!isBotGame) { // For Online and Friends modes
             prizesForFormat.forEach(prize => {
                 const claimInfo = roomData.prizeStatus[prize];
                 if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
@@ -720,16 +743,6 @@ export default function GameRoomPage() {
             }
         }
     }
-
-    if (isBotGame && coinsWonThisGame === 0 && currentUserWinnings === 0) {
-      router.replace('/play-with-computer');
-      return (
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <p className="mt-4 text-xl">Loading next game...</p>
-        </div>
-      );
-    }
     
     const playAgainButtonText = isBotGame ? "Play Again" : (roomData.settings.gameMode === 'online' ? "Find New Match" : (isCurrentUserHost ? "New Game" : "To Lobby"));
     const userHasPrizes = currentUserPrizeNames.length > 0;
@@ -749,7 +762,7 @@ export default function GameRoomPage() {
                 Final Prize Summary
             </h3>
             <div className="border rounded-md p-3">
-              {showCoinInfo && (
+              {!isBotGame && (
               <div className="flex justify-between items-center text-lg font-bold mb-2 pb-2 border-b">
                 <span>Total Prize Pool:</span>
                 <div className="flex items-center gap-1">
@@ -770,10 +783,17 @@ export default function GameRoomPage() {
                   }
                   
                   if (isBotGame) {
+                     const rewardAmount = (roomData.settings.gameMode && OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS]) ? OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS][prize] : 0;
                      return (
-                         <li key={prize} className="flex justify-between items-center text-md p-2 bg-secondary/20 rounded-md">
-                            <span className="font-medium">{prize}</span>
-                            <span className={cn("font-semibold text-right", isClaimed ? "text-green-600" : "text-muted-foreground")}>
+                         <li key={prize} className="flex flex-col text-sm bg-secondary/20 p-1.5 rounded-md">
+                             <div className="flex justify-between items-center w-full">
+                                <span className="font-medium">{prize}</span>
+                                <div className="font-semibold flex items-center gap-1">
+                                    <Image src="/coin.png" alt="Coins" width={16} height={16} />
+                                    <span>{rewardAmount}</span>
+                                </div>
+                             </div>
+                             <span className={cn("text-xs text-right w-full", isClaimed ? "text-green-600 font-medium" : "text-muted-foreground/80")}>
                                 {prizeStatusText}
                             </span>
                         </li>
@@ -807,13 +827,13 @@ export default function GameRoomPage() {
             {(userHasPrizes || isParticipationWinner) ? (
                 <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
                     <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
-                    {(showCoinInfo || (isBotGame && userHasPrizes)) ? (
+                    {(!isBotGame || (isBotGame && userHasPrizes)) ? (
                       <>
                         <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
                             You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(currentUserWinnings)}!
                         </div>
                          <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
-                        {showCoinInfo && (
+                        {!isBotGame && (
                             <p className="text-sm text-muted-foreground">You spent {formatCoins(totalCost)} and won {formatCoins(currentUserWinnings)}</p>
                         )}
                       </>
@@ -907,7 +927,7 @@ export default function GameRoomPage() {
                             {gameSettings.lobbySize}
                         </div>
                     </div>
-                    {showCoinInfo && (
+                    {!isBotGame && (
                         <div className="flex flex-col items-center">
                             <span className="text-xs opacity-80">Prize Pool</span>
                             <div className="font-bold flex items-center gap-1">
@@ -934,7 +954,7 @@ export default function GameRoomPage() {
                                   <Award className="mr-2 h-4 w-4 text-primary" />
                                   Prize Status
                               </CardTitle>
-                              {showCoinInfo && <div className="text-xs text-muted-foreground flex items-center gap-1">Total Pool: <Image src="/coin.png" alt="Coins" width={12} height={12} />{formatCoins(totalPrizePool)}</div>}
+                              {!isBotGame && <div className="text-xs text-muted-foreground flex items-center gap-1">Total Pool: <Image src="/coin.png" alt="Coins" width={12} height={12} />{formatCoins(totalPrizePool)}</div>}
                           </CardHeader>
                           <CardContent className="p-3 pt-0">
                               {isLoading ? (
@@ -955,13 +975,22 @@ export default function GameRoomPage() {
                                       }
                                       
                                       if (isBotGame) {
+                                          const rewardAmount = (roomData.settings.gameMode && OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS]) ? OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS][prize] : 0;
                                           return (
-                                              <li key={prize} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
-                                                  <span>{prize}</span>
-                                                  <span className={cn("font-semibold text-right", isClaimed ? "text-green-600" : "text-muted-foreground")}>
-                                                      {claimantText}
-                                                  </span>
-                                              </li>
+                                             <li key={prize} className="flex flex-col bg-background/50 p-1.5 rounded-md">
+                                                <div className="flex justify-between items-center w-full">
+                                                    <div className="flex items-center gap-1">
+                                                        <span>{prize}</span>
+                                                    </div>
+                                                    <div className="font-semibold flex items-center gap-1">
+                                                        <Image src="/coin.png" alt="Coins" width={12} height={12} />
+                                                        {rewardAmount}
+                                                    </div>
+                                                </div>
+                                                <span className={cn("text-xs text-right w-full", isClaimed ? "text-green-600 font-medium" : "text-muted-foreground/80")}>
+                                                    {claimantText}
+                                                </span>
+                                            </li>
                                           );
                                       }
 
@@ -1017,7 +1046,7 @@ export default function GameRoomPage() {
                                           </span>
                                           <div className="text-muted-foreground flex items-center gap-1">
                                             <span>{ticketCount} {ticketsText(ticketCount)}</span>
-                                            {(showCoinInfo) && 
+                                            {(!isBotGame) && 
                                               <div className="flex items-center gap-0.5">
                                                 (<Image src="/coin.png" alt="Coins" width={12} height={12} />{formatCoins(ticketCost)})
                                               </div>
