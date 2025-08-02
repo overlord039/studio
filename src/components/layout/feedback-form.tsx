@@ -117,23 +117,23 @@ export default function FeedbackForm() {
       </TooltipProvider>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <div className="flex justify-center mb-2">
-            <MessageSquare className="h-8 w-8 text-primary" />
+          <div className="flex justify-center mb-1">
+            <MessageSquare className="h-7 w-7 text-primary" />
           </div>
-          <DialogTitle className="text-center text-xl">We’d love your feedback!</DialogTitle>
-          <DialogDescription className="text-center">
-            Your thoughts help us make HousieHub better for everyone.
+          <DialogTitle className="text-center text-lg">We’d love your feedback!</DialogTitle>
+          <DialogDescription className="text-center text-xs">
+            Your thoughts help us make HousieHub better.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6 py-4">
-          <div className="space-y-2">
+        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+          <div className="space-y-1">
             <p className="text-center text-sm font-medium">Rate your experience</p>
-            <div className="flex justify-center gap-2">
+            <div className="flex justify-center gap-1">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
                   className={cn(
-                    'h-10 w-10 cursor-pointer transition-colors',
+                    'h-8 w-8 cursor-pointer transition-colors',
                     (hoverRating || rating) >= star
                       ? 'text-yellow-400 fill-yellow-400'
                       : 'text-gray-300'
@@ -144,23 +144,20 @@ export default function FeedbackForm() {
                 />
               ))}
             </div>
-            <p className="text-center text-sm text-muted-foreground h-5">
+            <p className="text-center text-xs text-muted-foreground h-4">
               {rating ? ratingLabels[rating] : ' '}
             </p>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Textarea
               placeholder="Share your thoughts here..."
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
               maxLength={500}
-              className="min-h-[100px]"
+              className="min-h-[80px]"
             />
             <p className="text-xs text-muted-foreground text-right">{feedback.length} / 500</p>
           </div>
-          <p className="text-xs text-muted-foreground text-center">
-            We value your privacy. Your data is never shared.
-          </p>
           <DialogFooter>
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
