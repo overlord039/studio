@@ -37,7 +37,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
             {showHeaderAndFooter && <Header />}
             <main className={mainClassName}>
                  {showActionIcons && (
-                    <div className="fixed top-24 right-4 z-40 flex flex-col gap-2">
+                    <div className="fixed top-20 right-4 z-40 flex flex-col gap-2">
                         <FeedbackForm />
                     </div>
                 )}
