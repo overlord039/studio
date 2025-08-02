@@ -104,8 +104,8 @@ export default function FeedbackForm() {
         <Tooltip>
           <TooltipTrigger asChild>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10">
-                  <MessageSquare className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="h-12 w-12">
+                  <MessageSquare className="h-6 w-6" />
                   <span className="sr-only">Feedback</span>
               </Button>
             </DialogTrigger>
