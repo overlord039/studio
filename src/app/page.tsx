@@ -155,8 +155,8 @@ export default function HomePage() {
         </Card>
       )}
     </div>
-    {/* Bottom fixed navigation for mobile */}
-      <div className="fixed bottom-4 left-4 right-4 flex justify-between items-center md:hidden">
+    {/* Bottom navigation for mobile, above footer */}
+      <div className="mt-auto px-4 pb-4 flex justify-between items-center md:hidden">
         <Card 
           className="bg-accent text-accent-foreground hover:bg-accent/90 transition-colors cursor-pointer rounded-2xl shadow-lg w-32"
           onClick={() => handleFreeToolsNavigation('/number-caller')}
