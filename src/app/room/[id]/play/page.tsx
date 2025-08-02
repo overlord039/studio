@@ -719,29 +719,31 @@ export default function GameRoomPage() {
     const totalCost = ticketPrice * ticketsBought;
 
     if (currentUser) {
-        if (!isBotGame) { // For Online and Friends modes
+        if (coinsWonThisGame !== null) { // For bot games, this is reliable
+            currentUserWinnings = coinsWonThisGame;
+        }
+
+        // Common logic to find out names of prizes won for all modes
+        const prizesWon = roomData.prizeStatus;
+        for (const prize in prizesWon) {
+            if(prizesWon[prize as PrizeType]?.claimedBy.some(c => c.id === currentUser.uid)) {
+                if (!currentUserPrizeNames.includes(prize)) { 
+                    currentUserPrizeNames.push(prize);
+                }
+            }
+        }
+
+        // For non-bot games, calculate winnings from prize pool
+        if (!isBotGame) {
+            currentUserWinnings = 0; // Recalculate from scratch
             prizesForFormat.forEach(prize => {
                 const claimInfo = roomData.prizeStatus[prize];
                 if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
-                    if (!currentUserPrizeNames.includes(prize)) {
-                        currentUserPrizeNames.push(prize);
-                    }
                     const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[prize as PrizeType] || 0)) / 100;
                     const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
                     currentUserWinnings += prizePerWinner;
                 }
             });
-        } else if (coinsWonThisGame !== null) { // For bot games
-            currentUserWinnings = coinsWonThisGame;
-            // Common logic to find out names of prizes won for all modes
-            const prizesWon = roomData.prizeStatus;
-            for (const prize in prizesWon) {
-                if(prizesWon[prize as PrizeType]?.claimedBy.some(c => c.id === currentUser.uid)) {
-                    if (!currentUserPrizeNames.includes(prize)) { 
-                        currentUserPrizeNames.push(prize);
-                    }
-                }
-            }
         }
     }
     
@@ -825,27 +827,24 @@ export default function GameRoomPage() {
               </ul>
             </div>
 
-            {(userHasPrizes || isParticipationWinner) ? (
+            {userHasPrizes ? (
                 <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
                     <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
-                    {(!isBotGame || (isBotGame && userHasPrizes)) ? (
-                      <>
-                        <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
-                            You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(currentUserWinnings)}!
-                        </div>
-                         <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
-                        {!isBotGame && (
-                            <p className="text-sm text-muted-foreground">You spent {formatCoins(totalCost)} and won {formatCoins(currentUserWinnings)}</p>
-                        )}
-                      </>
-                    ) : isParticipationWinner ? (
-                        <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
-                           You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(currentUserWinnings)}!
-                           <span className="text-sm text-muted-foreground">(Participation Reward)</span>
-                        </div>
-                    ) : userHasPrizes ? (
-                         <p className="text-lg text-muted-foreground">You claimed: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
-                    ) : null}
+                    <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
+                        You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(currentUserWinnings)}!
+                    </div>
+                    <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
+                    {!isBotGame && (
+                        <p className="text-sm text-muted-foreground">You spent {formatCoins(totalCost)} and won {formatCoins(currentUserWinnings)}</p>
+                    )}
+                </div>
+            ) : isParticipationWinner ? (
+                <div className="text-center p-4 bg-secondary/50 rounded-lg">
+                    <p className="font-semibold text-muted-foreground">You didn't win a prize this time, but well played!</p>
+                    <p className="text-sm text-muted-foreground">Better luck next game!</p>
+                    <div className="text-lg font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2 mt-2">
+                       Participation Reward: <Image src="/coin.png" alt="Coins" width={20} height={20} /> {formatCoins(currentUserWinnings)}
+                    </div>
                 </div>
             ) : (
                  <div className="text-center p-4 bg-secondary/50 rounded-lg">
