@@ -180,8 +180,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   const checkDailyLogin = useCallback(async (user: User) => {
-    if (user.isGuest) return;
-
     const today = startOfDay(new Date());
     const lastLoginDate = startOfDay(new Date(user.stats.lastLogin || 0));
 

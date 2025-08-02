@@ -75,7 +75,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                            <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} activeTab={activeTab} setActiveTab={setActiveTab} />
                         </Dialog>
                         <FeedbackForm />
-                         {currentUser && !currentUser.isGuest && (
+                         {currentUser && (
                              <Dialog open={isRewardDialogOpen} onOpenChange={setIsRewardDialogOpen}>
                                 <TooltipProvider>
                                     <Tooltip>
