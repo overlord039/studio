@@ -73,7 +73,6 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                        <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
                            <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} activeTab={activeTab} setActiveTab={setActiveTab} />
                         </Dialog>
-                        <FeedbackForm />
                          {currentUser && (
                              <Dialog open={isRewardDialogOpen} onOpenChange={setIsRewardDialogOpen}>
                                 <TooltipProvider>
@@ -108,6 +107,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                 )}
                             </Dialog>
                         )}
+                        <FeedbackForm />
                     </div>
                 )}
                 {children}
