@@ -29,7 +29,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import Image from 'next/image';
 import { isSameDay, subDays, startOfDay } from 'date-fns';
 import { WEEKLY_REWARDS, PERFECT_STREAK_BONUS } from '@/lib/rewards';
-import DailyRewardDialog from '@/components/rewards/daily-reward-dialog';
 
 
 export interface User {
@@ -57,6 +56,9 @@ interface AuthContextType {
   setLocalGuestAvatar: (url: string) => void;
   setLocalGuestUsername: (name: string) => void;
   handleClaimReward: (day: number) => Promise<void>;
+  isRewardDialogOpen: boolean;
+  setIsRewardDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  canClaimReward: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -153,6 +155,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const router = useRouter();
   const [reward, setReward] = useState<{ amount: number; message: string } | null>(null);
+  const [isRewardDialogOpen, setIsRewardDialogOpen] = useState(false);
+  
+  const canClaimReward = currentUser ? (currentUser.stats.loginStreak || 0) > (currentUser.stats.lastClaimedDay || 0) : false;
 
   const fetchUser = useCallback(async () => {
     if (!auth || !auth.currentUser) return;
@@ -184,7 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const lastLoginDate = startOfDay(new Date(user.stats.lastLogin || 0));
 
     if (isSameDay(today, lastLoginDate)) {
-        return; // Already logged in today
+        return user; // Already logged in today
     }
 
     const yesterday = startOfDay(subDays(today, 1));
@@ -208,23 +213,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
 
         const updatedUser = { ...user, stats: { ...user.stats, loginStreak: newStreak, lastLogin: today.toISOString() }};
-        setCurrentUser(updatedUser);
-        
-        // Don't auto-show dialog, just update the state.
-        // The UI will decide when to show the dialog.
-        const canClaimToday = updatedUser.stats.loginStreak > (updatedUser.stats.lastClaimedDay || 0);
-        if (canClaimToday) {
-            toast({
-                title: "Daily Reward Available!",
-                description: "Click the calendar icon to claim your daily login reward.",
-            });
-        }
-
+        return updatedUser;
 
     } catch (error) {
         console.error("Error updating daily login stats:", error);
+        return user;
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     if (!auth || !db) {
@@ -258,7 +253,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     };
                     
                     userForLoginCheck = newUser;
-                    setCurrentUser(prevUser => areUsersEqual(prevUser, newUser) ? prevUser : newUser);
+                    
                 } else {
                     const isNewGuest = firebaseUser.isAnonymous;
                     const displayName = isNewGuest 
@@ -297,8 +292,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     }
                 }
 
-                if (userForLoginCheck && !loading) {
-                    await checkDailyLogin(userForLoginCheck);
+                if (userForLoginCheck) {
+                    const finalUser = await checkDailyLogin(userForLoginCheck);
+                    setCurrentUser(prevUser => areUsersEqual(prevUser, finalUser) ? prevUser : finalUser);
+
+                    const canClaimToday = (finalUser.stats.loginStreak || 0) > (finalUser.stats.lastClaimedDay || 0);
+                    if (canClaimToday) {
+                        setTimeout(() => setIsRewardDialogOpen(true), 1500); // Open dialog after a short delay
+                    }
                 }
                 setLoading(false);
             }, (error) => {
@@ -319,7 +320,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             userDocUnsubscribe();
         }
     };
-  }, [toast, checkDailyLogin, loading]);
+  }, [toast, checkDailyLogin]);
 
   const handleClaimReward = async (day: number) => {
     if (!currentUser) return;
@@ -561,7 +562,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isSigningIn,
       setLocalGuestAvatar,
       setLocalGuestUsername,
-      handleClaimReward
+      handleClaimReward,
+      isRewardDialogOpen,
+      setIsRewardDialogOpen,
+      canClaimReward
   };
 
   if (!allConfigValuesPresent && !loading) {

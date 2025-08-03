@@ -21,12 +21,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/
 export default function PageLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const { currentUser, handleClaimReward } = useAuth();
+    const { currentUser, handleClaimReward, isRewardDialogOpen, setIsRewardDialogOpen, canClaimReward } = useAuth();
 
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('general');
-    const [isRewardDialogOpen, setIsRewardDialogOpen] = useState(false);
-
+    
     useEffect(() => {
         const settingsParam = searchParams.get('settings');
         const tabParam = searchParams.get('tab');
@@ -81,7 +80,13 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <DialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-12 w-12">
+                                                <Button variant="ghost" size="icon" className="h-12 w-12 relative">
+                                                    {canClaimReward && !isRewardDialogOpen && (
+                                                      <span className="absolute top-2 right-2 flex h-3 w-3">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                                      </span>
+                                                    )}
                                                     <Calendar className="h-7 w-7 text-white" />
                                                     <span className="sr-only">Daily Rewards</span>
                                                 </Button>
