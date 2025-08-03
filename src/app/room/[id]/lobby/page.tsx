@@ -555,17 +555,16 @@ export default function LobbyPage() {
                         <span>{currentUser.stats.coins}</span>
                     </div>
                 </div>
-                 <CardDescription className="text-xs md:text-sm">
-                   You have {currentUserInRoom?.tickets.length} {ticketsText(currentUserInRoom?.tickets.length ?? 0)} confirmed.
-                  {!isCurrentUserHost && " Waiting for host..."}
+                <CardDescription className="text-xs md:text-sm flex items-center justify-between">
+                   <span>You have {currentUserInRoom?.tickets.length} {ticketsText(currentUserInRoom?.tickets.length ?? 0)} confirmed.
+                    {!isCurrentUserHost && " Waiting for host..."}
+                   </span>
+                   <Button onClick={() => setIsEditingTickets(true)} variant="outline" className="text-xs h-7 px-2">
+                      <Edit className="mr-1.5 h-3 w-3" />
+                      Change
+                    </Button>
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-2 md:p-3 pt-0 flex flex-row items-center justify-end gap-2 md:gap-4">
-                <Button onClick={() => setIsEditingTickets(true)} variant="outline" className="text-xs md:text-sm h-9 md:h-10">
-                  <Edit className="mr-2 h-4 w-4" />
-                  Change
-                </Button>
-              </CardContent>
             </Card>
           )}
           
