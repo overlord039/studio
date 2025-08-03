@@ -421,12 +421,11 @@ export default function LobbyPage() {
     gameSettings.gameMode !== 'rush';
   
   const ticketsText = (count: number) => count === 1 ? 'ticket' : 'tickets';
-  let cardTitleForTickets = "Buy Your Tickets";
-  if (doesCurrentUserHaveTickets && isEditingTickets) {
-      cardTitleForTickets = "Update Your Tickets";
-  } else if (!currentUserInRoom) {
-      cardTitleForTickets = "Join & Buy Tickets";
-  }
+  
+  const ticketCardDescription = isEditingTickets 
+    ? "Select a new number of tickets to buy for this game."
+    : "Select how many tickets you want to buy for the next game.";
+  const ticketCardButtonText = isEditingTickets ? "Update" : "Confirm";
 
 
   return (
@@ -511,7 +510,7 @@ export default function LobbyPage() {
                  <div className="flex justify-between items-center">
                     <CardTitle className="text-base md:text-lg flex items-center">
                         <Ticket className="mr-2 h-5 w-5 text-primary"/>
-                        {cardTitleForTickets}
+                        Buy Your Tickets
                     </CardTitle>
                     <div className="flex items-center gap-1 text-sm font-semibold bg-background/50 px-2 py-1 rounded-full">
                         <span className="text-xs text-muted-foreground mr-1">Your Coins:</span>
@@ -519,7 +518,7 @@ export default function LobbyPage() {
                         <span>{currentUser.stats.coins}</span>
                     </div>
                 </div>
-                <CardDescription className="text-xs md:text-sm">Select how many tickets you want to buy for the next game.</CardDescription>
+                <CardDescription className="text-xs md:text-sm">{ticketCardDescription}</CardDescription>
               </CardHeader>
               <CardContent className="p-2 md:p-3 pt-0 flex flex-row items-stretch gap-2 md:gap-4">
                  <Select
@@ -540,7 +539,7 @@ export default function LobbyPage() {
                 </Select>
                 <Button onClick={handleConfirmOrJoinTickets} className="flex-shrink-0 text-xs md:text-sm h-9 md:h-10" disabled={isJoiningOrUpdating}>
                   {isJoiningOrUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Confirm
+                  {ticketCardButtonText}
                 </Button>
               </CardContent>
             </Card>
