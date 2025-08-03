@@ -86,7 +86,7 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
     totalPrizePool: hostPlayerInRoom.confirmedTicketCost,
   };
   rooms.set(roomId, newRoom);
-  console.log(`Room created: ${roomId} by host ${host.id}.`);
+  console.log(`Room created: ${roomId} by host ${host.id}. Mode: ${gameSettings.gameMode}`);
   return newRoom;
 }
 
@@ -102,7 +102,7 @@ export function getRoomStore(roomId: string): Room | undefined {
   return room;
 }
 
-export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberOfTickets?: number): Room | { error: string } {
+export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberOfTickets: number): Room | { error: string } {
     const room = rooms.get(roomId);
     if (!room) {
         return { error: "Room not found." };
@@ -119,12 +119,8 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberO
     const normalizedPlayerName = playerInfo.name.trim().toLowerCase();
     const existingPlayerIndex = room.players.findIndex(p => p.id === playerInfo.id);
     
-    let numTicketsToBuy: number;
-    if (room.settings.gameMode === 'rush') {
-        numTicketsToBuy = 1 + Math.floor(Math.random() * 4);
-    } else {
-        numTicketsToBuy = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
-    }
+    // This now directly uses the provided `numberOfTickets`. For initial join in classic, this will be 0.
+    const numTicketsToBuy = Math.max(0, numberOfTickets);
 
     const newCost = room.settings.ticketPrice * numTicketsToBuy;
 

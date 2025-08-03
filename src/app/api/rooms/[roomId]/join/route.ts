@@ -35,7 +35,9 @@ export async function POST(
     if (room.settings.gameMode === 'rush') {
         numTickets = 1 + Math.floor(Math.random() * 4); // Random tickets for Rush mode
     } else {
-        numTickets = ticketsToBuy ?? 0; // If ticketsToBuy is undefined, default to 0
+        // For classic/multiplayer, ticketsToBuy will be a number when confirming, or undefined on initial join.
+        // Defaulting to 0 for initial join adds the player without tickets.
+        numTickets = ticketsToBuy ?? 0;
     }
     
     // Server-side validation of coin balance before adding/updating player
