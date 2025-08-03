@@ -12,6 +12,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Host details are required (id, name)' }, { status: 400 });
     }
     
+    // Ensure gameMode is valid if provided
+    if (settings?.gameMode && !['classic', 'rush', 'multiplayer', 'easy', 'medium', 'hard', 'online'].includes(settings.gameMode)) {
+        return NextResponse.json({ message: 'Invalid game mode provided.' }, { status: 400 });
+    }
+
     const newRoom = createRoomStore(host, settings);
     const roomForClient = getRoomStateForClient(newRoom.id);
 

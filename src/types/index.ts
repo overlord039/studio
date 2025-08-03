@@ -44,7 +44,7 @@ export interface GameSettings {
   numberOfTicketsPerPlayer: number; // How many tickets each player gets by default
   callingMode: CallingMode;
   isPublic?: boolean;
-  gameMode?: 'multiplayer' | 'easy' | 'medium' | 'hard' | 'online';
+  gameMode?: 'multiplayer' | 'easy' | 'medium' | 'hard' | 'online' | 'classic' | 'rush';
   tier?: OnlineGameTier;
 }
 

@@ -24,11 +24,20 @@ export async function POST(
       return NextResponse.json({ message: 'Player ID and name are required' }, { status: 400 });
     }
 
-    const numTickets = typeof ticketsToBuy === 'number' && ticketsToBuy > 0 ? ticketsToBuy : DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER;
+    const room = getRoomStore(roomId);
+    if (!room) {
+        return NextResponse.json({ message: "Room not found." }, { status: 404 });
+    }
+
+    let numTickets: number;
+    if (room.settings.gameMode === 'rush') {
+        numTickets = 1 + Math.floor(Math.random() * 4); // Random tickets between 1 and 4
+    } else {
+        numTickets = typeof ticketsToBuy === 'number' && ticketsToBuy > 0 ? ticketsToBuy : DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER;
+    }
     
     // Server-side validation of coin balance before adding/updating player
     if(db) {
-        const room = getRoomStore(roomId);
         if (room && room.settings.ticketPrice > 0) {
             
             try {

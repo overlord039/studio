@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Minus, Plus, LogOut } from 'lucide-react';
+import { Minus, Plus, LogOut, Zap, Users } from 'lucide-react';
 import { useSound } from '@/contexts/sound-context';
 import type { Player, GameSettings, Room } from '@/types';
 import Link from 'next/link';
@@ -17,6 +17,7 @@ import Image from 'next/image';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const LOBBY_SIZES = [3, 5, 10, 20];
+type GameType = 'classic' | 'rush';
 
 export default function CreateOrJoinRoomPage() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -31,9 +32,16 @@ export default function CreateOrJoinRoomPage() {
   const [lobbySize, setLobbySize] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showNoCoinsDialog, setShowNoCoinsDialog] = useState(false);
+  const [gameType, setGameType] = useState<GameType>('classic');
 
   // Join Room State
   const [joinRoomId, setJoinRoomId] = useState('');
+
+  useEffect(() => {
+    if (gameType === 'rush') {
+      setTicketPrice(0);
+    }
+  }, [gameType]);
 
 
   const handlePriceChange = (increment: number) => {
@@ -75,7 +83,7 @@ export default function CreateOrJoinRoomPage() {
       ticketPrice: ticketPrice,
       lobbySize: lobbySize,
       isPublic: false,
-      gameMode: 'multiplayer',
+      gameMode: gameType,
     };
 
     try {
@@ -157,6 +165,29 @@ export default function CreateOrJoinRoomPage() {
     </button>
   );
 
+  const GameTypeSelector = () => (
+    <div className="bg-secondary/30 p-2 rounded-lg flex items-center gap-2">
+        <Button
+            onClick={() => setGameType('classic')}
+            className={cn(
+                "w-1/2 transition-all",
+                gameType === 'classic' ? 'bg-primary text-primary-foreground shadow-md' : 'bg-transparent text-muted-foreground'
+            )}
+        >
+            <Users className="mr-2 h-4 w-4" /> Classic
+        </Button>
+        <Button
+            onClick={() => setGameType('rush')}
+            className={cn(
+                "w-1/2 transition-all",
+                gameType === 'rush' ? 'bg-primary text-primary-foreground shadow-md' : 'bg-transparent text-muted-foreground'
+            )}
+        >
+            <Zap className="mr-2 h-4 w-4" /> Rush
+        </Button>
+    </div>
+  );
+
   return (
     <>
     <div className="flex flex-col items-center justify-center flex-grow p-4">
@@ -170,26 +201,37 @@ export default function CreateOrJoinRoomPage() {
             <div className="space-y-6 animate-fade-in">
               <h2 className="text-center text-xl font-bold text-foreground tracking-widest uppercase">SELECT LOBBY</h2>
               
-              <div className="bg-secondary/30 p-4 rounded-lg">
-                <div className="space-y-2 text-center">
-                  <label className="text-sm font-semibold text-muted-foreground uppercase">Entry Fee</label>
-                  <div className="flex items-center justify-center gap-4">
-                    <Button size="icon" variant="secondary" className="rounded-full w-10 h-10" onClick={() => handlePriceChange(-5)} disabled={ticketPrice <= 0}>
-                      <Minus className="h-6 w-6" />
-                    </Button>
-                    <div className="flex flex-col items-center justify-center w-28 h-20 rounded-lg border-2 border-accent bg-accent/10">
-                      <div className="flex items-center gap-1">
-                        <Image src="/coin.png" alt="Coins" width={32} height={32} />
-                        <span className="text-3xl font-bold text-foreground">{ticketPrice}</span>
+              <GameTypeSelector />
+
+              {gameType === 'classic' && (
+                <div className="bg-secondary/30 p-4 rounded-lg animate-fade-in">
+                  <div className="space-y-2 text-center">
+                    <label className="text-sm font-semibold text-muted-foreground uppercase">Entry Fee</label>
+                    <div className="flex items-center justify-center gap-4">
+                      <Button size="icon" variant="secondary" className="rounded-full w-10 h-10" onClick={() => handlePriceChange(-5)} disabled={ticketPrice <= 0}>
+                        <Minus className="h-6 w-6" />
+                      </Button>
+                      <div className="flex flex-col items-center justify-center w-28 h-20 rounded-lg border-2 border-accent bg-accent/10">
+                        <div className="flex items-center gap-1">
+                          <Image src="/coin.png" alt="Coins" width={32} height={32} />
+                          <span className="text-3xl font-bold text-foreground">{ticketPrice}</span>
+                        </div>
+                        <span className="text-xs text-accent uppercase">ticket prize</span>
                       </div>
-                      <span className="text-xs text-accent uppercase">ticket prize</span>
+                      <Button size="icon" variant="secondary" className="rounded-full w-10 h-10" onClick={() => handlePriceChange(5)}>
+                        <Plus className="h-6 w-6" />
+                      </Button>
                     </div>
-                    <Button size="icon" variant="secondary" className="rounded-full w-10 h-10" onClick={() => handlePriceChange(5)}>
-                      <Plus className="h-6 w-6" />
-                    </Button>
                   </div>
                 </div>
-              </div>
+              )}
+               {gameType === 'rush' && (
+                <div className="text-center p-3 bg-secondary/30 rounded-lg animate-fade-in">
+                  <p className="font-semibold">Rush Mode!</p>
+                  <p className="text-sm text-muted-foreground">Entry fee is free. All players get random tickets (1-4).</p>
+                </div>
+              )}
+
 
               <div className="bg-secondary/30 p-4 rounded-lg">
                 <div className="space-y-2 text-center">
