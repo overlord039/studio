@@ -38,7 +38,7 @@ export async function POST(
     
     // Server-side validation of coin balance before adding/updating player
     if(db) {
-        if (room && room.settings.ticketPrice > 0) {
+        if (room && room.settings.ticketPrice > 0 && room.settings.gameMode !== 'rush') {
             
             try {
               await runTransaction(db, async (transaction) => {
