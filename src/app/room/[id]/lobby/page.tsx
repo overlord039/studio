@@ -576,7 +576,6 @@ export default function LobbyPage() {
                   <div className="flex flex-col">
                     <div className="flex items-center">
                       <span className={cn("font-medium", player.id === currentUser?.uid && "text-primary font-bold")}>{player.name}</span>
-                      {player.isBot && <Bot className="ml-1.5 h-4 w-4 text-muted-foreground" />}
                       {player.isHost && <span className="text-xs font-semibold text-primary ml-1.5">(Host)</span>}
                     </div>
                     <span className="text-xs text-muted-foreground flex items-center gap-1">

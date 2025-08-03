@@ -148,7 +148,6 @@ function PreGameContent() {
                                             <span className={cn("font-semibold truncate", player.id === currentUser.uid && "text-primary")}>
                                                 {player.name}
                                             </span>
-                                            {player.isBot && <Bot className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />}
                                         </div>
                                         <div className="flex items-center gap-1 font-medium text-muted-foreground flex-shrink-0">
                                             <TicketIcon className="h-3.5 w-3.5" />
@@ -174,5 +173,3 @@ export default function PreGamePage() {
         </div>
     );
 }
-
-    
