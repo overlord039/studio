@@ -422,11 +422,7 @@ export default function LobbyPage() {
   
   const ticketsText = (count: number) => count === 1 ? 'ticket' : 'tickets';
   
-  const ticketCardDescription = isEditingTickets 
-    ? "Select a new number of tickets to buy for this game."
-    : "Select how many tickets you want to buy for the next game.";
   const ticketCardButtonText = isEditingTickets ? "Update" : "Confirm";
-
 
   return (
     <>
@@ -475,7 +471,7 @@ export default function LobbyPage() {
             {roomData.isGameStarted && !roomData.isGameOver ? "Game has started." : roomData.isGameOver ? "Game is over. The host can start a new game." : "Waiting for players. The host can start the game once conditions are met."}
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-3 md:p-4 pt-0 space-y-4 md:space-y-6">
+        <CardContent className="p-3 md:p-4 pt-0 space-y-4">
           <div className="grid grid-cols-2 gap-4">
               <Card className="bg-secondary/20">
                 <CardContent className="p-3 flex flex-col items-center justify-center text-center">
@@ -518,7 +514,7 @@ export default function LobbyPage() {
                         <span>{currentUser.stats.coins}</span>
                     </div>
                 </div>
-                <CardDescription className="text-xs md:text-sm">{ticketCardDescription}</CardDescription>
+                <CardDescription className="text-xs md:text-sm">Select how many tickets you want to buy for this game.</CardDescription>
               </CardHeader>
               <CardContent className="p-2 md:p-3 pt-0 flex flex-row items-stretch gap-2 md:gap-4">
                  <Select
@@ -544,14 +540,14 @@ export default function LobbyPage() {
               </CardContent>
             </Card>
           )}
-
+          
           {!showTicketSelectionUI && doesCurrentUserHaveTickets && !roomData.isGameStarted && !roomData.isGameOver && gameSettings.gameMode !== 'rush' && (
             <Card className="bg-secondary/20">
               <CardHeader className="p-2 md:p-3 pb-2">
                 <div className="flex justify-between items-center">
                     <CardTitle className="text-base md:text-lg flex items-center">
                     <Ticket className="mr-2 h-5 w-5 text-primary"/>
-                    Your Confirmed Tickets
+                    Buy Your Tickets
                     </CardTitle>
                     <div className="flex items-center gap-1 text-sm font-semibold bg-background/50 px-2 py-1 rounded-full">
                          <span className="text-xs text-muted-foreground mr-1">Your Coins:</span>
@@ -559,120 +555,122 @@ export default function LobbyPage() {
                         <span>{currentUser.stats.coins}</span>
                     </div>
                 </div>
-              </CardHeader>
-              <CardContent className="p-2 md:p-3 pt-0 flex flex-row items-center justify-between gap-2 md:gap-4">
-                <p className="font-medium text-xs md:text-sm">
-                  You have {currentUserInRoom?.tickets.length} {ticketsText(currentUserInRoom?.tickets.length ?? 0)} confirmed.
+                 <CardDescription className="text-xs md:text-sm">
+                   You have {currentUserInRoom?.tickets.length} {ticketsText(currentUserInRoom?.tickets.length ?? 0)} confirmed.
                   {!isCurrentUserHost && " Waiting for host..."}
-                </p>
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-2 md:p-3 pt-0 flex flex-row items-center justify-end gap-2 md:gap-4">
                 <Button onClick={() => setIsEditingTickets(true)} variant="outline" className="text-xs md:text-sm h-9 md:h-10">
                   <Edit className="mr-2 h-4 w-4" />
-                  Edit
+                  Change
                 </Button>
               </CardContent>
             </Card>
           )}
-
-          <div>
-            <h3 className="text-base md:text-xl font-semibold mb-2 flex items-center">
-              <Users className="mr-2 h-5 w-5 text-primary" /> Players ({roomData.players.length}/{gameSettings.lobbySize})
-            </h3>
-            <ul className="space-y-2 rounded-md border p-2 md:p-4 max-h-40 md:max-h-60 overflow-y-auto text-xs md:text-sm">
-              {roomData.players.map(player => (
-                <li key={player.id} className="flex justify-between items-center p-2 bg-secondary/30 rounded">
-                  <div className="flex flex-col">
-                    <div className="flex items-center">
-                      <span className={cn("font-medium", player.id === currentUser?.uid && "text-primary font-bold")}>{player.name}</span>
-                      {player.isHost && <span className="text-xs font-semibold text-primary ml-1.5">(Host)</span>}
-                    </div>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      {player.tickets?.length > 0 
-                        ? <>
-                            <span>{player.tickets.length} ticket{player.tickets.length === 1 ? '' : 's'}</span>
-                            <div className="flex items-center gap-0.5">(<Image src="/coin.png" alt="Coins" width={14} height={14} />{player.tickets.length * gameSettings.ticketPrice})</div>
-                          </>
-                        : (roomData.isGameOver ? "Game Over" : "No tickets yet")}
-                    </span>
-                  </div>
-                  
-                  {isCurrentUserHost && !player.isBot && player.id !== currentUser?.uid && !roomData.isGameStarted && (
-                    <div className="flex items-center gap-1">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Make ${player.name} host`}>
-                            <Crown className="h-4 w-4 text-yellow-500" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Transfer Host?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to make {player.name} the new host? You will lose host privileges.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleTransferHost(player.id)}>Confirm</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Kick ${player.name}`}>
-                            <UserX className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Kick Player?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to remove {player.name} from the lobby?
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleKickPlayer(player.id)} className={buttonVariants({ variant: "destructive" })}>Kick</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  )}
-                </li>
-              ))}
-              {roomData.players.length === 0 && <li className="text-muted-foreground">No players yet. Join in!</li>}
-            </ul>
-          </div>
           
-           <div>
-            <h3 className="text-base md:text-xl font-semibold mb-2 flex items-center">
-                <Gift className="mr-2 h-5 w-5 text-primary" /> Prize Distribution
-            </h3>
-            <Card className="bg-secondary/30">
-              <CardContent className="p-2 md:p-4 space-y-2 text-xs md:text-sm">
-                 <div className="font-semibold flex items-center gap-1">
-                  <span>Potential Prize Pool:</span>
-                  <Image src="/coin.png" alt="Coins" width={18} height={18} />
-                  <span>{currentTotalPrizePool.toFixed(0)}</span>
-                 </div>
-                 <p className="text-xs text-muted-foreground">
-                   (Based on {totalTicketsBoughtByPlayers} {ticketsText(totalTicketsBoughtByPlayers)} confirmed by players for this round)
-                 </p>
-                {prizesForFormat.map((prizeName) => {
-                  const percentage = prizeDistribution[prizeName as PrizeType] || 0;
-                  const prizeAmount = (currentTotalPrizePool * percentage) / 100;
-                  return (
-                    <div key={prizeName} className="flex justify-between items-center text-xs md:text-sm">
-                      <span>{prizeName}:</span>
-                      <div className="font-semibold flex items-center gap-1">
-                        <Image src="/coin.png" alt="Coins" width={18} height={18} />
-                        <span>{prizeAmount.toFixed(0)}</span>
+          <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-base md:text-xl font-semibold mb-2 flex items-center">
+                  <Users className="mr-2 h-5 w-5 text-primary" /> Players ({roomData.players.length}/{gameSettings.lobbySize})
+                </h3>
+                <ul className="space-y-2 rounded-md border p-2 md:p-4 max-h-40 md:max-h-60 overflow-y-auto text-xs md:text-sm">
+                  {roomData.players.map(player => (
+                    <li key={player.id} className="flex justify-between items-center p-2 bg-secondary/30 rounded">
+                      <div className="flex flex-col">
+                        <div className="flex items-center">
+                          <span className={cn("font-medium", player.id === currentUser?.uid && "text-primary font-bold")}>{player.name}</span>
+                          {player.isHost && <span className="text-xs font-semibold text-primary ml-1.5">(Host)</span>}
+                        </div>
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          {player.tickets?.length > 0 
+                            ? <>
+                                <span>{player.tickets.length} ticket{player.tickets.length === 1 ? '' : 's'}</span>
+                                <div className="flex items-center gap-0.5">(<Image src="/coin.png" alt="Coins" width={14} height={14} />{player.tickets.length * gameSettings.ticketPrice})</div>
+                              </>
+                            : (roomData.isGameOver ? "Game Over" : "No tickets yet")}
+                        </span>
                       </div>
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
+                      
+                      {isCurrentUserHost && !player.isBot && player.id !== currentUser?.uid && !roomData.isGameStarted && (
+                        <div className="flex items-center gap-1">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Make ${player.name} host`}>
+                                <Crown className="h-4 w-4 text-yellow-500" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Transfer Host?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to make {player.name} the new host? You will lose host privileges.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleTransferHost(player.id)}>Confirm</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Kick ${player.name}`}>
+                                <UserX className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Kick Player?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to remove {player.name} from the lobby?
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleKickPlayer(player.id)} className={buttonVariants({ variant: "destructive" })}>Kick</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                  {roomData.players.length === 0 && <li className="text-muted-foreground">No players yet. Join in!</li>}
+                </ul>
+              </div>
+              
+              <div>
+                <h3 className="text-base md:text-xl font-semibold mb-2 flex items-center">
+                    <Gift className="mr-2 h-5 w-5 text-primary" /> Prize Distribution
+                </h3>
+                <Card className="bg-secondary/30">
+                  <CardContent className="p-2 md:p-4 space-y-2 text-xs md:text-sm">
+                     <div className="font-semibold flex items-center gap-1">
+                      <span>Potential Prize Pool:</span>
+                      <Image src="/coin.png" alt="Coins" width={18} height={18} />
+                      <span>{currentTotalPrizePool.toFixed(0)}</span>
+                     </div>
+                     <p className="text-xs text-muted-foreground">
+                       (Based on {totalTicketsBoughtByPlayers} {ticketsText(totalTicketsBoughtByPlayers)} confirmed by players for this round)
+                     </p>
+                    {prizesForFormat.map((prizeName) => {
+                      const percentage = prizeDistribution[prizeName as PrizeType] || 0;
+                      const prizeAmount = (currentTotalPrizePool * percentage) / 100;
+                      return (
+                        <div key={prizeName} className="flex justify-between items-center text-xs md:text-sm">
+                          <span>{prizeName}:</span>
+                          <div className="font-semibold flex items-center gap-1">
+                            <Image src="/coin.png" alt="Coins" width={18} height={18} />
+                            <span>{prizeAmount.toFixed(0)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              </div>
           </div>
           
           {isCurrentUserHost && !roomData.isGameStarted && !roomData.isGameOver &&(
