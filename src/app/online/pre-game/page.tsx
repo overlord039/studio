@@ -117,7 +117,7 @@ function PreGameContent() {
                         {formatCoins(totalPrizePool)}
                     </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                          <h3 className="text-sm font-semibold text-center mb-2 flex items-center justify-center uppercase tracking-wider">
                             <Gift className="mr-2 h-4 w-4"/> Prizes
