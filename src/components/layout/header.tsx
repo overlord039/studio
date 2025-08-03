@@ -379,7 +379,7 @@ export default function Header() {
              <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
                 <DialogTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-12 w-12">
-                        <Settings className="h-6 w-6" />
+                        <Settings className="h-7 w-7 text-white" />
                     </Button>
                 </DialogTrigger>
                 <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} activeTab={activeTab} setActiveTab={setActiveTab} />

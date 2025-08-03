@@ -82,7 +82,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                         <TooltipTrigger asChild>
                                             <DialogTrigger asChild>
                                                 <Button variant="ghost" size="icon" className="h-12 w-12">
-                                                    <Calendar className="h-6 w-6" />
+                                                    <Calendar className="h-7 w-7 text-white" />
                                                     <span className="sr-only">Daily Rewards</span>
                                                 </Button>
                                             </DialogTrigger>
