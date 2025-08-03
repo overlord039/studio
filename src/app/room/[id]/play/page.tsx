@@ -842,6 +842,20 @@ export default function GameRoomPage() {
                      </li>
                   );
                 })}
+                {isBotGame && (
+                  <li className="flex flex-col text-sm bg-green-500/10 p-1.5 rounded-md border border-green-500/20 mt-2">
+                      <div className="flex justify-between items-center w-full">
+                          <span className="font-medium">Participation Reward</span>
+                          <div className="font-semibold flex items-center gap-1 text-green-600">
+                              <Image src="/coin.png" alt="Coins" width={16} height={16} />
+                              <span>{PARTICIPATION_REWARD}</span>
+                          </div>
+                      </div>
+                      <span className="text-xs text-right w-full text-muted-foreground/80">
+                          Awarded for every game played
+                      </span>
+                  </li>
+                )}
               </ul>
             </div>
 
