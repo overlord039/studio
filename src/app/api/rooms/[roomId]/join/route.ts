@@ -29,16 +29,18 @@ export async function POST(
         return NextResponse.json({ message: "Room not found." }, { status: 404 });
     }
 
+    // Determine the number of tickets. For non-rush games, if ticketsToBuy is not provided (e.g., initial join),
+    // we pass 0 to addPlayerToRoomStore, so they are in the lobby but must confirm tickets.
     let numTickets: number;
     if (room.settings.gameMode === 'rush') {
-        numTickets = 1 + Math.floor(Math.random() * 4); // Random tickets between 1 and 4
+        numTickets = 1 + Math.floor(Math.random() * 4); // Random tickets for Rush mode
     } else {
-        numTickets = typeof ticketsToBuy === 'number' && ticketsToBuy > 0 ? ticketsToBuy : DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER;
+        numTickets = ticketsToBuy ?? 0; // If ticketsToBuy is undefined, default to 0
     }
     
     // Server-side validation of coin balance before adding/updating player
     if(db) {
-        if (room && room.settings.ticketPrice > 0 && room.settings.gameMode !== 'rush') {
+        if (room && room.settings.ticketPrice > 0 && room.settings.gameMode !== 'rush' && ticketsToBuy && ticketsToBuy > 0) {
             
             try {
               await runTransaction(db, async (transaction) => {
