@@ -71,10 +71,6 @@ export async function POST(
         return NextResponse.json({ message: 'User data not found in database.' }, { status: 404 });
     }
     
-    const isGuest = playerDoc.data().isGuest || false;
-
-    const batch = writeBatch(db);
-    
     // Online game stats (including coins & prizes) are handled separately in game-store.ts upon game completion.
     const isOnlineGame = room.settings.gameMode === 'online';
     if (isOnlineGame) {
@@ -124,10 +120,11 @@ export async function POST(
       statsUpdate['stats.coins'] = increment(coinsEarned);
     }
     
+    const batch = writeBatch(db);
     batch.update(playerDocRef, statsUpdate);
     await batch.commit();
 
-    return NextResponse.json({ success: true, message: 'Stats updated successfully.', coinsEarned });
+    return NextResponse.json({ success: true, message: 'Stats updated successfully.' });
 
   } catch (error) {
     console.error(`Error updating stats for room ${roomId}:`, error);

@@ -92,7 +92,7 @@ const OFFLINE_COIN_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType,
     [PRIZE_TYPES.FULL_HOUSE]: 5,
   }
 };
-
+const PARTICIPATION_REWARD = 1;
 
 export default function GameRoomPage() {
   const router = useRouter();
@@ -266,63 +266,77 @@ export default function GameRoomPage() {
   // This effect runs ONCE when the game is over to trigger the stat update.
   useEffect(() => {
     if (roomData?.isGameOver && currentUser && !statsUpdateInitiatedRef.current) {
-      statsUpdateInitiatedRef.current = true;
-      localStorage.removeItem(`markedNumbers-${roomId}-${currentUser.uid}`);
+        statsUpdateInitiatedRef.current = true; // Prevents re-running
+        localStorage.removeItem(`markedNumbers-${roomId}-${currentUser.uid}`);
 
-      const updateMyStats = async () => {
+        const isBotGame = roomData.settings.gameMode && ['easy', 'medium', 'hard'].includes(roomData.settings.gameMode);
         
-        const isGameApplicableForStatsUpdate = roomData.settings.gameMode !== 'online';
-        if (!isGameApplicableForStatsUpdate) return; 
-
-        if (currentUser.isGuest) {
-            const newStats = { ...currentUser.stats };
-            newStats.matchesPlayed += 1;
-            
-            const prizesWon = roomData.prizeStatus;
-            for (const prize in prizesWon) {
-                if(prizesWon[prize as PrizeType]?.claimedBy.some(c => c.id === currentUser.uid)) {
-                   newStats.prizesWon[prize as PrizeType] = (newStats.prizesWon[prize as PrizeType] || 0) + 1;
+        if (isBotGame && roomData.settings.gameMode) {
+            let coinsEarned = 0;
+            const prizesWonByPlayer = [];
+            for (const prizeType in roomData.prizeStatus) {
+                const prizeInfo = roomData.prizeStatus[prizeType as PrizeType];
+                if (prizeInfo && prizeInfo.claimedBy.some(c => c.id === currentUser.uid)) {
+                    prizesWonByPlayer.push(prizeType as PrizeType);
                 }
             }
-            updateContextUserStats(newStats);
-            return;
+
+            const gameMode = roomData.settings.gameMode as 'easy' | 'medium' | 'hard';
+            const modeRewards = OFFLINE_COIN_REWARDS[gameMode];
+            
+            coinsEarned += PARTICIPATION_REWARD;
+
+            if (modeRewards && prizesWonByPlayer.length > 0) {
+                prizesWonByPlayer.forEach(prize => {
+                    coinsEarned += modeRewards[prize] || 0;
+                });
+            }
+            setCoinsWonThisGame(coinsEarned);
         }
 
-        try {
-          const response = await fetch(`/api/rooms/${roomId}/update-stats`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: currentUser.uid }),
-          });
+        // Always trigger the API for stat persistence, even for bot games.
+        // For bot games, the API will now primarily just increment matchesPlayed.
+        // For online games, the API handles prize distribution (this logic is on the server).
+        const updateMyStats = async () => {
+            if (currentUser.isGuest) {
+                const newStats = { ...currentUser.stats };
+                newStats.matchesPlayed += 1;
+                
+                const prizesWon = roomData.prizeStatus;
+                for (const prize in prizesWon) {
+                    if(prizesWon[prize as PrizeType]?.claimedBy.some(c => c.id === currentUser.uid)) {
+                       newStats.prizesWon[prize as PrizeType] = (newStats.prizesWon[prize as PrizeType] || 0) + 1;
+                    }
+                }
+                updateContextUserStats(newStats);
+                return;
+            }
 
-          const result = await response.json();
-          if (!response.ok) {
-            throw new Error(result.message || "Failed to trigger stat update.");
-          }
-          
-          if (result.coinsEarned >= 0) {
-            setCoinsWonThisGame(result.coinsEarned);
-             if (result.coinsEarned > 0) {
+            try {
+                const response = await fetch(`/api/rooms/${roomId}/update-stats`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: currentUser.uid }),
+                });
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.message || "Failed to trigger stat update.");
+                }
+
+            } catch (error) {
+                console.error("Failed to trigger stats update:", error);
                 toast({
-                    title: "Coins Rewarded!",
-                    description: `You earned ${result.coinsEarned} coins for playing.`,
-                    className: "bg-yellow-500 text-white",
-                })
-             }
-          }
-        } catch (error) {
-          console.error("Failed to trigger stats update:", error);
-          toast({
-            title: "Stats Sync Error",
-            description: "Could not save your game stats.",
-            variant: "destructive"
-          });
-        }
-      };
+                    title: "Stats Sync Error",
+                    description: "Could not save your game stats.",
+                    variant: "destructive"
+                });
+            }
+        };
 
-      updateMyStats();
+        updateMyStats();
     }
-  }, [roomData?.isGameOver, currentUser, roomId, toast, updateContextUserStats]);
+}, [roomData?.isGameOver, currentUser, roomId, toast, updateContextUserStats]);
 
   // This effect loads marked numbers from localStorage on mount
   useEffect(() => {
