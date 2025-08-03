@@ -46,7 +46,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
     }
 
 
-    const showHeaderAndFooter = pathname === '/' || pathname.startsWith('/online');
+    const showHeaderAndFooter = pathname === '/' || pathname.startsWith('/online') || pathname.startsWith('/room');
     const showActionIcons = pathname === '/';
 
     const isSpecialLayoutPage = 
@@ -70,9 +70,6 @@ export default function PageLayout({ children }: { children: ReactNode }) {
             <main className={mainClassName}>
                  {showActionIcons && (
                     <div className="fixed top-18 right-4 z-40 flex flex-col items-center gap-2">
-                       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-                           <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} activeTab={activeTab} setActiveTab={setActiveTab} />
-                        </Dialog>
                          {currentUser && (
                              <Dialog open={isRewardDialogOpen} onOpenChange={setIsRewardDialogOpen}>
                                 <TooltipProvider>
