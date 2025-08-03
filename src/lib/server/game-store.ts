@@ -62,6 +62,13 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
     isBot: false,
     confirmedTicketCost: 0,
   };
+  
+  if (gameSettings.gameMode === 'rush') {
+      const numTickets = 1 + Math.floor(Math.random() * 4);
+      hostPlayerInRoom.tickets = generateMultipleUniqueTickets(numTickets);
+      hostPlayerInRoom.confirmedTicketCost = 0; // Rush mode is free
+  }
+
 
   const newRoom: Room = {
     id: roomId,
@@ -76,7 +83,7 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
     numberPool: initializeNumberPool(),
     prizeStatus: initializePrizeStatus(gameSettings),
     lastNumberCalledTimestamp: undefined,
-    totalPrizePool: 0,
+    totalPrizePool: hostPlayerInRoom.confirmedTicketCost,
   };
   rooms.set(roomId, newRoom);
   console.log(`Room created: ${roomId} by host ${host.id}.`);
@@ -111,7 +118,14 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberO
     
     const normalizedPlayerName = playerInfo.name.trim().toLowerCase();
     const existingPlayerIndex = room.players.findIndex(p => p.id === playerInfo.id);
-    const numTicketsToBuy = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
+    
+    let numTicketsToBuy: number;
+    if (room.settings.gameMode === 'rush') {
+        numTicketsToBuy = 1 + Math.floor(Math.random() * 4);
+    } else {
+        numTicketsToBuy = Math.max(1, numberOfTickets === undefined ? (room.settings.numberOfTicketsPerPlayer || DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER) : numberOfTickets);
+    }
+
     const newCost = room.settings.ticketPrice * numTicketsToBuy;
 
     if (existingPlayerIndex !== -1) {
