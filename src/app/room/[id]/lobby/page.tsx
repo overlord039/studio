@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter, useParams } from "next/navigation";
-import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangle, Edit, RotateCcw, Crown, UserX, Bot } from "lucide-react";
+import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangle, Edit, RotateCcw, Crown, UserX, Zap } from "lucide-react";
 import type { Room, GameSettings, PrizeType, BackendPlayerInRoom } from "@/types";
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE } from "@/lib/constants";
 import React, { useEffect, useState, useCallback, useRef } from "react";
@@ -416,8 +416,9 @@ export default function LobbyPage() {
   const currentTotalPrizePool = gameSettings.ticketPrice * totalTicketsBoughtByPlayers;
   const minPlayersToStart = gameSettings.gameMode !== 'multiplayer' ? 1 : MIN_LOBBY_SIZE;
 
-  const showTicketSelectionUI = currentUser && !roomData.isGameStarted && 
-    (!doesCurrentUserHaveTickets || isEditingTickets);
+  const showTicketSelectionUI = currentUser && !roomData.isGameStarted &&
+    (!doesCurrentUserHaveTickets || isEditingTickets) &&
+    gameSettings.gameMode !== 'rush';
   
   const ticketsText = (count: number) => count === 1 ? 'ticket' : 'tickets';
   let cardTitleForTickets = "Buy Your Tickets";
@@ -497,6 +498,13 @@ export default function LobbyPage() {
               </Card>
           </div>
 
+          {gameSettings.gameMode === 'rush' && !roomData.isGameStarted && (
+            <div className="text-center p-3 bg-secondary/30 rounded-lg">
+                <h3 className="font-semibold flex items-center justify-center gap-2"><Zap className="h-5 w-5 text-primary"/>Rush Mode Active!</h3>
+                <p className="text-sm text-muted-foreground">Tickets will be assigned randomly to all players when you join.</p>
+            </div>
+          )}
+
           {showTicketSelectionUI && !roomData.isGameOver && (
             <Card className="bg-secondary/20">
               <CardHeader className="p-2 md:p-3 pb-2">
@@ -538,7 +546,7 @@ export default function LobbyPage() {
             </Card>
           )}
 
-          {!showTicketSelectionUI && doesCurrentUserHaveTickets && !roomData.isGameStarted && !roomData.isGameOver && (
+          {!showTicketSelectionUI && doesCurrentUserHaveTickets && !roomData.isGameStarted && !roomData.isGameOver && gameSettings.gameMode !== 'rush' && (
             <Card className="bg-secondary/20">
               <CardHeader className="p-2 md:p-3 pb-2">
                 <div className="flex justify-between items-center">
