@@ -46,7 +46,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
     }
 
 
-    const showHeaderAndFooter = pathname === '/' || pathname.startsWith('/online') || pathname.startsWith('/room');
+    const showHeaderAndFooter = pathname === '/' || pathname.startsWith('/online');
     const showActionIcons = pathname === '/';
 
     const isSpecialLayoutPage = 
@@ -70,40 +70,38 @@ export default function PageLayout({ children }: { children: ReactNode }) {
             <main className={mainClassName}>
                  {showActionIcons && (
                     <div className="fixed top-18 right-4 z-40 flex flex-col items-center gap-2">
-                         {currentUser && (
-                             <Dialog open={isRewardDialogOpen} onOpenChange={setIsRewardDialogOpen}>
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <DialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-12 w-12 relative">
-                                                    {canClaimReward && !isRewardDialogOpen && (
-                                                      <span className="absolute top-2 right-2 flex h-3 w-3">
-                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                                                      </span>
-                                                    )}
-                                                    <Calendar className="h-7 w-7 text-white" />
-                                                    <span className="sr-only">Daily Rewards</span>
-                                                </Button>
-                                            </DialogTrigger>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>Daily Rewards</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                                {isRewardDialogOpen && (
-                                    <DailyRewardDialog 
-                                        user={currentUser} 
-                                        onClaim={handleClaimAndClose}
-                                        onClose={() => setIsRewardDialogOpen(false)}
-                                        open={isRewardDialogOpen}
-                                        onOpenChange={setIsRewardDialogOpen}
-                                    />
-                                )}
-                            </Dialog>
-                        )}
+                         <Dialog>
+                            <TooltipProvider>
+                                <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <DialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-12 w-12 relative">
+                                             {currentUser && canClaimReward && !isRewardDialogOpen && (
+                                                <span className="absolute top-2 right-2 flex h-3 w-3">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                                </span>
+                                            )}
+                                            <Calendar className="h-7 w-7 text-white" />
+                                            <span className="sr-only">Daily Rewards</span>
+                                        </Button>
+                                    </DialogTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Daily Rewards</p>
+                                </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            {currentUser && (
+                                <DailyRewardDialog 
+                                    user={currentUser} 
+                                    onClaim={handleClaimAndClose}
+                                    onClose={() => setIsRewardDialogOpen(false)}
+                                    open={isRewardDialogOpen}
+                                    onOpenChange={setIsRewardDialogOpen}
+                                />
+                            )}
+                        </Dialog>
                         <FeedbackForm />
                     </div>
                 )}
