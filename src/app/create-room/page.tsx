@@ -36,6 +36,7 @@ export default function CreateOrJoinRoomPage() {
 
   // Join Room State
   const [joinRoomId, setJoinRoomId] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
 
   useEffect(() => {
     if (gameType === 'rush') {
@@ -120,7 +121,7 @@ export default function CreateOrJoinRoomPage() {
   };
 
 
-  const handleJoinRoom = () => {
+  const handleJoinRoom = async () => {
     playSound('cards.mp3');
     if (!currentUser) {
       toast({
@@ -131,14 +132,44 @@ export default function CreateOrJoinRoomPage() {
       return;
     }
     const trimmedRoomId = joinRoomId.trim();
-    if (trimmedRoomId) {
-      router.push(`/room/${trimmedRoomId}/lobby`);
-    } else {
+    if (!trimmedRoomId) {
       toast({
         title: "Room ID Required",
         description: "Please enter a Room ID to join.",
         variant: "destructive",
       });
+      return;
+    }
+
+    setIsJoining(true);
+    try {
+        const response = await fetch(`/api/rooms/${trimmedRoomId}/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                playerId: currentUser.uid,
+                playerName: currentUser.displayName || 'Guest',
+                // We don't pass tickets here, allowing the backend to use defaults
+                // or handle modes like 'rush' appropriately.
+            }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || "Failed to join room.");
+        }
+        
+        router.push(`/room/${trimmedRoomId}/lobby`);
+
+    } catch (error) {
+        toast({
+            title: "Could Not Join Room",
+            description: (error as Error).message,
+            variant: "destructive",
+        });
+    } finally {
+        setIsJoining(false);
     }
   };
 
@@ -274,13 +305,13 @@ export default function CreateOrJoinRoomPage() {
                   className="h-12 text-lg text-center bg-background border-input focus:border-accent tracking-widest"
                   value={joinRoomId}
                   onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
-                  disabled={authLoading}
+                  disabled={authLoading || isJoining}
                   maxLength={6}
                 />
               </div>
 
-              <Button onClick={handleJoinRoom} variant="default" size="lg" className="w-full text-lg font-bold" disabled={authLoading}>
-                Join Room
+              <Button onClick={handleJoinRoom} variant="default" size="lg" className="w-full text-lg font-bold" disabled={authLoading || isJoining}>
+                {isJoining ? 'Joining...' : 'Join Room'}
               </Button>
             </div>
           )}
