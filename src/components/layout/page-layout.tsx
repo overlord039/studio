@@ -70,7 +70,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
             <main className={mainClassName}>
                  {showActionIcons && (
                     <div className="fixed top-18 right-4 z-40 flex flex-col items-center gap-2">
-                         <Dialog>
+                        <Dialog open={isRewardDialogOpen} onOpenChange={setIsRewardDialogOpen}>
                             <TooltipProvider>
                                 <Tooltip>
                                 <TooltipTrigger asChild>
@@ -96,9 +96,6 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                 <DailyRewardDialog 
                                     user={currentUser} 
                                     onClaim={handleClaimAndClose}
-                                    onClose={() => setIsRewardDialogOpen(false)}
-                                    open={isRewardDialogOpen}
-                                    onOpenChange={setIsRewardDialogOpen}
                                 />
                             )}
                         </Dialog>
