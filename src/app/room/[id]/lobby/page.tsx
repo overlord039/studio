@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -547,7 +548,7 @@ export default function LobbyPage() {
                 <div className="flex justify-between items-center">
                     <CardTitle className="text-base md:text-lg flex items-center">
                     <Ticket className="mr-2 h-5 w-5 text-primary"/>
-                    Buy Your Tickets
+                    Your Confirmed Tickets
                     </CardTitle>
                     <div className="flex items-center gap-1 text-sm font-semibold bg-background/50 px-2 py-1 rounded-full">
                          <span className="text-xs text-muted-foreground mr-1">Your Coins:</span>

@@ -201,6 +201,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         newStreak = 1; // Streak broken, reset to 1
     }
     
+    // If the streak was 7 yesterday and we are continuing, it rolls over to 1 today.
+    // If it was less than 7, it just increments.
     if (newStreak > 7) {
         newStreak = 1;
     }
@@ -296,8 +298,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     const finalUser = await checkDailyLogin(userForLoginCheck);
                     setCurrentUser(prevUser => areUsersEqual(prevUser, finalUser) ? prevUser : finalUser);
 
-                    const canClaimToday = (finalUser.stats.loginStreak || 0) > (finalUser.stats.lastClaimedDay || 0);
-                    if (canClaimToday) {
+                    const canClaim = (finalUser.stats.loginStreak || 0) > (finalUser.stats.lastClaimedDay || 0);
+                    if (canClaim) {
                         setTimeout(() => setIsRewardDialogOpen(true), 1500); // Open dialog after a short delay
                     }
                 }
@@ -325,10 +327,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const handleClaimReward = async (day: number) => {
     if (!currentUser) return;
     
+    // Safety check to prevent claiming future days
+    if (day > (currentUser.stats.loginStreak || 0)) {
+        toast({ title: "Error", description: "Cannot claim a future reward.", variant: "destructive" });
+        return;
+    }
+    
     const rewardAmount = WEEKLY_REWARDS[day - 1];
     let totalReward = rewardAmount;
     let message = `You claimed ${rewardAmount} coins for Day ${day}!`;
 
+    // A perfect week is when the streak is 7 AND they are claiming day 7.
     if (day === 7 && currentUser.stats.loginStreak === 7) {
         totalReward += PERFECT_STREAK_BONUS;
         message = `You completed the week and earned a bonus! Total reward: ${totalReward} coins!`;
