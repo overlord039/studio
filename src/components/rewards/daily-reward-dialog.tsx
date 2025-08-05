@@ -2,7 +2,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -11,25 +11,46 @@ import { WEEKLY_REWARDS, PERFECT_STREAK_BONUS } from '@/lib/rewards';
 import { cn } from '@/lib/utils';
 import { CheckCircle, Gift, Star, X } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
+import AnimatedCoin from './animated-coin';
 
 interface DailyRewardDialogProps {
   user: User;
-  onClaim: (day: number) => void;
+  onClaim: (day: number) => Promise<{claimedAmount: number} | null>;
 }
 
 export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogProps) {
   const { setIsRewardDialogOpen } = useAuth();
   const streak = user.stats.loginStreak || 1;
   const lastClaimed = user.stats.lastClaimedDay || 0;
-  
+  const [animatingCoins, setAnimatingCoins] = useState<number[]>([]);
+  let coinIdCounter = 0;
+
   const canClaimToday = streak > lastClaimed;
+
+  const handleClaimAndAnimate = async () => {
+      const result = await onClaim(streak);
+      if (result && result.claimedAmount > 0) {
+        const coinsToAnimate = Math.min(20, result.claimedAmount);
+        const newCoins = Array.from({ length: coinsToAnimate }, () => coinIdCounter++);
+        setAnimatingCoins(newCoins);
+
+        setTimeout(() => {
+            handleClose();
+        }, 2000); // Close dialog after animation has played out
+      }
+  };
+
+  const handleAnimationEnd = (id: number) => {
+    setAnimatingCoins(prev => prev.filter(coinId => coinId !== id));
+  };
+
 
   const handleClose = () => {
     setIsRewardDialogOpen(false);
   }
 
   return (
-    <DialogContent className="max-w-md w-[90vw] p-0" onInteractOutside={(e) => { if (canClaimToday) e.preventDefault() }}>
+    <DialogContent className="max-w-md w-[90vw] p-0 overflow-hidden" onInteractOutside={(e) => { if (canClaimToday) e.preventDefault() }}>
       <div className="relative p-6">
         <DialogHeader className="text-center">
           <div className="flex justify-center mb-2">
@@ -59,7 +80,7 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
 
         <DialogFooter className="mt-6">
           {canClaimToday ? (
-            <Button onClick={() => onClaim(streak)} className="w-full" size="lg">
+            <Button onClick={handleClaimAndAnimate} className="w-full" size="lg">
               Claim Day {streak} Reward
             </Button>
           ) : (
@@ -76,6 +97,9 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
               </button>
           </DialogClose>
       )}
+       {animatingCoins.map(id => (
+        <AnimatedCoin key={id} id={id} onAnimationEnd={handleAnimationEnd} />
+      ))}
     </DialogContent>
   );
 }

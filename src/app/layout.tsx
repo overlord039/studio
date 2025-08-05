@@ -1,4 +1,5 @@
 
+
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
@@ -8,6 +9,7 @@ import PageLayout from '@/components/layout/page-layout';
 import { SoundProvider } from '@/contexts/sound-context';
 import BackgroundMusicPlayer from '@/components/layout/background-music-player';
 import SplashScreen from '@/components/layout/splash-screen';
+import AnimatedCoin from '@/components/rewards/animated-coin';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',

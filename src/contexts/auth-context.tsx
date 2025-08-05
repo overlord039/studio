@@ -55,7 +55,7 @@ interface AuthContextType {
   isSigningIn: null | 'guest' | 'google';
   setLocalGuestAvatar: (url: string) => void;
   setLocalGuestUsername: (name: string) => void;
-  handleClaimReward: (day: number) => Promise<void>;
+  handleClaimReward: (day: number) => Promise<{claimedAmount: number} | null>;
   isRewardDialogOpen: boolean;
   setIsRewardDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
   canClaimReward: boolean;
@@ -325,12 +325,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast, checkDailyLogin]);
 
   const handleClaimReward = async (day: number) => {
-    if (!currentUser) return;
+    if (!currentUser) return null;
     
     // Safety check to prevent claiming future days
     if (day > (currentUser.stats.loginStreak || 0)) {
         toast({ title: "Error", description: "Cannot claim a future reward.", variant: "destructive" });
-        return;
+        return null;
     }
     
     const rewardAmount = WEEKLY_REWARDS[day - 1];
@@ -350,9 +350,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             'stats.lastClaimedDay': day,
         });
         toast({ title: "Reward Claimed!", description: message });
+        return { claimedAmount: totalReward };
     } catch (error) {
         console.error("Failed to claim reward:", error);
         toast({ title: "Error", description: "Could not claim your reward.", variant: "destructive" });
+        return null;
     }
   };
 
