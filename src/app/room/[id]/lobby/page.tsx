@@ -430,22 +430,28 @@ export default function LobbyPage() {
     <div className="flex flex-grow flex-col items-center justify-center p-4">
       <Card className="w-full max-w-2xl shadow-xl">
         <CardHeader className="p-2 md:p-3">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-lg md:text-2xl font-bold flex items-center gap-2">
-              <span>Lobby:</span>
-              <div className="flex items-center gap-1 bg-muted p-1.5 rounded-lg border">
-                <span className="font-mono text-accent tracking-widest">{roomData.id}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleCopyRoomId}
-                  className="h-6 w-6"
-                  aria-label="Copy Room ID"
-                >
-                  <ClipboardCopy className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardTitle>
+          <div className="flex justify-between items-center gap-2">
+            <div className="flex items-center gap-2">
+                <CardTitle className="text-lg md:text-xl font-bold flex items-center gap-2">
+                <span>Lobby:</span>
+                <div className="flex items-center gap-1 bg-muted p-1.5 rounded-lg border">
+                    <span className="font-mono text-accent tracking-widest">{roomData.id}</span>
+                    <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleCopyRoomId}
+                    className="h-6 w-6"
+                    aria-label="Copy Room ID"
+                    >
+                    <ClipboardCopy className="h-4 w-4" />
+                    </Button>
+                </div>
+                </CardTitle>
+                <div className="flex items-center gap-1 text-sm font-semibold bg-background/50 px-2 py-1 rounded-full">
+                    <Image src="/coin.png" alt="Coins" width={18} height={18} />
+                    <span>{currentUser.stats.coins}</span>
+                </div>
+            </div>
             <div className="flex items-center gap-2">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -509,11 +515,6 @@ export default function LobbyPage() {
                         <Ticket className="mr-2 h-5 w-5 text-primary"/>
                         Buy Your Tickets
                     </CardTitle>
-                    <div className="flex items-center gap-1 text-sm font-semibold bg-background/50 px-2 py-1 rounded-full">
-                        <span className="text-xs text-muted-foreground mr-1">Your Coins:</span>
-                        <Image src="/coin.png" alt="Coins" width={18} height={18} />
-                        <span>{currentUser.stats.coins}</span>
-                    </div>
                 </div>
                 <CardDescription className="text-xs md:text-sm">Select how many tickets you want to buy for this game.</CardDescription>
               </CardHeader>
@@ -550,11 +551,6 @@ export default function LobbyPage() {
                     <Ticket className="mr-2 h-5 w-5 text-primary"/>
                     Your Confirmed Tickets
                     </CardTitle>
-                    <div className="flex items-center gap-1 text-sm font-semibold bg-background/50 px-2 py-1 rounded-full">
-                         <span className="text-xs text-muted-foreground mr-1">Your Coins:</span>
-                        <Image src="/coin.png" alt="Coins" width={18} height={18} />
-                        <span>{currentUser.stats.coins}</span>
-                    </div>
                 </div>
                 <CardDescription className="text-xs md:text-sm flex items-center justify-between">
                    <span>You have {currentUserInRoom?.tickets.length} {ticketsText(currentUserInRoom?.tickets.length ?? 0)} confirmed.
