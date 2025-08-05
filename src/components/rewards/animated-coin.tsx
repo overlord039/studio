@@ -17,7 +17,7 @@ export default function AnimatedCoin({ id, onAnimationEnd, isDeduction = false }
   useEffect(() => {
     // Animation logic for coin deduction (spending)
     if (isDeduction) {
-        const startX = 85 + Math.random() * 10; // Start from top-right
+        const startX = 5 + Math.random() * 10; // Start from top-left
         const startY = 5 + Math.random() * 5; 
         const endX = 50 + (Math.random() - 0.5) * 40; // End near center
         const endY = 50 + (Math.random() - 0.5) * 20; 
@@ -25,7 +25,7 @@ export default function AnimatedCoin({ id, onAnimationEnd, isDeduction = false }
         const delay = Math.random() * 0.5;
         const rotation = (Math.random() - 0.5) * 360;
 
-        // Set initial style (top-right)
+        // Set initial style (top-left)
         setStyle({
             left: `${startX}%`,
             top: `${startY}%`,
