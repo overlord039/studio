@@ -171,7 +171,7 @@ export default function LobbyPage() {
     
     const cost = selectedTicketsToBuy * roomData.settings.ticketPrice;
     if (cost > 0) {
-      triggerAnimation(cost);
+      triggerAnimation(cost, true);
     }
 
     setIsJoiningOrUpdating(true);

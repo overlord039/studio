@@ -4,7 +4,6 @@
 
 import type { ReactNode } from 'react';
 import React, { useState, useEffect, useContext, createContext, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { 
   signOut, 
@@ -30,6 +29,7 @@ import Image from 'next/image';
 import { isSameDay, subDays, startOfDay } from 'date-fns';
 import { WEEKLY_REWARDS, PERFECT_STREAK_BONUS } from '@/lib/rewards';
 import AnimatedCoin from '@/components/rewards/animated-coin';
+import { useRouter } from 'next/navigation';
 
 
 export interface User {
@@ -630,30 +630,38 @@ export function useAuth() {
 
 // Coin Animation Context
 interface CoinAnimationContextType {
-  triggerAnimation: (count: number) => void;
+  triggerAnimation: (count: number, isDeduction?: boolean) => void;
 }
 
 const CoinAnimationContext = createContext<CoinAnimationContextType | undefined>(undefined);
 
 export function CoinAnimationProvider({ children }: { children: ReactNode }) {
-  const [animatingCoins, setAnimatingCoins] = useState<number[]>([]);
+  const [animatingCoins, setAnimatingCoins] = useState<{id: number; isDeduction: boolean}[]>([]);
   let coinIdCounter = 0;
 
-  const triggerAnimation = useCallback((count: number) => {
+  const triggerAnimation = useCallback((count: number, isDeduction = false) => {
     const coinsToAnimate = Math.min(20, count); // Max 20 coins at a time
-    const newCoins = Array.from({ length: coinsToAnimate }, () => coinIdCounter++);
+    const newCoins = Array.from({ length: coinsToAnimate }, () => ({
+        id: coinIdCounter++,
+        isDeduction: isDeduction
+    }));
     setAnimatingCoins(prev => [...prev, ...newCoins]);
   }, []);
 
   const handleAnimationEnd = useCallback((id: number) => {
-    setAnimatingCoins(prev => prev.filter(coinId => coinId !== id));
+    setAnimatingCoins(prev => prev.filter(coin => coin.id !== id));
   }, []);
 
   return (
     <CoinAnimationContext.Provider value={{ triggerAnimation }}>
       {children}
-      {animatingCoins.map(id => (
-        <AnimatedCoin key={id} id={id} onAnimationEnd={handleAnimationEnd} />
+      {animatingCoins.map(coin => (
+        <AnimatedCoin 
+            key={coin.id} 
+            id={coin.id} 
+            onAnimationEnd={handleAnimationEnd}
+            isDeduction={coin.isDeduction}
+        />
       ))}
     </CoinAnimationContext.Provider>
   );
