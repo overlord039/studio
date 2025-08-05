@@ -10,7 +10,7 @@ import type { User } from '@/contexts/auth-context';
 import { WEEKLY_REWARDS, PERFECT_STREAK_BONUS } from '@/lib/rewards';
 import { cn } from '@/lib/utils';
 import { CheckCircle, Gift, Star, X } from 'lucide-react';
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth, useCoinAnimation } from '@/contexts/auth-context';
 import AnimatedCoin from './animated-coin';
 
 interface DailyRewardDialogProps {
@@ -20,30 +20,21 @@ interface DailyRewardDialogProps {
 
 export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogProps) {
   const { setIsRewardDialogOpen } = useAuth();
+  const { triggerAnimation } = useCoinAnimation();
   const streak = user.stats.loginStreak || 1;
   const lastClaimed = user.stats.lastClaimedDay || 0;
-  const [animatingCoins, setAnimatingCoins] = useState<number[]>([]);
-  let coinIdCounter = 0;
-
+  
   const canClaimToday = streak > lastClaimed;
 
   const handleClaimAndAnimate = async () => {
       const result = await onClaim(streak);
       if (result && result.claimedAmount > 0) {
-        const coinsToAnimate = Math.min(20, result.claimedAmount);
-        const newCoins = Array.from({ length: coinsToAnimate }, () => coinIdCounter++);
-        setAnimatingCoins(newCoins);
-
+        triggerAnimation(result.claimedAmount);
         setTimeout(() => {
             handleClose();
-        }, 2000); // Close dialog after animation has played out
+        }, 500); // Close dialog after animation has a moment to start
       }
   };
-
-  const handleAnimationEnd = (id: number) => {
-    setAnimatingCoins(prev => prev.filter(coinId => coinId !== id));
-  };
-
 
   const handleClose = () => {
     setIsRewardDialogOpen(false);
@@ -97,9 +88,6 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
               </button>
           </DialogClose>
       )}
-       {animatingCoins.map(id => (
-        <AnimatedCoin key={id} id={id} onAnimationEnd={handleAnimationEnd} />
-      ))}
     </DialogContent>
   );
 }

@@ -42,7 +42,6 @@ export default function PageLayout({ children }: { children: ReactNode }) {
 
     const handleClaimAndClose = async (day: number) => {
         await handleClaimReward(day);
-        setIsRewardDialogOpen(false);
     }
 
 

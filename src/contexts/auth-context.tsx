@@ -626,3 +626,42 @@ export function useAuth() {
   }
   return context;
 }
+
+// Coin Animation Context
+interface CoinAnimationContextType {
+  triggerAnimation: (count: number) => void;
+}
+
+const CoinAnimationContext = createContext<CoinAnimationContextType | undefined>(undefined);
+
+export function CoinAnimationProvider({ children }: { children: ReactNode }) {
+  const [animatingCoins, setAnimatingCoins] = useState<number[]>([]);
+  let coinIdCounter = 0;
+
+  const triggerAnimation = useCallback((count: number) => {
+    const coinsToAnimate = Math.min(20, count); // Max 20 coins at a time
+    const newCoins = Array.from({ length: coinsToAnimate }, () => coinIdCounter++);
+    setAnimatingCoins(prev => [...prev, ...newCoins]);
+  }, []);
+
+  const handleAnimationEnd = useCallback((id: number) => {
+    setAnimatingCoins(prev => prev.filter(coinId => coinId !== id));
+  }, []);
+
+  return (
+    <CoinAnimationContext.Provider value={{ triggerAnimation }}>
+      {children}
+      {animatingCoins.map(id => (
+        <AnimatedCoin key={id} id={id} onAnimationEnd={handleAnimationEnd} />
+      ))}
+    </CoinAnimationContext.Provider>
+  );
+}
+
+export function useCoinAnimation() {
+  const context = useContext(CoinAnimationContext);
+  if (!context) {
+    throw new Error('useCoinAnimation must be used within a CoinAnimationProvider');
+  }
+  return context;
+}

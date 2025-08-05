@@ -11,7 +11,7 @@ import { ClipboardCopy, Users, Play, LogOut, Gift, Ticket, Loader2, AlertTriangl
 import type { Room, GameSettings, PrizeType, BackendPlayerInRoom } from "@/types";
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE } from "@/lib/constants";
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { useAuth } from "@/contexts/auth-context";
+import { useAuth, useCoinAnimation } from "@/contexts/auth-context";
 import { useSound } from "@/contexts/sound-context";
 import {
   AlertDialog,
@@ -37,6 +37,7 @@ export default function LobbyPage() {
   const roomId = Array.isArray(roomIdParam) ? roomIdParam[0] ?? '' : roomIdParam ?? '';
   const { currentUser, loading: authLoading, fetchUser } = useAuth();
   const { playSound } = useSound();
+  const { triggerAnimation } = useCoinAnimation();
 
   const [roomData, setRoomData] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -166,6 +167,11 @@ export default function LobbyPage() {
     if (!currentUser || !roomData || (roomData.isGameStarted && !roomData.isGameOver)) {
         toast({title: "Cannot proceed", description: "Game is active, user not logged in, or no room data.", variant: "destructive"});
         return;
+    }
+    
+    const cost = selectedTicketsToBuy * roomData.settings.ticketPrice;
+    if (cost > 0) {
+      triggerAnimation(cost);
     }
 
     setIsJoiningOrUpdating(true);

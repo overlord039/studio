@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from "@/components/theme-provider";
-import { AuthProvider } from '@/contexts/auth-context';
+import { AuthProvider, CoinAnimationProvider } from '@/contexts/auth-context';
 import PageLayout from '@/components/layout/page-layout';
 import { SoundProvider } from '@/contexts/sound-context';
 import BackgroundMusicPlayer from '@/components/layout/background-music-player';
@@ -43,8 +43,10 @@ export default function RootLayout({
               disableTransitionOnChange
             >
             <AuthProvider>
-              <PageLayout>{children}</PageLayout>
-              <BackgroundMusicPlayer />
+              <CoinAnimationProvider>
+                <PageLayout>{children}</PageLayout>
+                <BackgroundMusicPlayer />
+              </CoinAnimationProvider>
             </AuthProvider>
             </ThemeProvider>
         </SoundProvider>
