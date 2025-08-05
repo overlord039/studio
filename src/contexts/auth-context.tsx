@@ -29,6 +29,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import Image from 'next/image';
 import { isSameDay, subDays, startOfDay } from 'date-fns';
 import { WEEKLY_REWARDS, PERFECT_STREAK_BONUS } from '@/lib/rewards';
+import AnimatedCoin from '@/components/rewards/animated-coin';
 
 
 export interface User {
