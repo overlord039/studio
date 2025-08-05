@@ -447,10 +447,6 @@ export default function LobbyPage() {
                     </Button>
                 </div>
                 </CardTitle>
-                <div className="flex items-center gap-1 text-sm font-semibold bg-background/50 px-2 py-1 rounded-full">
-                    <Image src="/coin.png" alt="Coins" width={18} height={18} />
-                    <span>{currentUser.stats.coins}</span>
-                </div>
             </div>
             <div className="flex items-center gap-2">
               <AlertDialog>
