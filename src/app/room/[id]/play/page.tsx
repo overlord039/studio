@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause, Menu, Ticket } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth, useCoinAnimation } from '@/contexts/auth-context';
 import { useSound } from '@/contexts/sound-context';
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, NUMBERS_RANGE_MAX } from '@/lib/constants';
 import { Switch } from '@/components/ui/switch';
@@ -102,6 +102,7 @@ export default function GameRoomPage() {
   const { toast } = useToast();
   const { currentUser, loading: authLoading, updateUserStats: updateContextUserStats } = useAuth();
   const { isSfxMuted, playSound } = useSound();
+  const { triggerAnimation } = useCoinAnimation();
 
   const [roomData, setRoomData] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -270,6 +271,7 @@ export default function GameRoomPage() {
         localStorage.removeItem(`markedNumbers-${roomId}-${currentUser.uid}`);
 
         const isBotGame = roomData.settings.gameMode && ['easy', 'medium', 'hard'].includes(roomData.settings.gameMode);
+        let calculatedWinnings = 0;
         
         if (isBotGame && roomData.settings.gameMode) {
             let coinsEarned = 0;
@@ -291,12 +293,29 @@ export default function GameRoomPage() {
                     coinsEarned += modeRewards[prize] || 0;
                 });
             }
-            setCoinsWonThisGame(coinsEarned);
+            calculatedWinnings = coinsEarned;
+        } else {
+            const gameSettings: GameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
+            const currentPrizeFormat = gameSettings.prizeFormat;
+            const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
+            const prizeDistributionPercentages = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat] || {};
+            const totalPrizePool = roomData.totalPrizePool || 0;
+
+            prizesForFormat.forEach(prize => {
+                const claimInfo = roomData.prizeStatus[prize];
+                if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
+                    const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[prize as PrizeType] || 0)) / 100;
+                    const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
+                    calculatedWinnings += prizePerWinner;
+                }
+            });
+        }
+        
+        setCoinsWonThisGame(calculatedWinnings);
+        if (calculatedWinnings > 0) {
+          triggerAnimation(calculatedWinnings);
         }
 
-        // Always trigger the API for stat persistence, even for bot games.
-        // For bot games, the API will now primarily just increment matchesPlayed.
-        // For online games, the API handles prize distribution (this logic is on the server).
         const updateMyStats = async () => {
             if (currentUser.isGuest) {
                 const newStats = { ...currentUser.stats };
@@ -336,7 +355,7 @@ export default function GameRoomPage() {
 
         updateMyStats();
     }
-}, [roomData?.isGameOver, currentUser, roomId, toast, updateContextUserStats]);
+}, [roomData?.isGameOver, currentUser, roomId, toast, updateContextUserStats, triggerAnimation]);
 
   // This effect loads marked numbers from localStorage on mount
   useEffect(() => {
@@ -730,17 +749,13 @@ export default function GameRoomPage() {
   };
 
   if (roomData.isGameOver) {
-    let currentUserWinnings = 0;
+    let currentUserWinnings = coinsWonThisGame || 0;
     const currentUserPrizeNames: string[] = [];
     const ticketPrice = roomData.settings.ticketPrice || 0;
     const ticketsBought = myTickets.length;
     const totalCost = ticketPrice * ticketsBought;
 
     if (currentUser) {
-        if (coinsWonThisGame !== null) { // For bot games, this is reliable
-            currentUserWinnings = coinsWonThisGame;
-        }
-
         // Common logic to find out names of prizes won for all modes
         const prizesWon = roomData.prizeStatus;
         for (const prize in prizesWon) {
@@ -749,19 +764,6 @@ export default function GameRoomPage() {
                     currentUserPrizeNames.push(prize);
                 }
             }
-        }
-
-        // For non-bot games, calculate winnings from prize pool
-        if (!isBotGame) {
-            currentUserWinnings = 0; // Recalculate from scratch
-            prizesForFormat.forEach(prize => {
-                const claimInfo = roomData.prizeStatus[prize];
-                if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
-                    const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[prize as PrizeType] || 0)) / 100;
-                    const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
-                    currentUserWinnings += prizePerWinner;
-                }
-            });
         }
     }
     
