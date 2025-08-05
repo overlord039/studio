@@ -475,19 +475,19 @@ export default function LobbyPage() {
         <CardContent className="p-3 md:p-4 pt-0 space-y-4">
           <div className="grid grid-cols-2 gap-4">
               <Card className="bg-secondary/20">
-                <CardContent className="p-3 flex flex-col items-center justify-center text-center">
+                <CardContent className="p-2 flex flex-col items-center justify-center text-center">
                     <span className="text-xs text-muted-foreground">Ticket Price</span>
-                    <div className="flex items-center gap-1 font-bold text-lg">
-                      <Image src="/coin.png" alt="Coins" width={22} height={22} />
+                    <div className="flex items-center gap-1 font-bold text-base">
+                      <Image src="/coin.png" alt="Coins" width={18} height={18} />
                       <span>{gameSettings.ticketPrice}</span>
                     </div>
                 </CardContent>
               </Card>
               <Card className="bg-secondary/20">
-                <CardContent className="p-3 flex flex-col items-center justify-center text-center">
+                <CardContent className="p-2 flex flex-col items-center justify-center text-center">
                     <span className="text-xs text-muted-foreground">Room Size</span>
-                    <div className="flex items-center gap-1 font-bold text-lg">
-                      <Users className="h-5 w-5 text-primary" />
+                    <div className="flex items-center gap-1 font-bold text-base">
+                      <Users className="h-4 w-4 text-primary" />
                       <span>{gameSettings.lobbySize}</span>
                     </div>
                 </CardContent>
