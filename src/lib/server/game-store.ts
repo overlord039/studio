@@ -1,6 +1,6 @@
 
 
-import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid, CallingMode } from '@/types';
+import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid, CallingMode, OnlineGameTier } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { generateMultipleUniqueTickets } from '@/lib/housie';
 import { db } from '@/lib/firebase/config';
@@ -73,7 +73,7 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
   const newRoom: Room = {
     id: roomId,
     host: { id: host.id, name: host.name, isHost: true },
-    players: [hostPlayerInRoom],
+    players: [], // Start with an empty player list, host will be added via addPlayerToRoomStore
     settings: gameSettings,
     createdAt: new Date(),
     isGameStarted: false,
@@ -83,7 +83,7 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
     numberPool: initializeNumberPool(),
     prizeStatus: initializePrizeStatus(gameSettings),
     lastNumberCalledTimestamp: undefined,
-    totalPrizePool: hostPlayerInRoom.confirmedTicketCost,
+    totalPrizePool: 0,
   };
   rooms.set(roomId, newRoom);
   console.log(`Room created: ${roomId} by host ${host.id}. Mode: ${gameSettings.gameMode}`);
@@ -695,4 +695,60 @@ export function getRoomStateForClient(roomId: string): Omit<Room, 'numberPool'> 
     console.error(`Error preparing room data for client for room ${roomId}:`, e);
     return undefined;
   }
+}
+
+// Online Matchmaking Specific Functions
+const ONLINE_BOT_NAMES = ["Alex", "Sam", "Jordan", "Taylor", "Casey", "Riley", "Jessie", "Morgan", "Skyler", "Drew"];
+
+function generateGuestBotName(): string {
+  const guestId = Math.floor(1000 + Math.random() * 9000);
+  return `Guest#${guestId}`;
+}
+
+function shuffleArray<T>(array: T[]): T[] {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+}
+
+export function findPublicRoom(tier: OnlineGameTier): Room | undefined {
+    for (const room of rooms.values()) {
+        if (
+            room.settings.isPublic &&
+            room.settings.tier === tier &&
+            !room.isGameStarted &&
+            room.players.length < room.settings.lobbySize
+        ) {
+            return room;
+        }
+    }
+    return undefined;
+}
+
+export function fillRoomWithBotsAndStart(roomId: string, hostId: string, roomSize: number) {
+    const room = getRoomStore(roomId);
+    if (!room || room.isGameStarted) return;
+
+    const botsToAdd = roomSize - room.players.length;
+    if (botsToAdd <= 0) {
+        // Room is full with real players, start immediately
+        startGameInRoomStore(roomId, hostId);
+        return;
+    }
+
+    const guestBotNames = Array.from({ length: 5 }, () => generateGuestBotName());
+    const onlineNamePool = shuffleArray([...ONLINE_BOT_NAMES, ...guestBotNames]);
+    
+    for (let i = 0; i < botsToAdd; i++) {
+        const botId = `bot-${i+1}-${Date.now()}`;
+        const botName = onlineNamePool[i % onlineNamePool.length];
+        const botPlayer: Player = { id: botId, name: botName, isBot: true };
+        const botTickets = 1 + Math.floor(Math.random() * 4);
+        addPlayerToRoomStore(roomId, botPlayer, botTickets);
+    }
+    
+    startGameInRoomStore(roomId, hostId);
 }

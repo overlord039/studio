@@ -42,14 +42,16 @@ function MatchmakingContent() {
     const [error, setError] = useState<string | null>(null);
     const [isFindingMatch, setIsFindingMatch] = useState(false);
     const [countdown, setCountdown] = useState<number | null>(null);
-    const [createdRoomId, setCreatedRoomId] = useState<string | null>(null);
+    const [matchedRoom, setMatchedRoom] = useState<Room | null>(null);
+    const [pollingIntervalId, setPollingIntervalId] = useState<NodeJS.Timeout | null>(null);
 
+    // Initial setup from search params
     useEffect(() => {
         const tierParam = searchParams.get('tier') as OnlineGameTier;
         const ticketsParam = searchParams.get('tickets');
         if (tierParam && TIERS[tierParam] && ticketsParam) {
-            setTier(tierParam);
             const config = TIERS[tierParam];
+            setTier(tierParam);
             setTierConfig(config);
             setCountdown(config.matchmakingTime);
             setTickets(parseInt(ticketsParam, 10));
@@ -59,80 +61,97 @@ function MatchmakingContent() {
     }, [searchParams]);
 
     const findMatch = useCallback(async () => {
-      if (!currentUser || !tier) return;
-      
-      setIsFindingMatch(true);
-      playSound('start.wav');
-
-      const player: Player & { isGuest?: boolean } = {
-        id: currentUser.uid,
-        name: currentUser.displayName || 'Guest',
-        email: currentUser.email,
-        isGuest: currentUser.isGuest,
-      };
-
-      try {
-        const response = await fetch('/api/online/join-or-create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ player, tier, tickets }),
-        });
+        if (!currentUser || !tier || isFindingMatch) return;
         
-        const responseData = await response.json();
+        setIsFindingMatch(true);
+        playSound('start.wav');
 
-        if (!response.ok) {
-          throw new Error(responseData.message || 'Failed to create online match.');
+        const player: Player = { id: currentUser.uid, name: currentUser.displayName || 'Guest' };
+
+        try {
+            const response = await fetch('/api/online/join-or-create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ player, tier, tickets }),
+            });
+            
+            const responseData = await response.json();
+            if (!response.ok) throw new Error(responseData.message || 'Failed to find a match.');
+            
+            const newCoinBalance = responseData.newCoinBalance;
+            if (typeof newCoinBalance === 'number') {
+                updateUserStats({ coins: newCoinBalance });
+            }
+
+            const room: Room = responseData;
+            setMatchedRoom(room);
+            
+        } catch (err) {
+            setError((err as Error).message);
+            setIsFindingMatch(false);
         }
-        
-        const newCoinBalance = responseData.newCoinBalance;
-        if (typeof newCoinBalance === 'number') {
-            updateUserStats({ coins: newCoinBalance });
-        }
+    }, [currentUser, tier, tickets, isFindingMatch, playSound, updateUserStats]);
 
-        const newRoom: Room = responseData;
-        setCreatedRoomId(newRoom.id);
-        
-        // This brief delay ensures the state update has time to propagate before navigation
-        setTimeout(() => {
-            toast({ title: "Match Found!", description: "Let's check the prize pool..." });
-            router.push(`/online/pre-game?roomId=${newRoom.id}`);
-        }, 100);
-
-
-      } catch (err) {
-        setError((err as Error).message);
-        setIsFindingMatch(false);
-      }
-
-    }, [currentUser, tier, tickets, router, toast, playSound, updateUserStats]);
-    
+    // Kick off the match finding process once ready
     useEffect(() => {
-        if (countdown === null || error || isFindingMatch) return;
-
-        if (countdown <= 0) {
+        if (tier && currentUser && !matchedRoom && !isFindingMatch) {
             findMatch();
-            return;
+        }
+    }, [tier, currentUser, matchedRoom, isFindingMatch, findMatch]);
+
+    // Poll for game status once a room is matched
+    useEffect(() => {
+        if (matchedRoom && !pollingIntervalId) {
+            const interval = setInterval(async () => {
+                try {
+                    const res = await fetch(`/api/rooms/${matchedRoom.id}`);
+                    if (!res.ok) {
+                        // Handle room disappearing
+                        throw new Error("Room no longer available.");
+                    }
+                    const updatedRoom: Room = await res.json();
+
+                    if (updatedRoom.isGameStarted) {
+                        toast({ title: "Match Found!", description: "Let's check the prize pool..." });
+                        router.push(`/online/pre-game?roomId=${updatedRoom.id}`);
+                    } else {
+                        // Update player list in UI while waiting
+                        setMatchedRoom(updatedRoom);
+                    }
+                } catch (err) {
+                    setError((err as Error).message);
+                    if (pollingIntervalId) clearInterval(pollingIntervalId);
+                }
+            }, 3000); // Poll every 3 seconds
+
+            setPollingIntervalId(interval);
         }
 
+        return () => {
+            if (pollingIntervalId) clearInterval(pollingIntervalId);
+        };
+    }, [matchedRoom, pollingIntervalId, router, toast]);
+    
+    // Countdown timer for display purposes
+     useEffect(() => {
+        if (countdown === null || error) return;
         const timer = setInterval(() => {
-            setCountdown(prev => (prev !== null ? prev - 1 : 0));
+            setCountdown(prev => (prev !== null && prev > 0 ? prev - 1 : 0));
         }, 1000);
-
         return () => clearInterval(timer);
-    }, [countdown, error, findMatch, isFindingMatch]);
+    }, [countdown, error]);
+
 
     const handleCancel = async () => {
-        if (createdRoomId && currentUser) {
+        if (pollingIntervalId) clearInterval(pollingIntervalId);
+        if (matchedRoom && currentUser) {
              try {
-                const response = await fetch(`/api/rooms/${createdRoomId}/leave`, {
+                // Attempt to leave the room cleanly
+                await fetch(`/api/rooms/${matchedRoom.id}/leave`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ playerId: currentUser.uid }),
                 });
-                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || "Failed to leave room.");
-                }
             } catch (err) {
                 console.error("Error leaving created room on cancel:", err);
             }
@@ -169,6 +188,7 @@ function MatchmakingContent() {
     };
 
     const progressPercentage = countdown !== null ? (countdown / tierConfig.matchmakingTime) * 100 : 0;
+    const playersFound = matchedRoom?.players.length || 1;
 
     return (
         <Card className="w-full max-w-md shadow-xl bg-card/80 backdrop-blur-sm border-accent/20">
@@ -179,17 +199,7 @@ function MatchmakingContent() {
             <CardContent className="space-y-6 flex flex-col items-center">
                  <div className="relative h-40 w-40">
                     <svg className="h-full w-full" viewBox="0 0 100 100">
-                        {/* Background circle */}
-                        <circle
-                            className="text-accent/20"
-                            strokeWidth="7"
-                            stroke="currentColor"
-                            fill="transparent"
-                            r="45"
-                            cx="50"
-                            cy="50"
-                        />
-                        {/* Progress circle */}
+                        <circle className="text-accent/20" strokeWidth="7" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
                         <circle
                             className="text-accent"
                             strokeWidth="7"
@@ -219,16 +229,16 @@ function MatchmakingContent() {
                 </div>
                 <div className="text-center text-sm text-foreground/70">
                     <Users className="inline-block h-4 w-4 mr-2" />
-                    <span>Looking for {tierConfig.roomSize} players</span>
+                    <span>{playersFound} / {tierConfig.roomSize} players found</span>
                 </div>
                 {isFindingMatch ? (
-                     <Button variant="secondary" disabled className="w-full">
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Joining Match...
+                     <Button variant="outline" onClick={handleCancel} className="w-full">
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Cancel
                     </Button>
                 ) : (
-                    <Button variant="outline" onClick={handleCancel} className="w-full">
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Cancel
+                    <Button variant="secondary" disabled className="w-full">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Joining Match...
                     </Button>
                 )}
             </CardContent>
