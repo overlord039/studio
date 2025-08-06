@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Lock, Play, Users, ArrowLeft, Loader2, Link as LinkIcon, Ticket, LogOut } from 'lucide-react';
+import { Lock, Play, Users, ArrowLeft, Loader2, Link as LinkIcon, Ticket, LogOut, Info } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import type { OnlineGameTier, TierConfig } from '@/types';
@@ -18,13 +18,14 @@ import Image from 'next/image';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
 
-const TIERS: Record<OnlineGameTier, TierConfig> = {
+const TIERS: Record<OnlineGameTier, TierConfig & { description: string }> = {
     quick: {
         name: "Quick",
         ticketPrice: 5,
         roomSize: 4,
         matchmakingTime: 15,
         unlockRequirements: { matches: 0, coins: 0 },
+        description: "A fast-paced game for a quick dose of fun. Perfect for when you're short on time."
     },
     classic: {
         name: "Classic",
@@ -32,6 +33,7 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
         roomSize: 6,
         matchmakingTime: 30,
         unlockRequirements: { matches: 5, coins: 50 },
+        description: "The standard Housie experience. A bigger room for more competition and larger prizes."
     },
     tournament: {
         name: "Tournament",
@@ -39,10 +41,11 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
         roomSize: 10,
         matchmakingTime: 60,
         unlockRequirements: { matches: 15, coins: 150 },
+        description: "The ultimate challenge. Compete in a large lobby for the biggest prize pool."
     }
 };
 
-const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig: TierConfig }) => {
+const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig: TierConfig & { description: string } }) => {
     const router = useRouter();
     const { currentUser } = useAuth();
     const { toast } = useToast();
@@ -84,61 +87,78 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
             <Card 
                 key={tierKey} 
                 className={cn(
-                    "shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 h-full flex flex-col",
-                    isUnlocked ? "bg-card" : "bg-muted text-muted-foreground opacity-70 cursor-not-allowed"
+                    "shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 h-full flex flex-col border-2",
+                    isUnlocked ? "bg-card border-primary/20 hover:border-primary/50" : "bg-muted text-muted-foreground opacity-80 cursor-not-allowed border-border"
                 )}
             >
                 <CardHeader className="p-4">
                     <div className="flex justify-between items-start">
                         <div>
-                            <CardTitle className="text-xl font-bold">{tierConfig.name}</CardTitle>
-                            <CardDescription>
-                                <div className="flex items-center gap-4 text-xs mt-1">
-                                    <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {tierConfig.roomSize} Players</span>
-                                    <span className="flex items-center gap-1"><Image src="/coin.png" alt="Coins" width={14} height={14} /> {tierConfig.ticketPrice} / ticket</span>
-                                </div>
-                            </CardDescription>
+                            <CardTitle className="text-2xl font-bold">{tierConfig.name}</CardTitle>
+                            <CardDescription className="text-xs">{tierConfig.description}</CardDescription>
                         </div>
                         {!isUnlocked && <Lock className="h-5 w-5 text-destructive" />}
                     </div>
                 </CardHeader>
-                <CardContent className="p-4 pt-0 space-y-3 flex-grow">
-                    {isUnlocked ? (
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                                <Label htmlFor={`tickets-${tierKey}`} className="flex-shrink-0 text-sm flex items-center gap-1">
-                                    <Ticket className="h-4 w-4"/> Tickets
-                                </Label>
-                                <Select
-                                    value={String(selectedTickets)}
-                                    onValueChange={(value) => setSelectedTickets(Number(value))}
-                                >
-                                    <SelectTrigger id={`tickets-${tierKey}`} className="h-9">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {[1, 2, 3, 4].map(num => (
-                                            <SelectItem key={num} value={String(num)}>
-                                                {num} {num === 1 ? 'ticket' : 'tickets'}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                <CardContent className="p-4 pt-0 space-y-4 flex-grow flex flex-col justify-between">
+                     <div className="space-y-2">
+                        <div className="flex justify-around text-center text-xs bg-secondary/30 p-2 rounded-lg">
+                            <div>
+                                <p className="font-bold text-base">{tierConfig.roomSize}</p>
+                                <p className="text-muted-foreground">Players</p>
                             </div>
-                             <Button className="w-full" onClick={handleJoinTier}>
-                                <Play className="mr-2 h-4 w-4" />
-                                {hasEnoughCoins ? `Join for ${totalCost} Coins` : "Not enough coins"}
-                            </Button>
+                            <div>
+                                <p className="font-bold text-base flex items-center justify-center gap-1">
+                                    <Image src="/coin.png" alt="Coins" width={14} height={14} />
+                                    {tierConfig.ticketPrice}
+                                </p>
+                                <p className="text-muted-foreground">Per Ticket</p>
+                            </div>
+                             <div>
+                                <p className="font-bold text-base">{tierConfig.matchmakingTime}s</p>
+                                <p className="text-muted-foreground">Wait Time</p>
+                            </div>
                         </div>
-                    ) : (
-                         <div className="text-xs">
-                            <p>
-                                Requires: {tierConfig.unlockRequirements.matches} played & {tierConfig.unlockRequirements.coins} coins.
-                            </p>
-                            <p>
-                                Your progress: {currentUser.stats.matchesPlayed} matches & {currentUser.stats.coins} coins.
-                            </p>
-                        </div>
+                         {isUnlocked ? (
+                            <div className="space-y-3 pt-2">
+                                <div className="flex items-center gap-2">
+                                    <Label htmlFor={`tickets-${tierKey}`} className="flex-shrink-0 text-sm flex items-center gap-1">
+                                        <Ticket className="h-4 w-4"/> Tickets
+                                    </Label>
+                                    <Select
+                                        value={String(selectedTickets)}
+                                        onValueChange={(value) => setSelectedTickets(Number(value))}
+                                    >
+                                        <SelectTrigger id={`tickets-${tierKey}`} className="h-9">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {[1, 2, 3, 4].map(num => (
+                                                <SelectItem key={num} value={String(num)}>
+                                                    {num} {num === 1 ? 'ticket' : 'tickets'}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="text-xs text-center p-2 rounded-lg bg-destructive/10 border border-destructive/20">
+                                <p className="font-semibold text-destructive">Unlock Requirements:</p>
+                                <p>
+                                    {tierConfig.unlockRequirements.matches} matches & {tierConfig.unlockRequirements.coins} coins.
+                                </p>
+                                <p className="text-muted-foreground">
+                                    (Your progress: {currentUser.stats.matchesPlayed} matches & {currentUser.stats.coins} coins)
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                    {isUnlocked && (
+                         <Button className="w-full" onClick={handleJoinTier}>
+                            <Play className="mr-2 h-4 w-4" />
+                            {hasEnoughCoins ? `Join for ${totalCost} Coins` : "Not enough coins"}
+                        </Button>
                     )}
                 </CardContent>
             </Card>
