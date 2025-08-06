@@ -176,6 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           createdAt: firestoreData.createdAt?.toDate ? firestoreData.createdAt.toDate().toISOString() : firestoreData.createdAt,
           stats: firestoreData.stats || createDefaultStats(),
         };
+        // This is a more performant way to update state only if it has changed.
         setCurrentUser(prevUser => areUsersEqual(prevUser, newUser) ? prevUser : newUser);
       }
     } catch (error) {
@@ -407,10 +408,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             ...(newStats.prizesWon || {}),
           },
         };
-        return {
-            ...prevUser,
-            stats: updatedStats
-        };
+        const updatedUser = { ...prevUser, stats: updatedStats };
+        // Return previous state if they are identical to prevent re-renders
+        return areUsersEqual(prevUser, updatedUser) ? prevUser : updatedUser;
     });
   };
 
