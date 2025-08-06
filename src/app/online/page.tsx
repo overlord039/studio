@@ -84,7 +84,7 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
             <Card 
                 key={tierKey} 
                 className={cn(
-                    "shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1",
+                    "shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1 h-full flex flex-col",
                     isUnlocked ? "bg-card" : "bg-muted text-muted-foreground opacity-70 cursor-not-allowed"
                 )}
             >
@@ -102,44 +102,45 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
                         {!isUnlocked && <Lock className="h-5 w-5 text-destructive" />}
                     </div>
                 </CardHeader>
-                {isUnlocked && (
-                    <CardContent className="p-4 pt-0 space-y-3">
-                        <div className="flex items-center gap-2">
-                            <Label htmlFor={`tickets-${tierKey}`} className="flex-shrink-0 text-sm flex items-center gap-1">
-                                <Ticket className="h-4 w-4"/> Tickets
-                            </Label>
-                            <Select
-                                value={String(selectedTickets)}
-                                onValueChange={(value) => setSelectedTickets(Number(value))}
-                            >
-                                <SelectTrigger id={`tickets-${tierKey}`} className="h-9">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {[1, 2, 3, 4].map(num => (
-                                        <SelectItem key={num} value={String(num)}>
-                                            {num} {num === 1 ? 'ticket' : 'tickets'}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                <CardContent className="p-4 pt-0 space-y-3 flex-grow">
+                    {isUnlocked ? (
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                                <Label htmlFor={`tickets-${tierKey}`} className="flex-shrink-0 text-sm flex items-center gap-1">
+                                    <Ticket className="h-4 w-4"/> Tickets
+                                </Label>
+                                <Select
+                                    value={String(selectedTickets)}
+                                    onValueChange={(value) => setSelectedTickets(Number(value))}
+                                >
+                                    <SelectTrigger id={`tickets-${tierKey}`} className="h-9">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {[1, 2, 3, 4].map(num => (
+                                            <SelectItem key={num} value={String(num)}>
+                                                {num} {num === 1 ? 'ticket' : 'tickets'}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                             <Button className="w-full" onClick={handleJoinTier}>
+                                <Play className="mr-2 h-4 w-4" />
+                                {hasEnoughCoins ? `Join for ${totalCost} Coins` : "Not enough coins"}
+                            </Button>
                         </div>
-                        <Button className="w-full" onClick={handleJoinTier}>
-                            <Play className="mr-2 h-4 w-4" />
-                            {hasEnoughCoins ? `Join for ${totalCost} Coins` : "Not enough coins"}
-                        </Button>
-                    </CardContent>
-                )}
-                {!isUnlocked && (
-                    <CardContent className="p-4 pt-0 text-xs">
-                        <p>
-                            Requires: {tierConfig.unlockRequirements.matches} played & {tierConfig.unlockRequirements.coins} coins.
-                        </p>
-                        <p>
-                            Your progress: {currentUser.stats.matchesPlayed} matches & {currentUser.stats.coins} coins.
-                        </p>
-                    </CardContent>
-                )}
+                    ) : (
+                         <div className="text-xs">
+                            <p>
+                                Requires: {tierConfig.unlockRequirements.matches} played & {tierConfig.unlockRequirements.coins} coins.
+                            </p>
+                            <p>
+                                Your progress: {currentUser.stats.matchesPlayed} matches & {currentUser.stats.coins} coins.
+                            </p>
+                        </div>
+                    )}
+                </CardContent>
             </Card>
             <AlertDialog open={showNoCoinsDialog} onOpenChange={setShowNoCoinsDialog}>
                 <AlertDialogContent>
@@ -175,17 +176,21 @@ export default function OnlineModePage() {
     }
 
     return (
-        <div className="flex flex-col items-center justify-center flex-grow p-4">
-            <div className="text-center mb-8">
+        <div className="flex flex-col w-full flex-grow p-4">
+            <div className="text-center mb-8 flex-shrink-0">
                 <h1 className="text-3xl font-bold text-white">Online</h1>
                 <p className="text-white/80 mt-2">Join a game and play with others online!</p>
             </div>
-            <div className="w-full max-w-md space-y-4">
-                {Object.entries(TIERS).map(([tierKey, tierConfig]) => (
-                    <TierCard key={tierKey} tierKey={tierKey as OnlineGameTier} tierConfig={tierConfig} />
-                ))}
+            <div className="w-full flex-grow flex items-center">
+                 <div className="w-full flex gap-4 pb-4 overflow-x-auto snap-x snap-mandatory">
+                    {Object.entries(TIERS).map(([tierKey, tierConfig]) => (
+                        <div key={tierKey} className="flex-shrink-0 w-[80vw] max-w-xs snap-center">
+                            <TierCard tierKey={tierKey as OnlineGameTier} tierConfig={tierConfig} />
+                        </div>
+                    ))}
+                </div>
             </div>
-            <div className="mt-8 w-full max-w-md">
+            <div className="mt-8 w-full max-w-md self-center flex-shrink-0">
                 <Link href="/" passHref>
                 <Button variant="destructive" size="icon">
                     <LogOut className="h-4 w-4 rotate-180" />
