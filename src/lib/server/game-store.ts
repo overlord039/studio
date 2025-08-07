@@ -171,6 +171,10 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
   
   if (room.isGameStarted) return { error: "Game has already started." };
   if (room.isGameOver) return { error: "Game is over. Reset the room to start a new game." };
+  if (room.host.id !== hostId) {
+    console.error(`Attempt to start game ${roomId} by non-host ${hostId}. Current host is ${room.host.id}.`);
+    return { error: "Only the host can start the game." };
+  }
 
   const minPlayersRequired = room.settings.gameMode === 'multiplayer' ? MIN_LOBBY_SIZE : 1;
   const playersWithTickets = room.players.filter(p => p.tickets.length > 0).length;
@@ -735,6 +739,9 @@ export function fillRoomWithBotsAndStart(roomId: string, hostId: string, roomSiz
 
     const room = getRoomStore(roomId);
     if (!room || room.isGameStarted) return;
+    
+    // Ensure we are using the CURRENT host's ID to start the game
+    const currentHostId = room.host.id;
 
     const botsToAdd = roomSize - room.players.length;
     if (botsToAdd > 0) {
@@ -750,8 +757,6 @@ export function fillRoomWithBotsAndStart(roomId: string, hostId: string, roomSiz
       }
     }
     
-    // The hostId here should be the ID of the first real player who initiated the matchmaking
-    startGameInRoomStore(roomId, hostId);
+    console.log(`Attempting to start game for room ${roomId} with host ID: ${currentHostId}`);
+    startGameInRoomStore(roomId, currentHostId);
 }
-
-    
