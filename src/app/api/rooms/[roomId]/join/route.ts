@@ -1,7 +1,7 @@
 
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { addPlayerToRoomStore, getRoomStateForClient, getRoomStore } from '@/lib/server/game-store';
+import { addPlayerToRoomStore, getRoomStateForClient, getRoomStore, generateMultipleUniqueTickets } from '@/lib/server/game-store';
 import type { Player } from '@/types';
 import { DEFAULT_NUMBER_OF_TICKETS_PER_PLAYER } from '@/lib/constants';
 import { db } from '@/lib/firebase/config';
@@ -29,18 +29,13 @@ export async function POST(
         return NextResponse.json({ message: "Room not found." }, { status: 404 });
     }
 
-    // Determine the number of tickets. For non-rush games, if ticketsToBuy is not provided (e.g., initial join),
-    // we pass 0 to addPlayerToRoomStore, so they are in the lobby but must confirm tickets.
     let numTickets: number;
     if (room.settings.gameMode === 'rush') {
-        numTickets = 1 + Math.floor(Math.random() * 4); // Random tickets for Rush mode
+        numTickets = 1 + Math.floor(Math.random() * 4);
     } else {
-        // For classic/multiplayer, ticketsToBuy will be a number when confirming, or undefined on initial join.
-        // Defaulting to 0 for initial join adds the player without tickets.
         numTickets = ticketsToBuy ?? 0;
     }
     
-    // Server-side validation of coin balance before adding/updating player
     if(db) {
         if (room && room.settings.ticketPrice > 0 && room.settings.gameMode !== 'rush' && ticketsToBuy && ticketsToBuy > 0) {
             
@@ -70,7 +65,6 @@ export async function POST(
             }
         }
     }
-
 
     const result = addPlayerToRoomStore(roomId, { id: playerId, name: playerName }, numTickets);
 

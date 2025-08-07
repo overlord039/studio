@@ -1,4 +1,5 @@
 
+
 import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid, CallingMode, OnlineGameTier } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { generateMultipleUniqueTickets } from '@/lib/housie';
@@ -91,21 +92,33 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberO
     if (room.isGameStarted && !room.isGameOver) return { error: "Game is currently in progress. Cannot join now." };
     
     const existingPlayerIndex = room.players.findIndex(p => p.id === playerInfo.id);
-    if (existingPlayerIndex !== -1) return room; // Player already in room
+    let player: BackendPlayerInRoom;
+
+    if (existingPlayerIndex !== -1) {
+        // Player exists, update their tickets if provided.
+        player = room.players[existingPlayerIndex];
+        // Only generate new tickets if a positive number is passed.
+        // A value of 0 is used for initial joins to the lobby without confirming tickets.
+        if (numberOfTickets > 0) {
+            player.tickets = generateMultipleUniqueTickets(numberOfTickets);
+            player.confirmedTicketCost = room.settings.ticketPrice * numberOfTickets;
+        }
+    } else {
+        // New player
+        if (room.players.length >= room.settings.lobbySize) return { error: "Room is full." };
+
+        player = {
+          id: playerInfo.id,
+          name: playerInfo.name,
+          isHost: playerInfo.isHost || false,
+          isBot: !!playerInfo.isBot,
+          tickets: numberOfTickets > 0 ? generateMultipleUniqueTickets(numberOfTickets) : [],
+          confirmedTicketCost: room.settings.ticketPrice * numberOfTickets,
+        };
+        room.players.push(player);
+    }
     
-    if (room.players.length >= room.settings.lobbySize) return { error: "Room is full." };
-
-    const newPlayer: BackendPlayerInRoom = {
-      id: playerInfo.id,
-      name: playerInfo.name,
-      isHost: playerInfo.isHost,
-      isBot: !!playerInfo.isBot,
-      tickets: generateMultipleUniqueTickets(numberOfTickets),
-      confirmedTicketCost: room.settings.ticketPrice * numberOfTickets,
-    };
-    room.players.push(newPlayer);
-
-    room.totalPrizePool = room.players.reduce((sum, player) => sum + (player.confirmedTicketCost || 0), 0);
+    room.totalPrizePool = room.players.reduce((sum, p) => sum + (p.confirmedTicketCost || 0), 0);
     
     if (room.settings.isPublic && room.players.length === room.settings.lobbySize) {
       console.log(`Room ${roomId} is full with real players. Starting game immediately.`);
