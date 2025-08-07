@@ -5,14 +5,12 @@ import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import type { OnlineGameTier, TierConfig, Player, Room } from '@/types';
-import { Loader2, Users, Search, ArrowLeft, AlertTriangle, Clock } from 'lucide-react';
+import { Loader2, Users, Search, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/contexts/sound-context';
-import { cn } from '@/lib/utils';
-import Image from 'next/image';
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
@@ -44,8 +42,8 @@ function MatchmakingContent() {
     const [countdown, setCountdown] = useState<number | null>(null);
     const [matchedRoom, setMatchedRoom] = useState<Room | null>(null);
     const [pollingIntervalId, setPollingIntervalId] = useState<NodeJS.Timeout | null>(null);
-
-    // Initial setup from search params
+    
+    // Set initial tier/ticket config from URL params
     useEffect(() => {
         const tierParam = searchParams.get('tier') as OnlineGameTier;
         const ticketsParam = searchParams.get('tickets');
@@ -60,6 +58,7 @@ function MatchmakingContent() {
         }
     }, [searchParams]);
 
+    // Main function to call the backend to find/create a match
     const findMatch = useCallback(async () => {
         if (!currentUser || !tier || isFindingMatch) return;
         
@@ -78,13 +77,11 @@ function MatchmakingContent() {
             const responseData = await response.json();
             if (!response.ok) throw new Error(responseData.message || 'Failed to find a match.');
             
-            const newCoinBalance = responseData.newCoinBalance;
-            if (typeof newCoinBalance === 'number') {
-                updateUserStats({ coins: newCoinBalance });
+            if (typeof responseData.newCoinBalance === 'number') {
+                updateUserStats({ coins: responseData.newCoinBalance });
             }
 
-            const room: Room = responseData;
-            setMatchedRoom(room);
+            setMatchedRoom(responseData);
             
         } catch (err) {
             setError((err as Error).message);
@@ -92,31 +89,28 @@ function MatchmakingContent() {
         }
     }, [currentUser, tier, tickets, isFindingMatch, playSound, updateUserStats]);
 
-    // Kick off the match finding process once ready
+    // Effect to start the matchmaking process once component is ready
     useEffect(() => {
         if (tier && currentUser && !matchedRoom && !isFindingMatch) {
             findMatch();
         }
     }, [tier, currentUser, matchedRoom, isFindingMatch, findMatch]);
 
-    // Poll for game status once a room is matched
+    // Effect to poll for game status updates once a room is joined
     useEffect(() => {
         if (matchedRoom && !pollingIntervalId) {
             const interval = setInterval(async () => {
                 try {
                     const res = await fetch(`/api/rooms/${matchedRoom.id}`);
-                    if (!res.ok) {
-                        // Handle room disappearing
-                        throw new Error("Room no longer available.");
-                    }
+                    if (!res.ok) throw new Error("Room no longer available.");
+
                     const updatedRoom: Room = await res.json();
 
                     if (updatedRoom.isGameStarted) {
-                        toast({ title: "Match Found!", description: "Let's check the prize pool..." });
+                        toast({ title: "Match Found!", description: "Joining the game..." });
                         router.push(`/online/pre-game?roomId=${updatedRoom.id}`);
                     } else {
-                        // Update player list in UI while waiting
-                        setMatchedRoom(updatedRoom);
+                        setMatchedRoom(updatedRoom); // Update player list in UI
                     }
                 } catch (err) {
                     setError((err as Error).message);
@@ -127,13 +121,14 @@ function MatchmakingContent() {
             setPollingIntervalId(interval);
         }
 
+        // Cleanup function to clear interval when component unmounts
         return () => {
             if (pollingIntervalId) clearInterval(pollingIntervalId);
         };
     }, [matchedRoom, pollingIntervalId, router, toast]);
     
-    // Countdown timer for display purposes
-     useEffect(() => {
+    // Countdown timer for display
+    useEffect(() => {
         if (countdown === null || error) return;
         const timer = setInterval(() => {
             setCountdown(prev => (prev !== null && prev > 0 ? prev - 1 : 0));
@@ -141,19 +136,17 @@ function MatchmakingContent() {
         return () => clearInterval(timer);
     }, [countdown, error]);
 
-
     const handleCancel = async () => {
         if (pollingIntervalId) clearInterval(pollingIntervalId);
         if (matchedRoom && currentUser) {
              try {
-                // Attempt to leave the room cleanly
                 await fetch(`/api/rooms/${matchedRoom.id}/leave`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ playerId: currentUser.uid }),
                 });
             } catch (err) {
-                console.error("Error leaving created room on cancel:", err);
+                console.error("Error leaving room on cancel:", err);
             }
         }
         router.push('/online');
@@ -167,9 +160,7 @@ function MatchmakingContent() {
         return (
             <Card className="w-full max-w-md shadow-xl border-destructive">
                 <CardHeader className="text-center">
-                    <div className="flex justify-center items-center gap-2 text-destructive mb-2">
-                        <AlertTriangle className="h-10 w-10"/>
-                    </div>
+                    <AlertTriangle className="h-10 w-10 text-destructive mx-auto mb-2"/>
                     <CardTitle>Matchmaking Failed</CardTitle>
                 </CardHeader>
                 <CardContent className="text-center space-y-4">
@@ -179,73 +170,38 @@ function MatchmakingContent() {
             </Card>
         );
     }
-
-    const formatTime = (seconds: number | null) => {
-        if (seconds === null) return '00:00';
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    };
-
-    const progressPercentage = countdown !== null ? (countdown / tierConfig.matchmakingTime) * 100 : 0;
-    const playersFound = matchedRoom?.players.length || 1;
+    
+    const progressPercentage = countdown !== null ? ((tierConfig.matchmakingTime - countdown) / tierConfig.matchmakingTime) * 100 : 0;
+    const playersFound = matchedRoom?.players.length || (isFindingMatch ? 1 : 0);
 
     return (
         <Card className="w-full max-w-md shadow-xl bg-card/80 backdrop-blur-sm border-accent/20">
             <CardHeader className="text-center">
+                <Search className="h-10 w-10 mx-auto mb-2 text-primary"/>
                 <CardTitle className="text-2xl text-foreground">Finding a Match...</CardTitle>
                 <CardDescription className="text-foreground/80">Tier: {tierConfig.name} ({tickets} {tickets === 1 ? 'ticket' : 'tickets'})</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 flex flex-col items-center">
-                 <div className="relative h-40 w-40">
-                    <svg className="h-full w-full" viewBox="0 0 100 100">
-                        <circle className="text-accent/20" strokeWidth="7" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
-                        <circle
-                            className="text-accent"
-                            strokeWidth="7"
-                            strokeLinecap="round"
-                            stroke="currentColor"
-                            fill="transparent"
-                            r="45"
-                            cx="50"
-                            cy="50"
-                            strokeDasharray={2 * Math.PI * 45}
-                            strokeDashoffset={(2 * Math.PI * 45) * (1 - progressPercentage / 100)}
-                            style={{ transition: 'stroke-dashoffset 1s linear' }}
-                            transform="rotate(-90 50 50)"
-                        />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-4xl font-bold font-mono text-foreground">
-                            {formatTime(countdown)}
-                        </span>
-                        <p className="text-xs uppercase text-foreground/70">Estimated Time</p>
+                <div className="w-full space-y-2">
+                    <Progress value={progressPercentage} className="h-2" />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Searching...</span>
+                        <span>Est. time: {countdown}s</span>
                     </div>
                 </div>
 
-                 <div className="flex justify-center items-center gap-2 text-foreground/90">
-                    <Loader2 className="h-5 w-5 animate-spin text-accent" />
-                    <span className="text-lg font-semibold">Searching for players...</span>
-                </div>
-                <div className="text-center text-sm text-foreground/70">
-                    <Users className="inline-block h-4 w-4 mr-2" />
+                <div className="text-center text-lg text-foreground/90 font-semibold flex items-center gap-2">
+                    <Users className="h-5 w-5" />
                     <span>{playersFound} / {tierConfig.roomSize} players found</span>
                 </div>
-                {isFindingMatch ? (
-                     <Button variant="outline" onClick={handleCancel} className="w-full">
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Cancel
-                    </Button>
-                ) : (
-                    <Button variant="secondary" disabled className="w-full">
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Joining Match...
-                    </Button>
-                )}
+                
+                <Button variant="outline" onClick={handleCancel} className="w-full">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Cancel Search
+                </Button>
             </CardContent>
         </Card>
     );
 }
-
 
 export default function MatchmakingPage() {
     return (
