@@ -201,10 +201,10 @@ export default function OnlineModePage() {
                 <h1 className="text-3xl font-bold text-white">Online</h1>
                 <p className="text-white/80 mt-2">Join a game and play with others online!</p>
             </div>
-            <div className="w-full flex-grow flex items-center">
-                 <div className="w-full flex gap-4 pb-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide" style={{'--scrollbar-size': '0'} as React.CSSProperties}>
+            <div className="w-full flex-grow flex items-center justify-center">
+                 <div className="w-full flex justify-center gap-4 pb-4 overflow-x-auto md:overflow-x-visible snap-x snap-mandatory md:snap-none scrollbar-hide" style={{'--scrollbar-size': '0'} as React.CSSProperties}>
                     {Object.entries(TIERS).map(([tierKey, tierConfig]) => (
-                        <div key={tierKey} className="flex-shrink-0 w-[90vw] max-w-sm snap-center">
+                        <div key={tierKey} className="flex-shrink-0 w-[90vw] max-w-sm snap-center md:w-auto">
                             <TierCard tierKey={tierKey as OnlineGameTier} tierConfig={tierConfig} />
                         </div>
                     ))}
