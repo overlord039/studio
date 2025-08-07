@@ -154,6 +154,13 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberO
 
     // Recalculate total prize pool based on confirmed tickets
     room.totalPrizePool = room.players.reduce((sum, player) => sum + (player.confirmedTicketCost || 0), 0);
+    
+    if (room.settings.isPublic && room.players.length === room.settings.lobbySize) {
+        const host = room.players.find(p => !p.isBot) || room.host;
+        console.log(`Room ${roomId} is full with real players. Starting game immediately.`);
+        fillRoomWithBotsAndStart(roomId, host.id, room.settings.lobbySize);
+    }
+    
     rooms.set(roomId, room);
     return room;
 }
@@ -162,14 +169,12 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
   const room = rooms.get(roomId);
   if (!room) return { error: "Room not found." };
   
-  if (room.settings.gameMode !== 'online' && room.host.id !== hostId) {
-    return { error: "Only the host can start this game." };
-  }
+  const actualHostId = room.players.find(p => !p.isBot)?.id || hostId;
   
   if (room.isGameStarted) return { error: "Game has already started." };
   if (room.isGameOver) return { error: "Game is over. Reset the room to start a new game." };
 
-  const hostPlayer = room.players.find(p => p.id === room.host.id);
+  const hostPlayer = room.players.find(p => p.id === actualHostId);
   if (!hostPlayer || hostPlayer.tickets.length === 0) {
     return { error: `Host must have tickets before starting.` };
   }
@@ -729,26 +734,29 @@ export function findPublicRoom(tier: OnlineGameTier): Room | undefined {
 }
 
 export function fillRoomWithBotsAndStart(roomId: string, hostId: string, roomSize: number) {
+    const matchmakingTimer = roomTimers.get(roomId);
+    if (matchmakingTimer) {
+        clearTimeout(matchmakingTimer);
+        roomTimers.delete(roomId);
+    }
+
     const room = getRoomStore(roomId);
     if (!room || room.isGameStarted) return;
 
     const botsToAdd = roomSize - room.players.length;
-    if (botsToAdd <= 0) {
-        // Room is full with real players, start immediately
-        startGameInRoomStore(roomId, hostId);
-        return;
-    }
-
-    const guestBotNames = Array.from({ length: 5 }, () => generateGuestBotName());
-    const onlineNamePool = shuffleArray([...ONLINE_BOT_NAMES, ...guestBotNames]);
-    
-    for (let i = 0; i < botsToAdd; i++) {
-        const botId = `bot-${i+1}-${Date.now()}`;
-        const botName = onlineNamePool[i % onlineNamePool.length];
-        const botPlayer: Player = { id: botId, name: botName, isBot: true };
-        const botTickets = 1 + Math.floor(Math.random() * 4);
-        addPlayerToRoomStore(roomId, botPlayer, botTickets);
+    if (botsToAdd > 0) {
+      const guestBotNames = Array.from({ length: 5 }, () => generateGuestBotName());
+      const onlineNamePool = shuffleArray([...ONLINE_BOT_NAMES, ...guestBotNames]);
+      
+      for (let i = 0; i < botsToAdd; i++) {
+          const botId = `bot-${i+1}-${Date.now()}`;
+          const botName = onlineNamePool[i % onlineNamePool.length];
+          const botPlayer: Player = { id: botId, name: botName, isBot: true };
+          const botTickets = 1 + Math.floor(Math.random() * 4);
+          addPlayerToRoomStore(roomId, botPlayer, botTickets);
+      }
     }
     
+    // The hostId here should be the ID of the first real player who initiated the matchmaking
     startGameInRoomStore(roomId, hostId);
 }
