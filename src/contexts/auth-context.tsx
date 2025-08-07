@@ -639,7 +639,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-       <Dialog open={!!reward} onOpenChange={() => {}}>
+       <Dialog open={!!reward} onOpenChange={(isOpen) => !isOpen && setReward(null)}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="text-center text-2xl">Reward!</DialogTitle>
