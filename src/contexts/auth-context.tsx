@@ -197,23 +197,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const yesterday = startOfDay(subDays(today, 1));
     let newStreak = user.stats.loginStreak || 0;
+    let newLastClaimedDay = user.stats.lastClaimedDay || 0;
     
     // If the last login was yesterday, they've continued their streak.
     if (isSameDay(lastLoginDate, yesterday)) {
         newStreak++;
     } else {
-        // If they missed a day (or more), the streak resets to 1.
+        // If they missed a day (or more), the streak resets to 1, and so does their claim progress.
         newStreak = 1;
+        newLastClaimedDay = 0;
     }
     
     // A streak cycle is 7 days. If they complete day 7, the next day is day 1 of a new streak.
     if (newStreak > 7) {
         newStreak = 1;
+        newLastClaimedDay = 0; // Reset claim progress for the new week
     }
 
     // For guests, we only update the local state, not Firestore.
     if (user.isGuest) {
-      const updatedUser = { ...user, stats: { ...user.stats, loginStreak: newStreak, lastLogin: today.toISOString() }};
+      const updatedUser = { ...user, stats: { ...user.stats, loginStreak: newStreak, lastClaimedDay: newLastClaimedDay, lastLogin: today.toISOString() }};
       return updatedUser;
     }
 
@@ -222,10 +225,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await updateDoc(userDocRef, {
             'stats.loginStreak': newStreak,
             'stats.lastLogin': today.toISOString(),
+            'stats.lastClaimedDay': newLastClaimedDay,
         });
 
         // Return the user object with the updated stats for immediate use in the UI.
-        const updatedUser = { ...user, stats: { ...user.stats, loginStreak: newStreak, lastLogin: today.toISOString() }};
+        const updatedUser = { ...user, stats: { ...user.stats, loginStreak: newStreak, lastClaimedDay: newLastClaimedDay, lastLogin: today.toISOString() }};
         return updatedUser;
 
     } catch (error) {
@@ -360,9 +364,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const handleClaimReward = async (day: number) => {
     if (!currentUser) return null;
     
-    // Safety check to prevent claiming future days
+    // Safety checks
     if (day > (currentUser.stats.loginStreak || 0)) {
         toast({ title: "Error", description: "Cannot claim a future reward.", variant: "destructive" });
+        return null;
+    }
+    if (day <= (currentUser.stats.lastClaimedDay || 0)) {
+        toast({ title: "Already Claimed", description: "You've already claimed the reward for this day.", variant: "destructive" });
         return null;
     }
     
