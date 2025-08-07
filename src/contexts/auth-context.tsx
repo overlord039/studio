@@ -190,21 +190,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const today = startOfDay(new Date());
     const lastLoginDate = startOfDay(new Date(user.stats.lastLogin || 0));
 
+    // If the user already logged in today, no need to do anything.
     if (isSameDay(today, lastLoginDate)) {
-        return user; // Already logged in today
+        return user;
     }
 
     const yesterday = startOfDay(subDays(today, 1));
     let newStreak = user.stats.loginStreak || 0;
     
+    // If the last login was yesterday, they've continued their streak.
     if (isSameDay(lastLoginDate, yesterday)) {
-        newStreak++; // Continued streak
+        newStreak++;
     } else {
-        newStreak = 1; // Streak broken, reset to 1
+        // If they missed a day (or more), the streak resets to 1.
+        newStreak = 1;
     }
     
-    // If the streak was 7 yesterday and we are continuing, it rolls over to 1 today.
-    // If it was less than 7, it just increments.
+    // A streak cycle is 7 days. If they complete day 7, the next day is day 1 of a new streak.
     if (newStreak > 7) {
         newStreak = 1;
     }
@@ -216,11 +218,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             'stats.lastLogin': today.toISOString(),
         });
 
+        // Return the user object with the updated stats for immediate use in the UI.
         const updatedUser = { ...user, stats: { ...user.stats, loginStreak: newStreak, lastLogin: today.toISOString() }};
         return updatedUser;
 
     } catch (error) {
         console.error("Error updating daily login stats:", error);
+        // If the update fails, return the original user object to avoid UI discrepancies.
         return user;
     }
   }, []);
