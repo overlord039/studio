@@ -649,7 +649,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           </DialogHeader>
           <div className="flex items-center justify-center gap-2 p-4">
               <Image src="/coin.png" alt="Coins" width={40} height={40} />
-              <span className="text-4xl font-bold text-yellow-500">+{reward?.amount}</span>
+              <span className="text-4xl font-bold text-yellow-500">{reward?.amount}</span>
           </div>
           <DialogFooter>
             <Button onClick={() => setReward(null)} className="w-full">Claim</Button>
