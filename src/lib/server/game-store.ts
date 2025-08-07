@@ -169,15 +169,8 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
   const room = rooms.get(roomId);
   if (!room) return { error: "Room not found." };
   
-  const actualHostId = room.players.find(p => !p.isBot)?.id || hostId;
-  
   if (room.isGameStarted) return { error: "Game has already started." };
   if (room.isGameOver) return { error: "Game is over. Reset the room to start a new game." };
-
-  const hostPlayer = room.players.find(p => p.id === actualHostId);
-  if (!hostPlayer || hostPlayer.tickets.length === 0) {
-    return { error: `Host must have tickets before starting.` };
-  }
 
   const minPlayersRequired = room.settings.gameMode === 'multiplayer' ? MIN_LOBBY_SIZE : 1;
   const playersWithTickets = room.players.filter(p => p.tickets.length > 0).length;
@@ -760,3 +753,5 @@ export function fillRoomWithBotsAndStart(roomId: string, hostId: string, roomSiz
     // The hostId here should be the ID of the first real player who initiated the matchmaking
     startGameInRoomStore(roomId, hostId);
 }
+
+    

@@ -1,7 +1,7 @@
 
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { createRoomStore, addPlayerToRoomStore, getRoomStateForClient, startGameInRoomStore } from '@/lib/server/game-store';
+import { createRoomStore, addPlayerToRoomStore, getRoomStateForClient, startGameInRoomStore, findPublicRoom, fillRoomWithBotsAndStart } from '@/lib/server/game-store';
 import type { Player, GameSettings, OnlineGameTier, TierConfig, Room } from '@/types';
 import { db } from '@/lib/firebase/config';
 import { doc, runTransaction, increment, updateDoc, getDoc } from 'firebase/firestore';
@@ -21,22 +21,11 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
     }
 };
 
-// Bot names for ONLINE mode - more human-like or generic
-const ONLINE_BOT_NAMES = ["Alex", "Sam", "Jordan", "Taylor", "Casey", "Riley", "Jessie", "Morgan", "Skyler", "Drew"];
-
-function generateGuestBotName(): string {
-  const guestId = Math.floor(1000 + Math.random() * 9000); // e.g., 1234
-  return `Guest#${guestId}`;
+declare global {
+  // eslint-disable-next-line no-var
+  var roomTimers: Map<string, NodeJS.Timeout>;
 }
-
-function shuffleArray<T>(array: T[]): T[] {
-  const newArray = [...array];
-  for (let i = newArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-  }
-  return newArray;
-}
+const roomTimers = global.roomTimers || (global.roomTimers = new Map<string, NodeJS.Timeout>());
 
 
 export async function POST(request: NextRequest) {
@@ -80,50 +69,47 @@ export async function POST(request: NextRequest) {
          return NextResponse.json({ message: err.message || "An error occurred during the transaction." }, { status: 400 });
     }
     
-    // 2. Create the room with online-specific settings
-    const roomSettings: Partial<GameSettings> = {
-      lobbySize: tierConfig.roomSize,
-      isPublic: true,
-      callingMode: 'auto',
-      gameMode: 'online',
-      ticketPrice: tierConfig.ticketPrice,
-      tier: tier, // Add the tier to settings
-    };
-    // The player joining is the temporary "host" for creation purposes
-    const newRoom = createRoomStore(player, roomSettings);
+    // 2. Find an available public room for the selected tier
+    let targetRoom: Room | { error: string } | undefined = findPublicRoom(tier);
+    let roomCreated = false;
 
-    // 3. Add the human player with their chosen number of tickets
-    addPlayerToRoomStore(newRoom.id, { ...player, isHost: true }, tickets);
-
-    // 4. Add bot players to fill the room
-    const guestBotNames = Array.from({ length: 5 }, () => generateGuestBotName()); // Generate 5 Guest#xxxx names
-    const onlineNamePool = shuffleArray([...ONLINE_BOT_NAMES, ...guestBotNames]);
-
-    const botsToAdd = tierConfig.roomSize - 1;
-    for (let i = 0; i < botsToAdd; i++) {
-        const botId = `bot-${i+1}-${Date.now()}`;
-        const botName = onlineNamePool[i % onlineNamePool.length];
-        const botPlayer: Player = { id: botId, name: botName, isBot: true };
-        const botTickets = 1 + Math.floor(Math.random() * 4);
-        addPlayerToRoomStore(newRoom.id, botPlayer, botTickets);
+    // 3. If no room is found, create a new one
+    if (!targetRoom || 'error' in targetRoom) {
+      const roomSettings: Partial<GameSettings> = {
+        lobbySize: tierConfig.roomSize,
+        isPublic: true,
+        callingMode: 'auto',
+        gameMode: 'online',
+        ticketPrice: tierConfig.ticketPrice,
+        tier: tier,
+      };
+      targetRoom = createRoomStore(player, roomSettings);
+      roomCreated = true;
     }
     
-    // 5. Start the game immediately
-    const startResult = startGameInRoomStore(newRoom.id, player.id);
-    if (startResult && 'error' in startResult) {
-        console.error(`Failed to start online game ${newRoom.id}:`, startResult.error);
-        // We don't return an error to the client here, because the room is created
-        // and they can still join, but we log it. The game might not auto-start.
+    if ('error' in targetRoom) {
+       return NextResponse.json({ message: targetRoom.error }, { status: 500 });
+    }
+
+    // 4. Add player to the found/created room
+    addPlayerToRoomStore(targetRoom.id, { ...player, isHost: true }, tickets);
+
+    // If we just created this room, set a timer to fill it with bots and start
+    if (roomCreated) {
+        const matchmakingTimer = setTimeout(() => {
+            fillRoomWithBotsAndStart(targetRoom!.id, player.id, tierConfig.roomSize);
+        }, tierConfig.matchmakingTime * 1000);
+        roomTimers.set(targetRoom.id, matchmakingTimer); // Store timer to be cancelled if room fills
     }
     
-    // 6. Get the final state and return it
-    const roomForClient = getRoomStateForClient(newRoom.id);
+    // 5. Get the final state and return it
+    const roomForClient = getRoomStateForClient(targetRoom.id);
     if (!roomForClient) {
         return NextResponse.json({ message: 'Failed to retrieve online room after creation' }, { status: 500 });
     }
     
     const responsePayload: Room & { newCoinBalance: number } = {
-        ...roomForClient,
+        ...(roomForClient as Room),
         newCoinBalance: newCoinBalance
     };
     
@@ -134,3 +120,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Error creating online game', error: (error as Error).message }, { status: 500 });
   }
 }
+
+    
