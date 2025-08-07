@@ -211,6 +211,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         newStreak = 1;
     }
 
+    // For guests, we only update the local state, not Firestore.
+    if (user.isGuest) {
+      const updatedUser = { ...user, stats: { ...user.stats, loginStreak: newStreak, lastLogin: today.toISOString() }};
+      return updatedUser;
+    }
+
     const userDocRef = doc(db, "users", user.uid);
     try {
         await updateDoc(userDocRef, {
@@ -243,6 +249,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (firebaseUser) {
+            
+            // For guest users, we don't listen to Firestore, we manage state locally.
+            if (firebaseUser.isAnonymous) {
+              const today = new Date();
+              const guestUserProfile: User = {
+                uid: firebaseUser.uid,
+                displayName: `Guest#${firebaseUser.uid.substring(0,5)}`,
+                email: null,
+                photoURL: null,
+                isGuest: true,
+                createdAt: firebaseUser.metadata.creationTime || today.toISOString(),
+                stats: {
+                  ...createDefaultStats(),
+                  coins: 10,
+                  lastLogin: today.toISOString(),
+                  loginStreak: 1,
+                },
+              };
+              setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
+              setCurrentUser(guestUserProfile);
+              setLoading(false);
+              return;
+            }
+
             const userDocRef = doc(db, "users", firebaseUser.uid);
             
             userDocUnsubscribe = onSnapshot(userDocRef, async (docSnap) => {
@@ -263,10 +293,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     userForLoginCheck = newUser;
                     
                 } else {
-                    const isNewGuest = firebaseUser.isAnonymous;
-                    const displayName = isNewGuest 
-                        ? `Guest#${firebaseUser.uid.substring(0,5)}` 
-                        : firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`;
+                    const displayName = firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`;
 
                     const today = new Date();
                     const newUserProfile: User = {
@@ -274,7 +301,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         displayName: displayName,
                         email: firebaseUser.email,
                         photoURL: firebaseUser.photoURL,
-                        isGuest: isNewGuest,
+                        isGuest: false,
                         createdAt: firebaseUser.metadata.creationTime || today.toISOString(),
                         stats: {
                             ...createDefaultStats(),
@@ -348,6 +375,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         totalReward += PERFECT_STREAK_BONUS;
         message = `You completed the week and earned a bonus! Total reward: ${totalReward} coins!`;
     }
+    
+    // For guests, update locally
+    if (currentUser.isGuest) {
+      setCurrentUser(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          stats: {
+            ...prev.stats,
+            coins: (prev.stats.coins || 0) + totalReward,
+            lastClaimedDay: day
+          }
+        }
+      });
+      toast({ title: "Reward Claimed!", description: message });
+      return { claimedAmount: totalReward };
+    }
 
     const userDocRef = doc(db, "users", currentUser.uid);
     try {
@@ -365,20 +409,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
 
-  const setLocalGuestAvatar = async (url: string) => {
-    if (currentUser) {
-       await updateUserProfile({ photoURL: url });
+  const setLocalGuestAvatar = (url: string) => {
+    if (currentUser && currentUser.isGuest) {
+      setCurrentUser(prev => prev ? { ...prev, photoURL: url } : null);
     }
   };
 
-  const setLocalGuestUsername = async (name: string) => {
-    if (currentUser) {
-       await updateUserProfile({ displayName: name });
+  const setLocalGuestUsername = (name: string) => {
+    if (currentUser && currentUser.isGuest) {
+      setCurrentUser(prev => prev ? { ...prev, displayName: name } : null);
     }
   };
 
   const updateUserProfile = async (data: Partial<Pick<User, 'displayName' | 'photoURL'>>) => {
-    if (!currentUser || !db) return;
+    if (!currentUser || !db || currentUser.isGuest) return;
 
     const userDocRef = doc(db, "users", currentUser.uid);
     const updates: { [key: string]: any } = { ...data };

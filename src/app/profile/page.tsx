@@ -70,7 +70,11 @@ export default function ProfilePage() {
 
   const handleAvatarSelect = async (src: string) => {
     if (currentUser) {
-      await updateUserProfile({ photoURL: src });
+      if (currentUser.isGuest) {
+        setLocalGuestAvatar(src);
+      } else {
+        await updateUserProfile({ photoURL: src });
+      }
       toast({
         title: "Avatar Updated!",
         description: "Your new profile picture has been saved.",
@@ -95,29 +99,33 @@ export default function ProfilePage() {
     setUsernameError(null);
 
     try {
-      const checkResponse = await fetch('/api/users/check-username', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: trimmedName }),
-      });
-      const checkData = await checkResponse.json();
+      if (currentUser.isGuest) {
+        setLocalGuestUsername(trimmedName);
+      } else {
+          const checkResponse = await fetch('/api/users/check-username', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: trimmedName }),
+          });
+          const checkData = await checkResponse.json();
 
-      if (!checkResponse.ok || !checkData.isAvailable) {
-          throw new Error(checkData.message || "This username is already taken.");
+          if (!checkResponse.ok || !checkData.isAvailable) {
+              throw new Error(checkData.message || "This username is already taken.");
+          }
+
+          const updateResponse = await fetch('/api/users/check-username', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: trimmedName, userId: currentUser.uid, oldUsername: currentUser.displayName }),
+          });
+
+          const updateData = await updateResponse.json();
+          if (!updateResponse.ok || !updateData.success) {
+              throw new Error(updateData.message || "Could not reserve username.");
+          }
+          
+          await updateUserProfile({ displayName: trimmedName });
       }
-
-      const updateResponse = await fetch('/api/users/check-username', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: trimmedName, userId: currentUser.uid, oldUsername: currentUser.displayName }),
-      });
-
-      const updateData = await updateResponse.json();
-      if (!updateResponse.ok || !updateData.success) {
-          throw new Error(updateData.message || "Could not reserve username.");
-      }
-      
-      await updateUserProfile({ displayName: trimmedName });
       
       setIsEditingName(false);
       toast({ title: "Name Updated", description: `Your name has been changed to ${trimmedName}.`});
@@ -186,7 +194,7 @@ export default function ProfilePage() {
             .map(prize => [prize, prizesWon[prize] ?? 0] as [string, number])
         : [];
     
-    const canChangeName = !currentUser.stats?.usernameChanged;
+    const canChangeName = currentUser.isGuest || !currentUser.stats?.usernameChanged;
 
     return (
       <div className="animate-fade-in max-w-lg w-full">
