@@ -54,11 +54,20 @@ function stopRoomTimer(roomId: string, reason: string) {
 export function createRoomStore(host: Player, clientSettings?: Partial<GameSettings>): Room {
   const roomId = generateRoomId();
   const gameSettings: GameSettings = { ...DEFAULT_GAME_SETTINGS, ...clientSettings };
+  
+  const hostPlayer: BackendPlayerInRoom = {
+    id: host.id,
+    name: host.name,
+    isHost: true,
+    isBot: !!host.isBot,
+    tickets: [],
+    confirmedTicketCost: 0,
+  };
 
   const newRoom: Room = {
     id: roomId,
     host: { id: host.id, name: host.name, isHost: true },
-    players: [],
+    players: [hostPlayer],
     settings: gameSettings,
     createdAt: new Date(),
     isGameStarted: false,
