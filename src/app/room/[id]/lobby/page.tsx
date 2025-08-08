@@ -26,8 +26,34 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const MAX_TICKETS_PER_PLAYER = 4;
+
+const LobbySkeleton = () => (
+    <div className="flex flex-grow flex-col items-center justify-center p-4">
+        <Card className="w-full max-w-2xl shadow-xl">
+            <CardHeader className="p-2 md:p-3">
+                <div className="flex justify-between items-center gap-2">
+                    <Skeleton className="h-8 w-48" />
+                    <Skeleton className="h-8 w-8 rounded-md" />
+                </div>
+            </CardHeader>
+            <CardContent className="p-3 md:p-4 pt-0 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                </div>
+                <Skeleton className="h-24 w-full" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Skeleton className="h-48 w-full" />
+                    <Skeleton className="h-48 w-full" />
+                </div>
+                <Skeleton className="h-12 w-full" />
+            </CardContent>
+        </Card>
+    </div>
+);
 
 export default function LobbyPage() {
   const { toast } = useToast();
@@ -62,10 +88,6 @@ export default function LobbyPage() {
             if (!currentUser && !authLoading) setError("Please sign in to access the lobby.");
         }
         return;
-    }
-    if(isInitialLoad) {
-        setIsLoading(true);
-        setError(null);
     }
     
     try {
@@ -118,13 +140,18 @@ export default function LobbyPage() {
       }
       
       setRoomData(data);
+      if (isInitialLoad) setIsLoading(false);
+      setError(null);
       previousIsGameStartedRef.current = data.isGameStarted;
 
     } catch (err) {
       console.error(`Error fetching room ${roomId} details:`, err);
       if (isInitialLoad || !roomDataRef.current) { 
          setError((err as Error).message || "An unexpected error occurred while fetching room details.");
-         if (isInitialLoad) setRoomData(null);
+         if (isInitialLoad) {
+             setRoomData(null);
+             setIsLoading(false);
+         }
       } else {
         toast({
             title: "Lobby Update Failed",
@@ -134,9 +161,7 @@ export default function LobbyPage() {
         });
         console.warn("Polling error fetching room details:", err);
       }
-    } finally {
-      if(isInitialLoad) setIsLoading(false);
-    }
+    } 
   }, [roomId, currentUser, authLoading, router, toast, playSound]); 
 
   useEffect(() => {
@@ -153,7 +178,7 @@ export default function LobbyPage() {
   }, [currentUser, roomId, authLoading, fetchRoomDetails]);
 
   useEffect(() => {
-    if (!roomId || !currentUser || (roomData?.isGameStarted && !roomData.isGameOver) || isLoading) {
+    if (!roomId || !currentUser || (roomData?.isGameStarted && !roomData.isGameOver)) {
       return;
     }
 
@@ -161,7 +186,7 @@ export default function LobbyPage() {
       if (!document.hidden) fetchRoomDetails(false);
     }, 3000); 
     return () => clearInterval(intervalId);
-  }, [roomId, currentUser, roomData?.isGameStarted, roomData?.isGameOver, fetchRoomDetails, isLoading]);
+  }, [roomId, currentUser, roomData?.isGameStarted, roomData?.isGameOver, fetchRoomDetails]);
 
   const handleConfirmOrJoinTickets = async () => {
     if (!currentUser || !roomData || (roomData.isGameStarted && !roomData.isGameOver)) {
@@ -370,12 +395,7 @@ export default function LobbyPage() {
   }
 
   if (isLoading || authLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-xl">Loading Room...</p>
-      </div>
-    );
+    return <LobbySkeleton />;
   }
 
   if (error) {
