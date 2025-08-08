@@ -100,7 +100,7 @@ const RewardCard = ({ day, reward, lastClaimedDay }: { day: number, reward: numb
 
     return (
         <div className={cn(
-            "p-2 rounded-lg text-center border-2 flex flex-col items-center justify-center aspect-square transition-all",
+            "p-2 rounded-lg text-center border-2 flex flex-col items-center justify-center aspect-square transition-all relative",
             isClaimed && "bg-green-600/20 border-green-500 text-green-700",
             isNextToClaim && "bg-primary/20 border-primary shadow-lg scale-105",
             !isClaimed && !isNextToClaim && "bg-muted/50 border-border/50 opacity-60"
@@ -108,7 +108,6 @@ const RewardCard = ({ day, reward, lastClaimedDay }: { day: number, reward: numb
             <p className="text-xs font-semibold uppercase">Day {day}</p>
             <Image src="/coin.png" alt="Coin" width={24} height={24} className="my-1"/>
             <p className="text-sm font-bold">{reward}</p>
-            {isClaimed && <CheckCircle className="absolute h-4 w-4 text-green-500 top-1 right-1" />}
         </div>
     )
 }
