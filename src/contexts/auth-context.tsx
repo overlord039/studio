@@ -241,8 +241,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (firebaseUser) {
-            
-            // For guest users, we don't listen to Firestore, we manage state locally.
+            const isNewUser = firebaseUser.metadata.creationTime === firebaseUser.metadata.lastSignInTime;
+
             if (firebaseUser.isAnonymous) {
               const today = new Date();
               const guestUserProfile: User = {
@@ -259,7 +259,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   loginStreak: 1,
                 },
               };
-              setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
+               if (isNewUser) {
+                 setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
+               }
               setCurrentUser(guestUserProfile);
               setLoading(false);
               return;
@@ -311,7 +313,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         await batch.commit();
 
                         userForLoginCheck = newUserProfile;
-                        setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
+                         if (isNewUser) {
+                           setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
+                         }
 
                     } catch (error) {
                         console.error("Error creating new user profile:", error);
@@ -323,10 +327,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     const finalUser = await checkDailyLogin(userForLoginCheck);
                     setCurrentUser(prevUser => areUsersEqual(prevUser, finalUser) ? prevUser : finalUser);
 
-                    // Check if the daily reward dialog should be shown
                     const canClaimNow = (finalUser.stats.loginStreak || 0) > 0 && (finalUser.stats.lastClaimedDay || 0) < 7;
-                    if (canClaimNow) {
-                        setTimeout(() => setIsRewardDialogOpen(true), 1500); // Open dialog after a short delay
+                    if (canClaimNow && !isNewUser) {
+                        setTimeout(() => setIsRewardDialogOpen(true), 1500); 
                     }
                 }
                 setLoading(false);
