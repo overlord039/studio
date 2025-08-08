@@ -29,15 +29,15 @@ export async function POST(
         return NextResponse.json({ message: "Room not found." }, { status: 404 });
     }
 
-    let numTickets: number;
+    let numTickets = ticketsToBuy ?? 0;
+    
+    // Rush mode ticket logic is now handled in addPlayerToRoomStore based on settings
     if (room.settings.gameMode === 'rush') {
         numTickets = 1 + Math.floor(Math.random() * 4);
-    } else {
-        numTickets = ticketsToBuy ?? 0;
     }
     
     if(db) {
-        if (room && room.settings.ticketPrice > 0 && room.settings.gameMode !== 'rush' && ticketsToBuy && ticketsToBuy > 0) {
+        if (room.settings.ticketPrice > 0 && ticketsToBuy && ticketsToBuy > 0) {
             
             try {
               await runTransaction(db, async (transaction) => {
@@ -45,19 +45,26 @@ export async function POST(
                   const playerDoc = await transaction.get(playerDocRef);
 
                   if (!playerDoc.exists()) {
+                      // This is a critical check. If it fails, the user record isn't in Firestore yet.
+                      // The client should ideally wait for auth state to settle before allowing actions.
                       throw new Error("Player data not found.");
                   }
 
                   const currentCoins = playerDoc.data().stats?.coins || 0;
                   const existingPlayerInRoom = room.players.find(p => p.id === playerId);
-                  const oldCost = existingPlayerInRoom?.confirmedTicketCost || 0;
+                  
+                  // Calculate cost based on the *new* tickets being bought, not the difference.
                   const newCost = room.settings.ticketPrice * numTickets;
-                  const costDifference = newCost - oldCost;
-
-                  if (currentCoins < costDifference) {
-                      throw new Error(`Not enough coins. You need ${costDifference} more coins.`);
+                  
+                  // When re-confirming tickets, the cost should be the total new cost.
+                  // The old cost is effectively refunded/ignored.
+                  if (currentCoins < newCost) {
+                      throw new Error(`Not enough coins. You need ${newCost} coins.`);
                   }
                   
+                  const oldCost = existingPlayerInRoom?.confirmedTicketCost || 0;
+                  const costDifference = newCost - oldCost;
+
                   transaction.update(playerDocRef, { 'stats.coins': increment(-costDifference) });
               });
             } catch (err) {

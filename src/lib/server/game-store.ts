@@ -104,10 +104,8 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberO
     let player: BackendPlayerInRoom;
 
     if (existingPlayerIndex !== -1) {
-        // Player exists, update their tickets if provided.
+        // Player exists, update their tickets if a positive number is passed.
         player = room.players[existingPlayerIndex];
-        // Only generate new tickets if a positive number is passed.
-        // A value of 0 is used for initial joins to the lobby without confirming tickets.
         if (numberOfTickets > 0) {
             player.tickets = generateMultipleUniqueTickets(numberOfTickets);
             player.confirmedTicketCost = room.settings.ticketPrice * numberOfTickets;
@@ -119,7 +117,7 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberO
         player = {
           id: playerInfo.id,
           name: playerInfo.name,
-          isHost: playerInfo.isHost || false,
+          isHost: room.players.length === 0, // First player is the host
           isBot: !!playerInfo.isBot,
           tickets: numberOfTickets > 0 ? generateMultipleUniqueTickets(numberOfTickets) : [],
           confirmedTicketCost: room.settings.ticketPrice * numberOfTickets,
@@ -142,17 +140,22 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
   const room = rooms.get(roomId);
   if (!room) return { error: "Room not found." };
   
+  const gameStarter = room.players.find(p => !p.isBot) || room.host;
+  if (!gameStarter) return { error: "Could not find a valid player to start the game."};
+  const gameStarterId = gameStarter.id;
+
   if (room.isGameStarted) return { error: "Game has already started." };
   if (room.isGameOver) return { error: "Game is over. Reset the room to start a new game." };
   
-  // In automated online games, we don't need a strict host check to start
   if (!room.settings.isPublic && room.host.id !== hostId) {
-    return { error: "Only the host can start the game." };
+    return { error: `Only the host can start the game. Current host: ${room.host.name}, trying to start: ${hostId}` };
   }
 
   const playersWithTickets = room.players.filter(p => p.tickets.length > 0).length;
-  if (playersWithTickets === 0) {
-     return { error: `No players have tickets.` };
+  const minPlayersToStart = room.settings.gameMode === 'multiplayer' ? MIN_LOBBY_SIZE : 1;
+
+  if (playersWithTickets < minPlayersToStart) {
+     return { error: `Need at least ${minPlayersToStart} player(s) with tickets. Currently: ${playersWithTickets}` };
   }
   
   room.isGameStarted = true;
@@ -227,8 +230,10 @@ export function removePlayerFromRoomStore(roomId: string, playerId: string): { s
     // If the host leaves, assign a new one
     if (leavingPlayer.isHost) {
         const newHost = room.players.find(p => !p.isBot) || room.players[0];
-        newHost.isHost = true;
-        room.host = { id: newHost.id, name: newHost.name, isHost: true };
+        if (newHost) {
+          newHost.isHost = true;
+          room.host = { id: newHost.id, name: newHost.name, isHost: true };
+        }
     }
     
     room.totalPrizePool = room.players.reduce((sum, player) => sum + (player.confirmedTicketCost || 0), 0);
@@ -368,4 +373,65 @@ export function fillRoomWithBotsAndStart(roomId: string) {
     // The host is the first non-bot player, or the first player if all are bots.
     const gameStarter = room.players.find(p => !p.isBot) || room.host;
     startGameInRoomStore(roomId, gameStarter.id);
+}
+
+export function kickPlayerStore(roomId: string, hostId: string, playerIdToKick: string): Room | { error: string } {
+    const room = getRoomStore(roomId);
+    if (!room) return { error: "Room not found." };
+    if (room.host.id !== hostId) return { error: "Only the host can kick players." };
+    if (hostId === playerIdToKick) return { error: "Host cannot kick themselves." };
+
+    const removeResult = removePlayerFromRoomStore(roomId, playerIdToKick);
+    if (!removeResult.success) {
+        return { error: removeResult.error || "Failed to kick player." };
+    }
+    return room;
+}
+
+export function transferHostStore(roomId: string, currentHostId: string, newHostId: string): Room | { error: string } {
+    const room = getRoomStore(roomId);
+    if (!room) return { error: "Room not found." };
+    if (room.host.id !== currentHostId) return { error: "Only the current host can transfer ownership." };
+
+    const currentHostPlayer = room.players.find(p => p.id === currentHostId);
+    const newHostPlayer = room.players.find(p => p.id === newHostId);
+
+    if (!newHostPlayer) return { error: "New host not found in the room." };
+    if (newHostPlayer.isBot) return { error: "Cannot make a bot the host."};
+
+    if (currentHostPlayer) {
+        currentHostPlayer.isHost = false;
+    }
+    newHostPlayer.isHost = true;
+    room.host = { id: newHostPlayer.id, name: newHostPlayer.name, isHost: true };
+    
+    rooms.set(roomId, room);
+    return room;
+}
+
+export function updateCallingModeStore(roomId: string, hostId: string, newMode: CallingMode): Room | { error: string } {
+    const room = getRoomStore(roomId);
+    if (!room) return { error: "Room not found." };
+    if (room.host.id !== hostId) return { error: "Only the host can change the calling mode." };
+
+    room.settings.callingMode = newMode;
+    rooms.set(roomId, room);
+
+    // If switching to 'auto', start the timer if it isn't already running
+    if (newMode === 'auto' && room.isGameStarted && !roomTimers.has(roomId)) {
+        const intervalId = setInterval(() => {
+            const currentRoomState = getRoomStore(roomId);
+            if (!currentRoomState || !currentRoomState.isGameStarted || currentRoomState.isGameOver) {
+                stopRoomTimer(roomId, !currentRoomState ? "Room no longer exists" : "Game not started or over");
+                return;
+            }
+            callNextNumberStore(roomId);
+        }, SERVER_CALL_INTERVAL);
+        roomTimers.set(roomId, intervalId);
+    } else if (newMode === 'manual') {
+        // If switching to 'manual', stop the timer
+        stopRoomTimer(roomId, "Switched to manual calling mode.");
+    }
+    
+    return room;
 }
