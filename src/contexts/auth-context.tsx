@@ -3,7 +3,7 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import React, { useState, useEffect, useContext, createContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, createContext, useCallback, useRef } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { 
   signOut, 
@@ -159,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isRewardDialogOpen, setIsRewardDialogOpen] = useState(false);
   
   const canClaimReward = currentUser ? (currentUser.stats.loginStreak || 0) > 0 && (currentUser.stats.lastClaimedDay || 0) < 7 : false;
+  const sessionWelcomedRef = useRef(false);
 
 
   const fetchUser = useCallback(async () => {
@@ -203,12 +204,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
         newStreak = 1;
     }
-    
-    // For guests, we only update the local state, not Firestore.
-    if (user.isGuest) {
-      const updatedUser = { ...user, stats: { ...user.stats, loginStreak: newStreak, lastLogin: today.toISOString() }};
-      return updatedUser;
-    }
 
     const userDocRef = doc(db, "users", user.uid);
     try {
@@ -243,30 +238,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (firebaseUser) {
             const isNewUser = firebaseUser.metadata.creationTime === firebaseUser.metadata.lastSignInTime;
 
-            if (firebaseUser.isAnonymous) {
-              const today = new Date();
-              const guestUserProfile: User = {
-                uid: firebaseUser.uid,
-                displayName: `Guest#${firebaseUser.uid.substring(0,5)}`,
-                email: null,
-                photoURL: null,
-                isGuest: true,
-                createdAt: firebaseUser.metadata.creationTime || today.toISOString(),
-                stats: {
-                  ...createDefaultStats(),
-                  coins: 10,
-                  lastLogin: today.toISOString(),
-                  loginStreak: 1,
-                },
-              };
-               if (isNewUser) {
-                 setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
-               }
-              setCurrentUser(guestUserProfile);
-              setLoading(false);
-              return;
-            }
-
             const userDocRef = doc(db, "users", firebaseUser.uid);
             
             userDocUnsubscribe = onSnapshot(userDocRef, async (docSnap) => {
@@ -287,15 +258,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     userForLoginCheck = newUser;
                     
                 } else {
-                    const displayName = firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`;
-
+                    const isGuest = firebaseUser.isAnonymous;
+                    const displayName = isGuest ? `Guest#${firebaseUser.uid.substring(0,5)}` : (firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`);
+                    
                     const today = new Date();
                     const newUserProfile: User = {
                         uid: firebaseUser.uid,
                         displayName: displayName,
-                        email: firebaseUser.email,
-                        photoURL: firebaseUser.photoURL,
-                        isGuest: false,
+                        email: isGuest ? null : firebaseUser.email,
+                        photoURL: isGuest ? null : firebaseUser.photoURL,
+                        isGuest: isGuest,
                         createdAt: firebaseUser.metadata.creationTime || today.toISOString(),
                         stats: {
                             ...createDefaultStats(),
@@ -313,8 +285,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         await batch.commit();
 
                         userForLoginCheck = newUserProfile;
-                         if (isNewUser) {
+                         if (isNewUser && !sessionWelcomedRef.current) {
                            setReward({ amount: 10, message: 'Welcome! Here are some coins to start.' });
+                           sessionWelcomedRef.current = true;
                          }
 
                     } catch (error) {
@@ -378,24 +351,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const nextClaimDay = dayToClaim === 7 ? 0 : dayToClaim;
     
-    // For guests, update locally
-    if (currentUser.isGuest) {
-      setCurrentUser(prev => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          stats: {
-            ...prev.stats,
-            coins: (prev.stats.coins || 0) + totalReward,
-            lastClaimedDay: nextClaimDay,
-            loginStreak: 0, // Reset streak for today after claiming
-          }
-        }
-      });
-      toast({ title: "Reward Claimed!", description: message });
-      return { claimedAmount: totalReward };
-    }
-
     const userDocRef = doc(db, "users", currentUser.uid);
     try {
         await updateDoc(userDocRef, {
@@ -415,23 +370,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setLocalGuestAvatar = (url: string) => {
     if (currentUser && currentUser.isGuest) {
-      setCurrentUser(prev => prev ? { ...prev, photoURL: url } : null);
+        updateUserProfile({ photoURL: url });
     }
   };
 
   const setLocalGuestUsername = (name: string) => {
-    if (currentUser && currentUser.isGuest) {
-      setCurrentUser(prev => prev ? { ...prev, displayName: name } : null);
+     if (currentUser && currentUser.isGuest) {
+        updateUserProfile({ displayName: name });
     }
   };
 
   const updateUserProfile = async (data: Partial<Pick<User, 'displayName' | 'photoURL'>>) => {
-    if (!currentUser || !db || currentUser.isGuest) return;
+    if (!currentUser || !db) return;
 
     const userDocRef = doc(db, "users", currentUser.uid);
     const updates: { [key: string]: any } = { ...data };
     
-    if (data.displayName && currentUser.stats?.usernameChanged !== true) {
+    // For non-guests, handle username change logic with Firestore
+    if (!currentUser.isGuest && data.displayName && currentUser.stats?.usernameChanged !== true) {
         updates['stats.usernameChanged'] = true;
     }
 
