@@ -68,10 +68,10 @@ export async function POST(request: NextRequest) {
     }
     
     // --- Matchmaking Logic ---
-    let targetRoom: Room | { error: string } | undefined = findPublicRoom(tier);
+    let targetRoom: Room | undefined = findPublicRoom(tier);
     let roomCreated = false;
 
-    if (!targetRoom || 'error' in targetRoom) {
+    if (!targetRoom) {
       // Create a new room if none are available
       const roomSettings: Partial<GameSettings> = {
         lobbySize: tierConfig.roomSize,
@@ -85,12 +85,13 @@ export async function POST(request: NextRequest) {
       roomCreated = true;
     }
     
-    if ('error' in targetRoom) {
-       return NextResponse.json({ message: targetRoom.error }, { status: 500 });
-    }
-
     // Add player to the found/created room
-    addPlayerToRoomStore(targetRoom.id, { ...player, isHost: roomCreated }, tickets);
+    const addResult = addPlayerToRoomStore(targetRoom.id, { ...player, isHost: roomCreated }, tickets);
+
+    if ('error' in addResult) {
+        // Handle error, maybe refund coins
+       return NextResponse.json({ message: addResult.error }, { status: 400 });
+    }
 
     // If we just created a new room, start the matchmaking timer
     if (roomCreated) {
