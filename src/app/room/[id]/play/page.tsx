@@ -724,7 +724,7 @@ export default function GameRoomPage() {
     );
   }
   
-  const isFullHouseClaimed = roomData.prizeStatus[PRIZE_TYPES.FULL_HOUSE]?.claimedBy?.length > 0;
+  const isFullHouseClaimed = roomData.prizeStatus && roomData.prizeStatus[PRIZE_TYPES.FULL_HOUSE]?.claimedBy?.length > 0;
   if (!roomData.isGameStarted && !isFullHouseClaimed) {
     return (
        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
