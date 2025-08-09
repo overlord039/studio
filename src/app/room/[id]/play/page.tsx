@@ -228,7 +228,8 @@ export default function GameRoomPage() {
       setRoomData(data);
       previousPrizeStatusRef.current = data.prizeStatus;
 
-      const me = data.players.find(p => p.id === currentUser.uid);
+      const players = data.players || [];
+      const me = players.find(p => p.id === currentUser.uid);
       if (me && me.tickets) {
         setMyTickets(me.tickets);
       } else if (isInitialLoad && (!me || !me.tickets || me.tickets.length === 0)) {

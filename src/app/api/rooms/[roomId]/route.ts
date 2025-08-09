@@ -1,6 +1,10 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { getRoomStore, getRoomStateForClient } from '@/lib/server/game-store';
+import { db } from '@/lib/firebase/config';
+import { doc, getDoc } from 'firebase/firestore';
+import type { FirestoreRoom } from '@/types';
+
 
 export async function GET(
   request: NextRequest,
@@ -13,32 +17,25 @@ export async function GET(
       return NextResponse.json({ message: 'Room ID is required' }, { status: 400 });
     }
 
-    const roomForClient = getRoomStateForClient(roomId);
-
-    if (!roomForClient) {
-      // This means either room not found, or getRoomStateForClient had an internal error and returned undefined
-      return NextResponse.json({ message: 'Room not found or unable to process room data.' }, { status: 404 });
+    if (db) {
+        const roomDocRef = doc(db, "rooms", roomId);
+        const roomSnap = await getDoc(roomDocRef);
+        if (roomSnap.exists()) {
+            const roomData = roomSnap.data() as FirestoreRoom;
+            // You might want to fetch players subcollection here too if needed
+            return NextResponse.json(roomData);
+        }
     }
     
-    return NextResponse.json(roomForClient, { status: 200 });
-
-  } catch (error) { // This catch is for truly unexpected errors within this GET handler
-    let errorMessage = 'An unexpected error occurred while fetching room details.';
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    } else if (typeof error === 'string') {
-      errorMessage = error;
+    const memoryRoom = getRoomStateForClient(roomId);
+    if (memoryRoom) {
+      return NextResponse.json(memoryRoom);
     }
-    // Using console.error for server-side logging
+
+    return NextResponse.json({ message: 'Room not found.' }, { status: 404 });
+
+  } catch (error) { 
     console.error(`Critical error in GET /api/rooms/${roomId}:`, error); 
-    
-    // Attempt to return a structured error response
-    try {
-      return NextResponse.json({ message: 'Server error fetching room.', errorDetail: errorMessage }, { status: 500 });
-    } catch (responseError) {
-      // If even NextResponse.json fails (highly unlikely but for robustness)
-      console.error(`Error creating NextResponse in GET /api/rooms/${roomId} catch block:`, responseError);
-      return new Response('Internal Server Error', { status: 500, headers: { 'Content-Type': 'text/plain' } });
-    }
+    return NextResponse.json({ message: 'Server error fetching room.', error: (error as Error).message }, { status: 500 });
   }
 }
