@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
         }
 
         const roomRef = doc(db, 'rooms', roomId);
+        let commitBatch = false;
 
         await runTransaction(db, async (transaction) => {
             const roomSnap = await transaction.get(roomRef);
