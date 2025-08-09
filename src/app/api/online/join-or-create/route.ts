@@ -1,10 +1,10 @@
 
 
 import { NextResponse, type NextRequest } from 'next/server';
-import { createRoomStore, addPlayerToRoomStore, getRoomStateForClient, startGameInRoomStore, findPublicRoom, fillRoomWithBotsAndStart } from '@/lib/server/game-store';
+import { createRoomStore, addPlayerToRoomStore, getRoomStateForClient, findPublicRoom, fillRoomWithBotsAndStart } from '@/lib/server/game-store';
 import type { Player, GameSettings, OnlineGameTier, TierConfig, Room } from '@/types';
 import { db } from '@/lib/firebase/config';
-import { doc, runTransaction, increment, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, runTransaction, increment } from 'firebase/firestore';
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
@@ -21,6 +21,13 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
     }
 };
 
+declare global {
+  // eslint-disable-next-line no-var
+  var roomTimers: Map<string, NodeJS.Timeout>;
+}
+// Ensure the global timer map exists
+const roomTimers = global.roomTimers || (global.roomTimers = new Map<string, NodeJS.Timeout>());
+
 export async function POST(request: NextRequest) {
   if (!db) {
     return NextResponse.json({ message: 'Firestore is not configured.' }, { status: 500 });
@@ -29,6 +36,7 @@ export async function POST(request: NextRequest) {
   try {
     const { player, tier, tickets } = (await request.json()) as { player: Player; tier: OnlineGameTier, tickets: number };
 
+    // --- Validation ---
     if (!player || !player.id || !player.name) {
       return NextResponse.json({ message: 'Player details are required' }, { status: 400 });
     }
@@ -44,17 +52,15 @@ export async function POST(request: NextRequest) {
     const playerDocRef = doc(db, "users", player.id);
     let newCoinBalance = 0;
 
-    // 1. Transaction to check coins and deduct them
+    // --- Transaction to deduct coins ---
     try {
         await runTransaction(db, async (transaction) => {
             const playerDoc = await transaction.get(playerDocRef);
-            if (!playerDoc.exists()) {
-                throw new Error("Player data not found.");
-            }
+            if (!playerDoc.exists()) throw new Error("Player data not found.");
+            
             const currentCoins = playerDoc.data().stats?.coins || 0;
-            if (currentCoins < totalCost) {
-                throw new Error("Not enough coins to buy these tickets.");
-            }
+            if (currentCoins < totalCost) throw new Error("Not enough coins to buy these tickets.");
+            
             newCoinBalance = currentCoins - totalCost;
             transaction.update(playerDocRef, { 'stats.coins': increment(-totalCost) });
         });
@@ -62,12 +68,12 @@ export async function POST(request: NextRequest) {
          return NextResponse.json({ message: err.message || "An error occurred during the transaction." }, { status: 400 });
     }
     
-    // 2. Find an available public room for the selected tier
+    // --- Matchmaking Logic ---
     let targetRoom: Room | { error: string } | undefined = findPublicRoom(tier);
     let roomCreated = false;
 
-    // 3. If no room is found, create a new one
     if (!targetRoom || 'error' in targetRoom) {
+      // Create a new room if none are available
       const roomSettings: Partial<GameSettings> = {
         lobbySize: tierConfig.roomSize,
         isPublic: true,
@@ -84,23 +90,23 @@ export async function POST(request: NextRequest) {
        return NextResponse.json({ message: targetRoom.error }, { status: 500 });
     }
 
-    // 4. Add player to the found/created room
-    addPlayerToRoomStore(targetRoom.id, { ...player, isHost: true }, tickets);
+    // Add player to the found/created room
+    addPlayerToRoomStore(targetRoom.id, { ...player, isHost: roomCreated }, tickets);
 
-    // If we just created this room, set a timer to fill it with bots and start
+    // If we just created a new room, start the matchmaking timer
     if (roomCreated) {
-        setTimeout(() => {
-            fillRoomWithBotsAndStart(targetRoom!.id, player.id, tierConfig.roomSize);
+        const matchmakingTimer = setTimeout(() => {
+            fillRoomWithBotsAndStart(targetRoom!.id);
         }, tierConfig.matchmakingTime * 1000);
+        roomTimers.set(targetRoom.id, matchmakingTimer);
     }
     
-    // 5. Get the final state and return it
     const roomForClient = getRoomStateForClient(targetRoom.id);
     if (!roomForClient) {
-        return NextResponse.json({ message: 'Failed to retrieve online room after creation' }, { status: 500 });
+        return NextResponse.json({ message: 'Failed to retrieve room after join/create' }, { status: 500 });
     }
     
-    const responsePayload: Room & { newCoinBalance: number } = {
+    const responsePayload = {
         ...roomForClient,
         newCoinBalance: newCoinBalance
     };
@@ -108,7 +114,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(responsePayload, { status: 201 });
 
   } catch (error) {
-    console.error('Error creating online game room:', error);
-    return NextResponse.json({ message: 'Error creating online game', error: (error as Error).message }, { status: 500 });
+    console.error('Error in online join-or-create:', error);
+    return NextResponse.json({ message: 'Error joining or creating online game', error: (error as Error).message }, { status: 500 });
   }
 }
