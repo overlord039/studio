@@ -5,7 +5,7 @@ import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import type { OnlineGameTier, TierConfig, Player, Room } from '@/types';
-import { Loader2, Users, Search, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Loader2, Users, Search, ArrowLeft, AlertTriangle, Bot } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -201,8 +201,9 @@ function MatchmakingContent() {
                         <ScrollArea className="h-24 w-full rounded-md border bg-secondary/30 p-2">
                             <div className="space-y-1.5">
                                 {matchedRoom.players.map((player) => (
-                                     <div key={player.id} className={cn("text-sm font-medium text-left px-2", player.id === currentUser.uid && "text-primary")}>
-                                        {player.name}
+                                     <div key={player.id} className={cn("text-sm font-medium text-left px-2 flex items-center gap-2", player.id === currentUser.uid && "text-primary")}>
+                                        {player.isBot && <Bot className="h-4 w-4" />}
+                                        <span>{player.name}</span>
                                      </div>
                                 ))}
                             </div>
