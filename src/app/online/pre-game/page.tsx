@@ -1,10 +1,11 @@
 
+
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
-import type { Room, PrizeType, GameSettings, OnlineGameTier, TierConfig, Player } from '@/types';
+import type { Room, PrizeType, GameSettings, OnlineGameTier, TierConfig, Player, FirestoreRoom, FirestorePlayer } from '@/types';
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS } from '@/lib/constants';
 import { Loader2, AlertTriangle, Gift, Users, Trophy, Bot, Ticket as TicketIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,9 @@ import { useSound } from '@/contexts/sound-context';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { db } from '@/lib/firebase/config';
+import { doc, collection, onSnapshot, runTransaction, Timestamp } from 'firebase/firestore';
+
 
 function PreGameContent() {
     const router = useRouter();
@@ -22,7 +26,8 @@ function PreGameContent() {
     const { toast } = useToast();
     const { playSound } = useSound();
     
-    const [roomData, setRoomData] = useState<Room | null>(null);
+    const [roomData, setRoomData] = useState<FirestoreRoom | null>(null);
+    const [players, setPlayers] = useState<FirestorePlayer[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [countdown, setCountdown] = useState(5);
@@ -30,44 +35,73 @@ function PreGameContent() {
     const roomId = searchParams.get('roomId');
 
     useEffect(() => {
-        if (!roomId) {
-            setError("No room ID provided.");
+        if (!roomId || !db) {
+            setError("No room ID provided or DB not configured.");
             setIsLoading(false);
             return;
         }
         
         playSound('notification.wav');
 
-        const fetchRoom = async () => {
-            try {
-                const response = await fetch(`/api/rooms/${roomId}`);
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.message || "Failed to fetch room data.");
+        const roomRef = doc(db, "rooms", roomId);
+        const playersRef = collection(db, "rooms", roomId, "players");
+
+        const unsubRoom = onSnapshot(roomRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data() as FirestoreRoom;
                 setRoomData(data);
-            } catch (err) {
-                setError((err as Error).message);
-            } finally {
-                setIsLoading(false);
+                if (data.status === 'in-progress') {
+                    toast({ title: "Match Starting!", description: "Let's go!" });
+                    router.push(`/room/${roomId}/play`);
+                }
+                 if(data.preGameEndTime) {
+                    const endTime = data.preGameEndTime.toMillis();
+                    const now = Date.now();
+                    setCountdown(Math.max(0, Math.ceil((endTime - now)/1000)));
+                }
+
+            } else {
+                setError("This room no longer exists.");
             }
+            setIsLoading(false);
+        });
+
+        const unsubPlayers = onSnapshot(playersRef, (querySnapshot) => {
+            const playersList = querySnapshot.docs.map(doc => doc.data() as FirestorePlayer);
+            setPlayers(playersList);
+        });
+
+        return () => {
+            unsubRoom();
+            unsubPlayers();
         };
-        fetchRoom();
-    }, [roomId, playSound]);
+
+    }, [roomId, playSound, router, toast]);
 
     useEffect(() => {
         if (!roomData || error) return;
-
-        if (countdown <= 0) {
-            router.push(`/room/${roomId}/play`);
-            return;
-        }
-
+        
         const timer = setInterval(() => {
-            setCountdown(prev => prev - 1);
+            setCountdown(prev => (prev > 0 ? prev - 1 : 0));
         }, 1000);
+
+         // Logic to trigger the final game start
+        if(countdown <= 0 && roomData.status === 'pre-game') {
+             runTransaction(db, async (transaction) => {
+                const roomRef = doc(db, "rooms", roomData.id);
+                const roomDoc = await transaction.get(roomRef);
+                if(roomDoc.exists() && roomDoc.data().status === 'pre-game') {
+                    transaction.update(roomRef, {
+                        status: 'in-progress',
+                        gameStartTime: Timestamp.now()
+                    });
+                }
+            }).catch(err => console.error("Failed to start game from pre-game:", err));
+        }
 
         return () => clearInterval(timer);
 
-    }, [countdown, roomData, error, router, roomId, currentUser, toast]);
+    }, [countdown, roomData, error, router, roomId]);
     
     if (isLoading || !currentUser) {
         return <Loader2 className="h-8 w-8 animate-spin text-white" />;
@@ -92,11 +126,14 @@ function PreGameContent() {
     
     if (!roomData) return null;
 
-    const gameSettings: GameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
+    const gameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
     const currentPrizeFormat = gameSettings.prizeFormat;
     const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
     const prizeDistribution = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat] || {};
-    const totalPrizePool = roomData.totalPrizePool || 0;
+    
+    const totalTicketsSold = players.reduce((acc, p) => acc + (p.tickets || 1), 0);
+    const totalPrizePool = roomData.settings.ticketPrice * totalTicketsSold;
+    
     const formatCoins = (amount: number) => new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 
     return (
@@ -138,21 +175,21 @@ function PreGameContent() {
                     </div>
                      <div>
                         <h3 className="text-sm font-semibold text-center mb-2 flex items-center justify-center uppercase tracking-wider">
-                            <Users className="mr-2 h-4 w-4"/> Players ({roomData.players.length}/{gameSettings.lobbySize})
+                            <Users className="mr-2 h-4 w-4"/> Players ({players.length}/{gameSettings.lobbySize})
                         </h3>
                         <ScrollArea className="h-36 w-full rounded-md border p-1">
                             <div className="space-y-1">
-                                {roomData.players.map((player: Player & { tickets: any[], isBot?: boolean }) => (
+                                {players.map((player) => (
                                     <div key={player.id} className="flex justify-between items-center text-xs p-1.5 bg-secondary/20 rounded-md">
                                         <div className="flex items-center gap-1.5 truncate">
-                                            {player.isBot && <Bot className="h-4 w-4 flex-shrink-0" />}
+                                            {player.type === 'bot' && <Bot className="h-4 w-4 flex-shrink-0" />}
                                             <span className={cn("font-semibold truncate", player.id === currentUser.uid && "text-primary")}>
                                                 {player.name}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-1 font-medium text-muted-foreground flex-shrink-0">
                                             <TicketIcon className="h-3.5 w-3.5" />
-                                            <span>{player.tickets.length}</span>
+                                            <span>{player.tickets}</span>
                                         </div>
                                     </div>
                                 ))}

@@ -1,5 +1,6 @@
 
 
+
 import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid, CallingMode, OnlineGameTier } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { generateMultipleUniqueTickets } from '@/lib/housie';
@@ -126,11 +127,6 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberO
     }
     
     room.totalPrizePool = room.players.reduce((sum, p) => sum + (p.confirmedTicketCost || 0), 0);
-    
-    if (room.settings.isPublic && room.players.length === room.settings.lobbySize) {
-      console.log(`Room ${roomId} is full with real players. Starting game immediately.`);
-      fillRoomWithBotsAndStart(roomId); // This will immediately start since room is full
-    }
     
     rooms.set(roomId, room);
     return room;
@@ -324,56 +320,6 @@ export function getRoomStateForClient(roomId: string): Omit<Room, 'numberPool'> 
   return clientRoom;
 }
 
-
-// --- ONLINE MATCHMAKING SPECIFIC FUNCTIONS ---
-const ONLINE_BOT_NAMES = ["Alex", "Sam", "Jordan", "Taylor", "Casey", "Riley", "Jessie", "Morgan", "Skyler", "Drew"];
-
-function shuffleArray<T>(array: T[]): T[] {
-  const newArray = [...array];
-  for (let i = newArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-  }
-  return newArray;
-}
-
-export function findPublicRoom(tier: OnlineGameTier): Room | undefined {
-    for (const room of rooms.values()) {
-        if (
-            room.settings.isPublic &&
-            room.settings.tier === tier &&
-            !room.isGameStarted &&
-            room.players.length < room.settings.lobbySize
-        ) {
-            return room;
-        }
-    }
-    return undefined;
-}
-
-export function fillRoomWithBotsAndStart(roomId: string) {
-    stopRoomTimer(roomId, "Matchmaking timer expired or room filled.");
-
-    const room = getRoomStore(roomId);
-    if (!room || room.isGameStarted) return;
-    
-    const botsToAdd = room.settings.lobbySize - room.players.length;
-    if (botsToAdd > 0) {
-      const namePool = shuffleArray([...ONLINE_BOT_NAMES]);
-      
-      for (let i = 0; i < botsToAdd; i++) {
-          const botId = `bot-${i+1}-${Date.now()}`;
-          const botName = namePool[i % namePool.length];
-          const botPlayer: Player = { id: botId, name: botName, isBot: true };
-          const botTickets = 1 + Math.floor(Math.random() * 4);
-          addPlayerToRoomStore(roomId, botPlayer, botTickets);
-      }
-    }
-    
-    // The host is the first non-bot player, or the first player if all are bots.
-    const gameStarter = room.players.find(p => !p.isBot) || room.host;
-    startGameInRoomStore(roomId, gameStarter.id);
-}
 
 export function kickPlayerStore(roomId: string, hostId: string, playerIdToKick: string): Room | { error: string } {
     const room = getRoomStore(roomId);

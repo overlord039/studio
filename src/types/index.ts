@@ -1,5 +1,6 @@
 
 
+
 export interface UserStats {
   matchesPlayed: number;
   prizesWon: Record<PrizeType, number>;
@@ -103,4 +104,28 @@ export interface TierConfig {
         matches: number;
         coins: number;
     };
+}
+
+// Firestore specific types for strong typing with transactions/listeners
+import type { Timestamp } from 'firebase/firestore';
+
+export interface FirestoreRoom {
+    id: string;
+    host: Player;
+    settings: GameSettings;
+    status: 'waiting' | 'pre-game' | 'in-progress' | 'finished';
+    playersCount: number;
+    tier: OnlineGameTier;
+    isPublic: boolean;
+    createdAt: Timestamp;
+    timerEnd: Timestamp;
+    preGameEndTime?: Timestamp;
+    gameStartTime?: Timestamp;
+}
+
+export interface FirestorePlayer {
+    id: string;
+    name: string;
+    type: 'human' | 'bot';
+    tickets: number; // Storing ticket count for simplicity in this model
 }

@@ -1,10 +1,11 @@
 
+
 "use client";
 
 import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
-import type { OnlineGameTier, TierConfig, Player, Room } from '@/types';
+import type { OnlineGameTier, TierConfig, Player, FirestoreRoom, FirestorePlayer } from '@/types';
 import { Loader2, Users, Search, ArrowLeft, AlertTriangle, Bot } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/contexts/sound-context';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { db } from '@/lib/firebase/config';
+import { onSnapshot, doc, collection } from "firebase/firestore";
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
@@ -41,26 +44,24 @@ function MatchmakingContent() {
     const [tierConfig, setTierConfig] = useState<TierConfig | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isFindingMatch, setIsFindingMatch] = useState(false);
-    const [countdown, setCountdown] = useState<number | null>(null);
-    const [matchedRoom, setMatchedRoom] = useState<Room | null>(null);
-    const [pollingIntervalId, setPollingIntervalId] = useState<NodeJS.Timeout | null>(null);
     
+    const [roomData, setRoomData] = useState<FirestoreRoom | null>(null);
+    const [players, setPlayers] = useState<FirestorePlayer[]>([]);
+    const [roomId, setRoomId] = useState<string | null>(null);
+
     // Set initial tier/ticket config from URL params
     useEffect(() => {
         const tierParam = searchParams.get('tier') as OnlineGameTier;
         const ticketsParam = searchParams.get('tickets');
         if (tierParam && TIERS[tierParam] && ticketsParam) {
-            const config = TIERS[tierParam];
             setTier(tierParam);
-            setTierConfig(config);
-            setCountdown(config.matchmakingTime);
+            setTierConfig(TIERS[tierParam]);
             setTickets(parseInt(ticketsParam, 10));
         } else {
             setError("Invalid game tier or ticket count specified.");
         }
     }, [searchParams]);
 
-    // Main function to call the backend to find/create a match
     const findMatch = useCallback(async () => {
         if (!currentUser || !tier || isFindingMatch) return;
         
@@ -82,75 +83,70 @@ function MatchmakingContent() {
             if (typeof responseData.newCoinBalance === 'number') {
                 updateUserStats({ coins: responseData.newCoinBalance });
             }
-
-            setMatchedRoom(responseData);
+            setRoomId(responseData.roomId);
             
         } catch (err) {
             setError((err as Error).message);
+        } finally {
             setIsFindingMatch(false);
         }
     }, [currentUser, tier, tickets, isFindingMatch, playSound, updateUserStats]);
 
-    // Effect to start the matchmaking process once component is ready
     useEffect(() => {
-        if (tier && currentUser && !matchedRoom && !isFindingMatch) {
+        if (tier && currentUser && !roomId && !isFindingMatch) {
             findMatch();
         }
-    }, [tier, currentUser, matchedRoom, isFindingMatch, findMatch]);
+    }, [tier, currentUser, roomId, isFindingMatch, findMatch]);
 
-    // Effect to poll for game status updates once a room is joined
+    // Firestore listener
     useEffect(() => {
-        if (matchedRoom && !pollingIntervalId) {
-            const interval = setInterval(async () => {
-                try {
-                    const res = await fetch(`/api/rooms/${matchedRoom.id}`);
-                    if (!res.ok) throw new Error("Room no longer available.");
+        if (!roomId || !db) return;
 
-                    const updatedRoom: Room = await res.json();
+        const roomRef = doc(db, "rooms", roomId);
+        const playersRef = collection(db, "rooms", roomId, "players");
 
-                    if (updatedRoom.isGameStarted) {
-                        toast({ title: "Match Found!", description: "Joining the game..." });
-                        router.push(`/online/pre-game?roomId=${updatedRoom.id}`);
-                    } else {
-                        setMatchedRoom(updatedRoom); // Update player list in UI
-                    }
-                } catch (err) {
-                    setError((err as Error).message);
-                    if (pollingIntervalId) clearInterval(pollingIntervalId);
+        const unsubRoom = onSnapshot(roomRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data() as FirestoreRoom;
+                setRoomData(data);
+                if(data.status === 'pre-game') {
+                    router.push(`/online/pre-game?roomId=${roomId}`);
                 }
-            }, 3000); // Poll every 3 seconds
+            } else {
+                setError("Room was deleted or could not be found.");
+            }
+        });
+        
+        const unsubPlayers = onSnapshot(playersRef, (querySnapshot) => {
+            const playersList = querySnapshot.docs.map(doc => doc.data() as FirestorePlayer);
+            setPlayers(playersList);
+        });
 
-            setPollingIntervalId(interval);
-        }
-
-        // Cleanup function to clear interval when component unmounts
         return () => {
-            if (pollingIntervalId) clearInterval(pollingIntervalId);
+            unsubRoom();
+            unsubPlayers();
         };
-    }, [matchedRoom, pollingIntervalId, router, toast]);
-    
-    // Countdown timer for display
-    useEffect(() => {
-        if (countdown === null || error) return;
-        const timer = setInterval(() => {
-            setCountdown(prev => (prev !== null && prev > 0 ? prev - 1 : 0));
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [countdown, error]);
+    }, [roomId, router]);
 
-    const handleCancel = async () => {
-        if (pollingIntervalId) clearInterval(pollingIntervalId);
-        if (matchedRoom && currentUser) {
-             try {
-                await fetch(`/api/rooms/${matchedRoom.id}/leave`, {
+    // This effect is responsible for triggering the bot-fill when the timer expires
+    useEffect(() => {
+        if (roomData?.status === 'waiting' && roomData.timerEnd) {
+            const timerEndMs = roomData.timerEnd.toMillis();
+            const timeNowMs = Date.now();
+
+            if (timeNowMs >= timerEndMs) {
+                // Timer is up, any client can trigger the fill
+                fetch(`/api/online/start-game`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ playerId: currentUser.uid }),
-                });
-            } catch (err) {
-                console.error("Error leaving room on cancel:", err);
+                    body: JSON.stringify({ roomId: roomData.id }),
+                }).catch(err => console.error("Failed to trigger start-game:", err));
             }
         }
+    }, [roomData]);
+
+    const handleCancel = async () => {
+        // Implement cancellation logic if needed (e.g., removing player from room)
         router.push('/online');
     };
     
@@ -173,8 +169,10 @@ function MatchmakingContent() {
         );
     }
     
-    const progressPercentage = countdown !== null ? ((tierConfig.matchmakingTime - countdown) / tierConfig.matchmakingTime) * 100 : 0;
-    const playersFound = matchedRoom?.players.length || (isFindingMatch ? 1 : 0);
+    const timerEndMs = roomData?.timerEnd?.toMillis() ?? (Date.now() + tierConfig.matchmakingTime * 1000);
+    const countdown = Math.max(0, Math.round((timerEndMs - Date.now()) / 1000));
+    const progressPercentage = roomData ? ((tierConfig.matchmakingTime - countdown) / tierConfig.matchmakingTime) * 100 : 0;
+    const playersFound = roomData?.playersCount || (isFindingMatch || roomId ? 1 : 0);
 
     return (
         <Card className="w-full max-w-md shadow-xl bg-card/80 backdrop-blur-sm border-accent/20">
@@ -197,12 +195,12 @@ function MatchmakingContent() {
                         <Users className="h-5 w-5" />
                         <span>{playersFound} / {tierConfig.roomSize} players found</span>
                     </div>
-                    {matchedRoom && matchedRoom.players.length > 0 && (
+                    {players.length > 0 && (
                         <ScrollArea className="h-24 w-full rounded-md border bg-secondary/30 p-2">
                             <div className="space-y-1.5">
-                                {matchedRoom.players.map((player) => (
+                                {players.map((player) => (
                                      <div key={player.id} className={cn("text-sm font-medium text-left px-2 flex items-center gap-2", player.id === currentUser.uid && "text-primary")}>
-                                        {player.isBot && <Bot className="h-4 w-4" />}
+                                        {player.type === 'bot' && <Bot className="h-4 w-4" />}
                                         <span>{player.name}</span>
                                      </div>
                                 ))}
