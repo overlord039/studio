@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useSound } from '@/contexts/sound-context';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
@@ -190,9 +192,22 @@ function MatchmakingContent() {
                     </div>
                 </div>
 
-                <div className="text-center text-lg text-foreground/90 font-semibold flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    <span>{playersFound} / {tierConfig.roomSize} players found</span>
+                <div className="w-full space-y-2 text-center">
+                    <div className="text-lg text-foreground/90 font-semibold flex items-center justify-center gap-2">
+                        <Users className="h-5 w-5" />
+                        <span>{playersFound} / {tierConfig.roomSize} players found</span>
+                    </div>
+                    {matchedRoom && matchedRoom.players.length > 0 && (
+                        <ScrollArea className="h-24 w-full rounded-md border bg-secondary/30 p-2">
+                            <div className="space-y-1.5">
+                                {matchedRoom.players.map((player) => (
+                                     <div key={player.id} className={cn("text-sm font-medium text-left px-2", player.id === currentUser.uid && "text-primary")}>
+                                        {player.name}
+                                     </div>
+                                ))}
+                            </div>
+                        </ScrollArea>
+                    )}
                 </div>
                 
                 <Button variant="outline" onClick={handleCancel} className="w-full">
