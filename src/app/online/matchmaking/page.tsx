@@ -48,22 +48,25 @@ function MatchmakingContent() {
     const [roomData, setRoomData] = useState<FirestoreRoom | null>(null);
     const [players, setPlayers] = useState<FirestorePlayer[]>([]);
     const [roomId, setRoomId] = useState<string | null>(null);
+    const [countdown, setCountdown] = useState<number | null>(null);
 
     // Set initial tier/ticket config from URL params
     useEffect(() => {
         const tierParam = searchParams.get('tier') as OnlineGameTier;
         const ticketsParam = searchParams.get('tickets');
         if (tierParam && TIERS[tierParam] && ticketsParam) {
+            const config = TIERS[tierParam];
             setTier(tierParam);
-            setTierConfig(TIERS[tierParam]);
+            setTierConfig(config);
             setTickets(parseInt(ticketsParam, 10));
+            setCountdown(config.matchmakingTime);
         } else {
             setError("Invalid game tier or ticket count specified.");
         }
     }, [searchParams]);
 
     const findMatch = useCallback(async () => {
-        if (!currentUser || !tier || isFindingMatch) return;
+        if (!currentUser || !tier || isFindingMatch || roomId) return;
         
         setIsFindingMatch(true);
         playSound('start.wav');
@@ -90,13 +93,13 @@ function MatchmakingContent() {
         } finally {
             setIsFindingMatch(false);
         }
-    }, [currentUser, tier, tickets, isFindingMatch, playSound, updateUserStats]);
+    }, [currentUser, tier, tickets, isFindingMatch, playSound, updateUserStats, roomId]);
 
     useEffect(() => {
-        if (tier && currentUser && !roomId && !isFindingMatch) {
+        if (tier && currentUser && !roomId) {
             findMatch();
         }
-    }, [tier, currentUser, roomId, isFindingMatch, findMatch]);
+    }, [tier, currentUser, roomId, findMatch]);
 
     // Firestore listener
     useEffect(() => {
@@ -134,7 +137,7 @@ function MatchmakingContent() {
             const timerEndMs = roomData.timerEnd.toMillis();
             const timeNowMs = Date.now();
 
-            if (timeNowMs >= timerEndMs) {
+            if (timeNowMs >= timerEndMs - 500) { // Add a small buffer
                 // Timer is up, any client can trigger the fill
                 fetch(`/api/online/start-game`, {
                     method: 'POST',
@@ -144,6 +147,20 @@ function MatchmakingContent() {
             }
         }
     }, [roomData]);
+
+    // Countdown timer effect
+    useEffect(() => {
+        if (!roomData?.timerEnd) return;
+
+        const interval = setInterval(() => {
+            const timerEndMs = roomData.timerEnd.toMillis();
+            const newCountdown = Math.max(0, Math.round((timerEndMs - Date.now()) / 1000));
+            setCountdown(newCountdown);
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [roomData?.timerEnd]);
+
 
     const handleCancel = async () => {
         // Implement cancellation logic if needed (e.g., removing player from room)
@@ -169,10 +186,9 @@ function MatchmakingContent() {
         );
     }
     
-    const timerEndMs = roomData?.timerEnd?.toMillis() ?? (Date.now() + tierConfig.matchmakingTime * 1000);
-    const countdown = Math.max(0, Math.round((timerEndMs - Date.now()) / 1000));
-    const progressPercentage = roomData ? ((tierConfig.matchmakingTime - countdown) / tierConfig.matchmakingTime) * 100 : 0;
-    const playersFound = roomData?.playersCount || (isFindingMatch || roomId ? 1 : 0);
+    const displayCountdown = countdown !== null ? countdown : tierConfig.matchmakingTime;
+    const progressPercentage = roomData ? ((tierConfig.matchmakingTime - displayCountdown) / tierConfig.matchmakingTime) * 100 : 0;
+    const playersFound = players.length > 0 ? players.length : (isFindingMatch || roomId ? 1 : 0);
 
     return (
         <Card className="w-full max-w-md shadow-xl bg-card/80 backdrop-blur-sm border-accent/20">
@@ -186,7 +202,7 @@ function MatchmakingContent() {
                     <Progress value={progressPercentage} className="h-2" />
                     <div className="flex justify-between text-xs text-muted-foreground">
                         <span>Searching...</span>
-                        <span>Est. time: {countdown}s</span>
+                        <span>Est. time: {displayCountdown}s</span>
                     </div>
                 </div>
 
