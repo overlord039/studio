@@ -17,17 +17,6 @@ declare global {
 const rooms = global.housieRooms || (global.housieRooms = new Map<string, Room>());
 const roomTimers = global.roomTimers || (global.roomTimers = new Map<string, NodeJS.Timeout>());
 
-const ONLINE_BOT_NAMES = ["Alex", "Sam", "Jordan", "Taylor", "Casey", "Riley", "Jessie", "Morgan", "Skyler", "Drew"];
-
-function shuffleArray<T>(array: T[]): T[] {
-  const newArray = [...array];
-  for (let i = newArray.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-  }
-  return newArray;
-}
-
 function generateRoomId(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
@@ -331,46 +320,6 @@ export function getRoomStateForClient(roomId: string): Omit<Room, 'numberPool'> 
 
   const { numberPool, ...clientRoom } = room;
   return clientRoom;
-}
-
-export function findPublicRoom(tier: OnlineGameTier): Room | undefined {
-    for (const room of rooms.values()) {
-        if (
-            room.settings.isPublic &&
-            room.settings.gameMode === 'online' &&
-            room.settings.tier === tier &&
-            !room.isGameStarted &&
-            !room.isGameOver &&
-            room.players.length < room.settings.lobbySize
-        ) {
-            return room;
-        }
-    }
-    return undefined;
-}
-
-export function fillRoomWithBotsAndStart(roomId: string): Room | { error: string } {
-    const room = getRoomStore(roomId);
-    if (!room) return { error: "Cannot fill room: Room not found." };
-    if (room.isGameStarted) return { error: "Cannot fill room: Game already started." };
-
-    const botsNeeded = room.settings.lobbySize - room.players.length;
-    if (botsNeeded > 0) {
-        const namePool = shuffleArray([...ONLINE_BOT_NAMES]);
-        const usedNames = new Set(room.players.map(p => p.name));
-        const availableNames = namePool.filter(name => !usedNames.has(name));
-        
-        for (let i = 0; i < botsNeeded; i++) {
-            const botId = `bot_${Date.now()}_${i}`;
-            const botName = availableNames[i % availableNames.length];
-            const botPlayer: Player = { id: botId, name: botName, isBot: true };
-            const botTickets = 1 + Math.floor(Math.random() * 4); // Bots get 1-4 tickets
-            addPlayerToRoomStore(roomId, botPlayer, botTickets);
-        }
-    }
-    
-    // Use the host's ID to start the game, as it's a server-initiated action.
-    return startGameInRoomStore(roomId, room.host.id);
 }
 
 
