@@ -2,8 +2,8 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { db } from '@/lib/firebase/config';
-import { doc, runTransaction, collection, Timestamp, writeBatch } from 'firebase/firestore';
-import type { FirestoreRoom, OnlineGameTier, TierConfig } from '@/types';
+import { doc, runTransaction, collection, Timestamp, writeBatch, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
+import type { FirestoreRoom, OnlineGameTier, TierConfig, FirestorePlayer } from '@/types';
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: { name: "Quick", ticketPrice: 5, roomSize: 4, matchmakingTime: 15, unlockRequirements: { matches: 0, coins: 0 } },
@@ -45,13 +45,11 @@ export async function POST(request: NextRequest) {
 
             // --- Safety Checks ---
             if (roomData.status !== 'waiting') {
-                // Another client already triggered this, so we can ignore.
                 console.log(`Game start for room ${roomId} already triggered. Current status: ${roomData.status}`);
                 return;
             }
 
             const timerEndMs = roomData.timerEnd.toMillis();
-            // Allow a small grace period for client-server clock differences
             if (timerEndMs > Date.now() + 2000 && roomData.playersCount < roomData.settings.lobbySize) {
                 console.log(`Game start for room ${roomId} triggered prematurely. Ignoring.`);
                 return;
@@ -71,21 +69,19 @@ export async function POST(request: NextRequest) {
                         id: botId,
                         name: namePool[i % namePool.length],
                         type: 'bot',
-                        tickets: 1 + Math.floor(Math.random() * 4), // Bots get random tickets
+                        tickets: 1 + Math.floor(Math.random() * 4),
+                        joinedAt: serverTimestamp()
                     });
                 }
             }
-
+            
             // --- Update Room Status ---
             transaction.update(roomRef, {
                 status: 'pre-game',
-                preGameEndTime: Timestamp.fromMillis(Date.now() + 5000), // 5 second pre-game countdown
-                playersCount: roomData.settings.lobbySize // Update count to be full
+                preGameEndTime: Timestamp.fromMillis(Date.now() + 5000),
+                playersCount: roomData.settings.lobbySize 
             });
             
-            // The reads (transaction.get) must come before writes.
-            // Since we are writing to a different collection (players) using a batch,
-            // we commit the batch *after* the transaction updates.
             await batch.commit();
         });
 

@@ -1,7 +1,5 @@
 
 
-
-
 export interface UserStats {
   matchesPlayed: number;
   prizesWon: Record<PrizeType, number>;
@@ -129,4 +127,5 @@ export interface FirestorePlayer {
     name: string;
     type: 'human' | 'bot';
     tickets: number; // Storing ticket count for simplicity in this model
+    joinedAt: Timestamp;
 }
