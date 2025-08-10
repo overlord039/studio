@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import type { Room, PrizeType, GameSettings, OnlineGameTier, TierConfig, Player, FirestoreRoom, FirestorePlayer } from '@/types';
@@ -16,7 +16,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { db } from '@/lib/firebase/config';
-import { doc, collection, onSnapshot, runTransaction, Timestamp } from 'firebase/firestore';
+import { doc, collection, onSnapshot, runTransaction, Timestamp, getDoc } from 'firebase/firestore';
 
 
 function PreGameContent() {
@@ -31,6 +31,7 @@ function PreGameContent() {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [countdown, setCountdown] = useState(5);
+    const [gameStartTriggered, setGameStartTriggered] = useState(false);
 
     const roomId = searchParams.get('roomId');
 
@@ -50,10 +51,16 @@ function PreGameContent() {
             if (docSnap.exists()) {
                 const data = docSnap.data() as FirestoreRoom;
                 setRoomData(data);
+                
+                // Navigate as soon as the status changes
                 if (data.status === 'in-progress') {
-                    toast({ title: "Match Starting!", description: "Let's go!" });
-                    router.push(`/room/${roomId}/play`);
+                    if (!gameStartTriggered) { // Prevent multiple toasts/pushes
+                        toast({ title: "Match Starting!", description: "Let's go!" });
+                        router.push(`/room/${roomId}/play`);
+                        setGameStartTriggered(true);
+                    }
                 }
+                
                  if(data.preGameEndTime) {
                     const endTime = data.preGameEndTime.toMillis();
                     const now = Date.now();
@@ -76,32 +83,46 @@ function PreGameContent() {
             unsubPlayers();
         };
 
-    }, [roomId, playSound, router, toast]);
+    }, [roomId, playSound, router, toast, gameStartTriggered]);
 
-    useEffect(() => {
-        if (!roomData || error) return;
+
+    // This effect is now robust. Any client can trigger the game start.
+    const triggerGameStart = useCallback(async () => {
+        if (!roomId || !db) return;
         
-        const timer = setInterval(() => {
-            setCountdown(prev => (prev > 0 ? prev - 1 : 0));
-        }, 1000);
-
-         // Logic to trigger the final game start
-        if(countdown <= 0 && roomData.status === 'pre-game') {
-             runTransaction(db, async (transaction) => {
-                const roomRef = doc(db, "rooms", roomData.id);
+        try {
+            await runTransaction(db, async (transaction) => {
+                const roomRef = doc(db, "rooms", roomId);
                 const roomDoc = await transaction.get(roomRef);
-                if(roomDoc.exists() && roomDoc.data().status === 'pre-game') {
+                // Only proceed if the room is still in the pre-game state.
+                if (roomDoc.exists() && roomDoc.data().status === 'pre-game') {
                     transaction.update(roomRef, {
                         status: 'in-progress',
                         gameStartTime: Timestamp.now()
                     });
                 }
-            }).catch(err => console.error("Failed to start game from pre-game:", err));
+            });
+        } catch (err) {
+            console.error("Failed to start game from pre-game:", err);
+            // Don't show an error to the user, as another client likely succeeded.
+            // The onSnapshot listener will handle navigation.
         }
+    }, [roomId]);
 
+
+    useEffect(() => {
+        if (countdown <= 0 && roomData?.status === 'pre-game' && !gameStartTriggered) {
+             setGameStartTriggered(true); // Prevent multiple triggers from this client
+             triggerGameStart();
+        }
+        
+        const timer = setInterval(() => {
+            setCountdown(prev => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
+        
         return () => clearInterval(timer);
 
-    }, [countdown, roomData, error, router, roomId]);
+    }, [countdown, roomData, triggerGameStart, gameStartTriggered]);
     
     if (isLoading || !currentUser) {
         return <Loader2 className="h-8 w-8 animate-spin text-white" />;
