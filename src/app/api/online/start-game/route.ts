@@ -2,14 +2,8 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { db } from '@/lib/firebase/config';
-import { doc, runTransaction, collection, Timestamp, writeBatch, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
-import type { FirestoreRoom, OnlineGameTier, TierConfig, FirestorePlayer } from '@/types';
-
-const TIERS: Record<OnlineGameTier, TierConfig> = {
-    quick: { name: "Quick", ticketPrice: 5, roomSize: 4, matchmakingTime: 15, unlockRequirements: { matches: 0, coins: 0 } },
-    classic: { name: "Classic", ticketPrice: 10, roomSize: 6, matchmakingTime: 30, unlockRequirements: { matches: 5, coins: 50 } },
-    tournament: { name: "Tournament", ticketPrice: 20, roomSize: 10, matchmakingTime: 60, unlockRequirements: { matches: 15, coins: 150 } }
-};
+import { doc, runTransaction, collection, Timestamp, serverTimestamp } from 'firebase/firestore';
+import type { FirestoreRoom } from '@/types';
 
 const ONLINE_BOT_NAMES = ["Alex", "Sam", "Jordan", "Taylor", "Casey", "Riley", "Jessie", "Morgan", "Skyler", "Drew"];
 
@@ -48,18 +42,9 @@ export async function POST(request: NextRequest) {
                 console.log(`Game start for room ${roomId} already triggered. Current status: ${roomData.status}`);
                 return; // Gracefully exit if already processed
             }
-
-            // A small grace period to prevent race conditions from clients.
-            const timerEndMs = roomData.timerEnd.toMillis();
-            if (timerEndMs > Date.now() + 2000 && roomData.playersCount < roomData.settings.lobbySize) {
-                 // It's not an error, just a premature trigger. Log it and exit.
-                console.log(`Game start for room ${roomId} triggered prematurely. Ignoring.`);
-                return;
-            }
-
+            
             const playersCollectionRef = collection(db, "rooms", roomId, "players");
-            const batch = writeBatch(db);
-
+            
             // --- Add Bots ---
             const botsNeeded = roomData.settings.lobbySize - roomData.playersCount;
             if (botsNeeded > 0) {
@@ -67,7 +52,8 @@ export async function POST(request: NextRequest) {
                 for (let i = 0; i < botsNeeded; i++) {
                     const botId = `bot_${Date.now()}_${i}`;
                     const botRef = doc(playersCollectionRef, botId);
-                    batch.set(botRef, {
+                    // This now happens *inside* the main transaction
+                    transaction.set(botRef, {
                         id: botId,
                         name: namePool[i % namePool.length],
                         type: 'bot',
@@ -81,11 +67,8 @@ export async function POST(request: NextRequest) {
             transaction.update(roomRef, {
                 status: 'pre-game',
                 preGameEndTime: Timestamp.fromMillis(Date.now() + 5000), // 5 second countdown
-                playersCount: roomData.settings.lobbySize 
+                playersCount: roomData.settings.lobbySize // Update count to include bots
             });
-            
-            // The batch must be committed *after* the transaction updates the main doc.
-            await batch.commit();
         });
 
         return NextResponse.json({ success: true, message: 'Game successfully moved to pre-game.' });
