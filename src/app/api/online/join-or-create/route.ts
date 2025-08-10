@@ -3,7 +3,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Player, OnlineGameTier, TierConfig, FirestoreRoom } from '@/types';
 import { db } from '@/lib/firebase/config';
-import { doc, runTransaction, collection, query, where, getDocs, Timestamp, writeBatch, serverTimestamp, orderBy } from 'firebase/firestore';
+import { doc, runTransaction, collection, query, where, getDocs, Timestamp, writeBatch, serverTimestamp, orderBy, limit } from 'firebase/firestore';
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
@@ -70,12 +70,26 @@ export async function POST(request: NextRequest) {
 
     const tierConfig = TIERS[tier];
     const totalCost = tierConfig.ticketPrice * tickets;
-    const playerDocRef = doc(db, "users", player.id);
     let newCoinBalance = 0;
+    
+    // --- Phase 1: Find a suitable room OUTSIDE the transaction ---
+    const roomsRef = collection(db, "rooms");
+    const q = query(
+        roomsRef,
+        where("status", "==", "waiting"),
+        where("tier", "==", tier),
+        where("isPublic", "==", true),
+        orderBy("createdAt", "asc"),
+        limit(20) // Limit search to the 20 oldest rooms to improve performance
+    );
+    const availableRoomsSnapshot = await getDocs(q);
+    const suitableRoomDoc = availableRoomsSnapshot.docs.find(doc => doc.data().playersCount < doc.data().settings.lobbySize);
+
     let targetRoomId: string | null = null;
     
-    // --- Transaction to deduct coins and find/create room ---
+    // --- Phase 2: Run Transaction to join/create room and deduct coins ---
      await runTransaction(db, async (transaction) => {
+        const playerDocRef = doc(db, "users", player.id);
         const playerDoc = await transaction.get(playerDocRef);
         if (!playerDoc.exists()) throw new Error("Player data not found.");
         
@@ -83,24 +97,20 @@ export async function POST(request: NextRequest) {
         if (currentCoins < totalCost) throw new Error("Not enough coins to buy these tickets.");
         
         newCoinBalance = currentCoins - totalCost;
-        transaction.update(playerDocRef, { 'stats.coins': newCoinBalance });
-
-        // --- Matchmaking Logic (inside transaction) ---
-        const roomsRef = collection(db, "rooms");
-        const q = query(
-            roomsRef,
-            where("status", "==", "waiting"),
-            where("tier", "==", tier),
-            where("isPublic", "==", true),
-            orderBy("createdAt", "asc") // Prioritize older rooms
-        );
-        const availableRoomsSnapshot = await getDocs(q);
         
-        const suitableRoomDoc = availableRoomsSnapshot.docs.find(doc => doc.data().playersCount < doc.data().settings.lobbySize);
-
         if (suitableRoomDoc) {
-            // Join an existing room
+            // --- Logic to JOIN an existing room ---
             targetRoomId = suitableRoomDoc.id;
+            const roomRef = doc(db, "rooms", targetRoomId);
+            const roomDoc = await transaction.get(roomRef); // Re-read inside transaction for consistency
+
+            if (!roomDoc.exists() || roomDoc.data().status !== 'waiting' || roomDoc.data().playersCount >= roomDoc.data().settings.lobbySize) {
+                // The room was filled or changed status between our initial query and this transaction.
+                // We'll let this transaction fail and the client can retry, which will then attempt to create a new room.
+                throw new Error("Room is no longer available. Please try again.");
+            }
+            
+            // The room is still available, so join it.
             const playerSubcollectionRef = doc(collection(db, "rooms", targetRoomId, "players"), player.id);
             
             transaction.set(playerSubcollectionRef, {
@@ -111,21 +121,19 @@ export async function POST(request: NextRequest) {
                 joinedAt: serverTimestamp()
             });
             
-            const newPlayerCount = suitableRoomDoc.data().playersCount + 1;
-            transaction.update(suitableRoomDoc.ref, {
-                playersCount: newPlayerCount
-            });
+            const newPlayerCount = roomDoc.data().playersCount + 1;
+            transaction.update(roomRef, { playersCount: newPlayerCount });
 
              // If room is now full, transition it immediately
             if (newPlayerCount >= tierConfig.roomSize) {
-                transaction.update(suitableRoomDoc.ref, {
+                transaction.update(roomRef, {
                     status: 'pre-game',
                     preGameEndTime: Timestamp.fromMillis(Date.now() + 5000)
                 });
             }
 
         } else {
-            // Create a new room
+            // --- Logic to CREATE a new room ---
             const newRoomRef = doc(collection(db, "rooms"));
             targetRoomId = newRoomRef.id;
             
@@ -160,10 +168,13 @@ export async function POST(request: NextRequest) {
                 joinedAt: serverTimestamp()
             });
         }
+
+        // Deduct coins at the end of the transaction, only if everything else succeeded.
+        transaction.update(playerDocRef, { 'stats.coins': newCoinBalance });
     });
     
     if (!targetRoomId) {
-        throw new Error("Failed to find or create a room.");
+        throw new Error("Failed to find or create a room. Please try again.");
     }
 
     return NextResponse.json({ roomId: targetRoomId, newCoinBalance }, { status: 201 });
@@ -171,6 +182,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error in online join-or-create:', error);
     // TODO: Add refund logic if coin deduction succeeded but room join failed.
-    return NextResponse.json({ message: 'Error joining or creating online game', error: (error as Error).message }, { status: 500 });
+    return NextResponse.json({ message: (error as Error).message || 'Error joining or creating online game' }, { status: 500 });
   }
 }
