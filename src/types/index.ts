@@ -1,5 +1,6 @@
 
 
+
 export interface UserStats {
   matchesPlayed: number;
   prizesWon: Record<PrizeType, number>;
@@ -40,9 +41,9 @@ export type CallingMode = 'auto' | 'manual';
 export interface GameSettings {
   ticketPrice: TicketPrice | number; // Allow number for coin-based prices
   lobbySize: number;
-  prizeFormat: PrizeFormat;
-  numberOfTicketsPerPlayer: number; // How many tickets each player gets by default
-  callingMode: CallingMode;
+  prizeFormat?: PrizeFormat;
+  numberOfTicketsPerPlayer?: number; // How many tickets each player gets by default
+  callingMode?: CallingMode;
   isPublic?: boolean;
   gameMode?: 'multiplayer' | 'easy' | 'medium' | 'hard' | 'online' | 'classic' | 'rush';
   tier?: OnlineGameTier;
