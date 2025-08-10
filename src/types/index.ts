@@ -115,6 +115,7 @@ export interface FirestoreRoom {
     settings: GameSettings;
     status: 'waiting' | 'pre-game' | 'in-progress' | 'finished';
     playersCount: number;
+    humanCount: number;
     botCount: number;
     tier: OnlineGameTier;
     isPublic: boolean;

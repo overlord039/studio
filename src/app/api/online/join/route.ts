@@ -15,6 +15,7 @@ import {
   writeBatch,
   serverTimestamp,
   limit,
+  increment,
 } from 'firebase/firestore';
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
@@ -133,10 +134,12 @@ export async function POST(request: NextRequest) {
         // --- Logic to JOIN an existing room ---
         targetRoomId = suitableRoomDoc.id;
         const roomRef = doc(db, 'rooms', targetRoomId);
-        const roomData = suitableRoomDoc.data() as FirestoreRoom;
-        const newPlayerCount = roomData.playersCount + 1;
+        
+        transaction.update(roomRef, { 
+            playersCount: increment(1),
+            humanCount: increment(1),
+        });
 
-        transaction.update(roomRef, { playersCount: newPlayerCount });
         const playerSubcollectionRef = doc(
           collection(db, 'rooms', targetRoomId, 'players'),
           player.id
@@ -167,6 +170,7 @@ export async function POST(request: NextRequest) {
           },
           status: 'waiting',
           playersCount: 1,
+          humanCount: 1,
           botCount: 0,
           tier: tier,
           isPublic: true,
