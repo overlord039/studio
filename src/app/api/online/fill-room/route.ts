@@ -59,8 +59,7 @@ export async function POST(request: NextRequest) {
       }
 
       const playersCollectionRef = collection(db, 'rooms', roomId, 'players');
-      // We get the player count from the room document, not by querying the subcollection, to ensure consistency within the transaction.
-      const currentHumanCount = roomData.humanCount || roomData.playersCount; // Fallback for safety
+      const currentHumanCount = roomData.humanCount || 0;
 
       // --- Add Bots ---
       const botsNeeded = roomData.settings.lobbySize - currentHumanCount;
