@@ -43,12 +43,14 @@ function MatchmakingContent() {
     const [tickets, setTickets] = useState(1);
     const [tierConfig, setTierConfig] = useState<TierConfig | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [isFindingMatch, setIsFindingMatch] = useState(true); // Start finding immediately
+    const [isFindingMatch, setIsFindingMatch] = useState(true);
     
     const [roomData, setRoomData] = useState<FirestoreRoom | null>(null);
     const [players, setPlayers] = useState<FirestorePlayer[]>([]);
     const [roomId, setRoomId] = useState<string | null>(null);
     const [countdown, setCountdown] = useState<number | null>(null);
+    const [gameStartTriggered, setGameStartTriggered] = useState(false);
+
 
     // Set initial tier/ticket config from URL params
     useEffect(() => {
@@ -69,6 +71,7 @@ function MatchmakingContent() {
         if (!currentUser || !tier || !isFindingMatch) return;
         
         playSound('start.wav');
+        setIsFindingMatch(true);
 
         const player: Player = { id: currentUser.uid, name: currentUser.displayName || 'Guest' };
 
@@ -111,8 +114,11 @@ function MatchmakingContent() {
             if (docSnap.exists()) {
                 const data = docSnap.data() as FirestoreRoom;
                 setRoomData(data);
-                if(data.status === 'pre-game') {
-                    router.push(`/online/pre-game?roomId=${roomId}`);
+                if(data.status === 'pre-game' && !gameStartTriggered) {
+                    setGameStartTriggered(true);
+                    setTimeout(() => {
+                        router.push(`/online/pre-game?roomId=${roomId}`);
+                    }, 1000); // Wait a moment to show the full player list
                 }
             } else {
                 setError("Room was deleted or could not be found.");
@@ -128,24 +134,27 @@ function MatchmakingContent() {
             unsubRoom();
             unsubPlayers();
         };
-    }, [roomId, router]);
+    }, [roomId, router, gameStartTriggered]);
 
     // This effect is responsible for triggering the bot-fill when the timer expires
     useEffect(() => {
-        if (roomData?.status === 'waiting' && roomData.timerEnd) {
+        if (roomData?.status === 'waiting' && roomData.timerEnd && !gameStartTriggered) {
             const timerEndMs = roomData.timerEnd.toMillis();
             const timeNowMs = Date.now();
 
             if (timeNowMs >= timerEndMs - 500) { // Add a small buffer
-                // Timer is up, any client can trigger the fill
+                setGameStartTriggered(true); // Prevent multiple triggers
                 fetch(`/api/online/start-game`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ roomId: roomData.id }),
-                }).catch(err => console.error("Failed to trigger start-game:", err));
+                }).catch(err => {
+                    console.error("Failed to trigger start-game:", err)
+                    setGameStartTriggered(false); // Allow retry if fetch fails
+                });
             }
         }
-    }, [roomData]);
+    }, [roomData, gameStartTriggered]);
 
     // Countdown timer effect
     useEffect(() => {
@@ -166,7 +175,7 @@ function MatchmakingContent() {
         router.push('/online');
     };
     
-    if (!currentUser || !tierConfig) {
+    if (isFindingMatch || !currentUser || !tierConfig) {
         return <Loader2 className="h-8 w-8 animate-spin text-white" />;
     }
 
