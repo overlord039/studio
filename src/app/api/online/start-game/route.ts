@@ -46,11 +46,13 @@ export async function POST(request: NextRequest) {
             // --- Safety Checks ---
             if (roomData.status !== 'waiting') {
                 console.log(`Game start for room ${roomId} already triggered. Current status: ${roomData.status}`);
-                return;
+                return; // Gracefully exit if already processed
             }
 
+            // A small grace period to prevent race conditions from clients.
             const timerEndMs = roomData.timerEnd.toMillis();
             if (timerEndMs > Date.now() + 2000 && roomData.playersCount < roomData.settings.lobbySize) {
+                 // It's not an error, just a premature trigger. Log it and exit.
                 console.log(`Game start for room ${roomId} triggered prematurely. Ignoring.`);
                 return;
             }
@@ -75,13 +77,14 @@ export async function POST(request: NextRequest) {
                 }
             }
             
-            // --- Update Room Status ---
+            // --- Update Room Status (Critical Change) ---
             transaction.update(roomRef, {
                 status: 'pre-game',
-                preGameEndTime: Timestamp.fromMillis(Date.now() + 5000),
+                preGameEndTime: Timestamp.fromMillis(Date.now() + 5000), // 5 second countdown
                 playersCount: roomData.settings.lobbySize 
             });
             
+            // The batch must be committed *after* the transaction updates the main doc.
             await batch.commit();
         });
 
