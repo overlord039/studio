@@ -86,11 +86,6 @@ export interface Room {
   totalPrizePool?: number;
 }
 
-// A Housie ticket is a 3x9 grid. Each cell can be a number or null (empty).
-export type HousieTicketNumber = number | null;
-export type HousieTicketRow = HousieTicketNumber[];
-export type HousieTicketGrid = HousieTicketRow[];
-
 // Types for Online Mode
 export type OnlineGameTier = 'quick' | 'classic' | 'tournament';
 
@@ -115,7 +110,6 @@ export interface FirestoreRoom {
     status: 'waiting' | 'pre-game' | 'in-progress' | 'finished';
     playersCount: number;
     humanCount: number;
-    botCount: number;
     tier: OnlineGameTier;
     isPublic: boolean;
     createdAt: Timestamp;
