@@ -68,6 +68,10 @@ export interface PrizeClaim {
   timestamp?: Date | string;
 }
 
+export type HousieTicketNumber = number | null;
+export type HousieTicketGrid = HousieTicketNumber[][];
+
+
 export interface Room {
   id: string;
   host: Player; // Just basic Player info for the host

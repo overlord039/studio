@@ -84,7 +84,6 @@ export async function POST(request: NextRequest) {
         status: 'pre-game',
         preGameEndTime: Timestamp.fromMillis(Date.now() + 5000), // 5 second countdown
         playersCount: roomData.settings.lobbySize, // Final count is always the lobby size
-        botCount: botsNeeded, // Set the calculated bot count
       });
     });
 

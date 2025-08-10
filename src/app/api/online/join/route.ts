@@ -170,7 +170,6 @@ export async function POST(request: NextRequest) {
           status: 'waiting',
           playersCount: 1,
           humanCount: 1,
-          botCount: 0,
           tier: tier,
           isPublic: true,
           createdAt: Timestamp.now(),
