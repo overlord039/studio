@@ -43,7 +43,7 @@ function MatchmakingContent() {
     const [tickets, setTickets] = useState(1);
     const [tierConfig, setTierConfig] = useState<TierConfig | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [isFindingMatch, setIsFindingMatch] = useState(false);
+    const [isFindingMatch, setIsFindingMatch] = useState(true); // Start finding immediately
     
     const [roomData, setRoomData] = useState<FirestoreRoom | null>(null);
     const [players, setPlayers] = useState<FirestorePlayer[]>([]);
@@ -66,9 +66,8 @@ function MatchmakingContent() {
     }, [searchParams]);
 
     const findMatch = useCallback(async () => {
-        if (!currentUser || !tier || isFindingMatch || roomId) return;
+        if (!currentUser || !tier || isFindingMatch === false) return;
         
-        setIsFindingMatch(true);
         playSound('start.wav');
 
         const player: Player = { id: currentUser.uid, name: currentUser.displayName || 'Guest' };
@@ -93,7 +92,7 @@ function MatchmakingContent() {
         } finally {
             setIsFindingMatch(false);
         }
-    }, [currentUser, tier, tickets, isFindingMatch, playSound, updateUserStats, roomId]);
+    }, [currentUser, tier, tickets, playSound, updateUserStats, isFindingMatch]);
 
     useEffect(() => {
         if (tier && currentUser && !roomId) {
@@ -188,7 +187,7 @@ function MatchmakingContent() {
     
     const displayCountdown = countdown !== null ? countdown : tierConfig.matchmakingTime;
     const progressPercentage = roomData ? ((tierConfig.matchmakingTime - displayCountdown) / tierConfig.matchmakingTime) * 100 : 0;
-    const playersFound = players.length > 0 ? players.length : (isFindingMatch || roomId ? 1 : 0);
+    const playersFound = players.length;
 
     return (
         <Card className="w-full max-w-md shadow-xl bg-card/80 backdrop-blur-sm border-accent/20">
