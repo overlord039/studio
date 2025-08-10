@@ -3,7 +3,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Player, OnlineGameTier, TierConfig, FirestoreRoom } from '@/types';
 import { db } from '@/lib/firebase/config';
-import { doc, runTransaction, collection, query, where, getDocs, Timestamp, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { doc, runTransaction, collection, query, where, getDocs, Timestamp, writeBatch, serverTimestamp, orderBy } from 'firebase/firestore';
 
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
@@ -20,10 +20,39 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
     }
 };
 
+async function cleanupOldRooms() {
+    if (!db) return;
+
+    const oneHourAgo = Timestamp.fromMillis(Date.now() - 60 * 60 * 1000);
+    const roomsRef = collection(db, "rooms");
+    const q = query(roomsRef, where("createdAt", "<", oneHourAgo));
+
+    try {
+        const oldRoomsSnapshot = await getDocs(q);
+        if (oldRoomsSnapshot.empty) {
+            return;
+        }
+
+        const batch = writeBatch(db);
+        oldRoomsSnapshot.forEach(doc => {
+            console.log(`Deleting expired room ${doc.id}`);
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
+        console.log(`Successfully deleted ${oldRoomsSnapshot.size} old room(s).`);
+    } catch (error) {
+        console.error("Error cleaning up old rooms:", error);
+    }
+}
+
+
 export async function POST(request: NextRequest) {
   if (!db) {
     return NextResponse.json({ message: 'Firestore is not configured.' }, { status: 500 });
   }
+
+  // Run cleanup in the background, don't wait for it to complete
+  cleanupOldRooms();
 
   try {
     const { player, tier, tickets } = (await request.json()) as { player: Player; tier: OnlineGameTier, tickets: number };
@@ -63,6 +92,7 @@ export async function POST(request: NextRequest) {
             where("status", "==", "waiting"),
             where("tier", "==", tier),
             where("isPublic", "==", true),
+            orderBy("createdAt", "asc") // Prioritize older rooms
         );
         const availableRooms = await getDocs(q);
         
