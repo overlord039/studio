@@ -79,8 +79,7 @@ export async function POST(request: NextRequest) {
         where("status", "==", "waiting"),
         where("tier", "==", tier),
         where("isPublic", "==", true),
-        orderBy("createdAt", "asc"),
-        limit(20) // Limit search to the 20 oldest rooms to improve performance
+        limit(20) // Limit search to improve performance
     );
     const availableRoomsSnapshot = await getDocs(q);
     const suitableRoomDoc = availableRoomsSnapshot.docs.find(doc => doc.data().playersCount < doc.data().settings.lobbySize);
