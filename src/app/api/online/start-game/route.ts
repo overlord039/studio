@@ -1,4 +1,5 @@
 
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { db } from '@/lib/firebase/config';
 import { doc, runTransaction, collection, Timestamp, writeBatch } from 'firebase/firestore';
@@ -33,7 +34,6 @@ export async function POST(request: NextRequest) {
         }
 
         const roomRef = doc(db, 'rooms', roomId);
-        let commitBatch = false;
 
         await runTransaction(db, async (transaction) => {
             const roomSnap = await transaction.get(roomRef);
@@ -46,13 +46,14 @@ export async function POST(request: NextRequest) {
             // --- Safety Checks ---
             if (roomData.status !== 'waiting') {
                 // Another client already triggered this, so we can ignore.
+                console.log(`Game start for room ${roomId} already triggered. Current status: ${roomData.status}`);
                 return;
             }
 
             const timerEndMs = roomData.timerEnd.toMillis();
             // Allow a small grace period for client-server clock differences
             if (timerEndMs > Date.now() + 2000 && roomData.playersCount < roomData.settings.lobbySize) {
-                 // It's not time yet and room is not full, do nothing.
+                console.log(`Game start for room ${roomId} triggered prematurely. Ignoring.`);
                 return;
             }
 
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
                         id: botId,
                         name: namePool[i % namePool.length],
                         type: 'bot',
-                        tickets: 1 + Math.floor(Math.random() * 4),
+                        tickets: 1 + Math.floor(Math.random() * 4), // Bots get random tickets
                     });
                 }
             }
@@ -79,16 +80,17 @@ export async function POST(request: NextRequest) {
             transaction.update(roomRef, {
                 status: 'pre-game',
                 preGameEndTime: Timestamp.fromMillis(Date.now() + 5000), // 5 second pre-game countdown
-                playersCount: roomData.settings.lobbySize
+                playersCount: roomData.settings.lobbySize // Update count to be full
             });
             
             // The reads (transaction.get) must come before writes.
             // Since we are writing to a different collection (players) using a batch,
-            // we commit the batch after the transaction updates.
-             await batch.commit();
+            // we commit the batch *after* the transaction updates.
+            await batch.commit();
         });
 
         return NextResponse.json({ success: true, message: 'Game successfully moved to pre-game.' });
+
     } catch (error) {
         console.error("Error starting game with bots:", error);
         return NextResponse.json({ success: false, message: (error as Error).message }, { status: 500 });

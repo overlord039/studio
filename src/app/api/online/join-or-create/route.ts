@@ -94,13 +94,13 @@ export async function POST(request: NextRequest) {
             where("isPublic", "==", true),
             orderBy("createdAt", "asc") // Prioritize older rooms
         );
-        const availableRooms = await getDocs(q);
+        const availableRoomsSnapshot = await getDocs(q);
         
-        const suitableRoom = availableRooms.docs.find(doc => doc.data().playersCount < doc.data().settings.lobbySize);
+        const suitableRoomDoc = availableRoomsSnapshot.docs.find(doc => doc.data().playersCount < doc.data().settings.lobbySize);
 
-        if (suitableRoom) {
+        if (suitableRoomDoc) {
             // Join an existing room
-            targetRoomId = suitableRoom.id;
+            targetRoomId = suitableRoomDoc.id;
             const playerSubcollectionRef = doc(collection(db, "rooms", targetRoomId, "players"), player.id);
             
             transaction.set(playerSubcollectionRef, {
@@ -110,12 +110,15 @@ export async function POST(request: NextRequest) {
                 type: 'human',
                 joinedAt: serverTimestamp()
             });
-            transaction.update(suitableRoom.ref, {
-                playersCount: suitableRoom.data().playersCount + 1
+            
+            const newPlayerCount = suitableRoomDoc.data().playersCount + 1;
+            transaction.update(suitableRoomDoc.ref, {
+                playersCount: newPlayerCount
             });
+
              // If room is now full, transition it immediately
-            if (suitableRoom.data().playersCount + 1 >= tierConfig.roomSize) {
-                transaction.update(suitableRoom.ref, {
+            if (newPlayerCount >= tierConfig.roomSize) {
+                transaction.update(suitableRoomDoc.ref, {
                     status: 'pre-game',
                     preGameEndTime: Timestamp.fromMillis(Date.now() + 5000)
                 });
