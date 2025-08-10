@@ -59,8 +59,8 @@ export async function POST(request: NextRequest) {
       }
 
       const playersCollectionRef = collection(db, 'rooms', roomId, 'players');
-      const playersSnapshot = await getDocs(playersCollectionRef);
-      const currentPlayersCount = playersSnapshot.size;
+      // We get the player count from the room document, not by querying the subcollection, to ensure consistency within the transaction.
+      const currentPlayersCount = roomData.playersCount;
 
       // --- Add Bots ---
       const botsNeeded = roomData.settings.lobbySize - currentPlayersCount;
@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
         for (let i = 0; i < botsNeeded; i++) {
           const botId = `bot_${Date.now()}_${i}`;
           const botRef = doc(playersCollectionRef, botId);
+          // Set bot data within the transaction
           transaction.set(botRef, {
             id: botId,
             name: namePool[i % namePool.length],

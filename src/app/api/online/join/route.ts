@@ -53,6 +53,7 @@ async function cleanupOldRooms() {
     const batch = writeBatch(db);
     oldRoomsSnapshot.forEach((doc) => batch.delete(doc.ref));
     await batch.commit();
+    console.log(`Cleaned up ${oldRoomsSnapshot.size} old room(s).`);
   } catch (error) {
     console.error('Error cleaning up old rooms:', error);
   }
@@ -125,14 +126,15 @@ export async function POST(request: NextRequest) {
       // Note: We get rooms inside the transaction to ensure data consistency.
       const availableRoomsSnapshot = await getDocs(q);
       const suitableRoomDoc = availableRoomsSnapshot.docs.find(
-        (doc) => doc.data().playersCount < doc.data().settings.lobbySize
+        (doc) => (doc.data() as FirestoreRoom).playersCount < doc.data().settings.lobbySize
       );
 
       if (suitableRoomDoc) {
         // --- Logic to JOIN an existing room ---
         targetRoomId = suitableRoomDoc.id;
         const roomRef = doc(db, 'rooms', targetRoomId);
-        const newPlayerCount = suitableRoomDoc.data().playersCount + 1;
+        const roomData = suitableRoomDoc.data() as FirestoreRoom;
+        const newPlayerCount = roomData.playersCount + 1;
 
         transaction.update(roomRef, { playersCount: newPlayerCount });
         const playerSubcollectionRef = doc(
@@ -165,6 +167,7 @@ export async function POST(request: NextRequest) {
           },
           status: 'waiting',
           playersCount: 1,
+          botCount: 0,
           tier: tier,
           isPublic: true,
           createdAt: Timestamp.now(),
