@@ -118,6 +118,7 @@ export interface FirestoreRoom {
     isPublic: boolean;
     createdAt: Timestamp;
     timerEnd: Timestamp;
+    botCount?: number;
     preGameEndTime?: Timestamp;
     gameStartTime?: Timestamp;
 }

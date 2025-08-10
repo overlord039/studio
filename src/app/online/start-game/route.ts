@@ -28,26 +28,32 @@ export async function POST(request: NextRequest) {
         }
 
         const roomRef = doc(db, 'rooms', roomId);
+        let botCount = 0;
 
-        // --- Step 1: Add Bots in a Batch ---
-        const roomSnapForBotCheck = await getDoc(roomRef);
-        if (!roomSnapForBotCheck.exists()) {
-            throw new Error("Room does not exist.");
-        }
-        const roomData = roomSnapForBotCheck.data() as FirestoreRoom;
+        await runTransaction(db, async (transaction) => {
+            const roomSnap = await transaction.get(roomRef);
+            if (!roomSnap.exists()) {
+                throw new Error("Room does not exist.");
+            }
 
-        // Safety check: only add bots if the room is still in 'waiting'
-        if (roomData.status === 'waiting') {
+            const roomData = roomSnap.data() as FirestoreRoom;
+
+            // Safety check: only add bots if the room is still in 'waiting'
+            if (roomData.status !== 'waiting') {
+                console.log(`Game start for room ${roomId} already processed. Current status: ${roomData.status}`);
+                return; // Gracefully exit if already processed
+            }
+
             const botsNeeded = roomData.settings.lobbySize - roomData.playersCount;
+            botCount = botsNeeded; // Set botCount to be used outside the transaction if needed for logging
+            
             if (botsNeeded > 0) {
-                const batch = writeBatch(db);
                 const playersCollectionRef = collection(db, "rooms", roomId, "players");
                 const namePool = shuffleArray([...ONLINE_BOT_NAMES]);
-                
                 for (let i = 0; i < botsNeeded; i++) {
                     const botId = `bot_${Date.now()}_${i}`;
                     const botRef = doc(playersCollectionRef, botId);
-                    batch.set(botRef, {
+                    transaction.set(botRef, {
                         id: botId,
                         name: namePool[i % namePool.length],
                         type: 'bot',
@@ -55,33 +61,18 @@ export async function POST(request: NextRequest) {
                         joinedAt: serverTimestamp()
                     });
                 }
-                await batch.commit();
             }
-        }
-
-
-        // --- Step 2: Transition Room Status in a Transaction ---
-        await runTransaction(db, async (transaction) => {
-            const roomSnap = await transaction.get(roomRef);
-            if (!roomSnap.exists()) {
-                throw new Error("Room does not exist.");
-            }
-            const currentData = roomSnap.data() as FirestoreRoom;
-
-            // Final safety check inside transaction
-            if (currentData.status !== 'waiting') {
-                console.log(`Game start for room ${roomId} already processed. Current status: ${currentData.status}`);
-                return;
-            }
-
+            
+            // --- Update Room Status (Critical Change) ---
             transaction.update(roomRef, {
                 status: 'pre-game',
                 preGameEndTime: Timestamp.fromMillis(Date.now() + 5000), // 5 second countdown
-                playersCount: currentData.settings.lobbySize // Set to full
+                playersCount: roomData.settings.lobbySize, // Update count to include bots
+                botCount: botsNeeded, // Store the number of bots added
             });
         });
 
-        return NextResponse.json({ success: true, message: 'Game successfully moved to pre-game.' });
+        return NextResponse.json({ success: true, message: `Game successfully moved to pre-game. Added ${botCount} bots.` });
 
     } catch (error) {
         console.error("Error starting game with bots:", error);
