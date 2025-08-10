@@ -124,9 +124,8 @@ export async function POST(request: NextRequest) {
         limit(20) // Search a limited number of rooms for performance
       );
 
-      // Note: We get rooms inside the transaction to ensure data consistency.
-      const availableRoomsSnapshot = await getDocs(q);
-      const suitableRoomDoc = availableRoomsSnapshot.docs.find(
+      const querySnapshot = await getDocs(q);
+      const suitableRoomDoc = querySnapshot.docs.find(
         (doc) => (doc.data() as FirestoreRoom).humanCount < doc.data().settings.lobbySize
       );
 

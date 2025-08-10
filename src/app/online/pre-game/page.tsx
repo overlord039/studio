@@ -1,6 +1,6 @@
 
 
-"use client";
+'use client';
 
 import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -156,7 +156,7 @@ function PreGameContent() {
     if (!roomData) return null;
 
     const gameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
-    const currentPrizeFormat = gameSettings.prizeFormat;
+    const currentPrizeFormat = gameSettings.prizeFormat || 'Format 1';
     const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
     const prizeDistribution = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat] || {};
     
