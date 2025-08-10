@@ -66,7 +66,7 @@ function MatchmakingContent() {
     }, [searchParams]);
 
     const findMatch = useCallback(async () => {
-        if (!currentUser || !tier || isFindingMatch === false) return;
+        if (!currentUser || !tier || !isFindingMatch) return;
         
         playSound('start.wav');
 
@@ -95,10 +95,10 @@ function MatchmakingContent() {
     }, [currentUser, tier, tickets, playSound, updateUserStats, isFindingMatch]);
 
     useEffect(() => {
-        if (tier && currentUser && !roomId) {
+        if (tier && currentUser && !roomId && isFindingMatch) {
             findMatch();
         }
-    }, [tier, currentUser, roomId, findMatch]);
+    }, [tier, currentUser, roomId, findMatch, isFindingMatch]);
 
     // Firestore listener
     useEffect(() => {

@@ -111,18 +111,26 @@ function PreGameContent() {
 
 
     useEffect(() => {
-        if (countdown <= 0 && roomData?.status === 'pre-game' && !gameStartTriggered) {
-             setGameStartTriggered(true); // Prevent multiple triggers from this client
-             triggerGameStart();
+        let timer: NodeJS.Timeout;
+        if (roomData?.status === 'pre-game' && roomData.preGameEndTime) {
+            const updateCountdown = () => {
+                const endTime = roomData.preGameEndTime.toMillis();
+                const now = Date.now();
+                const newCountdown = Math.max(0, Math.ceil((endTime - now) / 1000));
+                setCountdown(newCountdown);
+
+                if (newCountdown <= 0 && !gameStartTriggered) {
+                    setGameStartTriggered(true);
+                    triggerGameStart();
+                }
+            };
+            updateCountdown();
+            timer = setInterval(updateCountdown, 1000);
         }
-        
-        const timer = setInterval(() => {
-            setCountdown(prev => (prev > 0 ? prev - 1 : 0));
-        }, 1000);
         
         return () => clearInterval(timer);
 
-    }, [countdown, roomData, triggerGameStart, gameStartTriggered]);
+    }, [roomData, triggerGameStart, gameStartTriggered]);
     
     if (isLoading || !currentUser) {
         return <Loader2 className="h-8 w-8 animate-spin text-white" />;
