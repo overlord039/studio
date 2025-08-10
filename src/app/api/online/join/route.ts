@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
       // Note: We get rooms inside the transaction to ensure data consistency.
       const availableRoomsSnapshot = await getDocs(q);
       const suitableRoomDoc = availableRoomsSnapshot.docs.find(
-        (doc) => (doc.data() as FirestoreRoom).playersCount < doc.data().settings.lobbySize
+        (doc) => (doc.data() as FirestoreRoom).humanCount < doc.data().settings.lobbySize
       );
 
       if (suitableRoomDoc) {

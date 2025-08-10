@@ -8,8 +8,6 @@ import {
   runTransaction,
   collection,
   Timestamp,
-  writeBatch,
-  getDocs,
   serverTimestamp,
 } from 'firebase/firestore';
 import type { FirestoreRoom } from '@/types';
@@ -61,8 +59,10 @@ export async function POST(request: NextRequest) {
       const playersCollectionRef = collection(db, 'rooms', roomId, 'players');
       const currentHumanCount = roomData.humanCount || 0;
 
-      // --- Add Bots ---
+      // --- Accurately Calculate Bots Needed ---
       const botsNeeded = roomData.settings.lobbySize - currentHumanCount;
+      
+      // --- Add Bots ---
       if (botsNeeded > 0) {
         const namePool = shuffleArray([...ONLINE_BOT_NAMES]);
         for (let i = 0; i < botsNeeded; i++) {
@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
       transaction.update(roomRef, {
         status: 'pre-game',
         preGameEndTime: Timestamp.fromMillis(Date.now() + 5000), // 5 second countdown
-        playersCount: roomData.settings.lobbySize, // Update count to include bots
-        botCount: botsNeeded,
+        playersCount: roomData.settings.lobbySize, // Final count is always the lobby size
+        botCount: botsNeeded, // Set the calculated bot count
       });
     });
 

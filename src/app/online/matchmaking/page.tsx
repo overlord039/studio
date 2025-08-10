@@ -98,6 +98,7 @@ function MatchmakingContent() {
 
     playSound('start.wav');
     setIsFindingMatch(true);
+    setError(null); // Clear previous errors
 
     const player: Player = {
       id: currentUser.uid,
@@ -127,10 +128,10 @@ function MatchmakingContent() {
   }, [currentUser, tier, tickets, playSound, updateUserStats, isFindingMatch]);
 
   useEffect(() => {
-    if (tier && currentUser && !roomId && !isFindingMatch) {
+    if (tier && currentUser && !roomId && !isFindingMatch && !error) {
       findMatch();
     }
-  }, [tier, currentUser, roomId, findMatch, isFindingMatch]);
+  }, [tier, currentUser, roomId, findMatch, isFindingMatch, error]);
 
   // Firestore listener
   useEffect(() => {
@@ -145,9 +146,10 @@ function MatchmakingContent() {
         setRoomData(data);
         if (data.status === 'pre-game' && !gameStartTriggered) {
           setGameStartTriggered(true);
+          // Add a small delay to allow UI to update with final player list
           setTimeout(() => {
             router.push(`/online/pre-game?roomId=${roomId}`);
-          }, 1000); // Wait a moment to show the full player list
+          }, 1500); 
         }
       } else {
         setError('Room was deleted or could not be found.');
@@ -158,6 +160,7 @@ function MatchmakingContent() {
       const playersList = querySnapshot.docs.map(
         (doc) => doc.data() as FirestorePlayer
       );
+      playersList.sort((a, b) => a.joinedAt.toMillis() - b.joinedAt.toMillis());
       setPlayers(playersList);
     });
 
@@ -178,7 +181,6 @@ function MatchmakingContent() {
       const timeNowMs = Date.now();
 
       if (timeNowMs >= timerEndMs - 500) {
-        // Add a small buffer
         setGameStartTriggered(true); // Prevent multiple triggers
         fetch(`/api/online/fill-room`, {
           method: 'POST',
@@ -278,11 +280,11 @@ function MatchmakingContent() {
                   <div
                     key={player.id}
                     className={cn(
-                      'text-sm font-medium text-left px-2 flex items-center gap-2',
+                      'text-sm font-medium text-left px-2 flex items-center gap-2 animate-fade-in',
                       player.id === currentUser.uid && 'text-primary'
                     )}
                   >
-                    {player.type === 'bot' && <Bot className="h-4 w-4" />}
+                    {player.type === 'bot' ? <Bot className="h-4 w-4" /> : <div className="w-4 h-4" /> }
                     <span>{player.name}</span>
                   </div>
                 ))}
