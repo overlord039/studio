@@ -34,6 +34,7 @@ function PreGameContent() {
 
     const roomId = searchParams.get('roomId');
 
+    // This effect listens for real-time updates on the room and players
     useEffect(() => {
         if (!roomId || !db) {
             setError("No room ID provided or DB not configured.");
@@ -51,13 +52,15 @@ function PreGameContent() {
                 const data = docSnap.data() as FirestoreRoom;
                 setRoomData(data);
                 
+                // Server-authoritative navigation trigger
                 if (data.status === 'in-progress' && !navigatedRef.current) {
                     navigatedRef.current = true;
                     toast({ title: "Match Starting!", description: "Let's go!" });
                     router.push(`/room/${roomId}/play`);
                 }
                 
-                if (data.preGameEndTime) {
+                // Set initial countdown value from server timestamp
+                if (data.preGameEndTime && countdown === null) {
                     const endTime = data.preGameEndTime.toMillis();
                     const now = Date.now();
                     const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
@@ -66,6 +69,8 @@ function PreGameContent() {
 
             } else {
                 setError("This room no longer exists.");
+                toast({title: "Room Closed", description: "The game room is no longer available.", variant: "destructive"});
+                router.push("/online");
             }
             setIsLoading(false);
         });
@@ -81,14 +86,24 @@ function PreGameContent() {
             unsubPlayers();
         };
 
-    }, [roomId, playSound, router, toast]);
+    }, [roomId, playSound, router, toast, countdown]); // Added countdown to dependencies
 
+    // This effect handles the local ticking of the countdown and triggers the game start
     useEffect(() => {
         if (countdown === null) return;
 
         if (countdown <= 0 && !navigatedRef.current) {
-            navigatedRef.current = true;
-            router.push(`/room/${roomId}/play`);
+            navigatedRef.current = true; // Prevent multiple triggers
+            
+            // Tell the server to start the game
+            fetch(`/api/online/start-game`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ roomId }),
+            }).catch((err) => {
+                console.error('Failed to trigger start-game, but listening for server state change:', err);
+                // The listener will still handle navigation if the server state changes anyway
+            });
             return;
         }
 
