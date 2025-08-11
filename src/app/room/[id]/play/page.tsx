@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -101,6 +100,21 @@ function isFirestoreRoom(data: any): data is FirestoreRoom {
     return data && typeof data.status === 'string';
 }
 
+function generateMultipleUniqueTickets(count: number): HousieTicketGrid[] {
+  const housieLib = require('@/lib/housie');
+  return housieLib.generateMultipleUniqueTickets(count);
+}
+
+function initializePrizeStatus(settings: GameSettings): Record<PrizeType, any> {
+    const status: Record<PrizeType, any> = {} as Record<PrizeType, any>;
+    const prizeFormat = settings.prizeFormat || DEFAULT_GAME_SETTINGS.prizeFormat;
+    const prizesForFormat = PRIZE_DEFINITIONS[prizeFormat] || Object.values(PRIZE_TYPES);
+
+    (prizesForFormat as PrizeType[]).forEach(prize => {
+        status[prize] = { claimedBy: [] }; // Firestore compatible
+    });
+    return status;
+}
 
 export default function GameRoomPage() {
   const router = useRouter();
@@ -199,62 +213,64 @@ export default function GameRoomPage() {
       }
       const data: Room | FirestoreRoom = await response.json();
       
-      const oldPrizeStatus = previousPrizeStatusRef.current;
-      
       if (isFirestoreRoom(data)) {
         setIsOnlineGame(true);
-      } else {
-         const newPrizeStatus = data.prizeStatus;
-         if (oldPrizeStatus && newPrizeStatus && !data.isGameOver) {
-              const prizes = Object.keys(newPrizeStatus) as PrizeType[];
-              for (const prize of prizes) {
-                  const newClaim = newPrizeStatus[prize];
-                  const oldClaim = oldPrizeStatus[prize];
+        // Firestore listener will handle state updates for online games
+        return;
+      }
+      
+      const oldPrizeStatus = previousPrizeStatusRef.current;
+      const newPrizeStatus = data.prizeStatus;
 
-                  const newClaimants = newClaim?.claimedBy ?? [];
-                  const oldClaimants = oldClaim?.claimedBy ?? [];
+      if (oldPrizeStatus && newPrizeStatus && !data.isGameOver) {
+          const prizes = Object.keys(newPrizeStatus) as PrizeType[];
+          for (const prize of prizes) {
+              const newClaim = newPrizeStatus[prize];
+              const oldClaim = oldPrizeStatus[prize];
 
-                  if (newClaimants.length > oldClaimants.length) {
-                      const oldClaimantIds = new Set(oldClaimants.map(c => c.id));
-                      const newlyAddedClaimants = newClaimants.filter(c => !oldClaimantIds.has(c.id));
+              const newClaimants = newClaim?.claimedBy ?? [];
+              const oldClaimants = oldClaim?.claimedBy ?? [];
 
-                      if (newlyAddedClaimants.length > 0) {
-                          playSound('win.wav');
-                          const claimantNames = newlyAddedClaimants
-                              .map(claimant => {
-                                  if (claimant.id === currentUser?.uid) return "You";
-                                  return claimant.name || claimant.id;
-                               })
-                              .join(', ');
-                          
-                          toast({
-                            title: "Game Update!",
-                            description: `🔔 ${claimantNames} claimed ${prize}!`
-                          });
-                          
-                          break; 
-                      }
+              if (newClaimants.length > oldClaimants.length) {
+                  const oldClaimantIds = new Set(oldClaimants.map(c => c.id));
+                  const newlyAddedClaimants = newClaimants.filter(c => !oldClaimantIds.has(c.id));
+
+                  if (newlyAddedClaimants.length > 0) {
+                      playSound('win.wav');
+                      const claimantNames = newlyAddedClaimants
+                          .map(claimant => {
+                              if (claimant.id === currentUser?.uid) return "You";
+                              return claimant.name || claimant.id;
+                           })
+                          .join(', ');
+                      
+                      toast({
+                        title: "Game Update!",
+                        description: `🔔 ${claimantNames} claimed ${prize}!`
+                      });
+                      
+                      break; 
                   }
               }
           }
-        setRoomData(data as Room);
-        previousPrizeStatusRef.current = data.prizeStatus;
-        const players = data.players || [];
-        const me = players.find(p => p.id === currentUser.uid);
-        if (me && me.tickets) {
-            setMyTickets(me.tickets);
-        } else if (isInitialLoad && (!me || !me.tickets || me.tickets.length === 0)) {
-            const playerTicketsParam = searchParams.get('playerTickets');
-            if (playerTicketsParam) {
-                const numTickets = parseInt(playerTicketsParam, 10);
-                if (numTickets === 0 && data.isGameStarted && !data.isGameOver) {
-                    if (!roomDataRef.current || !roomDataRef.current.isGameOver) { 
-                        toast({ title: 'Spectating', description: "You don't have any tickets for this game." });
-                    }
-                }
-            }
-            setMyTickets([]);
-        }
+      }
+      setRoomData(data as Room);
+      previousPrizeStatusRef.current = data.prizeStatus;
+      const players = data.players || [];
+      const me = players.find(p => p.id === currentUser.uid);
+      if (me && me.tickets) {
+          setMyTickets(me.tickets);
+      } else if (isInitialLoad && (!me || !me.tickets || me.tickets.length === 0)) {
+          const playerTicketsParam = searchParams.get('playerTickets');
+          if (playerTicketsParam) {
+              const numTickets = parseInt(playerTicketsParam, 10);
+              if (numTickets === 0 && data.isGameStarted && !data.isGameOver) {
+                  if (!roomDataRef.current || !roomDataRef.current.isGameOver) { 
+                      toast({ title: 'Spectating', description: "You don't have any tickets for this game." });
+                  }
+              }
+          }
+          setMyTickets([]);
       }
 
     } catch (err) {
@@ -279,7 +295,7 @@ export default function GameRoomPage() {
 
   // Firestore listener for Online games
     useEffect(() => {
-    if (!isOnlineGame || !roomId || !db) return;
+    if (!isOnlineGame || !roomId || !db || !currentUser) return;
 
     const roomDocRef = doc(db, 'rooms', roomId);
     const playersColRef = collection(db, 'rooms', roomId, 'players');
@@ -292,7 +308,6 @@ export default function GameRoomPage() {
         }
         
         const firestoreData = docSnap.data() as FirestoreRoom;
-        const gameInProgress = firestoreData.status === 'in-progress';
         
         // Fetch players to get tickets for the current user
         const playersSnap = await getDocs(playersColRef);
@@ -300,15 +315,17 @@ export default function GameRoomPage() {
         setOnlinePlayers(playersList);
 
         const me = playersList.find(p => p.id === currentUser?.uid);
-        if (me) {
-           // For now, generating tickets on the client. Could be moved to server on game start.
-           setMyTickets(generateMultipleUniqueTickets(me.tickets));
-        } else {
-           setMyTickets([]);
-        }
+        
+        setMyTickets(prevTickets => {
+            if (me && (prevTickets.length !== me.tickets)) {
+                return generateMultipleUniqueTickets(me.tickets);
+            }
+            return prevTickets;
+        });
 
-        // Create a synthetic `Room` object for the UI to consume
+        // Synthetic Room object for UI
         setRoomData(prevData => {
+            const isGameActive = firestoreData.status === 'in-progress';
             const syntheticRoom: Room = {
                 id: firestoreData.id,
                 host: firestoreData.host,
@@ -317,20 +334,22 @@ export default function GameRoomPage() {
                     name: p.name,
                     isBot: p.type === 'bot',
                     isHost: p.id === firestoreData.host.id,
-                    tickets: [], // tickets are handled separately above
+                    tickets: [], // tickets are handled separately
+                    confirmedTicketCost: (firestoreData.settings.ticketPrice || 0) * p.tickets,
                 })),
                 settings: firestoreData.settings,
                 createdAt: firestoreData.createdAt.toDate(),
-                isGameStarted: gameInProgress, // Key change: map status to isGameStarted
+                isGameStarted: isGameActive,
                 isGameOver: firestoreData.status === 'finished',
-                currentNumber: prevData?.currentNumber || null, // Will be updated by another mechanism
-                calledNumbers: prevData?.calledNumbers || [],
-                numberPool: [], // Not managed by this listener
-                prizeStatus: prevData?.prizeStatus || initializePrizeStatus(firestoreData.settings),
+                currentNumber: (firestoreData as any).currentNumber || null,
+                calledNumbers: (firestoreData as any).calledNumbers || [],
+                numberPool: [],
+                prizeStatus: (firestoreData as any).prizeStatus || initializePrizeStatus(firestoreData.settings),
                 totalPrizePool: (firestoreData.settings.ticketPrice || 0) * (firestoreData.playersCount || 0)
             };
             return syntheticRoom;
         });
+        setIsLoading(false);
     });
 
     return () => unsubRoom();
@@ -469,30 +488,39 @@ export default function GameRoomPage() {
 
   // Polling for game updates and handling notifications for changes
   useEffect(() => {
-    if (!roomId || !currentUser || roomData?.isGameOver || isLoading || isOnlineGame) {
+    if (!roomId || !currentUser || roomData?.isGameOver || isLoading ) {
         if (previousCallingModeRef.current && roomData?.isGameOver) {
             previousCallingModeRef.current = undefined; // Reset on game over
         }
         return;
     }
     
-    // Check for calling mode change
-    if (previousCallingModeRef.current && roomData && roomData.settings.callingMode !== previousCallingModeRef.current) {
+    // Check for calling mode change (non-online games)
+    if (!isOnlineGame && previousCallingModeRef.current && roomData && roomData.settings.callingMode !== previousCallingModeRef.current) {
         playSound('notification.wav');
         toast({
             title: "Mode Switched by Host",
             description: `Number calling is now ${roomData.settings.callingMode}.`
         });
     }
-    previousCallingModeRef.current = roomData?.settings.callingMode;
+    if(!isOnlineGame) previousCallingModeRef.current = roomData?.settings.callingMode;
 
-    const isManualMode = roomData?.settings.callingMode === 'manual';
+    const isManualMode = !isOnlineGame && roomData?.settings.callingMode === 'manual';
     const isHost = roomData?.host.id === currentUser.uid;
-    const pollInterval = isManualMode && !isHost ? 7000 : 5000;
+    const pollInterval = isOnlineGame ? 5000 : (isManualMode && !isHost ? 7000 : 5000);
 
     const intervalId = setInterval(() => {
       if (!document.hidden) { 
-        fetchGameDetails(false);
+        if (isOnlineGame && roomData?.isGameStarted) {
+            // For online games, trigger the number call
+            fetch(`/api/online/call-number`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ roomId }),
+            }).catch(err => console.warn("Failed to trigger online number call:", err));
+        } else if (!isOnlineGame) {
+            fetchGameDetails(false);
+        }
       }
     }, pollInterval); 
     
@@ -705,8 +733,8 @@ export default function GameRoomPage() {
   const handlePlayAgain = async () => {
     if (!currentUser || !roomData) return;
 
-    const isBotGame = roomData.settings.gameMode !== 'multiplayer' && roomData.settings.gameMode !== 'online';
-    const isOnlineGame = roomData.settings.gameMode === 'online';
+    const isBotGame = roomData.settings.gameMode && ['easy', 'medium', 'hard'].includes(roomData.settings.gameMode);
+    
     setIsResetting(true);
 
     if (isBotGame) {
@@ -857,7 +885,7 @@ export default function GameRoomPage() {
                 Final Prize Summary
             </h3>
             <div className="border rounded-md p-3">
-              {!isOnlineGame && (
+              {(isOnlineGame || roomData.settings.gameMode === 'multiplayer') && (
               <div className="flex justify-between items-center text-lg font-bold mb-2 pb-2 border-b">
                 <span>Total Prize Pool:</span>
                 <div className="flex items-center gap-1">
@@ -877,7 +905,7 @@ export default function GameRoomPage() {
                     prizeStatusText = `Claimed by ${winnerNames}`;
                   }
                   
-                  if (isOnlineGame) {
+                  if (!isOnlineGame && roomData.settings.gameMode !== 'multiplayer') { // Bot games
                      const rewardAmount = (roomData.settings.gameMode && OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS]) ? OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS][prize] : 0;
                      return (
                          <li key={prize} className="flex flex-col text-sm bg-secondary/20 p-1.5 rounded-md">
@@ -916,7 +944,7 @@ export default function GameRoomPage() {
                      </li>
                   );
                 })}
-                {isOnlineGame && (
+                {!isOnlineGame && roomData.settings.gameMode !== 'multiplayer' && (
                   <li className="flex flex-col text-sm bg-green-500/10 p-1.5 rounded-md border border-green-500/20 mt-2">
                       <div className="flex justify-between items-center w-full">
                           <span className="font-medium">Participation Reward</span>
@@ -940,7 +968,7 @@ export default function GameRoomPage() {
                         You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(currentUserWinnings)}!
                     </div>
                     <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
-                    {!isOnlineGame && (
+                    {(isOnlineGame || roomData.settings.gameMode === 'multiplayer') && (
                         <p className="text-sm text-muted-foreground">You spent {formatCoins(totalCost)} and won {formatCoins(currentUserWinnings)}</p>
                     )}
                 </div>
@@ -1003,7 +1031,7 @@ export default function GameRoomPage() {
           <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
             <div className="flex-grow">
                <div className="flex items-center gap-2 mb-1">
-                  {isOnlineGame && roomData.settings.gameMode ? (
+                  {roomData.settings.gameMode && roomData.settings.gameMode !== 'multiplayer' && roomData.settings.gameMode !== 'online' ? (
                       <div className={cn(
                           "px-2 py-1 text-xs font-bold text-white rounded-md capitalize",
                           roomData.settings.gameMode === 'easy' && "bg-green-600",
@@ -1033,7 +1061,7 @@ export default function GameRoomPage() {
                             {gameSettings.lobbySize}
                         </div>
                     </div>
-                    {!isOnlineGame && (
+                    {(isOnlineGame || roomData.settings.gameMode === 'multiplayer') && (
                         <div className="flex flex-col items-center">
                             <span className="text-xs opacity-80">Prize Pool</span>
                             <div className="font-bold flex items-center gap-1">
@@ -1060,7 +1088,7 @@ export default function GameRoomPage() {
                                   <Award className="mr-2 h-4 w-4 text-primary" />
                                   Prize Status
                               </CardTitle>
-                              {!isOnlineGame && <div className="text-xs text-muted-foreground flex items-center gap-1">Total Pool: <Image src="/coin.png" alt="Coins" width={12} height={12} />{formatCoins(totalPrizePool)}</div>}
+                              {(isOnlineGame || roomData.settings.gameMode === 'multiplayer') && <div className="text-xs text-muted-foreground flex items-center gap-1">Total Pool: <Image src="/coin.png" alt="Coins" width={12} height={12} />{formatCoins(totalPrizePool)}</div>}
                           </CardHeader>
                           <CardContent className="p-3 pt-0">
                               {isLoading ? (
@@ -1080,7 +1108,7 @@ export default function GameRoomPage() {
                                           claimantText = `Claimed by ${claimantNames}`;
                                       }
                                       
-                                      if (isOnlineGame) {
+                                      if (!isOnlineGame && roomData.settings.gameMode !== 'multiplayer') {
                                           const rewardAmount = (roomData.settings.gameMode && OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS]) ? OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS][prize] : 0;
                                           return (
                                              <li key={prize} className="flex flex-col bg-background/50 p-1.5 rounded-md">
@@ -1142,8 +1170,8 @@ export default function GameRoomPage() {
                                   <ScrollArea className="h-40">
                                       <ul className="space-y-1 text-xs">
                                       {[...roomData.players].sort((a,b) => (a.isHost ? -1 : b.isHost ? 1 : 0)).map((player) => {
-                                         const ticketCount = player.tickets?.length || 0;
-                                         const ticketCost = ticketCount * gameSettings.ticketPrice;
+                                         const playerTickets = isOnlineGame ? (onlinePlayers.find(p => p.id === player.id)?.tickets || 0) : (player.tickets?.length || 0);
+                                         const ticketCost = playerTickets * gameSettings.ticketPrice;
                                          return (
                                           <li key={player.id} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
                                           <span className={cn("font-medium", player.id === currentUser?.uid && "text-primary font-bold")}>
@@ -1151,8 +1179,8 @@ export default function GameRoomPage() {
                                               {player.isHost && <span className="ml-1 font-semibold text-primary">*</span>}
                                           </span>
                                           <div className="text-muted-foreground flex items-center gap-1">
-                                            <span>{ticketCount} {ticketsText(ticketCount)}</span>
-                                            {(!isOnlineGame) && 
+                                            <span>{playerTickets} {ticketsText(playerTickets)}</span>
+                                            {(isOnlineGame || roomData.settings.gameMode === 'multiplayer') && 
                                               <div className="flex items-center gap-0.5">
                                                 (<Image src="/coin.png" alt="Coins" width={12} height={12} />{formatCoins(ticketCost)})
                                               </div>
@@ -1231,7 +1259,7 @@ export default function GameRoomPage() {
               />
           </div>
 
-          {isCurrentUserHost && !isAutoCalling && !roomData.isGameOver && (
+          {isCurrentUserHost && !isAutoCalling && !roomData.isGameOver && !isOnlineGame && (
             <div className="w-full max-w-md">
               <Button 
                   onClick={handleCallNextNumber}
@@ -1324,19 +1352,4 @@ export default function GameRoomPage() {
       {myTickets.length < 4 && <Footer />}
     </>
   );
-}
-function initializePrizeStatus(settings: GameSettings): Record<PrizeType, PrizeClaim | null> {
-    const status: Record<PrizeType, PrizeClaim | null> = {} as Record<PrizeType, PrizeClaim | null>;
-    const prizeFormat = settings.prizeFormat || DEFAULT_GAME_SETTINGS.prizeFormat;
-    const prizesForFormat = PRIZE_DEFINITIONS[prizeFormat] || Object.values(PRIZE_TYPES);
-
-    (prizesForFormat as PrizeType[]).forEach(prize => {
-        status[prize] = null;
-    });
-    return status;
-}
-
-function generateMultipleUniqueTickets(count: number): HousieTicketGrid[] {
-  const housieLib = require('@/lib/housie');
-  return housieLib.generateMultipleUniqueTickets(count);
 }
