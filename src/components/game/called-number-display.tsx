@@ -16,7 +16,7 @@ interface CalledNumberDisplayProps {
 }
 
 export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMuted, onToggleMute, animationKey }: CalledNumberDisplayProps) {
-  const recentThree = calledNumbers.slice(1, 4);
+  const recentThree = calledNumbers.slice(0, 3);
   const displayNumbers: (number | null)[] = [...recentThree];
   while (displayNumbers.length < 3) {
     displayNumbers.push(null);
