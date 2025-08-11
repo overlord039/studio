@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, Suspense, useCallback } from 'react';
+import React, { useState, useEffect, Suspense, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import type { Room, PrizeType, GameSettings, OnlineGameTier, TierConfig, Player, FirestoreRoom, FirestorePlayer } from '@/types';
@@ -30,42 +30,17 @@ function PreGameContent() {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [countdown, setCountdown] = useState<number | null>(null);
-    const [gameStartTriggered, setGameStartTriggered] = useState(false);
+    const navigatedRef = useRef(false);
 
     const roomId = searchParams.get('roomId');
 
-    // Effect to start game when timer hits 0
-    useEffect(() => {
-        if (countdown === 0 && !gameStartTriggered && roomId && db) {
-            setGameStartTriggered(true);
-            const startGame = async () => {
-                try {
-                    const roomRef = doc(db, "rooms", roomId);
-                    await runTransaction(db, async (transaction) => {
-                        const roomDoc = await transaction.get(roomRef);
-                        if (roomDoc.exists() && roomDoc.data().status === 'pre-game') {
-                            transaction.update(roomRef, {
-                                status: 'in-progress',
-                                gameStartTime: Timestamp.now(),
-                            });
-                        }
-                    });
-                } catch (err) {
-                    console.error("Failed to start game from client trigger:", err);
-                }
-            };
-            startGame();
-        }
-    }, [countdown, gameStartTriggered, roomId]);
-    
-    // Main listener effect for room data
     useEffect(() => {
         if (!roomId || !db) {
             setError("No room ID provided or DB not configured.");
             setIsLoading(false);
             return;
         }
-        
+
         playSound('notification.wav');
 
         const roomRef = doc(db, "rooms", roomId);
@@ -76,19 +51,17 @@ function PreGameContent() {
                 const data = docSnap.data() as FirestoreRoom;
                 setRoomData(data);
                 
-                // Navigate as soon as the status changes to in-progress
-                if (data.status === 'in-progress' && !gameStartTriggered) {
-                    setGameStartTriggered(true); 
+                if (data.status === 'in-progress' && !navigatedRef.current) {
+                    navigatedRef.current = true;
                     toast({ title: "Match Starting!", description: "Let's go!" });
                     router.push(`/room/${roomId}/play`);
                 }
                 
-                // Set the initial countdown value from Firestore
-                 if(data.preGameEndTime && countdown === null) {
+                if (data.preGameEndTime) {
                     const endTime = data.preGameEndTime.toMillis();
                     const now = Date.now();
-                    const newCountdown = Math.max(0, Math.ceil((endTime - now)/1000));
-                    setCountdown(newCountdown);
+                    const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
+                    setCountdown(remaining);
                 }
 
             } else {
@@ -108,18 +81,23 @@ function PreGameContent() {
             unsubPlayers();
         };
 
-    }, [roomId, playSound, router, toast, gameStartTriggered, countdown]);
+    }, [roomId, playSound, router, toast]);
 
-    // Local tick-down effect for the countdown timer
     useEffect(() => {
-        if (countdown === null || countdown <= 0) return;
+        if (countdown === null) return;
+
+        if (countdown <= 0 && !navigatedRef.current) {
+            navigatedRef.current = true;
+            router.push(`/room/${roomId}/play`);
+            return;
+        }
 
         const interval = setInterval(() => {
-            setCountdown(prev => (prev !== null && prev > 0 ? prev - 1 : 0));
+            setCountdown((prev) => (prev !== null && prev > 0 ? prev - 1 : 0));
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [countdown]);
+    }, [countdown, router, roomId]);
     
     if (isLoading || !currentUser) {
         return <Loader2 className="h-8 w-8 animate-spin text-white" />;
@@ -162,7 +140,7 @@ function PreGameContent() {
                 </div>
                 <CardTitle className="text-2xl text-foreground">Match Ready!</CardTitle>
                 <CardDescription className="text-foreground/80">Here's what you're playing for. Game starts in...</CardDescription>
-                 <div className="text-5xl font-bold text-primary">{countdown}</div>
+                 <div className="text-5xl font-bold text-primary">{countdown !== null ? countdown : '--'}</div>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="text-center p-3 rounded-lg bg-primary/10">
