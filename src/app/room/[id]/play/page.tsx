@@ -393,32 +393,10 @@ export default function GameRoomPage() {
         statsUpdateInitiatedRef.current = true; // Prevents re-running
         localStorage.removeItem(`markedNumbers-${roomId}-${currentUser.uid}`);
 
-        const isBotGame = roomData.settings.gameMode && ['easy', 'medium', 'hard'].includes(roomData.settings.gameMode);
         let calculatedWinnings = 0;
         
-        if (isBotGame && roomData.settings.gameMode) {
-            let coinsEarned = 0;
-            const prizesWonByPlayer = [];
-            for (const prizeType in roomData.prizeStatus) {
-                const prizeInfo = roomData.prizeStatus[prizeType as PrizeType];
-                if (prizeInfo && prizeInfo.claimedBy.some(c => c.id === currentUser.uid)) {
-                    prizesWonByPlayer.push(prizeType as PrizeType);
-                }
-            }
-
-            const gameMode = roomData.settings.gameMode as 'easy' | 'medium' | 'hard';
-            const modeRewards = OFFLINE_COIN_REWARDS[gameMode];
-            
-            coinsEarned += PARTICIPATION_REWARD;
-
-            if (modeRewards && prizesWonByPlayer.length > 0) {
-                prizesWonByPlayer.forEach(prize => {
-                    coinsEarned += modeRewards[prize] || 0;
-                });
-            }
-            calculatedWinnings = coinsEarned;
-        } else {
-            const gameSettings: GameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
+        if (isOnlineGame) {
+             const gameSettings: GameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
             const currentPrizeFormat = gameSettings.prizeFormat || 'Format 1';
             const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
             const prizeDistributionPercentages = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat] || {};
@@ -432,6 +410,30 @@ export default function GameRoomPage() {
                     calculatedWinnings += prizePerWinner;
                 }
             });
+        } else { // Bot or Friends game
+            const isBotGame = roomData.settings.gameMode && ['easy', 'medium', 'hard'].includes(roomData.settings.gameMode);
+            if (isBotGame && roomData.settings.gameMode) {
+                let coinsEarned = 0;
+                const prizesWonByPlayer = [];
+                for (const prizeType in roomData.prizeStatus) {
+                    const prizeInfo = roomData.prizeStatus[prizeType as PrizeType];
+                    if (prizeInfo && prizeInfo.claimedBy.some(c => c.id === currentUser.uid)) {
+                        prizesWonByPlayer.push(prizeType as PrizeType);
+                    }
+                }
+
+                const gameMode = roomData.settings.gameMode as 'easy' | 'medium' | 'hard';
+                const modeRewards = OFFLINE_COIN_REWARDS[gameMode];
+                
+                coinsEarned += PARTICIPATION_REWARD;
+
+                if (modeRewards && prizesWonByPlayer.length > 0) {
+                    prizesWonByPlayer.forEach(prize => {
+                        coinsEarned += modeRewards[prize] || 0;
+                    });
+                }
+                calculatedWinnings = coinsEarned;
+            }
         }
         
         setCoinsWonThisGame(calculatedWinnings);
@@ -441,9 +443,9 @@ export default function GameRoomPage() {
 
         const updateMyStats = async () => {
             if (currentUser.isGuest) {
+                // Simplified guest stat updates (no server call)
                 const newStats = { ...currentUser.stats };
                 newStats.matchesPlayed += 1;
-                
                 const prizesWon = roomData.prizeStatus;
                 for (const prize in prizesWon) {
                     if(prizesWon[prize as PrizeType]?.claimedBy.some(c => c.id === currentUser.uid)) {
@@ -453,12 +455,15 @@ export default function GameRoomPage() {
                 updateContextUserStats(newStats);
                 return;
             }
+            
+            // Determine which API to call
+            const endpoint = isOnlineGame ? `/api/online/update-stats` : `/api/rooms/${roomId}/update-stats`;
 
             try {
-                const response = await fetch(`/api/rooms/${roomId}/update-stats`, {
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: currentUser.uid }),
+                    body: JSON.stringify({ roomId, userId: currentUser.uid }),
                 });
 
                 const result = await response.json();
@@ -478,7 +483,7 @@ export default function GameRoomPage() {
 
         updateMyStats();
     }
-}, [roomData?.isGameOver, currentUser, roomId, toast, updateContextUserStats, triggerAnimation]);
+  }, [roomData?.isGameOver, currentUser, roomId, toast, updateContextUserStats, triggerAnimation, isOnlineGame]);
 
   // This effect loads marked numbers from localStorage on mount
   useEffect(() => {
