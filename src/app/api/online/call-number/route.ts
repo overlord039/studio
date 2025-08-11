@@ -72,7 +72,7 @@ export async function POST(request: Request) {
             const nextNumber = numberPool.pop()!;
             
             transaction.update(roomRef, {
-                numberPool: numberPool,
+                numberPool: numberPool, // Save the updated (shorter) pool back to Firestore
                 calledNumbers: arrayUnion(nextNumber),
                 currentNumber: nextNumber,
                 lastNumberCall: serverTimestamp()
