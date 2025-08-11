@@ -22,8 +22,9 @@ export default function HousieTicket({ ticketIndex, ticket, calledNumbers, onNum
     
     const currentNumberKey = `${ticketIndex}-${r}-${c}`;
     const isMarkedByPlayer = markedNumbers?.has(currentNumberKey);
+    const isCalled = calledNumbers.includes(num);
     
-    if (isMarkedByPlayer) {
+    if (isCalled && isMarkedByPlayer) {
       return 'called-marked';
     }
     return 'default';

@@ -43,7 +43,7 @@ import {
 import Footer from '@/components/layout/footer';
 import Image from 'next/image';
 import { db } from '@/lib/firebase/config';
-import { onSnapshot, doc, collection, getDocs, QuerySnapshot, DocumentData } from 'firebase/firestore';
+import { onSnapshot, doc, collection, getDocs, QuerySnapshot, DocumentData, getDoc } from 'firebase/firestore';
 
 
 const MemoizedHousieTicket = React.memo(HousieTicket);
@@ -361,7 +361,7 @@ export default function GameRoomPage() {
             isGameStarted: isGameActive || isGameOver,
             isGameOver: isGameOver,
             currentNumber: firestoreData.currentNumber || null,
-            calledNumbers: firestoreData.calledNumbers || [],
+            calledNumbers: firestoreData.calledNumbers ? [...firestoreData.calledNumbers].reverse() : [],
             numberPool: [],
             prizeStatus: firestoreData.prizeStatus || initializePrizeStatus(firestoreData.settings),
             totalPrizePool: (firestoreData.settings.ticketPrice || 0) * playersList.reduce((acc, p) => acc + p.tickets, 0)
@@ -546,7 +546,7 @@ export default function GameRoomPage() {
 
   // Polling for game updates and handling notifications for changes
   useEffect(() => {
-    if (!roomId || !currentUser || roomData?.isGameOver || isLoading ) {
+    if (!roomId || !currentUser || (roomData?.isGameStarted && roomData.isGameOver) || isLoading ) {
         if (previousCallingModeRef.current && roomData?.isGameOver) {
             previousCallingModeRef.current = undefined; // Reset on game over
         }
@@ -565,7 +565,7 @@ export default function GameRoomPage() {
 
     const isManualMode = !isOnlineGame && roomData?.settings.callingMode === 'manual';
     const isHost = roomData?.host.id === currentUser.uid;
-    const pollInterval = isOnlineGame ? 5000 : (isManualMode && !isHost ? 7000 : 5000);
+    const pollInterval = isOnlineGame ? 4500 : (isManualMode && !isHost ? 7000 : 5000);
 
     const intervalId = setInterval(() => {
       if (!document.hidden && roomDataRef.current && roomDataRef.current.isGameStarted && !roomDataRef.current.isGameOver) { 
@@ -604,15 +604,14 @@ export default function GameRoomPage() {
       return; 
     }
 
-    if (!roomData.calledNumbers.includes(numberValue)) {
-      return;
+    if (roomData.calledNumbers.includes(numberValue)) {
+      playSound('marking number.wav');
+      setMarkedNumbers(prev => {
+        const newMarked = new Set(prev);
+        newMarked.add(key);
+        return newMarked;
+      });
     }
-    playSound('marking number.wav');
-    setMarkedNumbers(prev => {
-      const newMarked = new Set(prev);
-      newMarked.add(key);
-      return newMarked;
-    });
   };
 
   const handleClaimPrize = async (prizeType: PrizeType) => {
@@ -637,17 +636,18 @@ export default function GameRoomPage() {
     
     let isClaimValidAndMarked = false;
     let winningTicketIndex = -1;
+    const numbersToValidate = isOnlineGame ? [...roomData.calledNumbers].reverse() : roomData.calledNumbers;
 
     for (let i = 0; i < myTickets.length; i++) {
         const ticket = myTickets[i];
         const housieLib = require('@/lib/housie');
 
-        if (housieLib.checkWinningCondition(ticket, roomData.calledNumbers, prizeType)) {
+        if (housieLib.checkWinningCondition(ticket, numbersToValidate, prizeType)) {
             if (prizeType === PRIZE_TYPES.EARLY_5) {
                 let markedAndCalledCount = 0;
                 ticket.forEach((row, r) => {
                     row.forEach((num, c) => {
-                        if (num !== null && roomData.calledNumbers.includes(num)) {
+                        if (num !== null && numbersToValidate.includes(num)) {
                             if (markedNumbers.has(`${i}-${r}-${c}`)) {
                                 markedAndCalledCount++;
                             }
@@ -1350,7 +1350,7 @@ export default function GameRoomPage() {
                       <DialogTitle>Number Board</DialogTitle>
                   </DialogHeader>
                   <MemoizedLiveNumberBoard
-                      calledNumbers={roomData.calledNumbers}
+                      calledNumbers={isOnlineGame ? [...roomData.calledNumbers].reverse() : roomData.calledNumbers}
                       currentNumber={roomData.currentNumber}
                       remainingCount={NUMBERS_RANGE_MAX - roomData.calledNumbers.length}
                       calledCount={roomData.calledNumbers.length}
@@ -1370,7 +1370,7 @@ export default function GameRoomPage() {
                     <MemoizedHousieTicket
                       ticketIndex={index}
                       ticket={ticket}
-                      calledNumbers={roomData.calledNumbers}
+                      calledNumbers={isOnlineGame ? [...roomData.calledNumbers].reverse() : roomData.calledNumbers}
                       markedNumbers={markedNumbers}
                       onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
                       className="w-full max-w-md lg:max-w-lg"
@@ -1386,3 +1386,4 @@ export default function GameRoomPage() {
     </>
   );
 }
+
