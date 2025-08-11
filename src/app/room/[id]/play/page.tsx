@@ -344,13 +344,47 @@ export default function GameRoomPage() {
             prizeStatus: firestoreData.prizeStatus || initializePrizeStatus(firestoreData.settings),
             totalPrizePool: (firestoreData.settings.ticketPrice || 0) * playersList.reduce((acc, p) => acc + p.tickets, 0)
         };
+        
+        const oldPrizeStatus = previousPrizeStatusRef.current;
+        const newPrizeStatus = syntheticRoom.prizeStatus;
+
+        if (oldPrizeStatus && newPrizeStatus && !syntheticRoom.isGameOver) {
+            const prizes = Object.keys(newPrizeStatus) as PrizeType[];
+            for (const prize of prizes) {
+                const newClaim = newPrizeStatus[prize];
+                const oldClaim = oldPrizeStatus[prize];
+                
+                const newClaimants = newClaim?.claimedBy ?? [];
+                const oldClaimants = oldClaim?.claimedBy ?? [];
+
+                if (newClaimants.length > oldClaimants.length) {
+                    const oldClaimantIds = new Set(oldClaimants.map(c => c.id));
+                    const newlyAddedClaimants = newClaimants.filter(c => !oldClaimantIds.has(c.id));
+
+                    if (newlyAddedClaimants.length > 0) {
+                        playSound('win.wav');
+                        const claimantNames = newlyAddedClaimants
+                            .map(claimant => claimant.id === currentUser?.uid ? "You" : claimant.name)
+                            .join(', ');
+                        
+                        toast({
+                          title: "Game Update!",
+                          description: `🔔 ${claimantNames} claimed ${prize}!`
+                        });
+                        break; 
+                    }
+                }
+            }
+        }
+        
         setRoomData(syntheticRoom);
+        previousPrizeStatusRef.current = newPrizeStatus;
         setIsLoading(false);
     });
 
     return () => unsubRoom();
 
-}, [isOnlineGame, roomId, currentUser, db, myTickets.length]);
+}, [isOnlineGame, roomId, currentUser, db, myTickets.length, toast, playSound]);
 
 
   // This effect runs ONCE when the game is over to trigger the stat update.
