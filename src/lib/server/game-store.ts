@@ -1,5 +1,4 @@
 
-
 import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid, CallingMode, OnlineGameTier } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { generateMultipleUniqueTickets } from '@/lib/housie';
@@ -126,14 +125,6 @@ export function addPlayerToRoomStore(roomId: string, playerInfo: Player, numberO
     }
     
     room.totalPrizePool = room.players.reduce((sum, p) => sum + (p.confirmedTicketCost || 0), 0);
-    
-    // Check if room is full after adding player
-    if (room.players.length >= room.settings.lobbySize && !room.isGameStarted) {
-        console.log(`Room ${roomId} is full, starting game immediately.`);
-        stopRoomTimer(roomId, "Room is full");
-        startGameInRoomStore(roomId, room.host.id);
-    }
-
     rooms.set(roomId, room);
     return room;
 }
@@ -145,8 +136,10 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
   if (room.isGameStarted) return { error: "Game has already started." };
   if (room.isGameOver) return { error: "Game is over. Reset the room to start a new game." };
   
-  // For public games, any server trigger can start it. For private, only host.
-  if (!room.settings.isPublic && room.host.id !== hostId) {
+  const isBotGame = room.settings.gameMode && ['easy', 'medium', 'hard'].includes(room.settings.gameMode);
+
+  // For public/bot games, any server trigger can start it. For private, only host.
+  if (!room.settings.isPublic && !isBotGame && room.host.id !== hostId) {
     return { error: `Only the host can start the game. Current host: ${room.host.name}, trying to start: ${hostId}` };
   }
 
@@ -383,3 +376,4 @@ export function updateCallingModeStore(roomId: string, hostId: string, newMode: 
     
     return room;
 }
+
