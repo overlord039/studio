@@ -117,6 +117,28 @@ function initializePrizeStatus(settings: GameSettings): Record<PrizeType, any> {
     return status;
 }
 
+// Function to calculate prizes accurately
+function calculatePrizes(totalPool: number, prizeDefs: PrizeType[], distPercentages: Record<PrizeType, number>): Record<PrizeType, number> {
+    const calculatedPrizes: Record<PrizeType, number> = {} as any;
+    let sumOfPrizes = 0;
+    
+    // Calculate all prizes except Full House
+    for (const prize of prizeDefs) {
+        if (prize !== PRIZE_TYPES.FULL_HOUSE) {
+            const percentage = distPercentages[prize] || 0;
+            const amount = Math.floor((totalPool * percentage) / 100);
+            calculatedPrizes[prize] = amount;
+            sumOfPrizes += amount;
+        }
+    }
+    
+    // Full House gets the remainder to ensure the total matches the pool
+    calculatedPrizes[PRIZE_TYPES.FULL_HOUSE] = totalPool - sumOfPrizes;
+
+    return calculatedPrizes;
+}
+
+
 export default function GameRoomPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -401,11 +423,12 @@ export default function GameRoomPage() {
             const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
             const prizeDistributionPercentages = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat] || {};
             const totalPrizePool = roomData.totalPrizePool || 0;
+            const finalPrizes = calculatePrizes(totalPrizePool, prizesForFormat, prizeDistributionPercentages);
 
             prizesForFormat.forEach(prize => {
                 const claimInfo = roomData.prizeStatus[prize as PrizeType];
                 if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
-                    const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[prize as PrizeType] || 0)) / 100;
+                    const prizeAmount = finalPrizes[prize as PrizeType] || 0;
                     const prizePerWinner = claimInfo.claimedBy.length > 0 ? prizeAmount / claimInfo.claimedBy.length : prizeAmount;
                     calculatedWinnings += prizePerWinner;
                 }
@@ -856,6 +879,8 @@ export default function GameRoomPage() {
   const formatCoins = (amount: number) => {
     return new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
   };
+  
+  const finalPrizes = calculatePrizes(totalPrizePool, prizesForFormat, prizeDistributionPercentages);
 
   if (roomData.isGameOver) {
     let currentUserWinnings = coinsWonThisGame || 0;
@@ -932,7 +957,7 @@ export default function GameRoomPage() {
                       );
                   }
 
-                  const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[prize as PrizeType] || 0)) / 100;
+                  const prizeAmount = finalPrizes[prize as PrizeType] || 0;
                   const prizePerWinner = (claimInfo && claimInfo.claimedBy.length > 0) ? prizeAmount / claimInfo.claimedBy.length : 0;
                   
                   return (
@@ -1137,7 +1162,7 @@ export default function GameRoomPage() {
                                           );
                                       }
 
-                                      const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[prize as PrizeType] || 0)) / 100;
+                                      const prizeAmount = finalPrizes[prize as PrizeType] || 0;
                                       const winnerCount = claimInfo?.claimedBy.length ?? 0;
 
                                       let prizeValueText = formatCoins(prizeAmount);
