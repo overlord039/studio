@@ -81,9 +81,12 @@ export async function POST(request: NextRequest) {
       }
 
       // --- Update Room Status (Critical Change) ---
+      // Set exactly 5-second pre-game timer from now
+      const preGameEndTime = Timestamp.fromMillis(Date.now() + 5000);
+      
       transaction.update(roomRef, {
         status: 'pre-game',
-        preGameEndTime: Timestamp.fromMillis(Date.now() + 5000), // 5 second pre-game countdown
+        preGameEndTime: preGameEndTime,
         playersCount: humanCount + botsNeeded, // Final player count
       });
     });
