@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -317,7 +318,7 @@ export default function GameRoomPage() {
         const me = playersList.find(p => p.id === currentUser?.uid);
         
         setMyTickets(prevTickets => {
-            if (me && (prevTickets.length !== me.tickets)) {
+            if (me && (prevTickets.length === 0 && me.tickets > 0)) {
                 return generateMultipleUniqueTickets(me.tickets);
             }
             return prevTickets;
@@ -345,7 +346,7 @@ export default function GameRoomPage() {
                 calledNumbers: (firestoreData as any).calledNumbers || [],
                 numberPool: [],
                 prizeStatus: (firestoreData as any).prizeStatus || initializePrizeStatus(firestoreData.settings),
-                totalPrizePool: (firestoreData.settings.ticketPrice || 0) * (firestoreData.playersCount || 0)
+                totalPrizePool: (firestoreData.settings.ticketPrice || 0) * playersList.reduce((acc, p) => acc + p.tickets, 0)
             };
             return syntheticRoom;
         });
@@ -825,8 +826,7 @@ export default function GameRoomPage() {
     );
   }
   
-  const isFullHouseClaimed = roomData.prizeStatus && roomData.prizeStatus[PRIZE_TYPES.FULL_HOUSE]?.claimedBy?.length > 0;
-  if (!roomData.isGameStarted && !isFullHouseClaimed) {
+  if (!roomData.isGameStarted) {
     return (
        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
         <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
