@@ -338,7 +338,7 @@ export default function GameRoomPage() {
                     tickets: [], // tickets are handled separately
                     confirmedTicketCost: (firestoreData.settings.ticketPrice || 0) * p.tickets,
                 })),
-                settings: firestoreData.settings,
+                settings: firestoreData.settings || DEFAULT_GAME_SETTINGS,
                 createdAt: firestoreData.createdAt.toDate(),
                 isGameStarted: isGameActive,
                 isGameOver: firestoreData.status === 'finished',
@@ -390,15 +390,15 @@ export default function GameRoomPage() {
             calculatedWinnings = coinsEarned;
         } else {
             const gameSettings: GameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
-            const currentPrizeFormat = gameSettings.prizeFormat;
+            const currentPrizeFormat = gameSettings.prizeFormat || 'Format 1';
             const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
             const prizeDistributionPercentages = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat] || {};
             const totalPrizePool = roomData.totalPrizePool || 0;
 
             prizesForFormat.forEach(prize => {
-                const claimInfo = roomData.prizeStatus[prize];
+                const claimInfo = roomData.prizeStatus[prize as PrizeType];
                 if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
-                    const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[prize as PrizeType] || 0)) / 100;
+                    const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[currentPrizeFormat]?.[prize as PrizeType] || 0)) / 100;
                     const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
                     calculatedWinnings += prizePerWinner;
                 }
@@ -826,7 +826,7 @@ export default function GameRoomPage() {
     );
   }
   
-  if (!roomData.isGameStarted) {
+  if (!roomData.isGameStarted && !roomData.isGameOver) {
     return (
        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
         <Loader2 className="h-16 w-16 text-primary animate-spin mb-4" />
@@ -837,7 +837,7 @@ export default function GameRoomPage() {
   }
 
   const gameSettings: GameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
-  const currentPrizeFormat = gameSettings.prizeFormat;
+  const currentPrizeFormat = gameSettings.prizeFormat || 'Format 1';
   const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
   const prizeDistributionPercentages = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat] || {};
   const totalPrizePool = roomData.totalPrizePool || 0;
@@ -896,7 +896,7 @@ export default function GameRoomPage() {
               )}
               <ul className="space-y-2">
                 {prizesForFormat.map(prize => {
-                  const claimInfo = roomData.prizeStatus[prize];
+                  const claimInfo = roomData.prizeStatus[prize as PrizeType];
                   const isClaimed = claimInfo && claimInfo.claimedBy.length > 0;
                   
                   let prizeStatusText = "Not Claimed";
@@ -906,7 +906,7 @@ export default function GameRoomPage() {
                   }
                   
                   if (!isOnlineGame && roomData.settings.gameMode !== 'multiplayer') { // Bot games
-                     const rewardAmount = (roomData.settings.gameMode && OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS]) ? OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS][prize] : 0;
+                     const rewardAmount = (roomData.settings.gameMode && OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS]) ? OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS][prize as PrizeType] : 0;
                      return (
                          <li key={prize} className="flex flex-col text-sm bg-secondary/20 p-1.5 rounded-md">
                              <div className="flex justify-between items-center w-full">
@@ -923,7 +923,7 @@ export default function GameRoomPage() {
                       );
                   }
 
-                  const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[prize as PrizeType] || 0)) / 100;
+                  const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[currentPrizeFormat]?.[prize as PrizeType] || 0)) / 100;
                   const prizePerWinner = (claimInfo && claimInfo.claimedBy.length > 0) ? prizeAmount / claimInfo.claimedBy.length : 0;
                   
                   return (
@@ -1109,7 +1109,7 @@ export default function GameRoomPage() {
                                       }
                                       
                                       if (!isOnlineGame && roomData.settings.gameMode !== 'multiplayer') {
-                                          const rewardAmount = (roomData.settings.gameMode && OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS]) ? OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS][prize] : 0;
+                                          const rewardAmount = (roomData.settings.gameMode && OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS]) ? OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS][prize as PrizeType] : 0;
                                           return (
                                              <li key={prize} className="flex flex-col bg-background/50 p-1.5 rounded-md">
                                                 <div className="flex justify-between items-center w-full">
@@ -1129,7 +1129,7 @@ export default function GameRoomPage() {
                                       }
 
                                       // Logic for online/friends games (with money)
-                                      const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[prize as PrizeType] || 0)) / 100;
+                                      const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[currentPrizeFormat]?.[prize as PrizeType] || 0)) / 100;
                                       const winnerCount = claimInfo?.claimedBy.length ?? 0;
 
                                       let prizeValueText = formatCoins(prizeAmount);
