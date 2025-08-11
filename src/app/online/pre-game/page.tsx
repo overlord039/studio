@@ -31,6 +31,7 @@ function PreGameContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [countdown, setCountdown] = useState<number | null>(null);
     const navigatedRef = useRef(false);
+    const startGameCalledRef = useRef(false);
 
     const roomId = searchParams.get('roomId');
 
@@ -70,7 +71,9 @@ function PreGameContent() {
             } else {
                 setError("This room no longer exists.");
                 toast({title: "Room Closed", description: "The game room is no longer available.", variant: "destructive"});
-                router.push("/online");
+                if (!navigatedRef.current) {
+                    router.push("/online");
+                }
             }
             setIsLoading(false);
         });
@@ -86,25 +89,30 @@ function PreGameContent() {
             unsubPlayers();
         };
 
-    }, [roomId, playSound, router, toast, countdown]); // Added countdown to dependencies
+    }, [roomId, playSound, router, toast]);
 
     // This effect handles the local ticking of the countdown and triggers the game start
     useEffect(() => {
         if (countdown === null) return;
 
-        if (countdown <= 0 && !navigatedRef.current) {
-            navigatedRef.current = true; // Prevent multiple triggers
+        if (countdown <= 0 && !startGameCalledRef.current) {
+            startGameCalledRef.current = true;
             
-            // Tell the server to start the game
+            // Best-effort: tell server to start the game
             fetch(`/api/online/start-game`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ roomId }),
             }).catch((err) => {
                 console.error('Failed to trigger start-game, but listening for server state change:', err);
-                // The listener will still handle navigation if the server state changes anyway
+                // Fallback navigation if API fails, though listener should still catch it.
+                if (!navigatedRef.current) {
+                    setTimeout(() => {
+                        if (!navigatedRef.current) router.push(`/room/${roomId}/play`);
+                    }, 1500);
+                }
             });
-            return;
+            return; // Stop the interval
         }
 
         const interval = setInterval(() => {
@@ -222,3 +230,5 @@ export default function PreGamePage() {
         </div>
     );
 }
+
+    

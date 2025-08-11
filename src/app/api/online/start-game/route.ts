@@ -3,7 +3,7 @@
 
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase/config";
-import { doc, runTransaction } from "firebase/firestore";
+import { doc, runTransaction, serverTimestamp } from "firebase/firestore";
 
 export async function POST(request: Request) {
     if (!db) {
@@ -27,7 +27,10 @@ export async function POST(request: Request) {
             const roomData = roomSnap.data();
             // Idempotency: only transition from pre-game to in-progress
             if (roomData.status === 'pre-game') {
-                transaction.update(roomRef, { status: 'in-progress' });
+                transaction.update(roomRef, { 
+                    status: 'in-progress',
+                    gameStartTime: serverTimestamp() 
+                });
             }
         });
         
@@ -38,3 +41,5 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: false, message: (error as Error).message }, { status: 500 });
     }
 }
+
+    
