@@ -117,10 +117,11 @@ export interface FirestoreRoom {
     tier: OnlineGameTier;
     isPublic: boolean;
     createdAt: Timestamp;
-    timerEnd: Timestamp;
+    timerEnd?: Timestamp;
     preGameEndTime?: Timestamp;
     gameStartTime?: Timestamp;
 }
+
 
 export interface FirestorePlayer {
     id: string;

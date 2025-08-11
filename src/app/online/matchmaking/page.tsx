@@ -87,7 +87,7 @@ function MatchmakingContent() {
       setTier(tierParam);
       setTierConfig(config);
       setTickets(parseInt(ticketsParam, 10));
-      setCountdown(config.matchmakingTime);
+      setCountdown(config.matchmakingTime); // Start countdown immediately
     } else {
       setError('Invalid game tier or ticket count specified.');
     }
@@ -98,7 +98,7 @@ function MatchmakingContent() {
 
     playSound('start.wav');
     setIsFindingMatch(true);
-    setError(null); // Clear previous errors
+    setError(null);
 
     const player: Player = {
       id: currentUser.uid,
@@ -127,13 +127,14 @@ function MatchmakingContent() {
     }
   }, [currentUser, tier, tickets, playSound, updateUserStats, isFindingMatch]);
 
+  // Effect to initiate the match-finding process
   useEffect(() => {
     if (tier && currentUser && !roomId && !isFindingMatch && !error) {
       findMatch();
     }
   }, [tier, currentUser, roomId, findMatch, isFindingMatch, error]);
 
-  // Firestore listener
+  // Firestore listener for room and player updates
   useEffect(() => {
     if (!roomId || !db) return;
 
@@ -145,9 +146,9 @@ function MatchmakingContent() {
         const data = docSnap.data() as FirestoreRoom;
         setRoomData(data);
         
+        // Navigate as soon as the status changes to pre-game
         if (data.status === 'pre-game' && !gameStartTriggered) {
-          setGameStartTriggered(true); // Prevent multiple navigations
-          console.log("Room status is 'pre-game'. Navigating now.");
+          setGameStartTriggered(true);
           router.push(`/online/pre-game?roomId=${roomId}`);
         }
       } else {
@@ -165,7 +166,6 @@ function MatchmakingContent() {
       const playersList = querySnapshot.docs.map(
         (doc) => doc.data() as FirestorePlayer
       );
-      // Ensure players are sorted by join time
       playersList.sort((a, b) => {
           const timeA = a.joinedAt?.toMillis() || 0;
           const timeB = b.joinedAt?.toMillis() || 0;
@@ -180,7 +180,7 @@ function MatchmakingContent() {
     };
   }, [roomId, router, gameStartTriggered, toast]);
 
-  // Countdown timer effect
+  // Main countdown timer effect
   useEffect(() => {
     if (countdown === null) return;
     if (countdown > 0) {
@@ -189,10 +189,8 @@ function MatchmakingContent() {
         }, 1000);
         return () => clearInterval(timer);
     }
-  }, [countdown]);
-
-  // This effect is now robustly responsible for triggering the bot-fill when the timer expires
-  useEffect(() => {
+    
+    // Timer expired, trigger bot-fill if not already done
     if (countdown === 0 && roomId && !gameStartTriggered) {
       setGameStartTriggered(true); // Prevent multiple triggers
       console.log("Timer expired. Triggering fill-room API.");
@@ -206,6 +204,7 @@ function MatchmakingContent() {
         setError('There was an issue starting the game. Please try again.');
       });
     }
+
   }, [countdown, roomId, gameStartTriggered]);
 
 

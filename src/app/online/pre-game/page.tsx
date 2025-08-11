@@ -34,6 +34,31 @@ function PreGameContent() {
 
     const roomId = searchParams.get('roomId');
 
+    // Effect to start game when timer hits 0
+    useEffect(() => {
+        if (countdown === 0 && !gameStartTriggered && roomId) {
+            setGameStartTriggered(true);
+            const startGame = async () => {
+                try {
+                    const roomRef = doc(db, "rooms", roomId);
+                    await runTransaction(db, async (transaction) => {
+                        const roomDoc = await transaction.get(roomRef);
+                        if (roomDoc.exists() && roomDoc.data().status === 'pre-game') {
+                            transaction.update(roomRef, {
+                                status: 'in-progress',
+                                gameStartTime: Timestamp.now(),
+                            });
+                        }
+                    });
+                } catch (err) {
+                    console.error("Failed to start game from client trigger:", err);
+                }
+            };
+            startGame();
+        }
+    }, [countdown, gameStartTriggered, roomId]);
+    
+    // Main listener effect
     useEffect(() => {
         if (!roomId || !db) {
             setError("No room ID provided or DB not configured.");
@@ -51,19 +76,18 @@ function PreGameContent() {
                 const data = docSnap.data() as FirestoreRoom;
                 setRoomData(data);
                 
-                // Navigate as soon as the status changes
-                if (data.status === 'in-progress') {
-                    if (!gameStartTriggered) { // Prevent multiple toasts/pushes
-                        toast({ title: "Match Starting!", description: "Let's go!" });
-                        router.push(`/room/${roomId}/play`);
-                        setGameStartTriggered(true);
-                    }
+                // Navigate as soon as the status changes to in-progress
+                if (data.status === 'in-progress' && !gameStartTriggered) {
+                    setGameStartTriggered(true); // Prevent multiple navigations
+                    toast({ title: "Match Starting!", description: "Let's go!" });
+                    router.push(`/room/${roomId}/play`);
                 }
                 
                  if(data.preGameEndTime) {
                     const endTime = data.preGameEndTime.toMillis();
                     const now = Date.now();
-                    setCountdown(Math.max(0, Math.ceil((endTime - now)/1000)));
+                    const newCountdown = Math.max(0, Math.ceil((endTime - now)/1000));
+                    setCountdown(newCountdown);
                 }
 
             } else {
@@ -74,6 +98,7 @@ function PreGameContent() {
 
         const unsubPlayers = onSnapshot(playersRef, (querySnapshot) => {
             const playersList = querySnapshot.docs.map(doc => doc.data() as FirestorePlayer);
+            playersList.sort((a, b) => (a.joinedAt?.toMillis() || 0) - (b.joinedAt?.toMillis() || 0));
             setPlayers(playersList);
         });
 
@@ -84,52 +109,6 @@ function PreGameContent() {
 
     }, [roomId, playSound, router, toast, gameStartTriggered]);
 
-
-    // This effect is now robust. Any client can trigger the game start.
-    const triggerGameStart = useCallback(async () => {
-        if (!roomId || !db) return;
-        
-        try {
-            await runTransaction(db, async (transaction) => {
-                const roomRef = doc(db, "rooms", roomId);
-                const roomDoc = await transaction.get(roomRef);
-                // Only proceed if the room is still in the pre-game state.
-                if (roomDoc.exists() && roomDoc.data().status === 'pre-game') {
-                    transaction.update(roomRef, {
-                        status: 'in-progress',
-                        gameStartTime: Timestamp.now()
-                    });
-                }
-            });
-        } catch (err) {
-            console.error("Failed to start game from pre-game:", err);
-            // Don't show an error to the user, as another client likely succeeded.
-            // The onSnapshot listener will handle navigation.
-        }
-    }, [roomId]);
-
-
-    useEffect(() => {
-        let timer: NodeJS.Timeout;
-        if (roomData?.status === 'pre-game' && roomData.preGameEndTime) {
-            const updateCountdown = () => {
-                const endTime = roomData.preGameEndTime.toMillis();
-                const now = Date.now();
-                const newCountdown = Math.max(0, Math.ceil((endTime - now) / 1000));
-                setCountdown(newCountdown);
-
-                if (newCountdown <= 0 && !gameStartTriggered) {
-                    setGameStartTriggered(true);
-                    triggerGameStart();
-                }
-            };
-            updateCountdown();
-            timer = setInterval(updateCountdown, 1000);
-        }
-        
-        return () => clearInterval(timer);
-
-    }, [roomData, triggerGameStart, gameStartTriggered]);
     
     if (isLoading || !currentUser) {
         return <Loader2 className="h-8 w-8 animate-spin text-white" />;

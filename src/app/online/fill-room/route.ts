@@ -50,17 +50,18 @@ export async function POST(request: NextRequest) {
 
       const roomData = roomSnap.data() as FirestoreRoom;
 
-      // --- Safety Check ---
+      // --- Idempotency Check ---
+      // If the room is not in 'waiting' status, it means it has already been processed.
       if (roomData.status !== 'waiting') {
         console.log(`Fill-room for room ${roomId} already triggered or not applicable. Current status: ${roomData.status}`);
-        return; // Gracefully exit if already processed
+        return; 
       }
 
       const playersCollectionRef = collection(db, 'rooms', roomId, 'players');
-      const currentHumanCount = roomData.humanCount || 0;
+      const humanCount = roomData.humanCount || 0;
 
       // --- Accurately Calculate Bots Needed ---
-      const botsNeeded = roomData.settings.lobbySize - currentHumanCount;
+      const botsNeeded = roomData.settings.lobbySize - humanCount;
       
       // --- Add Bots ---
       if (botsNeeded > 0) {
@@ -68,12 +69,11 @@ export async function POST(request: NextRequest) {
         for (let i = 0; i < botsNeeded; i++) {
           const botId = `bot_${Date.now()}_${i}`;
           const botRef = doc(playersCollectionRef, botId);
-          // Set bot data within the transaction
           transaction.set(botRef, {
             id: botId,
             name: namePool[i % namePool.length],
             type: 'bot',
-            tickets: 1 + Math.floor(Math.random() * 4),
+            tickets: 1 + Math.floor(Math.random() * 4), // Bots get random tickets
             joinedAt: serverTimestamp(),
           });
         }
@@ -82,8 +82,8 @@ export async function POST(request: NextRequest) {
       // --- Update Room Status (Critical Change) ---
       transaction.update(roomRef, {
         status: 'pre-game',
-        preGameEndTime: Timestamp.fromMillis(Date.now() + 5000), // 5 second countdown
-        playersCount: roomData.settings.lobbySize, // Final count is always the lobby size
+        preGameEndTime: Timestamp.fromMillis(Date.now() + 5000), // 5 second pre-game countdown
+        playersCount: roomData.humanCount + botsNeeded, // Final player count
       });
     });
 
