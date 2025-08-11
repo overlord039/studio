@@ -308,54 +308,49 @@ export default function GameRoomPage() {
             return;
         }
         
-        const firestoreData = docSnap.data() as FirestoreRoom;
+        const firestoreData = docSnap.data() as FirestoreRoom & { calledNumbers?: number[], currentNumber?: number, prizeStatus?: any };
         
-        // Fetch players to get tickets for the current user
         const playersSnap = await getDocs(playersColRef);
         const playersList = playersSnap.docs.map(d => d.data() as FirestorePlayer);
         setOnlinePlayers(playersList);
 
         const me = playersList.find(p => p.id === currentUser?.uid);
         
-        setMyTickets(prevTickets => {
-            if (me && (prevTickets.length === 0 && me.tickets > 0)) {
-                return generateMultipleUniqueTickets(me.tickets);
-            }
-            return prevTickets;
-        });
+        if (me && me.tickets > 0 && myTickets.length === 0) {
+            setMyTickets(generateMultipleUniqueTickets(me.tickets));
+        }
 
-        // Synthetic Room object for UI
-        setRoomData(prevData => {
-            const isGameActive = firestoreData.status === 'in-progress';
-            const syntheticRoom: Room = {
-                id: firestoreData.id,
-                host: firestoreData.host,
-                players: playersList.map(p => ({
-                    id: p.id,
-                    name: p.name,
-                    isBot: p.type === 'bot',
-                    isHost: p.id === firestoreData.host.id,
-                    tickets: [], // tickets are handled separately
-                    confirmedTicketCost: (firestoreData.settings.ticketPrice || 0) * p.tickets,
-                })),
-                settings: firestoreData.settings || DEFAULT_GAME_SETTINGS,
-                createdAt: firestoreData.createdAt.toDate(),
-                isGameStarted: isGameActive,
-                isGameOver: firestoreData.status === 'finished',
-                currentNumber: (firestoreData as any).currentNumber || null,
-                calledNumbers: (firestoreData as any).calledNumbers || [],
-                numberPool: [],
-                prizeStatus: (firestoreData as any).prizeStatus || initializePrizeStatus(firestoreData.settings),
-                totalPrizePool: (firestoreData.settings.ticketPrice || 0) * playersList.reduce((acc, p) => acc + p.tickets, 0)
-            };
-            return syntheticRoom;
-        });
+        const isGameActive = firestoreData.status === 'in-progress';
+        const isGameOver = firestoreData.status === 'finished';
+
+        const syntheticRoom: Room = {
+            id: firestoreData.id,
+            host: firestoreData.host,
+            players: playersList.map(p => ({
+                id: p.id,
+                name: p.name,
+                isBot: p.type === 'bot',
+                isHost: p.id === firestoreData.host.id,
+                tickets: [], 
+                confirmedTicketCost: (firestoreData.settings.ticketPrice || 0) * p.tickets,
+            })),
+            settings: firestoreData.settings || DEFAULT_GAME_SETTINGS,
+            createdAt: firestoreData.createdAt.toDate(),
+            isGameStarted: isGameActive || isGameOver,
+            isGameOver: isGameOver,
+            currentNumber: firestoreData.currentNumber || null,
+            calledNumbers: firestoreData.calledNumbers || [],
+            numberPool: [],
+            prizeStatus: firestoreData.prizeStatus || initializePrizeStatus(firestoreData.settings),
+            totalPrizePool: (firestoreData.settings.ticketPrice || 0) * playersList.reduce((acc, p) => acc + p.tickets, 0)
+        };
+        setRoomData(syntheticRoom);
         setIsLoading(false);
     });
 
     return () => unsubRoom();
 
-}, [isOnlineGame, roomId, currentUser, db]);
+}, [isOnlineGame, roomId, currentUser, db, myTickets.length]);
 
 
   // This effect runs ONCE when the game is over to trigger the stat update.
@@ -398,8 +393,8 @@ export default function GameRoomPage() {
             prizesForFormat.forEach(prize => {
                 const claimInfo = roomData.prizeStatus[prize as PrizeType];
                 if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
-                    const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[currentPrizeFormat]?.[prize as PrizeType] || 0)) / 100;
-                    const prizePerWinner = prizeAmount / claimInfo.claimedBy.length;
+                    const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[prize as PrizeType] || 0)) / 100;
+                    const prizePerWinner = claimInfo.claimedBy.length > 0 ? prizeAmount / claimInfo.claimedBy.length : prizeAmount;
                     calculatedWinnings += prizePerWinner;
                 }
             });
@@ -511,15 +506,14 @@ export default function GameRoomPage() {
     const pollInterval = isOnlineGame ? 5000 : (isManualMode && !isHost ? 7000 : 5000);
 
     const intervalId = setInterval(() => {
-      if (!document.hidden) { 
-        if (isOnlineGame && roomData?.isGameStarted) {
-            // For online games, trigger the number call
+      if (!document.hidden && roomDataRef.current && roomDataRef.current.isGameStarted && !roomDataRef.current.isGameOver) { 
+        if (isOnlineGame) {
             fetch(`/api/online/call-number`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ roomId }),
             }).catch(err => console.warn("Failed to trigger online number call:", err));
-        } else if (!isOnlineGame) {
+        } else {
             fetchGameDetails(false);
         }
       }
@@ -626,48 +620,25 @@ export default function GameRoomPage() {
         });
         return;
     }
+
+    const endpoint = isOnlineGame ? `/api/online/claim-prize` : `/api/rooms/${roomId}/claim-prize`;
     
     try {
-      const response = await fetch(`/api/rooms/${roomId}/claim-prize`, {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId: currentUser.uid, prizeType, ticketIndex: winningTicketIndex }),
+        body: JSON.stringify({ roomId, playerId: currentUser.uid, prizeType, ticketIndex: winningTicketIndex }),
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        playSound('win.wav');
-        const updatedRoom: Room = result;
-        setRoomData(updatedRoom); 
-        previousPrizeStatusRef.current = updatedRoom.prizeStatus;
-
-        const claimStatus = updatedRoom.prizeStatus[prizeType];
-        
-        let toastMessageAlert = `Your claim for ${prizeType} has been submitted for validation.`;
-        if (claimStatus?.claimedBy.some(c => c.id === currentUser.uid)) {
-            toastMessageAlert = `You successfully claimed ${prizeType}!`;
-        }
-
-        if (updatedRoom.isGameOver) {
-          toastMessageAlert = `You claimed Full House! Game Over.`
-        }
-
-        toast({
-            title: "Claim Processed!",
-            description: toastMessageAlert,
-            className: (toastMessageAlert.includes("Bogey") || toastMessageAlert.includes("Invalid") || toastMessageAlert.includes("Failed")) ? "bg-destructive" : "bg-green-500 text-white"
-        });
+         if (!isOnlineGame) {
+            setRoomData(result as Room); 
+            previousPrizeStatusRef.current = (result as Room).prizeStatus;
+         }
       } else {
-        const errorMessage = result.message || `Failed to claim ${prizeType}.`;
-        if (errorMessage.toLowerCase().includes('bogey')) {
-          playSound('error.wav');
-        }
-        toast({
-            title: `Claim for ${prizeType} Failed`,
-            description: errorMessage,
-            variant: "destructive"
-        });
+        throw new Error(result.message || `Failed to claim ${prizeType}.`);
       }
     } catch (err) {
       console.error(`Error claiming ${prizeType}:`, err);
@@ -717,7 +688,6 @@ export default function GameRoomPage() {
             throw new Error(data.message || `Failed to switch to ${newMode} mode.`);
         }
         setRoomData(data);
-        // Do not toast here. Let the useEffect handle it for all players.
     } catch (error) {
         toast({
             title: "Error Switching Mode",
@@ -923,7 +893,7 @@ export default function GameRoomPage() {
                       );
                   }
 
-                  const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[currentPrizeFormat]?.[prize as PrizeType] || 0)) / 100;
+                  const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[prize as PrizeType] || 0)) / 100;
                   const prizePerWinner = (claimInfo && claimInfo.claimedBy.length > 0) ? prizeAmount / claimInfo.claimedBy.length : 0;
                   
                   return (
@@ -1128,8 +1098,7 @@ export default function GameRoomPage() {
                                           );
                                       }
 
-                                      // Logic for online/friends games (with money)
-                                      const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[currentPrizeFormat]?.[prize as PrizeType] || 0)) / 100;
+                                      const prizeAmount = (totalPrizePool * (prizeDistributionPercentages[prize as PrizeType] || 0)) / 100;
                                       const winnerCount = claimInfo?.claimedBy.length ?? 0;
 
                                       let prizeValueText = formatCoins(prizeAmount);

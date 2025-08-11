@@ -1,4 +1,5 @@
 
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { claimPrizeStore, getRoomStateForClient } from '@/lib/server/game-store';
 import type { PrizeType } from '@/types';
@@ -13,13 +14,14 @@ export async function POST(
     const { playerId, prizeType, ticketIndex } = (await request.json()) as { 
       playerId: string; 
       prizeType: PrizeType; 
-      ticketIndex: number; // Index of the ticket on which the prize is claimed
+      ticketIndex: number; 
     };
 
     if (!playerId || !prizeType || typeof ticketIndex !== 'number') {
       return NextResponse.json({ message: 'Player ID, prize type, and ticket index are required' }, { status: 400 });
     }
     
+    // This route should only handle non-online games which use the in-memory store
     const result = claimPrizeStore(roomId, playerId, prizeType, ticketIndex);
 
     if (result && 'error' in result) {
