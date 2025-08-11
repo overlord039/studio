@@ -144,6 +144,7 @@ function MatchmakingContent() {
       if (docSnap.exists()) {
         const data = docSnap.data() as FirestoreRoom;
         setRoomData(data);
+        // Navigation is now handled by this listener watching the status change.
         if (data.status === 'pre-game' && !gameStartTriggered) {
           setGameStartTriggered(true);
           // Add a small delay to allow UI to update with final player list
@@ -160,7 +161,12 @@ function MatchmakingContent() {
       const playersList = querySnapshot.docs.map(
         (doc) => doc.data() as FirestorePlayer
       );
-      playersList.sort((a, b) => a.joinedAt.toMillis() - b.joinedAt.toMillis());
+      // Ensure players are sorted by join time
+      playersList.sort((a, b) => {
+          const timeA = a.joinedAt?.toMillis() || 0;
+          const timeB = b.joinedAt?.toMillis() || 0;
+          return timeA - timeB;
+      });
       setPlayers(playersList);
     });
 
@@ -170,40 +176,34 @@ function MatchmakingContent() {
     };
   }, [roomId, router, gameStartTriggered]);
 
-  // This effect is responsible for triggering the bot-fill when the timer expires
-  useEffect(() => {
-    if (
-      roomData?.status === 'waiting' &&
-      roomData.timerEnd &&
-      !gameStartTriggered
-    ) {
-      const timerEndMs = roomData.timerEnd.toMillis();
-      const timeNowMs = Date.now();
-
-      if (timeNowMs >= timerEndMs - 500) {
-        setGameStartTriggered(true); // Prevent multiple triggers
-        fetch(`/api/online/fill-room`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomId: roomData.id }),
-        }).catch((err) => {
-          console.error('Failed to trigger fill-room:', err);
-          setGameStartTriggered(false); // Allow retry if fetch fails
-        });
-      }
-    }
-  }, [roomData, gameStartTriggered]);
-
   // Countdown timer effect
   useEffect(() => {
+    if (countdown === null) return;
+    
     const timer = setInterval(() => {
-      if (countdown !== null && countdown > 0) {
-        setCountdown(c => (c !== null ? c - 1 : null));
-      }
+      setCountdown(c => (c !== null && c > 0 ? c - 1 : 0));
     }, 1000);
 
     return () => clearInterval(timer);
   }, [countdown]);
+
+  // This effect is now robustly responsible for triggering the bot-fill when the timer expires
+  useEffect(() => {
+    if (countdown === 0 && roomId && !gameStartTriggered) {
+      setGameStartTriggered(true); // Prevent multiple triggers
+      
+      fetch(`/api/online/fill-room`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId }),
+      }).catch((err) => {
+        console.error('Failed to trigger fill-room:', err);
+        // If the fetch fails, another client will likely succeed.
+        // The Firestore listener will handle navigation regardless.
+      });
+    }
+  }, [countdown, roomId, gameStartTriggered]);
+
 
   const handleCancel = async () => {
     // Implement cancellation logic if needed (e.g., removing player from room)
@@ -231,12 +231,9 @@ function MatchmakingContent() {
     );
   }
 
-  const displayCountdown =
-    countdown !== null ? countdown : tierConfig.matchmakingTime;
+  const displayCountdown = countdown !== null ? countdown : tierConfig.matchmakingTime;
   const progressPercentage = roomData
-    ? ((tierConfig.matchmakingTime - displayCountdown) /
-        tierConfig.matchmakingTime) *
-      100
+    ? ((tierConfig.matchmakingTime - displayCountdown) / tierConfig.matchmakingTime) * 100
     : 0;
   const playersFound = players.length;
 
