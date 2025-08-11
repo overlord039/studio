@@ -3,7 +3,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { db } from '@/lib/firebase/config';
-import { doc, runTransaction } from 'firebase/firestore';
+import { doc, runTransaction, getDoc } from 'firebase/firestore';
 import type { FirestoreRoom, FirestorePlayer, PrizeType } from '@/types';
 import { generateMultipleUniqueTickets } from '@/lib/housie'; // We need this to check against generated tickets
 
