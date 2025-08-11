@@ -76,7 +76,7 @@ function MatchmakingContent() {
   const [players, setPlayers] = useState<FirestorePlayer[]>([]);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [gameStartTriggered, setGameStartTriggered] = useState(false);
+  const [navigationTriggered, setNavigationTriggered] = useState(false);
 
   // Set initial tier/ticket config from URL params
   useEffect(() => {
@@ -122,9 +122,9 @@ function MatchmakingContent() {
       setRoomId(responseData.roomId);
     } catch (err) {
       setError((err as Error).message);
-    } finally {
       setIsFindingMatch(false);
     }
+    // Note: isFindingMatch remains true until the process is complete or fails
   }, [currentUser, tier, tickets, playSound, updateUserStats, isFindingMatch]);
 
   // Effect to initiate the match-finding process
@@ -146,19 +146,23 @@ function MatchmakingContent() {
         const data = docSnap.data() as FirestoreRoom;
         setRoomData(data);
         
-        // Navigate as soon as the status changes to pre-game
-        if (data.status === 'pre-game' && !gameStartTriggered) {
-          setGameStartTriggered(true);
+        // SERVER-AUTHORITATIVE NAVIGATION TRIGGER
+        if (data.status === 'pre-game' && !navigationTriggered) {
+          setNavigationTriggered(true); // Prevent multiple navigations
+          toast({ title: "Match Found!", description: "Preparing the game..." });
           router.push(`/online/pre-game?roomId=${roomId}`);
         }
+
       } else {
         setError('Room was deleted or could not be found.');
-        toast({
-          title: 'Matchmaking Canceled',
-          description: 'The room you were in is no longer available.',
-          variant: 'destructive',
-        });
-        router.push('/online');
+        if (!navigationTriggered) {
+          toast({
+            title: 'Matchmaking Canceled',
+            description: 'The room you were in is no longer available.',
+            variant: 'destructive',
+          });
+          router.push('/online');
+        }
       }
     });
 
@@ -178,11 +182,12 @@ function MatchmakingContent() {
       unsubRoom();
       unsubPlayers();
     };
-  }, [roomId, router, gameStartTriggered, toast]);
+  }, [roomId, router, navigationTriggered, toast]);
 
   // Main countdown timer effect
   useEffect(() => {
-    if (countdown === null) return;
+    if (countdown === null || countdown < 0) return;
+
     if (countdown > 0) {
         const timer = setInterval(() => {
             setCountdown(c => (c !== null ? c - 1 : 0));
@@ -191,21 +196,20 @@ function MatchmakingContent() {
     }
     
     // Timer expired, trigger bot-fill if not already done
-    if (countdown === 0 && roomId && !gameStartTriggered) {
-      setGameStartTriggered(true); // Prevent multiple triggers
-      console.log("Timer expired. Triggering fill-room API.");
+    if (countdown === 0 && roomId && !navigationTriggered) {
+      console.log("Client timer expired. Triggering fill-room API.");
       
       fetch(`/api/online/fill-room`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roomId }),
       }).catch((err) => {
-        console.error('Failed to trigger fill-room:', err);
-        setError('There was an issue starting the game. Please try again.');
+        // The listener will handle navigation even if this fails, but we should log it.
+        console.error('Failed to trigger fill-room, but listening for server state change:', err);
       });
     }
 
-  }, [countdown, roomId, gameStartTriggered]);
+  }, [countdown, roomId, navigationTriggered]);
 
 
   const handleCancel = async () => {
@@ -213,7 +217,7 @@ function MatchmakingContent() {
     router.push('/online');
   };
 
-  if (isFindingMatch || !currentUser || !tierConfig) {
+  if (!currentUser || !tierConfig) {
     return <Loader2 className="h-8 w-8 animate-spin text-white" />;
   }
 
@@ -234,7 +238,7 @@ function MatchmakingContent() {
     );
   }
 
-  const displayCountdown = countdown !== null ? countdown : tierConfig.matchmakingTime;
+  const displayCountdown = countdown !== null ? Math.max(0, countdown) : tierConfig.matchmakingTime;
   const progressPercentage = roomData
     ? ((tierConfig.matchmakingTime - displayCountdown) / tierConfig.matchmakingTime) * 100
     : 0;
