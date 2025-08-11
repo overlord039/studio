@@ -144,16 +144,20 @@ function MatchmakingContent() {
       if (docSnap.exists()) {
         const data = docSnap.data() as FirestoreRoom;
         setRoomData(data);
-        // Navigation is now handled by this listener watching the status change.
+        
         if (data.status === 'pre-game' && !gameStartTriggered) {
-          setGameStartTriggered(true);
-          // Add a small delay to allow UI to update with final player list
-          setTimeout(() => {
-            router.push(`/online/pre-game?roomId=${roomId}`);
-          }, 1500); 
+          setGameStartTriggered(true); // Prevent multiple navigations
+          console.log("Room status is 'pre-game'. Navigating now.");
+          router.push(`/online/pre-game?roomId=${roomId}`);
         }
       } else {
         setError('Room was deleted or could not be found.');
+        toast({
+          title: 'Matchmaking Canceled',
+          description: 'The room you were in is no longer available.',
+          variant: 'destructive',
+        });
+        router.push('/online');
       }
     });
 
@@ -174,23 +178,24 @@ function MatchmakingContent() {
       unsubRoom();
       unsubPlayers();
     };
-  }, [roomId, router, gameStartTriggered]);
+  }, [roomId, router, gameStartTriggered, toast]);
 
   // Countdown timer effect
   useEffect(() => {
     if (countdown === null) return;
-    
-    const timer = setInterval(() => {
-      setCountdown(c => (c !== null && c > 0 ? c - 1 : 0));
-    }, 1000);
-
-    return () => clearInterval(timer);
+    if (countdown > 0) {
+        const timer = setInterval(() => {
+            setCountdown(c => (c !== null ? c - 1 : 0));
+        }, 1000);
+        return () => clearInterval(timer);
+    }
   }, [countdown]);
 
   // This effect is now robustly responsible for triggering the bot-fill when the timer expires
   useEffect(() => {
     if (countdown === 0 && roomId && !gameStartTriggered) {
       setGameStartTriggered(true); // Prevent multiple triggers
+      console.log("Timer expired. Triggering fill-room API.");
       
       fetch(`/api/online/fill-room`, {
         method: 'POST',
@@ -198,8 +203,7 @@ function MatchmakingContent() {
         body: JSON.stringify({ roomId }),
       }).catch((err) => {
         console.error('Failed to trigger fill-room:', err);
-        // If the fetch fails, another client will likely succeed.
-        // The Firestore listener will handle navigation regardless.
+        setError('There was an issue starting the game. Please try again.');
       });
     }
   }, [countdown, roomId, gameStartTriggered]);
