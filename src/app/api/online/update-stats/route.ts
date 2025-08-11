@@ -3,7 +3,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { db } from '@/lib/firebase/config';
-import { doc, getDoc, runTransaction, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, runTransaction, collection, getDocs, increment } from 'firebase/firestore';
 import type { FirestoreRoom, FirestorePlayer, PrizeType } from '@/types';
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES } from '@/lib/constants';
 
@@ -68,23 +68,27 @@ export async function POST(request: NextRequest) {
 
         const prizeFormat = roomData.settings.prizeFormat || 'Format 1';
         const prizesForFormat = PRIZE_DEFINITIONS[prizeFormat] || [];
+        
+        const statsUpdate: { [key: string]: any } = {
+            'stats.matchesPlayed': increment(1),
+            'stats.lastGameProcessed': roomId, // Mark this game as processed
+        };
 
         prizesForFormat.forEach(prize => {
             const claimInfo = roomData.prizeStatus?.[prize as PrizeType];
             if (claimInfo && claimInfo.claimedBy?.some((c: {id: string}) => c.id === userId)) {
+                // Increment prize count
+                statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
+                
+                // Calculate winnings
                 const prizeAmount = (totalPrizePool * (PRIZE_DISTRIBUTION_PERCENTAGES[prizeFormat]?.[prize as PrizeType] || 0)) / 100;
                 const prizePerWinner = claimInfo.claimedBy.length > 0 ? prizeAmount / claimInfo.claimedBy.length : prizeAmount;
                 totalWinnings += prizePerWinner;
             }
         });
 
-        const statsUpdate: { [key: string]: any } = {
-            'stats.matchesPlayed': playerSnap.data().stats.matchesPlayed + 1,
-            'stats.lastGameProcessed': roomId, // Mark this game as processed
-        };
-
         if (totalWinnings > 0) {
-            statsUpdate['stats.coins'] = playerSnap.data().stats.coins + Math.round(totalWinnings);
+            statsUpdate['stats.coins'] = increment(Math.round(totalWinnings));
         }
         
         transaction.update(playerRef, statsUpdate);
