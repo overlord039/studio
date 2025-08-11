@@ -197,22 +197,13 @@ function MatchmakingContent() {
   // Countdown timer effect
   useEffect(() => {
     const timer = setInterval(() => {
-      // If we have accurate server time, use that
-      if (roomData?.timerEnd) {
-        const timerEndMs = roomData.timerEnd.toMillis();
-        const newCountdown = Math.max(
-          0,
-          Math.round((timerEndMs - Date.now()) / 1000)
-        );
-        setCountdown(newCountdown);
-      } else if (countdown !== null && countdown > 0) {
-        // Otherwise, just decrement the client-side timer
+      if (countdown !== null && countdown > 0) {
         setCountdown(c => (c !== null ? c - 1 : null));
       }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [roomData?.timerEnd, countdown]);
+  }, [countdown]);
 
   const handleCancel = async () => {
     // Implement cancellation logic if needed (e.g., removing player from room)
