@@ -29,14 +29,14 @@ function PreGameContent() {
     const [players, setPlayers] = useState<FirestorePlayer[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [countdown, setCountdown] = useState(5);
+    const [countdown, setCountdown] = useState<number | null>(null);
     const [gameStartTriggered, setGameStartTriggered] = useState(false);
 
     const roomId = searchParams.get('roomId');
 
     // Effect to start game when timer hits 0
     useEffect(() => {
-        if (countdown === 0 && !gameStartTriggered && roomId) {
+        if (countdown === 0 && !gameStartTriggered && roomId && db) {
             setGameStartTriggered(true);
             const startGame = async () => {
                 try {
@@ -58,7 +58,7 @@ function PreGameContent() {
         }
     }, [countdown, gameStartTriggered, roomId]);
     
-    // Main listener effect
+    // Main listener effect for room data
     useEffect(() => {
         if (!roomId || !db) {
             setError("No room ID provided or DB not configured.");
@@ -78,12 +78,13 @@ function PreGameContent() {
                 
                 // Navigate as soon as the status changes to in-progress
                 if (data.status === 'in-progress' && !gameStartTriggered) {
-                    setGameStartTriggered(true); // Prevent multiple navigations
+                    setGameStartTriggered(true); 
                     toast({ title: "Match Starting!", description: "Let's go!" });
                     router.push(`/room/${roomId}/play`);
                 }
                 
-                 if(data.preGameEndTime) {
+                // Set the initial countdown value from Firestore
+                 if(data.preGameEndTime && countdown === null) {
                     const endTime = data.preGameEndTime.toMillis();
                     const now = Date.now();
                     const newCountdown = Math.max(0, Math.ceil((endTime - now)/1000));
@@ -107,8 +108,18 @@ function PreGameContent() {
             unsubPlayers();
         };
 
-    }, [roomId, playSound, router, toast, gameStartTriggered]);
+    }, [roomId, playSound, router, toast, gameStartTriggered, countdown]);
 
+    // Local tick-down effect for the countdown timer
+    useEffect(() => {
+        if (countdown === null || countdown <= 0) return;
+
+        const interval = setInterval(() => {
+            setCountdown(prev => (prev !== null && prev > 0 ? prev - 1 : 0));
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [countdown]);
     
     if (isLoading || !currentUser) {
         return <Loader2 className="h-8 w-8 animate-spin text-white" />;
