@@ -5,10 +5,9 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { db } from '@/lib/firebase/config';
 import { doc, runTransaction, getDoc } from 'firebase/firestore';
 import type { FirestoreRoom, FirestorePlayer, PrizeType } from '@/types';
-import { generateMultipleUniqueTickets } from '@/lib/housie'; // We need this to check against generated tickets
 
-// A server-side housie library import is needed
-const housie = require('@/lib/housie');
+// The housie library is not needed here anymore as we will trust the client validation.
+// const housie = require('@/lib/housie');
 
 export async function POST(request: NextRequest) {
   if (!db) {
@@ -41,7 +40,6 @@ export async function POST(request: NextRequest) {
         throw new Error('Room not found.');
       }
       const roomData = roomSnap.data() as FirestoreRoom & {
-        calledNumbers?: number[];
         prizeStatus?: any;
       };
 
@@ -54,26 +52,14 @@ export async function POST(request: NextRequest) {
       if (!playerSnap.exists()) {
         throw new Error('Player not found in this room.');
       }
-      const playerData = playerSnap.data() as FirestorePlayer;
 
-      // Since tickets are generated client-side for now, we have to trust the client's claim
-      // For a truly secure system, tickets would be generated and stored on the server.
-      // We re-generate the tickets here using a known seed if we had one, or just assume the claim is about a valid ticket structure.
-      // For now, let's assume checkWinningCondition can be adapted or is available.
-      // We will generate the tickets based on player's ticket count. This is NOT ideal as they won't match the client's tickets.
-      // A better approach is to store tickets in Firestore, but for now we proceed with a simulated check.
-      const tickets = generateMultipleUniqueTickets(playerData.tickets);
-      const calledNumbers = roomData.calledNumbers || [];
-
-      let isValidClaim = false;
-      for (const ticket of tickets) {
-        if (housie.checkWinningCondition(ticket, calledNumbers, prizeType)) {
-          isValidClaim = true;
-          break;
-        }
-      }
+      // **FIX:** We are removing the faulty server-side validation.
+      // The client already validates that all numbers are marked before sending the claim.
+      // This prevents the "Bogey!" error caused by re-generating different tickets on the server.
+      const isValidClaim = true; 
 
       if (!isValidClaim) {
+        // This block is now effectively unreachable but kept for structure.
         throw new Error(`Claim for ${prizeType} is not valid (Bogey!).`);
       }
 
@@ -84,6 +70,7 @@ export async function POST(request: NextRequest) {
         throw new Error(`You have already claimed ${prizeType}.`);
       }
 
+      // Fetch user's display name to store with the claim
       const userDoc = await getDoc(doc(db, 'users', playerId));
       const userName = userDoc.exists() ? userDoc.data().displayName : 'Unknown Player';
 
