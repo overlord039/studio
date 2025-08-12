@@ -429,34 +429,26 @@ export default function GameRoomPage() {
                 prizesWonByPlayer.push(prizeType as PrizeType);
             }
         }
+        
+        const prizeBasedGame = isOnlineGame || gameSettings.gameMode === 'multiplayer';
 
-        if (isOnlineGame) {
+        if (prizeBasedGame) {
             const totalPrizePool = roomData.totalPrizePool || 0;
             const finalPrizes = calculatePrizes(totalPrizePool, gameSettings);
             prizesWonByPlayer.forEach(prize => {
                 const claimInfo = roomData.prizeStatus[prize as PrizeType];
-                if(claimInfo) {
+                if (claimInfo) {
                     const prizeAmount = finalPrizes[prize as PrizeType] || 0;
                     const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.floor(prizeAmount / claimInfo.claimedBy.length) : 0;
                     calculatedWinnings += prizePerWinner;
                 }
             });
-        } else { // Bot or Friends game
+        } else { // Bot game
             const isBotGame = gameSettings.gameMode && ['easy', 'medium', 'hard'].includes(gameSettings.gameMode);
             if (isBotGame) {
                 calculatedWinnings += PARTICIPATION_REWARD;
                 prizesWonByPlayer.forEach(prize => {
                     calculatedWinnings += OFFLINE_COIN_REWARDS[gameSettings.gameMode as 'easy' | 'medium' | 'hard'][prize as PrizeType] || 0;
-                });
-            } else if (gameSettings.gameMode === 'multiplayer' && roomData.totalPrizePool) {
-                const finalPrizes = calculatePrizes(roomData.totalPrizePool, gameSettings);
-                 prizesWonByPlayer.forEach(prize => {
-                    const claimInfo = roomData.prizeStatus[prize as PrizeType];
-                    if (claimInfo) {
-                        const prizeAmount = finalPrizes[prize as PrizeType] || 0;
-                        const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.floor(prizeAmount / claimInfo.claimedBy.length) : 0;
-                        calculatedWinnings += prizePerWinner;
-                    }
                 });
             }
         }
@@ -491,7 +483,7 @@ export default function GameRoomPage() {
             });
         }
     }
-  }, [roomData?.isGameOver, currentUser, roomId, toast, updateUserStats, triggerAnimation, isOnlineGame]);
+  }, [roomData?.isGameOver, currentUser, roomId, toast, updateUserStats, triggerAnimation, isOnlineGame, roomData?.totalPrizePool, roomData?.settings]);
 
   // This effect loads marked numbers from localStorage on mount
   useEffect(() => {
@@ -1364,3 +1356,5 @@ export default function GameRoomPage() {
     </>
   );
 }
+
+    
