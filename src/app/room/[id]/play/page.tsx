@@ -133,7 +133,9 @@ function calculatePrizes(totalPool: number, prizeDefs: PrizeType[], distPercenta
     }
     
     // Full House gets the remainder to ensure the total matches the pool
-    calculatedPrizes[PRIZE_TYPES.FULL_HOUSE] = totalPool - sumOfPrizes;
+    if (prizeDefs.includes(PRIZE_TYPES.FULL_HOUSE)) {
+      calculatedPrizes[PRIZE_TYPES.FULL_HOUSE] = totalPool - sumOfPrizes;
+    }
 
     return calculatedPrizes;
 }
@@ -881,6 +883,7 @@ export default function GameRoomPage() {
   };
   
   const finalPrizes = calculatePrizes(totalPrizePool, prizesForFormat, prizeDistributionPercentages);
+  const hasPrizePool = roomData.settings.ticketPrice > 0;
 
   if (roomData.isGameOver) {
     let currentUserWinnings = coinsWonThisGame || 0;
@@ -919,7 +922,7 @@ export default function GameRoomPage() {
                 Final Prize Summary
             </h3>
             <div className="border rounded-md p-3">
-              {(isOnlineGame || roomData.settings.gameMode === 'multiplayer') && (
+              {(hasPrizePool) && (
               <div className="flex justify-between items-center text-lg font-bold mb-2 pb-2 border-b">
                 <span>Total Prize Pool:</span>
                 <div className="flex items-center gap-1">
@@ -939,7 +942,7 @@ export default function GameRoomPage() {
                     prizeStatusText = `Claimed by ${winnerNames}`;
                   }
                   
-                  if (!isOnlineGame && roomData.settings.gameMode !== 'multiplayer') { // Bot games
+                  if (!hasPrizePool) { // Bot games
                      const rewardAmount = (roomData.settings.gameMode && OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS]) ? OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS][prize as PrizeType] : 0;
                      return (
                          <li key={prize} className="flex flex-col text-sm bg-secondary/20 p-1.5 rounded-md">
@@ -978,7 +981,7 @@ export default function GameRoomPage() {
                      </li>
                   );
                 })}
-                {!isOnlineGame && roomData.settings.gameMode !== 'multiplayer' && (
+                {!hasPrizePool && (
                   <li className="flex flex-col text-sm bg-green-500/10 p-1.5 rounded-md border border-green-500/20 mt-2">
                       <div className="flex justify-between items-center w-full">
                           <span className="font-medium">Participation Reward</span>
@@ -1002,7 +1005,7 @@ export default function GameRoomPage() {
                         You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(currentUserWinnings)}!
                     </div>
                     <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
-                    {(isOnlineGame || roomData.settings.gameMode === 'multiplayer') && (
+                    {(hasPrizePool) && (
                         <p className="text-sm text-muted-foreground">You spent {formatCoins(totalCost)} and won {formatCoins(currentUserWinnings)}</p>
                     )}
                 </div>
@@ -1065,7 +1068,7 @@ export default function GameRoomPage() {
           <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
             <div className="flex-grow">
                <div className="flex items-center gap-2 mb-1">
-                  {roomData.settings.gameMode && roomData.settings.gameMode !== 'multiplayer' && roomData.settings.gameMode !== 'online' ? (
+                  {roomData.settings.gameMode && ['easy', 'medium', 'hard'].includes(roomData.settings.gameMode) ? (
                       <div className={cn(
                           "px-2 py-1 text-xs font-bold text-white rounded-md capitalize",
                           roomData.settings.gameMode === 'easy' && "bg-green-600",
@@ -1080,7 +1083,7 @@ export default function GameRoomPage() {
                       </div>
                   ) : (
                       <div className="text-white capitalize">
-                          Room ID: #{roomId}
+                          Friends Game: #{roomId}
                       </div>
                   )}
               </div>
@@ -1095,7 +1098,7 @@ export default function GameRoomPage() {
                             {gameSettings.lobbySize}
                         </div>
                     </div>
-                    {(isOnlineGame || roomData.settings.gameMode === 'multiplayer') && (
+                    {hasPrizePool && (
                         <div className="flex flex-col items-center">
                             <span className="text-xs opacity-80">Prize Pool</span>
                             <div className="font-bold flex items-center gap-1">
@@ -1122,7 +1125,7 @@ export default function GameRoomPage() {
                                   <Award className="mr-2 h-4 w-4 text-primary" />
                                   Prize Status
                               </CardTitle>
-                              {(isOnlineGame || roomData.settings.gameMode === 'multiplayer') && <div className="text-xs text-muted-foreground flex items-center gap-1">Total Pool: <Image src="/coin.png" alt="Coins" width={12} height={12} />{formatCoins(totalPrizePool)}</div>}
+                              {hasPrizePool && <div className="text-xs text-muted-foreground flex items-center gap-1">Total Pool: <Image src="/coin.png" alt="Coins" width={12} height={12} />{formatCoins(totalPrizePool)}</div>}
                           </CardHeader>
                           <CardContent className="p-3 pt-0">
                               {isLoading ? (
@@ -1142,7 +1145,7 @@ export default function GameRoomPage() {
                                           claimantText = `Claimed by ${claimantNames}`;
                                       }
                                       
-                                      if (!isOnlineGame && roomData.settings.gameMode !== 'multiplayer') {
+                                      if (!hasPrizePool) {
                                           const rewardAmount = (roomData.settings.gameMode && OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS]) ? OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS][prize as PrizeType] : 0;
                                           return (
                                              <li key={prize} className="flex flex-col bg-background/50 p-1.5 rounded-md">
@@ -1213,7 +1216,7 @@ export default function GameRoomPage() {
                                           </span>
                                           <div className="text-muted-foreground flex items-center gap-1">
                                             <span>{playerTickets} {ticketsText(playerTickets)}</span>
-                                            {(isOnlineGame || roomData.settings.gameMode === 'multiplayer') && 
+                                            {hasPrizePool && 
                                               <div className="flex items-center gap-0.5">
                                                 (<Image src="/coin.png" alt="Coins" width={12} height={12} />{formatCoins(ticketCost)})
                                               </div>
@@ -1260,8 +1263,8 @@ export default function GameRoomPage() {
                               <AlertDialogHeader>
                                   <AlertDialogTitle>Are you sure you want to leave the game?</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    {roomData.settings.gameMode === 'online'
-                                        ? "Leaving an online match will forfeit your entry fee. Are you sure?"
+                                    {hasPrizePool && !roomData.isGameOver
+                                        ? "Leaving will forfeit your entry fee. Are you sure?"
                                         : "This will remove you from the current game session. If you are the host, a new host will be assigned."
                                     }
                                   </AlertDialogDescription>
@@ -1386,4 +1389,5 @@ export default function GameRoomPage() {
     </>
   );
 }
+
 
