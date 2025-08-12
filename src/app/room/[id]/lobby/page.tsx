@@ -55,6 +55,33 @@ const LobbySkeleton = () => (
     </div>
 );
 
+function calculatePrizes(totalPool: number, settings: GameSettings): Record<PrizeType, number> {
+    const prizeFormat = settings.prizeFormat || 'Format 1';
+    const prizeDefs = PRIZE_DEFINITIONS[prizeFormat] || [];
+    const distPercentages = PRIZE_DISTRIBUTION_PERCENTAGES[prizeFormat] || {};
+    
+    const calculatedPrizes: Record<PrizeType, number> = {} as any;
+    let sumOfPrizes = 0;
+    
+    // Calculate all prizes except Full House
+    for (const prize of prizeDefs) {
+        if (prize !== 'Full House') {
+            const percentage = distPercentages[prize] || 0;
+            const amount = Math.floor((totalPool * percentage) / 100);
+            calculatedPrizes[prize] = amount;
+            sumOfPrizes += amount;
+        }
+    }
+    
+    // Full House gets the remainder to ensure the total matches the pool
+    if (prizeDefs.includes('Full House')) {
+      calculatedPrizes['Full House'] = totalPool - sumOfPrizes;
+    }
+
+    return calculatedPrizes;
+}
+
+
 export default function LobbyPage() {
   const { toast } = useToast();
   const router = useRouter();
@@ -437,10 +464,11 @@ export default function LobbyPage() {
 
   const currentPrizeFormat = gameSettings.prizeFormat;
   const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
-  const prizeDistribution = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat] || {};
   
   const totalTicketsBoughtByPlayers = roomData.players.reduce((sum, player) => sum + (player.tickets?.length || 0), 0);
   const currentTotalPrizePool = gameSettings.ticketPrice * totalTicketsBoughtByPlayers;
+  const finalPrizes = calculatePrizes(currentTotalPrizePool, gameSettings);
+
   const minPlayersToStart = gameSettings.gameMode !== 'multiplayer' ? 1 : MIN_LOBBY_SIZE;
 
   const showTicketSelectionUI = currentUser && !roomData.isGameStarted &&
@@ -674,8 +702,7 @@ export default function LobbyPage() {
                        (Based on {totalTicketsBoughtByPlayers} {ticketsText(totalTicketsBoughtByPlayers)} confirmed by players for this round)
                      </p>
                     {prizesForFormat.map((prizeName) => {
-                      const percentage = prizeDistribution[prizeName as PrizeType] || 0;
-                      const prizeAmount = (currentTotalPrizePool * percentage) / 100;
+                      const prizeAmount = finalPrizes[prizeName as PrizeType] || 0;
                       return (
                         <div key={prizeName} className="flex justify-between items-center text-xs md:text-sm">
                           <span>{prizeName}:</span>

@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
                 statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
                 
                 const prizeAmount = finalPrizes[prize as PrizeType] || 0;
-                const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.floor(prizeAmount / claimInfo.claimedBy.length) : Math.floor(prizeAmount);
+                const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.floor(prizeAmount / claimInfo.claimedBy.length) : 0;
                 totalWinnings += prizePerWinner;
             }
         });

@@ -18,6 +18,33 @@ import { db } from '@/lib/firebase/config';
 import { doc, collection, onSnapshot, runTransaction, Timestamp, getDoc } from 'firebase/firestore';
 
 
+function calculatePrizes(totalPool: number, settings: GameSettings): Record<PrizeType, number> {
+    const prizeFormat = settings.prizeFormat || 'Format 1';
+    const prizeDefs = PRIZE_DEFINITIONS[prizeFormat] || [];
+    const distPercentages = PRIZE_DISTRIBUTION_PERCENTAGES[prizeFormat] || {};
+    
+    const calculatedPrizes: Record<PrizeType, number> = {} as any;
+    let sumOfPrizes = 0;
+    
+    // Calculate all prizes except Full House
+    for (const prize of prizeDefs) {
+        if (prize !== 'Full House') {
+            const percentage = distPercentages[prize] || 0;
+            const amount = Math.floor((totalPool * percentage) / 100);
+            calculatedPrizes[prize] = amount;
+            sumOfPrizes += amount;
+        }
+    }
+    
+    // Full House gets the remainder to ensure the total matches the pool
+    if (prizeDefs.includes('Full House')) {
+      calculatedPrizes['Full House'] = totalPool - sumOfPrizes;
+    }
+
+    return calculatedPrizes;
+}
+
+
 function PreGameContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -146,13 +173,13 @@ function PreGameContent() {
     if (!roomData) return null;
 
     const gameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
-    const currentPrizeFormat = gameSettings.prizeFormat || 'Format 1';
-    const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
-    const prizeDistribution = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat] || {};
     
     const totalTicketsSold = players.reduce((acc, p) => acc + (p.tickets || 1), 0);
     const totalPrizePool = roomData.settings.ticketPrice * totalTicketsSold;
     
+    const finalPrizes = calculatePrizes(totalPrizePool, gameSettings);
+    const prizesForFormat = PRIZE_DEFINITIONS[gameSettings.prizeFormat || 'Format 1'] || [];
+
     const formatCoins = (amount: number) => new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 
     return (
@@ -179,11 +206,10 @@ function PreGameContent() {
                             <Gift className="mr-2 h-4 w-4"/> Prizes
                         </h3>
                         {prizesForFormat.map(prizeName => {
-                            const percentage = prizeDistribution[prizeName as PrizeType] || 0;
-                            const prizeAmount = (totalPrizePool * percentage) / 100;
+                            const prizeAmount = finalPrizes[prizeName as PrizeType] || 0;
                             return (
                                 <div key={prizeName} className="flex justify-between items-center text-xs p-1.5 bg-secondary/20 rounded-md">
-                                    <span className="font-semibold text-secondary-foreground">{prizeName} ({percentage}%)</span>
+                                    <span className="font-semibold text-secondary-foreground">{prizeName}</span>
                                     <div className="font-bold flex items-center gap-1">
                                         <Image src="/coin.png" alt="Coins" width={14} height={14} />
                                         <span>{formatCoins(prizeAmount)}</span>
@@ -230,5 +256,3 @@ export default function PreGamePage() {
         </div>
     );
 }
-
-    

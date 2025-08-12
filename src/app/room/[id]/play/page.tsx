@@ -125,6 +125,7 @@ function calculatePrizes(totalPool: number, settings: GameSettings): Record<Priz
     const calculatedPrizes: Record<PrizeType, number> = {} as any;
     let sumOfPrizes = 0;
     
+    // Calculate all prizes except Full House
     for (const prize of prizeDefs) {
         if (prize !== 'Full House') {
             const percentage = distPercentages[prize] || 0;
@@ -134,6 +135,7 @@ function calculatePrizes(totalPool: number, settings: GameSettings): Record<Priz
         }
     }
     
+    // Full House gets the remainder to ensure the total matches the pool
     if (prizeDefs.includes('Full House')) {
       calculatedPrizes['Full House'] = totalPool - sumOfPrizes;
     }
