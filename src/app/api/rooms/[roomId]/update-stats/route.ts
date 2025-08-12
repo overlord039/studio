@@ -3,8 +3,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getRoomStore } from '@/lib/server/game-store';
 import { db } from '@/lib/firebase/config';
-import { doc, increment, writeBatch, getDoc } from 'firebase/firestore';
-import type { PrizeType } from '@/types';
+import { doc, increment, writeBatch, getDoc, updateDoc } from 'firebase/firestore';
+import type { PrizeType, Room } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 
 // Define coin rewards for offline games
@@ -34,6 +34,8 @@ const OFFLINE_COIN_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType,
 
 const PARTICIPATION_REWARD = 1;
 
+// Simple in-memory cache to prevent multiple updates for the same game by the same user.
+const processedGames = new Set<string>();
 
 export async function POST(
   request: NextRequest,
@@ -48,7 +50,14 @@ export async function POST(
       return NextResponse.json({ message: 'User ID is required' }, { status: 400 });
     }
     if (!db) {
-        return NextResponse.json({ message: 'Firestore is not configured.' }, { status: 500 });
+        // This case should not happen for registered users, but as a safeguard.
+        return NextResponse.json({ success: true, message: 'Stats for guests are handled client-side.' });
+    }
+
+    // --- Idempotency Check ---
+    const processedKey = `${roomId}-${userId}`;
+    if (processedGames.has(processedKey)) {
+        return NextResponse.json({ success: true, message: 'Stats already updated for this game.' });
     }
 
     const room = getRoomStore(roomId);
@@ -71,13 +80,7 @@ export async function POST(
         return NextResponse.json({ message: 'User data not found in database.' }, { status: 404 });
     }
     
-    // Online game stats (including coins & prizes) are handled separately in game-store.ts upon game completion.
-    const isOnlineGame = room.settings.gameMode === 'online';
-    if (isOnlineGame) {
-        return NextResponse.json({ success: true, message: 'Stats for online games are handled separately.' });
-    }
-
-    // Logic for OFFLINE (BOT) & FRIENDS (MULTIPLAYER) games
+    const isBotGame = room.settings.gameMode && ['easy', 'medium', 'hard'].includes(room.settings.gameMode);
     const isFriendsGame = room.settings.gameMode === 'multiplayer';
     
     const statsUpdate: { [key: string]: any } = {
@@ -87,7 +90,6 @@ export async function POST(
     let coinsEarned = 0;
     const prizesWonByPlayer: PrizeType[] = [];
 
-    // Determine which prizes the player won
     for (const prizeType in room.prizeStatus) {
         const prizeInfo = room.prizeStatus[prizeType as PrizeType];
         if (prizeInfo && prizeInfo.claimedBy.some(c => c.id === userId)) {
@@ -95,34 +97,39 @@ export async function POST(
         }
     }
     
-    if (!isFriendsGame && room.settings.gameMode) {
-        // For bot games, calculate prize winnings and add participation reward
+    prizesWonByPlayer.forEach(prize => {
+        statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
+    });
+    
+    if (isBotGame && room.settings.gameMode) {
         const gameMode = room.settings.gameMode as 'easy' | 'medium' | 'hard';
         const modeRewards = OFFLINE_COIN_REWARDS[gameMode];
         
-        coinsEarned += PARTICIPATION_REWARD; // Always award participation coins
-
-        if (modeRewards && prizesWonByPlayer.length > 0) {
+        coinsEarned += PARTICIPATION_REWARD;
+        prizesWonByPlayer.forEach(prize => {
+            coinsEarned += modeRewards[prize] || 0;
+        });
+    } else if (isFriendsGame) {
+        // Friends game with ticket price
+        if ((room.totalPrizePool || 0) > 0) {
             prizesWonByPlayer.forEach(prize => {
-                statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
-                coinsEarned += modeRewards[prize] || 0;
+                 const claimInfo = room.prizeStatus[prize];
+                 if (claimInfo) {
+                    const percentage = PRIZE_DISTRIBUTION_PERCENTAGES['Format 1'][prize] || 0;
+                    const prizeAmount = ((room.totalPrizePool || 0) * percentage) / 100;
+                    const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.floor(prizeAmount / claimInfo.claimedBy.length) : 0;
+                    coinsEarned += prizePerWinner;
+                 }
             });
         }
-    } else if (isFriendsGame && prizesWonByPlayer.length > 0) { 
-        // For friends game, only update prize count, no coins
-        prizesWonByPlayer.forEach(prize => {
-            statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
-        });
     }
     
-    // Only update coins for non-friends games (i.e., bot games)
-    if (!isFriendsGame && coinsEarned > 0) {
+    if (coinsEarned > 0) {
       statsUpdate['stats.coins'] = increment(coinsEarned);
     }
     
-    const batch = writeBatch(db);
-    batch.update(playerDocRef, statsUpdate);
-    await batch.commit();
+    await updateDoc(playerDocRef, statsUpdate);
+    processedGames.add(processedKey);
 
     return NextResponse.json({ success: true, message: 'Stats updated successfully.' });
 

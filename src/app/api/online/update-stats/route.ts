@@ -4,20 +4,47 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { db } from '@/lib/firebase/config';
 import { doc, getDoc, runTransaction, collection, getDocs, increment, writeBatch } from 'firebase/firestore';
-import type { FirestoreRoom, FirestorePlayer, PrizeType } from '@/types';
+import type { FirestoreRoom, FirestorePlayer, PrizeType, GameSettings } from '@/types';
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES } from '@/lib/constants';
+
+// Helper function to calculate final prize distribution accurately
+function calculatePrizes(totalPool: number, settings: GameSettings): Record<PrizeType, number> {
+    const prizeFormat = settings.prizeFormat || 'Format 1';
+    const prizeDefs = PRIZE_DEFINITIONS[prizeFormat] || [];
+    const distPercentages = PRIZE_DISTRIBUTION_PERCENTAGES[prizeFormat] || {};
+    
+    const calculatedPrizes: Record<PrizeType, number> = {} as any;
+    let sumOfPrizes = 0;
+    
+    // Calculate all prizes except Full House
+    for (const prize of prizeDefs) {
+        if (prize !== 'Full House') {
+            const percentage = distPercentages[prize] || 0;
+            const amount = Math.floor((totalPool * percentage) / 100);
+            calculatedPrizes[prize] = amount;
+            sumOfPrizes += amount;
+        }
+    }
+    
+    // Full House gets the remainder to ensure the total matches the pool
+    if (prizeDefs.includes('Full House')) {
+      calculatedPrizes['Full House'] = totalPool - sumOfPrizes;
+    }
+
+    return calculatedPrizes;
+}
 
 
 // Function to safely delete a room and its subcollections
 async function deleteRoomAndSubcollections(roomId: string) {
     if (!db) return;
     const roomRef = doc(db, 'rooms', roomId);
-    const playersRef = collection(db, 'rooms', roomId, 'players');
 
     try {
         const batch = writeBatch(db);
         
         // Delete all documents in the 'players' subcollection
+        const playersRef = collection(db, 'rooms', roomId, 'players');
         const playersSnap = await getDocs(playersRef);
         playersSnap.forEach(playerDoc => {
             batch.delete(playerDoc.ref);
@@ -63,12 +90,11 @@ export async function POST(request: NextRequest) {
         const roomSnap = await transaction.get(roomRef);
 
         if (!roomSnap.exists()) {
-            // If room doesn't exist, it might have been cleaned up already.
             console.log(`Room ${roomId} not found for stats update, likely already deleted.`);
             return;
         }
         
-        const roomData = roomSnap.data() as FirestoreRoom & { prizeStatus?: any, playersWhoUpdatedStats?: string[] };
+        const roomData = roomSnap.data() as FirestoreRoom & { prizeStatus?: any, playersWhoUpdatedStats?: string[], botTickets?: any };
         if (roomData.status !== 'finished') {
             console.log(`Stats update for room ${roomId} called, but game not finished. Status: ${roomData.status}`);
             return;
@@ -77,6 +103,7 @@ export async function POST(request: NextRequest) {
         const playerRef = doc(db, 'users', userId);
         const playerSnap = await transaction.get(playerRef);
         if (!playerSnap.exists()) {
+            // This is a safeguard, but the client should not call this for guests.
             throw new Error('User data not found.');
         }
 
@@ -87,15 +114,16 @@ export async function POST(request: NextRequest) {
         }
 
         const playersColRef = collection(db, 'rooms', roomId, 'players');
-        const playersSnap = await getDocs(playersColRef); // Use getDocs, not transaction.get for collections
+        const playersSnap = await getDocs(playersColRef);
         const playersList = playersSnap.docs.map(d => d.data() as FirestorePlayer);
         const humanPlayersCount = playersList.filter(p => p.type === 'human').length;
 
         const totalTicketsSold = playersList.reduce((acc, p) => acc + (p.tickets || 1), 0);
         const totalPrizePool = (roomData.settings.ticketPrice || 0) * totalTicketsSold;
+        
+        const finalPrizes = calculatePrizes(totalPrizePool, roomData.settings);
 
-        const prizeFormat = roomData.settings.prizeFormat || 'Format 1';
-        const prizesForFormat = PRIZE_DEFINITIONS[prizeFormat] || [];
+        const prizesForFormat = PRIZE_DEFINITIONS[roomData.settings.prizeFormat || 'Format 1'] || [];
         
         const statsUpdate: { [key: string]: any } = {
             'stats.matchesPlayed': increment(1),
@@ -106,8 +134,8 @@ export async function POST(request: NextRequest) {
             if (claimInfo && claimInfo.claimedBy?.some((c: {id: string}) => c.id === userId)) {
                 statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
                 
-                const prizeAmount = (totalPrizePool * (PRIZE_DISTRIBUTION_PERCENTAGES[prizeFormat]?.[prize as PrizeType] || 0)) / 100;
-                const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.round(prizeAmount / claimInfo.claimedBy.length) : Math.round(prizeAmount);
+                const prizeAmount = finalPrizes[prize as PrizeType] || 0;
+                const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.floor(prizeAmount / claimInfo.claimedBy.length) : Math.floor(prizeAmount);
                 totalWinnings += prizePerWinner;
             }
         });

@@ -117,14 +117,16 @@ function initializePrizeStatus(settings: GameSettings): Record<PrizeType, any> {
     return status;
 }
 
-// Function to calculate prizes accurately
-function calculatePrizes(totalPool: number, prizeDefs: PrizeType[], distPercentages: Record<PrizeType, number>): Record<PrizeType, number> {
+function calculatePrizes(totalPool: number, settings: GameSettings): Record<PrizeType, number> {
+    const prizeFormat = settings.prizeFormat || 'Format 1';
+    const prizeDefs = PRIZE_DEFINITIONS[prizeFormat] || [];
+    const distPercentages = PRIZE_DISTRIBUTION_PERCENTAGES[prizeFormat] || {};
+    
     const calculatedPrizes: Record<PrizeType, number> = {} as any;
     let sumOfPrizes = 0;
     
-    // Calculate all prizes except Full House
     for (const prize of prizeDefs) {
-        if (prize !== PRIZE_TYPES.FULL_HOUSE) {
+        if (prize !== 'Full House') {
             const percentage = distPercentages[prize] || 0;
             const amount = Math.floor((totalPool * percentage) / 100);
             calculatedPrizes[prize] = amount;
@@ -132,9 +134,8 @@ function calculatePrizes(totalPool: number, prizeDefs: PrizeType[], distPercenta
         }
     }
     
-    // Full House gets the remainder to ensure the total matches the pool
-    if (prizeDefs.includes(PRIZE_TYPES.FULL_HOUSE)) {
-      calculatedPrizes[PRIZE_TYPES.FULL_HOUSE] = totalPool - sumOfPrizes;
+    if (prizeDefs.includes('Full House')) {
+      calculatedPrizes['Full House'] = totalPool - sumOfPrizes;
     }
 
     return calculatedPrizes;
@@ -147,8 +148,8 @@ export default function GameRoomPage() {
   const params = useParams();
   const roomId = Array.isArray(params.id) ? params.id[0] ?? '' : params.id ?? '';
   const { toast } = useToast();
-  const { currentUser, loading: authLoading, updateUserStats: updateContextUserStats } = useAuth();
-  const { isSfxMuted, playSound } = useSound();
+  const { currentUser, loading: authLoading, updateUserStats } = useAuth();
+  const { playSound } = useSound();
   const { triggerAnimation } = useCoinAnimation();
 
   const [roomData, setRoomData] = useState<Room | null>(null);
@@ -411,53 +412,50 @@ export default function GameRoomPage() {
 }, [isOnlineGame, roomId, currentUser, db, myTickets.length, toast, playSound]);
 
 
-  // This effect runs ONCE when the game is over to trigger the stat update.
+  // This effect runs ONCE when the game is over to trigger the stat update for all game modes.
   useEffect(() => {
     if (roomData?.isGameOver && currentUser && !statsUpdateInitiatedRef.current) {
         statsUpdateInitiatedRef.current = true; // Prevents re-running
         localStorage.removeItem(`markedNumbers-${roomId}-${currentUser.uid}`);
 
         let calculatedWinnings = 0;
-        
-        if (isOnlineGame) {
-             const gameSettings: GameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
-            const currentPrizeFormat = gameSettings.prizeFormat || 'Format 1';
-            const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
-            const prizeDistributionPercentages = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat] || {};
-            const totalPrizePool = roomData.totalPrizePool || 0;
-            const finalPrizes = calculatePrizes(totalPrizePool, prizesForFormat, prizeDistributionPercentages);
+        const prizesWonByPlayer = [];
+        const gameSettings = roomData.settings;
 
-            prizesForFormat.forEach(prize => {
+        for (const prizeType in roomData.prizeStatus) {
+            if (roomData.prizeStatus[prizeType as PrizeType]?.claimedBy.some(c => c.id === currentUser.uid)) {
+                prizesWonByPlayer.push(prizeType as PrizeType);
+            }
+        }
+
+        if (isOnlineGame) {
+            const totalPrizePool = roomData.totalPrizePool || 0;
+            const finalPrizes = calculatePrizes(totalPrizePool, gameSettings);
+            prizesWonByPlayer.forEach(prize => {
                 const claimInfo = roomData.prizeStatus[prize as PrizeType];
-                if (claimInfo && claimInfo.claimedBy.some(c => c.id === currentUser.uid)) {
+                if(claimInfo) {
                     const prizeAmount = finalPrizes[prize as PrizeType] || 0;
-                    const prizePerWinner = claimInfo.claimedBy.length > 0 ? prizeAmount / claimInfo.claimedBy.length : prizeAmount;
+                    const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.floor(prizeAmount / claimInfo.claimedBy.length) : 0;
                     calculatedWinnings += prizePerWinner;
                 }
             });
         } else { // Bot or Friends game
-            const isBotGame = roomData.settings.gameMode && ['easy', 'medium', 'hard'].includes(roomData.settings.gameMode);
-            if (isBotGame && roomData.settings.gameMode) {
-                let coinsEarned = 0;
-                const prizesWonByPlayer = [];
-                for (const prizeType in roomData.prizeStatus) {
-                    const prizeInfo = roomData.prizeStatus[prizeType as PrizeType];
-                    if (prizeInfo && prizeInfo.claimedBy.some(c => c.id === currentUser.uid)) {
-                        prizesWonByPlayer.push(prizeType as PrizeType);
+            const isBotGame = gameSettings.gameMode && ['easy', 'medium', 'hard'].includes(gameSettings.gameMode);
+            if (isBotGame) {
+                calculatedWinnings += PARTICIPATION_REWARD;
+                prizesWonByPlayer.forEach(prize => {
+                    calculatedWinnings += OFFLINE_COIN_REWARDS[gameSettings.gameMode as 'easy' | 'medium' | 'hard'][prize as PrizeType] || 0;
+                });
+            } else if (gameSettings.gameMode === 'multiplayer' && roomData.totalPrizePool) {
+                const finalPrizes = calculatePrizes(roomData.totalPrizePool, gameSettings);
+                 prizesWonByPlayer.forEach(prize => {
+                    const claimInfo = roomData.prizeStatus[prize as PrizeType];
+                    if (claimInfo) {
+                        const prizeAmount = finalPrizes[prize as PrizeType] || 0;
+                        const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.floor(prizeAmount / claimInfo.claimedBy.length) : 0;
+                        calculatedWinnings += prizePerWinner;
                     }
-                }
-
-                const gameMode = roomData.settings.gameMode as 'easy' | 'medium' | 'hard';
-                const modeRewards = OFFLINE_COIN_REWARDS[gameMode];
-                
-                coinsEarned += PARTICIPATION_REWARD;
-
-                if (modeRewards && prizesWonByPlayer.length > 0) {
-                    prizesWonByPlayer.forEach(prize => {
-                        coinsEarned += modeRewards[prize] || 0;
-                    });
-                }
-                calculatedWinnings = coinsEarned;
+                });
             }
         }
         
@@ -466,49 +464,32 @@ export default function GameRoomPage() {
           triggerAnimation(calculatedWinnings);
         }
 
-        const updateMyStats = async () => {
-            if (currentUser.isGuest) {
-                // Simplified guest stat updates (no server call)
-                const newStats = { ...currentUser.stats };
-                newStats.matchesPlayed += 1;
-                const prizesWon = roomData.prizeStatus;
-                for (const prize in prizesWon) {
-                    if(prizesWon[prize as PrizeType]?.claimedBy.some(c => c.id === currentUser.uid)) {
-                       newStats.prizesWon[prize as PrizeType] = (newStats.prizesWon[prize as PrizeType] || 0) + 1;
-                    }
-                }
-                updateContextUserStats(newStats);
-                return;
-            }
-            
-            // Determine which API to call
+        // Update stats
+        if (currentUser.isGuest) {
+            const newStats = { ...currentUser.stats };
+            newStats.matchesPlayed = (newStats.matchesPlayed || 0) + 1;
+            newStats.coins = (newStats.coins || 0) + calculatedWinnings;
+            prizesWonByPlayer.forEach(prize => {
+                newStats.prizesWon[prize as PrizeType] = (newStats.prizesWon[prize as PrizeType] || 0) + 1;
+            });
+            updateUserStats(newStats);
+        } else {
             const endpoint = isOnlineGame ? `/api/online/update-stats` : `/api/rooms/${roomId}/update-stats`;
-
-            try {
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ roomId, userId: currentUser.uid }),
-                });
-
-                const result = await response.json();
-                if (!response.ok) {
-                    throw new Error(result.message || "Failed to trigger stat update.");
-                }
-
-            } catch (error) {
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ roomId, userId: currentUser.uid }),
+            }).catch(error => {
                 console.error("Failed to trigger stats update:", error);
                 toast({
                     title: "Stats Sync Error",
                     description: "Could not save your game stats.",
                     variant: "destructive"
                 });
-            }
-        };
-
-        updateMyStats();
+            });
+        }
     }
-  }, [roomData?.isGameOver, currentUser, roomId, toast, updateContextUserStats, triggerAnimation, isOnlineGame]);
+  }, [roomData?.isGameOver, currentUser, roomId, toast, updateUserStats, triggerAnimation, isOnlineGame]);
 
   // This effect loads marked numbers from localStorage on mount
   useEffect(() => {
@@ -873,7 +854,6 @@ export default function GameRoomPage() {
   const gameSettings: GameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
   const currentPrizeFormat = gameSettings.prizeFormat || 'Format 1';
   const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
-  const prizeDistributionPercentages = PRIZE_DISTRIBUTION_PERCENTAGES[currentPrizeFormat] || {};
   const totalPrizePool = roomData.totalPrizePool || 0;
   
   const ticketsText = (count: number) => count === 1 ? 'ticket' : 'tickets';
@@ -882,21 +862,14 @@ export default function GameRoomPage() {
     return new Intl.NumberFormat('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
   };
   
-  const finalPrizes = calculatePrizes(totalPrizePool, prizesForFormat, prizeDistributionPercentages);
+  const finalPrizes = calculatePrizes(totalPrizePool, gameSettings);
   const hasPrizePool = roomData.settings.ticketPrice > 0;
 
   if (roomData.isGameOver) {
-    let currentUserWinnings = coinsWonThisGame || 0;
     const currentUserPrizeNames: string[] = [];
-    const ticketPrice = roomData.settings.ticketPrice || 0;
-    const ticketsBought = myTickets.length;
-    const totalCost = ticketPrice * ticketsBought;
-
     if (currentUser) {
-        // Common logic to find out names of prizes won for all modes
-        const prizesWon = roomData.prizeStatus;
-        for (const prize in prizesWon) {
-            if(prizesWon[prize as PrizeType]?.claimedBy.some(c => c.id === currentUser.uid)) {
+        for (const prize in roomData.prizeStatus) {
+            if(roomData.prizeStatus[prize as PrizeType]?.claimedBy.some(c => c.id === currentUser.uid)) {
                 if (!currentUserPrizeNames.includes(prize)) { 
                     currentUserPrizeNames.push(prize);
                 }
@@ -906,7 +879,7 @@ export default function GameRoomPage() {
     
     const playAgainButtonText = isOnlineGame ? "Find New Match" : (roomData.settings.gameMode === 'multiplayer' ? (isCurrentUserHost ? "New Game" : "To Lobby") : "Play Again");
     const userHasPrizes = currentUserPrizeNames.length > 0;
-    const isParticipationWinner = !userHasPrizes && currentUserWinnings > 0;
+    const isParticipationWinner = !userHasPrizes && (coinsWonThisGame || 0) > 0;
 
     return (
       <div className="flex-grow p-4 flex flex-col items-center justify-center">
@@ -998,31 +971,31 @@ export default function GameRoomPage() {
               </ul>
             </div>
 
-            {userHasPrizes ? (
-                <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
-                    <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
-                    <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
-                        You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(currentUserWinnings)}!
+            {coinsWonThisGame !== null && (
+                 userHasPrizes ? (
+                    <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
+                        <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
+                        <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
+                            You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(coinsWonThisGame)}!
+                        </div>
+                        <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
                     </div>
-                    <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
-                    {(hasPrizePool) && (
-                        <p className="text-sm text-muted-foreground">You spent {formatCoins(totalCost)} and won {formatCoins(currentUserWinnings)}</p>
-                    )}
-                </div>
-            ) : isParticipationWinner ? (
-                <div className="text-center p-4 bg-secondary/50 rounded-lg">
-                    <p className="font-semibold text-muted-foreground">You didn't win a prize this time, but well played!</p>
-                    <p className="text-sm text-muted-foreground">Better luck next game!</p>
-                    <div className="text-lg font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2 mt-2">
-                       Participation Reward: <Image src="/coin.png" alt="Coins" width={20} height={20} /> {formatCoins(currentUserWinnings)}
+                ) : isParticipationWinner ? (
+                    <div className="text-center p-4 bg-secondary/50 rounded-lg">
+                        <p className="font-semibold text-muted-foreground">You didn't win a prize this time, but well played!</p>
+                        <p className="text-sm text-muted-foreground">Better luck next game!</p>
+                        <div className="text-lg font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2 mt-2">
+                           Participation Reward: <Image src="/coin.png" alt="Coins" width={20} height={20} /> {formatCoins(coinsWonThisGame)}
+                        </div>
                     </div>
-                </div>
-            ) : (
-                 <div className="text-center p-4 bg-secondary/50 rounded-lg">
-                    <p className="font-semibold text-muted-foreground">You didn't win a prize this time, but well played!</p>
-                    <p className="text-sm text-muted-foreground">Better luck next game!</p>
-                </div>
+                ) : (
+                    <div className="text-center p-4 bg-secondary/50 rounded-lg">
+                        <p className="font-semibold text-muted-foreground">You didn't win a prize this time, but well played!</p>
+                        <p className="text-sm text-muted-foreground">Better luck next game!</p>
+                    </div>
+                )
             )}
+
 
             <div className="flex flex-row gap-4 mt-6">
               <Button onClick={handlePlayAgain} className="flex-1" size="lg" disabled={isResetting}>
@@ -1389,5 +1362,3 @@ export default function GameRoomPage() {
     </>
   );
 }
-
-
