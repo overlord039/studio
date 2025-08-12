@@ -47,12 +47,21 @@ async function cleanupOldRooms() {
   if (!db) return;
   const oneHourAgo = Timestamp.fromMillis(Date.now() - 60 * 60 * 1000);
   const roomsRef = collection(db, 'rooms');
-  const q = query(roomsRef, where('createdAt', '<', oneHourAgo));
+  // Query for old waiting/pre-game rooms OR finished rooms
+  const q = query(roomsRef, 
+    where('isPublic', '==', true),
+    where('createdAt', '<', oneHourAgo)
+  );
+
   try {
     const oldRoomsSnapshot = await getDocs(q);
     if (oldRoomsSnapshot.empty) return;
+    
     const batch = writeBatch(db);
-    oldRoomsSnapshot.forEach((doc) => batch.delete(doc.ref));
+    oldRoomsSnapshot.forEach((doc) => {
+        console.log(`Scheduling deletion for old room: ${doc.id}`);
+        batch.delete(doc.ref);
+    });
     await batch.commit();
     console.log(`Cleaned up ${oldRoomsSnapshot.size} old room(s).`);
   } catch (error) {
@@ -135,7 +144,6 @@ export async function POST(request: NextRequest) {
         const roomRef = doc(db, 'rooms', targetRoomId);
         
         transaction.update(roomRef, { 
-            playersCount: increment(1),
             humanCount: increment(1),
         });
 
@@ -168,7 +176,7 @@ export async function POST(request: NextRequest) {
             tier: tier,
           },
           status: 'waiting',
-          playersCount: 1,
+          playersCount: 0, // This will be updated when bots are added
           humanCount: 1,
           tier: tier,
           isPublic: true,

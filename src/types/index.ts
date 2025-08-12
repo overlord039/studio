@@ -121,6 +121,7 @@ export interface FirestoreRoom {
     timerEnd?: Timestamp;
     preGameEndTime?: Timestamp;
     gameStartTime?: Timestamp;
+    playersWhoUpdatedStats?: string[]; // To track who has updated their stats
 }
 
 
