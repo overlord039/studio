@@ -12,7 +12,8 @@ import {
 } from 'firebase/firestore';
 import type { FirestoreRoom } from '@/types';
 
-const ONLINE_BOT_NAMES = ["Alex", "Sam", "Jordan", "Taylor", "Casey", "Riley", "Jessie", "Morgan", "Skyler", "Drew"];
+// Bot names are now generated dynamically to mimic guest users.
+// const ONLINE_BOT_NAMES = ["Alex", "Sam", "Jordan", "Taylor", "Casey", "Riley", "Jessie", "Morgan", "Skyler", "Drew"];
 
 function shuffleArray<T>(array: T[]): T[] {
   const newArray = [...array];
@@ -66,13 +67,13 @@ export async function POST(request: NextRequest) {
       
       // --- Add Bots ---
       if (botsNeeded > 0) {
-        const namePool = shuffleArray([...ONLINE_BOT_NAMES]);
         for (let i = 0; i < botsNeeded; i++) {
           const botId = `bot_${Date.now()}_${i}`;
           const botRef = doc(playersCollectionRef, botId);
+          const botName = `Guest#${Math.random().toString(36).substring(2, 7)}`;
           transaction.set(botRef, {
             id: botId,
-            name: namePool[i % namePool.length],
+            name: botName,
             type: 'bot',
             tickets: 1 + Math.floor(Math.random() * 4), // Bots get random tickets
             joinedAt: serverTimestamp(),
