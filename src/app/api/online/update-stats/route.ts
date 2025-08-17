@@ -105,8 +105,9 @@ export async function POST(request: NextRequest) {
         const playerRef = doc(db, 'users', userId);
         const playerSnap = await transaction.get(playerRef);
         if (!playerSnap.exists()) {
-            // This is a safeguard, but the client should not call this for guests.
-            throw new Error('User data not found.');
+            // A player (human or guest) should always have a user doc. If not, something is wrong.
+            console.warn(`User document for userId ${userId} not found in room ${roomId}. Cannot update stats.`);
+            return;
         }
 
         // --- Idempotency: Check if this user's stats have been updated for this room ---

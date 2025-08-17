@@ -6,6 +6,7 @@ import { db } from '@/lib/firebase/config';
 import { doc, increment, writeBatch, getDoc, updateDoc } from 'firebase/firestore';
 import type { PrizeType, Room } from '@/types';
 import { PRIZE_TYPES } from '@/types';
+import { PRIZE_DISTRIBUTION_PERCENTAGES } from '@/lib/constants';
 
 // Define coin rewards for offline games
 const OFFLINE_COIN_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType, number>> = {
@@ -50,8 +51,8 @@ export async function POST(
       return NextResponse.json({ message: 'User ID is required' }, { status: 400 });
     }
     if (!db) {
-        // This case should not happen for registered users, but as a safeguard.
-        return NextResponse.json({ success: true, message: 'Stats for guests are handled client-side.' });
+        // This case should not happen if the app is configured, but as a safeguard.
+        return NextResponse.json({ success: false, message: 'Database not configured.' }, { status: 500 });
     }
 
     // --- Idempotency Check ---
@@ -70,13 +71,16 @@ export async function POST(
     }
     
     const playerInRoom = room.players.find(p => p.id === userId);
-    if (!playerInRoom || playerInRoom.isBot) {
-      return NextResponse.json({ message: 'Player not found in this game or is a bot.' }, { status: 404 });
+    if (!playerInRoom) { // Bots are not in this list for stats, so this check is for humans
+      return NextResponse.json({ message: 'Player not found in this game.' }, { status: 404 });
     }
 
     const playerDocRef = doc(db, "users", userId);
     const playerDoc = await getDoc(playerDocRef);
     if (!playerDoc.exists()) {
+        // This could happen if a guest leaves and their anon auth is lost, but their ID is passed.
+        // In a fully robust system, we might log this, but for now we'll just return.
+        console.warn(`User document for userId ${userId} not found. Cannot update stats.`);
         return NextResponse.json({ message: 'User data not found in database.' }, { status: 404 });
     }
     

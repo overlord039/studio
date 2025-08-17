@@ -152,7 +152,7 @@ export default function GameRoomPage() {
   const params = useParams();
   const roomId = Array.isArray(params.id) ? params.id[0] ?? '' : params.id ?? '';
   const { toast } = useToast();
-  const { currentUser, loading: authLoading, updateUserStats } = useAuth();
+  const { currentUser, loading: authLoading, fetchUser } = useAuth();
   const { playSound } = useSound();
   const { triggerAnimation } = useCoinAnimation();
 
@@ -423,7 +423,7 @@ export default function GameRoomPage() {
         localStorage.removeItem(`markedNumbers-${roomId}-${currentUser.uid}`);
 
         let calculatedWinnings = 0;
-        const prizesWonByPlayer = [];
+        const prizesWonByPlayer: PrizeType[] = [];
         const gameSettings = roomData.settings;
 
         for (const prizeType in roomData.prizeStatus) {
@@ -460,32 +460,23 @@ export default function GameRoomPage() {
           triggerAnimation(calculatedWinnings);
         }
 
-        // Update stats
-        if (currentUser.isGuest) {
-            const newStats = { ...currentUser.stats };
-            newStats.matchesPlayed = (newStats.matchesPlayed || 0) + 1;
-            newStats.coins = (newStats.coins || 0) + calculatedWinnings;
-            prizesWonByPlayer.forEach(prize => {
-                newStats.prizesWon[prize as PrizeType] = (newStats.prizesWon[prize as PrizeType] || 0) + 1;
+        const endpoint = isOnlineGame ? `/api/online/update-stats` : `/api/rooms/${roomId}/update-stats`;
+        fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId, userId: currentUser.uid }),
+        })
+        .then(() => fetchUser()) // Refresh user data after stats are updated
+        .catch(error => {
+            console.error("Failed to trigger stats update:", error);
+            toast({
+                title: "Stats Sync Error",
+                description: "Could not save your game stats.",
+                variant: "destructive"
             });
-            updateUserStats(newStats);
-        } else {
-            const endpoint = isOnlineGame ? `/api/online/update-stats` : `/api/rooms/${roomId}/update-stats`;
-            fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ roomId, userId: currentUser.uid }),
-            }).catch(error => {
-                console.error("Failed to trigger stats update:", error);
-                toast({
-                    title: "Stats Sync Error",
-                    description: "Could not save your game stats.",
-                    variant: "destructive"
-                });
-            });
-        }
+        });
     }
-  }, [roomData?.isGameOver, currentUser, roomId, toast, updateUserStats, triggerAnimation, isOnlineGame, roomData?.totalPrizePool, roomData?.settings]);
+  }, [roomData?.isGameOver, currentUser, roomId, toast, triggerAnimation, isOnlineGame, roomData?.totalPrizePool, roomData?.settings, fetchUser]);
 
   // This effect loads marked numbers from localStorage on mount
   useEffect(() => {
@@ -1079,13 +1070,13 @@ export default function GameRoomPage() {
                 </div>
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="icon" aria-label="Game Info &amp; Players">
+                  <Button variant="outline" size="icon" aria-label="Game Info & Players">
                     <Menu className="h-5 w-5 text-primary" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent className="flex flex-col bg-card/90 backdrop-blur-sm border-primary/20">
                   <SheetHeader className="text-center border-b pb-2">
-                      <SheetTitle className="text-base">Game Info &amp; Players</SheetTitle>
+                      <SheetTitle className="text-base">Game Info & Players</SheetTitle>
                   </SheetHeader>
                   <div className="py-2 space-y-4 flex-grow overflow-y-auto">
                       <Card className="bg-secondary/30">

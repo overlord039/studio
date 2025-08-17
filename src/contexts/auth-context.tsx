@@ -163,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   const fetchUser = useCallback(async () => {
-    if (!auth || !auth.currentUser) return;
+    if (!auth || !auth.currentUser || !db) return;
     try {
       const userDocRef = doc(db, "users", auth.currentUser.uid);
       const docSnap = await getDoc(userDocRef);
@@ -189,6 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 
   const checkDailyLogin = useCallback(async (user: User) => {
+    if (!db) return user;
     const today = startOfDay(new Date());
     const lastLoginDate = startOfDay(new Date(user.stats.lastLogin || 0));
 
@@ -327,7 +328,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast, checkDailyLogin]);
 
   const handleClaimReward = async (dayToClaim: number) => {
-    if (!currentUser) return null;
+    if (!currentUser || !db) return null;
     
     // Safety checks
     if ((currentUser.stats.loginStreak || 0) === 0) {
@@ -406,6 +407,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUserStats = (newStats: Partial<UserStats>) => {
     if (!currentUser) return;
     
+    // This function is now a proxy to call the server update endpoint.
+    // It keeps the client-side state in sync optimistically but relies on server for truth.
+    if (currentUser.isGuest) {
+        console.warn("Direct stat update on client for guests is deprecated. Use server endpoints.");
+    } else if (db) {
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const updates = Object.entries(newStats).reduce((acc, [key, value]) => {
+            acc[`stats.${key}`] = value;
+            return acc;
+        }, {} as Record<string, any>);
+        
+        updateDoc(userDocRef, updates).catch(err => {
+            console.error("Client-side stat sync failed:", err);
+            toast({title: "Sync Error", description: "Could not sync some stats with the server."});
+        });
+    }
+
+    // Optimistically update local state
     setCurrentUser(prevUser => {
         if (!prevUser) return null;
         const updatedStats: UserStats = {
@@ -440,7 +459,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const linkGoogleAccount = async () => {
-    if (!auth || !auth.currentUser?.isAnonymous) {
+    if (!auth || !auth.currentUser?.isAnonymous || !db) {
       toast({ title: "Error", description: "You must be signed in as a guest to link an account.", variant: "destructive" });
       return;
     }
