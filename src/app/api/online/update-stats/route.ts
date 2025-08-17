@@ -27,8 +27,10 @@ function calculatePrizes(totalPool: number, settings: GameSettings): Record<Priz
     }
     
     // Full House gets the remainder to ensure the total matches the pool
-    if (prizeDefs.includes('Full House')) {
+    if (prizeDefs.includes('Full House') && totalPool > 0) {
       calculatedPrizes['Full House'] = totalPool - sumOfPrizes;
+    } else {
+      calculatedPrizes['Full House'] = 0;
     }
 
     return calculatedPrizes;
