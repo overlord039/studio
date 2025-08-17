@@ -227,7 +227,6 @@ function PreGameContent() {
                                 {players.map((player) => (
                                     <div key={player.id} className="flex justify-between items-center text-xs p-1.5 bg-secondary/20 rounded-md">
                                         <div className="flex items-center gap-1.5 truncate">
-                                            {player.type === 'bot' && <Bot className="h-4 w-4 flex-shrink-0" />}
                                             <span className={cn("font-semibold truncate", player.id === currentUser.uid && "text-primary")}>
                                                 {player.name}
                                             </span>
