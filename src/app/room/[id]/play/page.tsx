@@ -1038,11 +1038,15 @@ export default function GameRoomPage() {
                         <div className="px-2 py-1 text-xs font-bold text-white rounded-md capitalize bg-purple-600">
                             Friends Game
                         </div>
-                        <div className="text-white font-mono">#{roomId}</div>
                       </div>
                   )}
               </div>
-              <div className="font-semibold text-white">{currentUser.displayName} ({myTickets.length} {ticketsText(myTickets.length)})</div>
+              <div className="font-semibold text-white flex items-center gap-2">
+                  <span>{currentUser.displayName} ({myTickets.length} {ticketsText(myTickets.length)})</span>
+                  {roomData.settings.gameMode === 'multiplayer' && (
+                    <span className="font-mono text-xs opacity-80">#{roomId}</span>
+                  )}
+              </div>
             </div>
             <div className="flex-shrink-0 flex items-center gap-2">
                  <div className="flex items-center gap-4 text-white">
