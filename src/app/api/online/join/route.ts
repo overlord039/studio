@@ -42,20 +42,17 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
   },
 };
 
-// This function cleans up rooms older than 1 hour that are stuck in a waiting state.
+// This function cleans up rooms older than 1 hour that are stuck in waiting or finished states.
 async function cleanupOldRooms() {
   if (!db) return;
   const oneHourAgo = Timestamp.fromMillis(Date.now() - 60 * 60 * 1000);
   const roomsRef = collection(db, 'rooms');
   
-  // **FIX:** The query is now more specific. It only targets rooms that are:
-  // 1. Public online rooms
-  // 2. Older than one hour
-  // 3. Still in the 'waiting' status.
-  // This prevents the deletion of active, pre-game, or finished rooms.
+  // **FIX:** The query now also targets 'finished' rooms, not just 'waiting' rooms.
+  // This ensures that completed games are also cleaned up after a reasonable time.
   const q = query(roomsRef, 
     where('isPublic', '==', true),
-    where('status', '==', 'waiting'), // Only clean up rooms that never started
+    where('status', 'in', ['waiting', 'finished']), 
     where('createdAt', '<', oneHourAgo)
   );
 
@@ -63,11 +60,24 @@ async function cleanupOldRooms() {
     const oldRoomsSnapshot = await getDocs(q);
     if (oldRoomsSnapshot.empty) return;
     
+    // We need to delete subcollections as well for finished rooms.
     const batch = writeBatch(db);
-    oldRoomsSnapshot.forEach((doc) => {
-        console.log(`Scheduling deletion for stale waiting room: ${doc.id}`);
-        batch.delete(doc.ref);
-    });
+    
+    for (const roomDoc of oldRoomsSnapshot.docs) {
+      console.log(`Scheduling deletion for stale room: ${roomDoc.id} with status ${roomDoc.data().status}`);
+
+      // If it's a finished room, we should also delete its players subcollection.
+      if (roomDoc.data().status === 'finished') {
+        const playersRef = collection(db, 'rooms', roomDoc.id, 'players');
+        const playersSnap = await getDocs(playersRef);
+        playersSnap.forEach(playerDoc => {
+            batch.delete(playerDoc.ref);
+        });
+      }
+      
+      batch.delete(roomDoc.ref);
+    }
+    
     await batch.commit();
     console.log(`Cleaned up ${oldRoomsSnapshot.size} stale room(s).`);
   } catch (error) {

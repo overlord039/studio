@@ -37,32 +37,6 @@ function calculatePrizes(totalPool: number, settings: GameSettings): Record<Priz
 }
 
 
-// Function to safely delete a room and its subcollections
-async function deleteRoomAndSubcollections(roomId: string) {
-    if (!db) return;
-    const roomRef = doc(db, 'rooms', roomId);
-
-    try {
-        const batch = writeBatch(db);
-        
-        // Delete all documents in the 'players' subcollection
-        const playersRef = collection(db, 'rooms', roomId, 'players');
-        const playersSnap = await getDocs(playersRef);
-        playersSnap.forEach(playerDoc => {
-            batch.delete(playerDoc.ref);
-        });
-
-        // Delete the main room document
-        batch.delete(roomRef);
-
-        await batch.commit();
-        console.log(`Successfully deleted room ${roomId} and its subcollections.`);
-    } catch (error) {
-        console.error(`Failed to delete room ${roomId}:`, error);
-    }
-}
-
-
 export async function POST(request: NextRequest) {
   if (!db) {
     return NextResponse.json(
@@ -85,7 +59,6 @@ export async function POST(request: NextRequest) {
     }
     
     let totalWinnings = 0;
-    let allStatsUpdated = false;
     
     await runTransaction(db, async (transaction) => {
         const roomRef = doc(db, 'rooms', roomId);
@@ -119,7 +92,6 @@ export async function POST(request: NextRequest) {
         const playersColRef = collection(db, 'rooms', roomId, 'players');
         const playersSnap = await getDocs(playersColRef);
         const playersList = playersSnap.docs.map(d => d.data() as FirestorePlayer);
-        const humanPlayersCount = playersList.filter(p => p.type === 'human').length;
 
         const totalTicketsSold = playersList.reduce((acc, p) => acc + (p.tickets || 1), 0);
         const totalPrizePool = (roomData.settings.ticketPrice || 0) * totalTicketsSold;
@@ -154,17 +126,7 @@ export async function POST(request: NextRequest) {
         transaction.update(roomRef, {
             playersWhoUpdatedStats: updatedStatsPlayers
         });
-
-        // Check if all human players have updated their stats
-        if (updatedStatsPlayers.length >= humanPlayersCount) {
-            allStatsUpdated = true;
-        }
     });
-    
-    // If all stats have been updated, delete the room outside the transaction
-    if (allStatsUpdated) {
-        await deleteRoomAndSubcollections(roomId);
-    }
     
     return NextResponse.json({ success: true, winnings: totalWinnings });
 
