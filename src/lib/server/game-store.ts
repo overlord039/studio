@@ -66,7 +66,7 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
   const newRoom: Room = {
     id: roomId,
     host: { id: host.id, name: host.name, isHost: true },
-    players: [], // Start with an empty player list
+    players: [hostPlayer], // Add the host as the first player
     settings: gameSettings,
     createdAt: new Date(),
     isGameStarted: false,
@@ -376,4 +376,3 @@ export function updateCallingModeStore(roomId: string, hostId: string, newMode: 
     
     return room;
 }
-
