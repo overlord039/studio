@@ -135,7 +135,8 @@ export async function POST(
     await updateDoc(playerDocRef, statsUpdate);
     processedGames.add(processedKey);
 
-    return NextResponse.json({ success: true, message: 'Stats updated successfully.' });
+    // Return the calculated winnings to the client
+    return NextResponse.json({ success: true, message: 'Stats updated successfully.', winnings: coinsEarned });
 
   } catch (error) {
     console.error(`Error updating stats for room ${roomId}:`, error);
