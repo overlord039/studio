@@ -42,14 +42,20 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
   },
 };
 
-// This function cleans up rooms older than 1 hour to prevent clutter.
+// This function cleans up rooms older than 1 hour that are stuck in a waiting state.
 async function cleanupOldRooms() {
   if (!db) return;
   const oneHourAgo = Timestamp.fromMillis(Date.now() - 60 * 60 * 1000);
   const roomsRef = collection(db, 'rooms');
-  // Query for old waiting/pre-game rooms OR finished rooms
+  
+  // **FIX:** The query is now more specific. It only targets rooms that are:
+  // 1. Public online rooms
+  // 2. Older than one hour
+  // 3. Still in the 'waiting' status.
+  // This prevents the deletion of active, pre-game, or finished rooms.
   const q = query(roomsRef, 
     where('isPublic', '==', true),
+    where('status', '==', 'waiting'), // Only clean up rooms that never started
     where('createdAt', '<', oneHourAgo)
   );
 
@@ -59,11 +65,11 @@ async function cleanupOldRooms() {
     
     const batch = writeBatch(db);
     oldRoomsSnapshot.forEach((doc) => {
-        console.log(`Scheduling deletion for old room: ${doc.id}`);
+        console.log(`Scheduling deletion for stale waiting room: ${doc.id}`);
         batch.delete(doc.ref);
     });
     await batch.commit();
-    console.log(`Cleaned up ${oldRoomsSnapshot.size} old room(s).`);
+    console.log(`Cleaned up ${oldRoomsSnapshot.size} stale room(s).`);
   } catch (error) {
     console.error('Error cleaning up old rooms:', error);
   }
