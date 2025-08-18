@@ -533,21 +533,15 @@ export default function GameRoomPage() {
     }
     if(!isOnlineGame) previousCallingModeRef.current = roomData?.settings.callingMode;
 
+    if (isOnlineGame) return; // Do not poll for online games, handled by listener + nudge
+
     const isManualMode = !isOnlineGame && roomData?.settings.callingMode === 'manual';
     const isHost = roomData?.host.id === currentUser.uid;
-    const pollInterval = isOnlineGame ? 4500 : (isManualMode && !isHost ? 7000 : 5000);
+    const pollInterval = isManualMode && !isHost ? 7000 : 5000;
 
     const intervalId = setInterval(() => {
       if (!document.hidden && roomDataRef.current && roomDataRef.current.isGameStarted && !roomDataRef.current.isGameOver) { 
-        if (isOnlineGame) {
-            fetch(`/api/online/call-number`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ roomId }),
-            }).catch(err => console.warn("Failed to trigger online number call:", err));
-        } else {
-            fetchGameDetails(false);
-        }
+        fetchGameDetails(false);
       }
     }, pollInterval); 
     
