@@ -1,5 +1,6 @@
 
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -514,9 +515,9 @@ export default function GameRoomPage() {
     }
   }, [currentUser, roomId, authLoading, fetchGameDetails]);
 
-  // Polling for game updates and handling notifications for changes
+  // Polling for game updates and handling notifications for changes for non-online games
   useEffect(() => {
-    if (!roomId || !currentUser || (roomData?.isGameStarted && roomData.isGameOver) || isLoading ) {
+    if (isOnlineGame || !roomId || !currentUser || roomData?.isGameOver || isLoading ) {
         if (previousCallingModeRef.current && roomData?.isGameOver) {
             previousCallingModeRef.current = undefined; // Reset on game over
         }
@@ -524,18 +525,16 @@ export default function GameRoomPage() {
     }
     
     // Check for calling mode change (non-online games)
-    if (!isOnlineGame && previousCallingModeRef.current && roomData && roomData.settings.callingMode !== previousCallingModeRef.current) {
+    if (previousCallingModeRef.current && roomData && roomData.settings.callingMode !== previousCallingModeRef.current) {
         playSound('notification.wav');
         toast({
             title: "Mode Switched by Host",
             description: `Number calling is now ${roomData.settings.callingMode}.`
         });
     }
-    if(!isOnlineGame) previousCallingModeRef.current = roomData?.settings.callingMode;
+    previousCallingModeRef.current = roomData?.settings.callingMode;
 
-    if (isOnlineGame) return; // Do not poll for online games, handled by listener + nudge
-
-    const isManualMode = !isOnlineGame && roomData?.settings.callingMode === 'manual';
+    const isManualMode = roomData?.settings.callingMode === 'manual';
     const isHost = roomData?.host.id === currentUser.uid;
     const pollInterval = isManualMode && !isHost ? 7000 : 5000;
 
@@ -1242,7 +1241,7 @@ export default function GameRoomPage() {
           <div className="w-full max-w-md relative">
               <MemoizedCalledNumberDisplay 
                   currentNumber={roomData.currentNumber}
-                  calledNumbers={roomData.calledNumbers}
+                  calledNumbers={isOnlineGame ? [...roomData.calledNumbers].reverse() : roomData.calledNumbers}
                   isMuted={isVoiceMuted}
                   onToggleMute={() => setIsVoiceMuted(prev => !prev)}
                   animationKey={animationKey}

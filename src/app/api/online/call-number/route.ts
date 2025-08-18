@@ -29,6 +29,7 @@ export async function POST(request: Request) {
         }
 
         const roomRef = doc(db, 'rooms', roomId);
+        let gameFinished = false;
 
         await runTransaction(db, async (transaction) => {
             const roomSnap = await transaction.get(roomRef);
@@ -47,12 +48,6 @@ export async function POST(request: Request) {
             if (roomData.status !== 'in-progress') {
                 return; // Not an error, just do nothing.
             }
-            
-            // Prevent calling too frequently (e.g., less than 4 seconds apart)
-            const lastCallTimestamp = roomData.lastNumberCall?.toMillis() || 0;
-            if (Date.now() - lastCallTimestamp < 4000) {
-                return;
-            }
 
             let numberPool = roomData.numberPool || [];
             
@@ -66,6 +61,7 @@ export async function POST(request: Request) {
                     status: 'finished',
                     currentNumber: null,
                 });
+                gameFinished = true;
                 return;
             }
             
@@ -79,6 +75,12 @@ export async function POST(request: Request) {
             });
         });
         
+        if (gameFinished) {
+            // If the game just finished, we might need to stop a timer or do other cleanup.
+            // For now, just logging it.
+            console.log(`Game finished in room ${roomId}. All numbers called.`);
+        }
+
         return NextResponse.json({ success: true, message: 'Number called successfully.' });
 
     } catch (error) {
