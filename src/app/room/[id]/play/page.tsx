@@ -1,6 +1,5 @@
 
 
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -939,7 +938,7 @@ export default function GameRoomPage() {
                       <div className="flex justify-between items-center w-full">
                           <span className="font-medium">Participation Reward</span>
                           <div className="font-semibold flex items-center gap-1 text-green-600">
-                              <Image src="/coin.png" alt="Coins" width={16} height={16} />
+                              <Image src="/coin.png" alt="Coin" width={16} height={16} />
                               <span>{PARTICIPATION_REWARD}</span>
                           </div>
                       </div>
@@ -1035,8 +1034,11 @@ export default function GameRoomPage() {
                           Online: {TIERS[roomData.settings.tier]?.name || 'Mode'}
                       </div>
                   ) : (
-                      <div className="text-white capitalize">
-                          Friends Game: #{roomId}
+                      <div className="flex items-center gap-2">
+                        <div className="px-2 py-1 text-xs font-bold text-white rounded-md capitalize bg-purple-600">
+                            Friends Game
+                        </div>
+                        <div className="text-white font-mono">#{roomId}</div>
                       </div>
                   )}
               </div>
