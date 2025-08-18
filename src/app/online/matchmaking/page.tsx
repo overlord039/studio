@@ -146,7 +146,8 @@ function MatchmakingContent() {
         const data = docSnap.data() as FirestoreRoom;
         setRoomData(data);
         
-        // SERVER-AUTHORITATIVE NAVIGATION TRIGGER
+        // **FIX:** Navigation is now only triggered when the room moves to the 'pre-game' state.
+        // The responsibility of navigating to the final game page is now handled by the PreGamePage.
         if (data.status === 'pre-game' && !navigationTriggered) {
           setNavigationTriggered(true); // Prevent multiple navigations
           toast({ title: "Match Found!", description: "Preparing the game..." });

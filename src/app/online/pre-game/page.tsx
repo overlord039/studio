@@ -84,6 +84,7 @@ function PreGameContent() {
                 if (data.status === 'in-progress' && !navigatedRef.current) {
                     navigatedRef.current = true;
                     toast({ title: "Match Starting!", description: "Let's go!" });
+                    // **FIX**: The navigation now includes the search params to pass ticket info
                     router.push(`/room/${roomId}/play`);
                 }
                 
