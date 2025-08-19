@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React from 'react';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 interface CalledNumberDisplayProps {
   currentNumber: number | null;
@@ -16,18 +17,12 @@ interface CalledNumberDisplayProps {
 }
 
 export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMuted, onToggleMute, animationKey }: CalledNumberDisplayProps) {
-  // Take the first 3 numbers from the history, which are the numbers called *before* the current one.
-  // The `calledNumbers` array has the most recent number at index 0.
-  // If the current number is the most recent, we want to show the numbers from index 1, 2, and 3.
-  const recentThree = calledNumbers.slice(1, 4);
-  const displayNumbers: (number | null)[] = [...recentThree];
-  while (displayNumbers.length < 3) {
-    displayNumbers.push(null);
-  }
+  // Take the last 10 numbers from the history, excluding the current one.
+  const recentHistory = calledNumbers.slice(1, 11);
 
   return (
     <Card className="shadow-lg bg-primary text-primary-foreground overflow-hidden">
-      <CardContent className="p-4 flex items-end justify-center gap-6">
+      <CardContent className="p-4 flex flex-col items-center justify-center gap-4">
         <div className="flex flex-col items-center text-center">
           <p className="text-xs uppercase tracking-wider mb-2">Called Number</p>
           <div className="flex items-center gap-3">
@@ -62,21 +57,28 @@ export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMu
             </div>
           </div>
         </div>
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center w-full">
           <p className="text-xs uppercase tracking-wider mb-2">Recent</p>
-          <div key={`recent-${animationKey}`} className="flex items-end gap-2 animate-slide-in-recent">
-            {displayNumbers.map((num, index) => (
-              <div
-                key={num !== null ? `recent-${num}-${index}` : `empty-${index}`}
-                className={cn(
-                  "flex size-10 items-center justify-center rounded-full border-2 text-base font-bold",
-                  num !== null ? "bg-card text-card-foreground opacity-80 border-primary" : "border-dashed bg-muted/50 border-primary-foreground/30",
+          <ScrollArea className="w-full max-w-xs whitespace-nowrap rounded-md">
+             <div key={`recent-${animationKey}`} className="flex w-max space-x-2 pb-2 animate-slide-in-recent">
+                {recentHistory.length > 0 ? (
+                    recentHistory.map((num, index) => (
+                    <div
+                        key={num !== null ? `recent-${num}-${index}` : `empty-${index}`}
+                        className={cn(
+                        "flex size-10 items-center justify-center rounded-full border-2 text-base font-bold",
+                        "bg-card text-card-foreground opacity-80 border-primary"
+                        )}
+                    >
+                        {num}
+                    </div>
+                    ))
+                ) : (
+                    <div className="text-center text-xs text-primary-foreground/70 h-10 flex items-center">No recent numbers yet.</div>
                 )}
-              >
-                {num}
-              </div>
-            ))}
-          </div>
+             </div>
+             <ScrollBar orientation="horizontal" className="h-2" />
+          </ScrollArea>
         </div>
       </CardContent>
     </Card>
