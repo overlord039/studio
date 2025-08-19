@@ -818,17 +818,24 @@ export default function GameRoomPage() {
     const currentUserPrizeNames: PrizeType[] = [];
 
     if (currentUser) {
+        const isBotGame = gameSettings.gameMode && ['easy', 'medium', 'hard'].includes(gameSettings.gameMode);
+        
+        // Find which prizes the current user claimed
         for (const prize in roomData.prizeStatus) {
             const castedPrize = prize as PrizeType;
             if (roomData.prizeStatus[castedPrize]?.claimedBy.some(c => c.id === currentUser.uid)) {
                 currentUserPrizeNames.push(castedPrize);
             }
         }
-
-        const isPrizePoolGame = isOnlineGame || gameSettings.gameMode === 'multiplayer';
-        const isBotGame = gameSettings.gameMode && ['easy', 'medium', 'hard'].includes(gameSettings.gameMode);
-
-        if (isPrizePoolGame) {
+        
+        // Calculate winnings based on game mode
+        if (isBotGame) {
+            currentUserPrizeNames.forEach(prize => {
+                totalWinnings += OFFLINE_COIN_REWARDS[gameSettings.gameMode as 'easy' | 'medium' | 'hard'][prize] || 0;
+            });
+            // Everyone gets a participation reward in bot games, even if they didn't win a specific prize.
+            totalWinnings += PARTICIPATION_REWARD;
+        } else { // Prize pool games (Online / Friends)
             currentUserPrizeNames.forEach(prize => {
                 const claimInfo = roomData.prizeStatus[prize];
                 if (claimInfo) {
@@ -837,12 +844,6 @@ export default function GameRoomPage() {
                     totalWinnings += prizePerWinner;
                 }
             });
-        } else if (isBotGame) {
-            currentUserPrizeNames.forEach(prize => {
-                totalWinnings += OFFLINE_COIN_REWARDS[gameSettings.gameMode as 'easy' | 'medium' | 'hard'][prize] || 0;
-            });
-            // Everyone gets a participation reward in bot games
-            totalWinnings += PARTICIPATION_REWARD;
         }
     }
     
@@ -939,22 +940,15 @@ export default function GameRoomPage() {
             </div>
 
             {totalWinnings > 0 ? (
-                currentUserPrizeNames.length > 0 ? (
-                    <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
-                        <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
-                        <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
-                            You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(totalWinnings)}!
-                        </div>
+                <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
+                    <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
+                    <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
+                        You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(totalWinnings)}!
+                    </div>
+                    {currentUserPrizeNames.length > 0 && (
                         <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
-                    </div>
-                ) : ( // Participation reward only
-                    <div className="text-center p-4 bg-secondary/50 rounded-lg">
-                        <p className="font-semibold text-muted-foreground">You didn't win a prize this time, but well played!</p>
-                        <div className="text-lg font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2 mt-2">
-                           Participation Reward: <Image src="/coin.png" alt="Coins" width={20} height={20} /> {formatCoins(totalWinnings)}
-                        </div>
-                    </div>
-                )
+                    )}
+                </div>
             ) : (
                 <div className="text-center p-4 bg-secondary/50 rounded-lg">
                     <p className="font-semibold text-muted-foreground">You didn't win a prize this time, but well played!</p>
