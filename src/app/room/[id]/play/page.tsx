@@ -814,40 +814,36 @@ export default function GameRoomPage() {
   const hasPrizePool = roomData.settings.ticketPrice > 0;
 
   if (roomData.isGameOver) {
-    const currentUserPrizeNames: PrizeType[] = [];
     let totalWinnings = 0;
-    const userHasPrizes = currentUserPrizeNames.length > 0;
-    const isParticipationWinner = !userHasPrizes && totalWinnings > 0;
+    const currentUserPrizeNames: PrizeType[] = [];
 
     if (currentUser) {
-      for (const prize in roomData.prizeStatus) {
-        if (roomData.prizeStatus[prize as PrizeType]?.claimedBy.some(c => c.id === currentUser.uid)) {
-          currentUserPrizeNames.push(prize as PrizeType);
-        }
-      }
-
-      const isPrizePoolGame = isOnlineGame || gameSettings.gameMode === 'multiplayer';
-
-      if (isPrizePoolGame) {
-        currentUserPrizeNames.forEach(prize => {
-          const claimInfo = roomData.prizeStatus[prize];
-          if (claimInfo) {
-            const prizeAmount = finalPrizes[prize] || 0;
-            const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.floor(prizeAmount / claimInfo.claimedBy.length) : 0;
-            totalWinnings += prizePerWinner;
-          }
-        });
-      } else { // Bot game
-        const isBotGame = gameSettings.gameMode && ['easy', 'medium', 'hard'].includes(gameSettings.gameMode);
-        if (isBotGame) {
-            if (currentUserPrizeNames.length > 0) {
-                currentUserPrizeNames.forEach(prize => {
-                    totalWinnings += OFFLINE_COIN_REWARDS[gameSettings.gameMode as 'easy' | 'medium' | 'hard'][prize] || 0;
-                });
+        for (const prize in roomData.prizeStatus) {
+            const castedPrize = prize as PrizeType;
+            if (roomData.prizeStatus[castedPrize]?.claimedBy.some(c => c.id === currentUser.uid)) {
+                currentUserPrizeNames.push(castedPrize);
             }
+        }
+
+        const isPrizePoolGame = isOnlineGame || gameSettings.gameMode === 'multiplayer';
+        const isBotGame = gameSettings.gameMode && ['easy', 'medium', 'hard'].includes(gameSettings.gameMode);
+
+        if (isPrizePoolGame) {
+            currentUserPrizeNames.forEach(prize => {
+                const claimInfo = roomData.prizeStatus[prize];
+                if (claimInfo) {
+                    const prizeAmount = finalPrizes[prize] || 0;
+                    const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.floor(prizeAmount / claimInfo.claimedBy.length) : 0;
+                    totalWinnings += prizePerWinner;
+                }
+            });
+        } else if (isBotGame) {
+            currentUserPrizeNames.forEach(prize => {
+                totalWinnings += OFFLINE_COIN_REWARDS[gameSettings.gameMode as 'easy' | 'medium' | 'hard'][prize] || 0;
+            });
+            // Everyone gets a participation reward in bot games
             totalWinnings += PARTICIPATION_REWARD;
         }
-      }
     }
     
     const playAgainButtonText = isOnlineGame ? "Find New Match" : (roomData.settings.gameMode === 'multiplayer' ? (isCurrentUserHost ? "New Game" : "To Lobby") : "Play Again");
@@ -893,7 +889,7 @@ export default function GameRoomPage() {
                              <div className="flex justify-between items-center w-full">
                                 <span className="font-medium">{prize}</span>
                                 <div className="font-semibold flex items-center gap-1">
-                                    <Image src="/coin.png" alt="Coins" width={16} height={16} />
+                                    <Image src="/coin.png" alt="Coin" width={16} height={16} />
                                     <span>{rewardAmount}</span>
                                 </div>
                              </div>
@@ -951,7 +947,7 @@ export default function GameRoomPage() {
                         </div>
                         <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
                     </div>
-                ) : ( // isParticipationWinner
+                ) : ( // Participation reward only
                     <div className="text-center p-4 bg-secondary/50 rounded-lg">
                         <p className="font-semibold text-muted-foreground">You didn't win a prize this time, but well played!</p>
                         <div className="text-lg font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2 mt-2">
