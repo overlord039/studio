@@ -64,10 +64,10 @@ export default function HomePage() {
       )}
       
       {/* Action Buttons */}
-      <div className="w-full max-w-md space-y-4">
-        <div className="flex flex-col gap-4">
+      <div className="w-full max-w-4xl space-y-4">
+        <div className="flex flex-col md:flex-row gap-4">
             <Card 
-            className="bg-green-600 text-white hover:bg-green-700 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
+            className="flex-1 bg-green-600 text-white hover:bg-green-700 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
             onClick={() => handleNavigateWithAuth('/online')}
             role="button"
             tabIndex={0}
@@ -80,7 +80,7 @@ export default function HomePage() {
             </Card>
 
             <Card 
-            className="bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
+            className="flex-1 bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
             onClick={() => handleNavigateWithAuth('/play-with-computer')}
             role="button"
             tabIndex={0}
@@ -93,7 +93,7 @@ export default function HomePage() {
             </Card>
 
             <Card 
-            className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
+            className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
             onClick={() => handleNavigateWithAuth('/create-room')}
             role="button"
             tabIndex={0}
