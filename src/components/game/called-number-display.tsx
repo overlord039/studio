@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,8 +16,8 @@ interface CalledNumberDisplayProps {
 }
 
 export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMuted, onToggleMute, animationKey }: CalledNumberDisplayProps) {
-  // Take the first 3 numbers from the `calledNumbers` array, which is already sorted with most recent first.
-  // The current number is not part of this `calledNumbers` list yet.
+  // Take the first 3 numbers from the `calledNumbers` array, which should contain the history.
+  // The current number is handled separately and should not be in this list yet.
   const recentThree = calledNumbers.slice(0, 3);
   const displayNumbers: (number | null)[] = [...recentThree];
   while (displayNumbers.length < 3) {
