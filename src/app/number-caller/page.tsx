@@ -102,7 +102,7 @@ export default function NumberCallerPage() {
   const sortedCalledNumbers = [...calledNumbers].sort((a,b) => a - b);
 
   return (
-    <div className="container mx-auto p-4 space-y-3 md:space-y-4 border rounded-xl shadow-lg">
+    <div className="container mx-auto p-4 space-y-3 md:space-y-4">
       <Card className="shadow-xl bg-gradient-to-br from-primary via-purple-600 to-accent text-primary-foreground">
         <CardHeader className="flex flex-row items-center justify-between gap-4 py-3 md:py-4 px-4 md:px-6">
            <div className="flex items-center gap-4">
@@ -125,8 +125,9 @@ export default function NumberCallerPage() {
           </div>
         </CardHeader>
       </Card>
-
-      <div className="space-y-3">
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1 space-y-4">
           <CalledNumberDisplay 
             currentNumber={currentNumber}
             calledNumbers={calledNumbers}
@@ -135,31 +136,38 @@ export default function NumberCallerPage() {
             animationKey={animationKey}
           />
           {!isAutoCalling && (
-            <Button onClick={callNextNumber} disabled={availableNumbers.length === 0} className="w-full">
-              <Zap className="mr-2 h-4 w-4" /> Next Number
+            <Button onClick={callNextNumber} disabled={availableNumbers.length === 0} className="w-full h-12 text-lg">
+              <Zap className="mr-2 h-5 w-5" /> Next Number
             </Button>
           )}
-        
-        <LiveNumberBoard 
-          calledNumbers={sortedCalledNumbers}
-          currentNumber={currentNumber}
-          isMinimized={false}
-          onToggleMinimize={() => {}}
-          remainingCount={NUMBERS_RANGE_MAX - sortedCalledNumbers.length}
-          calledCount={sortedCalledNumbers.length}
-        />
-
-        <div className="flex w-full gap-2 pt-2">
-          <Link href="/" passHref className="flex-1">
-            <Button variant="destructive" className="w-full">
-                <LogOut className="mr-2 h-4 w-4 rotate-180" /> Back to Home
+          <div className="flex w-full gap-2">
+            <Link href="/" passHref className="flex-1">
+              <Button variant="destructive" className="w-full">
+                  <LogOut className="mr-2 h-4 w-4 rotate-180" /> Back
+              </Button>
+            </Link>
+            <Button onClick={resetGame} variant="outline" className="flex-1">
+                <RotateCcw className="mr-2 h-4 w-4" /> Reset
             </Button>
-          </Link>
-          <Button onClick={resetGame} variant="outline" className="flex-1">
-              <RotateCcw className="mr-2 h-4 w-4" /> Reset
-          </Button>
+          </div>
+        </div>
+        <div className="lg:col-span-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Number Board</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <LiveNumberBoard 
+                        calledNumbers={sortedCalledNumbers}
+                        currentNumber={currentNumber}
+                        remainingCount={NUMBERS_RANGE_MAX - sortedCalledNumbers.length}
+                        calledCount={sortedCalledNumbers.length}
+                    />
+                </CardContent>
+            </Card>
         </div>
       </div>
+
     </div>
   );
 }
