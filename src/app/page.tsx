@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/auth-context';
 import { useSound } from '@/contexts/sound-context';
 import FeedbackForm from '@/components/layout/feedback-form';
+import { cn } from '@/lib/utils';
 
 export default function HomePage() {
   const router = useRouter();
@@ -73,9 +74,9 @@ export default function HomePage() {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/online') }}
             >
-            <CardContent className="flex flex-row items-center justify-center p-4 gap-3 text-center">
-                <Globe className="h-6 w-6" />
-                <p className="text-lg font-bold">Online</p>
+            <CardContent className="flex flex-row items-center justify-center p-4 md:p-6 gap-3 text-center">
+                <Globe className="h-6 w-6 md:h-8 md:w-8" />
+                <p className="text-lg md:text-xl font-bold">Online</p>
             </CardContent>
             </Card>
 
@@ -86,9 +87,9 @@ export default function HomePage() {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/play-with-computer') }}
             >
-            <CardContent className="flex flex-row items-center justify-center p-4 gap-3 text-center">
-                <Bot className="h-6 w-6" />
-                <p className="text-lg font-bold">Offline</p>
+            <CardContent className="flex flex-row items-center justify-center p-4 md:p-6 gap-3 text-center">
+                <Bot className="h-6 w-6 md:h-8 md:w-8" />
+                <p className="text-lg md:text-xl font-bold">Offline</p>
             </CardContent>
             </Card>
 
@@ -99,9 +100,9 @@ export default function HomePage() {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/create-room') }}
             >
-            <CardContent className="flex flex-row items-center justify-center p-4 gap-3 text-center">
-                <Users className="h-6 w-6" />
-                <p className="text-lg font-bold">Friends</p>
+            <CardContent className="flex flex-row items-center justify-center p-4 md:p-6 gap-3 text-center">
+                <Users className="h-6 w-6 md:h-8 md:w-8" />
+                <p className="text-lg md:text-xl font-bold">Friends</p>
             </CardContent>
             </Card>
         </div>
