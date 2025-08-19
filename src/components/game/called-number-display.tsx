@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,12 +16,11 @@ interface CalledNumberDisplayProps {
 }
 
 export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMuted, onToggleMute, animationKey }: CalledNumberDisplayProps) {
-  // Take the last 10 numbers from the history, excluding the current one.
   const recentHistory = calledNumbers.slice(1, 11);
 
   return (
     <Card className="shadow-lg bg-primary text-primary-foreground overflow-hidden">
-      <CardContent className="p-4 flex flex-col items-center justify-center gap-4">
+      <CardContent className="p-4 flex items-end justify-center gap-6">
         <div className="flex flex-col items-center text-center">
           <p className="text-xs uppercase tracking-wider mb-2">Called Number</p>
           <div className="flex items-center gap-3">
@@ -57,9 +55,9 @@ export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMu
             </div>
           </div>
         </div>
-        <div className="flex flex-col items-center w-full">
+        <div className="flex flex-col items-center">
           <p className="text-xs uppercase tracking-wider mb-2">Recent</p>
-          <ScrollArea className="w-full max-w-xs whitespace-nowrap rounded-md">
+          <ScrollArea className="w-48 whitespace-nowrap rounded-md">
              <div key={`recent-${animationKey}`} className="flex w-max space-x-2 pb-2 animate-slide-in-recent">
                 {recentHistory.length > 0 ? (
                     recentHistory.map((num, index) => (
