@@ -367,7 +367,7 @@ export default function GameRoomPage() {
             isGameStarted: isGameActive || isGameOver,
             isGameOver: isGameOver,
             currentNumber: firestoreData.currentNumber || null,
-            calledNumbers: firestoreData.calledNumbers ? [...firestoreData.calledNumbers].reverse() : [],
+            calledNumbers: firestoreData.calledNumbers || [],
             numberPool: [],
             prizeStatus: firestoreData.prizeStatus || initializePrizeStatus(firestoreData.settings),
             totalPrizePool: (firestoreData.settings.ticketPrice || 0) * playersList.reduce((acc, p) => acc + p.tickets, 0)
@@ -567,7 +567,7 @@ export default function GameRoomPage() {
     
     let isClaimValidAndMarked = false;
     let winningTicketIndex = -1;
-    const numbersToValidate = isOnlineGame ? [...roomData.calledNumbers].reverse() : roomData.calledNumbers;
+    const numbersToValidate = roomData.calledNumbers;
 
     for (let i = 0; i < myTickets.length; i++) {
         const ticket = myTickets[i];
