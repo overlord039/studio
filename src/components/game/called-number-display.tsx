@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent } from '@/components/ui/card';
@@ -57,7 +58,7 @@ export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMu
         </div>
         <div className="flex flex-col items-center">
           <p className="text-xs uppercase tracking-wider mb-2">Recent</p>
-          <ScrollArea className="w-48 whitespace-nowrap rounded-md">
+          <ScrollArea className="w-48 whitespace-nowrap rounded-md scrollbar-hide">
              <div key={`recent-${animationKey}`} className="flex w-max space-x-2 pb-2 animate-slide-in-recent">
                 {recentHistory.length > 0 ? (
                     recentHistory.map((num, index) => (
