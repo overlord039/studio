@@ -126,8 +126,8 @@ export default function NumberCallerPage() {
         </CardHeader>
       </Card>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
           <CalledNumberDisplay 
             currentNumber={currentNumber}
             calledNumbers={calledNumbers}
@@ -151,7 +151,7 @@ export default function NumberCallerPage() {
             </Button>
           </div>
         </div>
-        <div className="lg:col-span-2">
+        <div>
             <Card>
                 <CardHeader>
                     <CardTitle>Number Board</CardTitle>
