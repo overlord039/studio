@@ -4,6 +4,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase/config";
 import { doc, runTransaction, serverTimestamp } from "firebase/firestore";
+import { SERVER_CALL_INTERVAL } from "@/lib/constants";
 
 // This will store timers on the server instance.
 // NOTE: In a serverless/multi-instance environment, this is not a robust solution for long-running tasks.
@@ -67,11 +68,17 @@ export async function POST(request: Request) {
             const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
             const hostUrl = `${protocol}://${host}`;
 
-            const timerId = setInterval(() => {
-                callNumberForRoom(roomId, hostUrl);
-            }, 6000); // 6 seconds
+            // Call the first number after 1 second
+            setTimeout(() => {
+                callNumberForRoom(roomId, hostUrl).then(() => {
+                     // Then, set up the regular interval for subsequent numbers
+                    const timerId = setInterval(() => {
+                        callNumberForRoom(roomId, hostUrl);
+                    }, SERVER_CALL_INTERVAL); 
+                    activeRoomTimers.set(roomId, timerId);
+                });
+            }, 1000); // 1-second delay for the first call
             
-            activeRoomTimers.set(roomId, timerId);
             console.log(`Server-side timer started for room ${roomId}.`);
         }
 

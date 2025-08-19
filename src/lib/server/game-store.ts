@@ -155,16 +155,27 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
   room.numberPool = initializeNumberPool();
   
   if (room.settings.callingMode === 'auto') {
-    const intervalId = setInterval(() => {
-      const currentRoomState = getRoomStore(roomId);
-      if (!currentRoomState || !currentRoomState.isGameStarted || currentRoomState.isGameOver) {
-        stopRoomTimer(roomId, !currentRoomState ? "Room no longer exists" : "Game not started or already over");
-        return;
-      }
-      callNextNumberStore(roomId); 
-    }, SERVER_CALL_INTERVAL); 
-    roomTimers.set(roomId, intervalId);
+    // Call the first number after 1 second
+    setTimeout(() => {
+        const firstCallResult = callNextNumberStore(roomId);
+        if (firstCallResult && 'error' in firstCallResult) {
+            // Stop if the first call fails (e.g., game ended immediately)
+            return;
+        }
+
+        // Then, set up the regular interval for subsequent numbers
+        const intervalId = setInterval(() => {
+            const currentRoomState = getRoomStore(roomId);
+            if (!currentRoomState || !currentRoomState.isGameStarted || currentRoomState.isGameOver) {
+                stopRoomTimer(roomId, !currentRoomState ? "Room no longer exists" : "Game not started or already over");
+                return;
+            }
+            callNextNumberStore(roomId);
+        }, SERVER_CALL_INTERVAL);
+        roomTimers.set(roomId, intervalId);
+    }, 1000); // 1-second delay for the first call
   }
+
 
   rooms.set(roomId, room);
   console.log(`Game started in room: ${roomId}.`);
@@ -360,15 +371,20 @@ export function updateCallingModeStore(roomId: string, hostId: string, newMode: 
 
     // If switching to 'auto', start the timer if it isn't already running
     if (newMode === 'auto' && room.isGameStarted && !roomTimers.has(roomId)) {
-        const intervalId = setInterval(() => {
-            const currentRoomState = getRoomStore(roomId);
-            if (!currentRoomState || !currentRoomState.isGameStarted || currentRoomState.isGameOver) {
-                stopRoomTimer(roomId, !currentRoomState ? "Room no longer exists" : "Game not started or over");
-                return;
-            }
-            callNextNumberStore(roomId);
-        }, SERVER_CALL_INTERVAL);
-        roomTimers.set(roomId, intervalId);
+        setTimeout(() => {
+            const firstCallResult = callNextNumberStore(roomId);
+            if (firstCallResult && 'error' in firstCallResult) { return; }
+
+            const intervalId = setInterval(() => {
+                const currentRoomState = getRoomStore(roomId);
+                if (!currentRoomState || !currentRoomState.isGameStarted || currentRoomState.isGameOver) {
+                    stopRoomTimer(roomId, !currentRoomState ? "Room no longer exists" : "Game not started or over");
+                    return;
+                }
+                callNextNumberStore(roomId);
+            }, SERVER_CALL_INTERVAL);
+            roomTimers.set(roomId, intervalId);
+        }, 1000); // 1-second delay for the first call
     } else if (newMode === 'manual') {
         // If switching to 'manual', stop the timer
         stopRoomTimer(roomId, "Switched to manual calling mode.");
