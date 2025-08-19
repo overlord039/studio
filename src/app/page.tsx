@@ -81,19 +81,6 @@ export default function HomePage() {
             </Card>
 
             <Card 
-            className="flex-1 bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
-            onClick={() => handleNavigateWithAuth('/play-with-computer')}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/play-with-computer') }}
-            >
-            <CardContent className="flex flex-row md:flex-col items-center justify-center p-4 gap-3 text-center md:h-48 md:w-full">
-                <Bot className="h-6 w-6 md:h-12 md:w-12" />
-                <p className="text-lg md:text-2xl font-bold">Offline</p>
-            </CardContent>
-            </Card>
-
-            <Card 
             className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
             onClick={() => handleNavigateWithAuth('/create-room')}
             role="button"
@@ -103,6 +90,19 @@ export default function HomePage() {
             <CardContent className="flex flex-row md:flex-col items-center justify-center p-4 gap-3 text-center md:h-48 md:w-full">
                 <Users className="h-6 w-6 md:h-12 md:w-12" />
                 <p className="text-lg md:text-2xl font-bold">Friends</p>
+            </CardContent>
+            </Card>
+
+            <Card 
+            className="flex-1 bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
+            onClick={() => handleNavigateWithAuth('/play-with-computer')}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/play-with-computer') }}
+            >
+            <CardContent className="flex flex-row md:flex-col items-center justify-center p-4 gap-3 text-center md:h-48 md:w-full">
+                <Bot className="h-6 w-6 md:h-12 md:w-12" />
+                <p className="text-lg md:text-2xl font-bold">Offline</p>
             </CardContent>
             </Card>
         </div>
