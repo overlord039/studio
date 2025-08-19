@@ -814,9 +814,10 @@ export default function GameRoomPage() {
   const hasPrizePool = roomData.settings.ticketPrice > 0;
 
   if (roomData.isGameOver) {
-    // This calculation is now performed live when rendering the game over screen
-    let totalWinnings = 0;
     const currentUserPrizeNames: PrizeType[] = [];
+    let totalWinnings = 0;
+    const userHasPrizes = currentUserPrizeNames.length > 0;
+    const isParticipationWinner = !userHasPrizes && totalWinnings > 0;
 
     if (currentUser) {
       for (const prize in roomData.prizeStatus) {
@@ -839,18 +840,18 @@ export default function GameRoomPage() {
       } else { // Bot game
         const isBotGame = gameSettings.gameMode && ['easy', 'medium', 'hard'].includes(gameSettings.gameMode);
         if (isBotGame) {
-          totalWinnings += PARTICIPATION_REWARD;
-          currentUserPrizeNames.forEach(prize => {
-            totalWinnings += OFFLINE_COIN_REWARDS[gameSettings.gameMode as 'easy' | 'medium' | 'hard'][prize] || 0;
-          });
+            if (currentUserPrizeNames.length > 0) {
+                currentUserPrizeNames.forEach(prize => {
+                    totalWinnings += OFFLINE_COIN_REWARDS[gameSettings.gameMode as 'easy' | 'medium' | 'hard'][prize] || 0;
+                });
+            }
+            totalWinnings += PARTICIPATION_REWARD;
         }
       }
     }
     
     const playAgainButtonText = isOnlineGame ? "Find New Match" : (roomData.settings.gameMode === 'multiplayer' ? (isCurrentUserHost ? "New Game" : "To Lobby") : "Play Again");
-    const userHasPrizes = currentUserPrizeNames.length > 0;
-    const isParticipationWinner = !userHasPrizes && totalWinnings > 0;
-
+    
     return (
       <div className="flex-grow p-4 flex flex-col items-center justify-center">
         <Card className="w-full max-w-2xl shadow-xl border-accent">
@@ -942,7 +943,7 @@ export default function GameRoomPage() {
             </div>
 
             {totalWinnings > 0 ? (
-                userHasPrizes ? (
+                currentUserPrizeNames.length > 0 ? (
                     <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
                         <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
                         <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
@@ -953,7 +954,6 @@ export default function GameRoomPage() {
                 ) : ( // isParticipationWinner
                     <div className="text-center p-4 bg-secondary/50 rounded-lg">
                         <p className="font-semibold text-muted-foreground">You didn't win a prize this time, but well played!</p>
-                        <p className="text-sm text-muted-foreground">Better luck next game!</p>
                         <div className="text-lg font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2 mt-2">
                            Participation Reward: <Image src="/coin.png" alt="Coins" width={20} height={20} /> {formatCoins(totalWinnings)}
                         </div>
@@ -1339,4 +1339,3 @@ export default function GameRoomPage() {
     </>
   );
 }
-
