@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,6 +14,18 @@ interface CalledNumberDisplayProps {
   onToggleMute: () => void;
   animationKey: number;
 }
+
+const BORDER_COLORS = [
+    "border-red-400",
+    "border-blue-400",
+    "border-green-400",
+    "border-yellow-400",
+    "border-purple-400",
+    "border-pink-400",
+    "border-indigo-400",
+    "border-teal-400"
+];
+
 
 export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMuted, onToggleMute, animationKey }: CalledNumberDisplayProps) {
   const recentHistory = calledNumbers.slice(1, 11);
@@ -65,8 +76,8 @@ export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMu
                     <div
                         key={num !== null ? `recent-${num}-${index}` : `empty-${index}`}
                         className={cn(
-                        "flex size-10 items-center justify-center rounded-full border-2 text-base font-bold",
-                        "bg-card text-card-foreground opacity-80 border-primary"
+                        "flex size-10 items-center justify-center rounded-full border-2 text-base font-bold bg-card text-card-foreground opacity-90",
+                        BORDER_COLORS[index % BORDER_COLORS.length]
                         )}
                     >
                         {num}
