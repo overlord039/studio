@@ -16,8 +16,10 @@ interface CalledNumberDisplayProps {
 }
 
 export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMuted, onToggleMute, animationKey }: CalledNumberDisplayProps) {
-  // Take the first 3 numbers from the `calledNumbers` array, which should contain the history.
-  const recentThree = calledNumbers.slice(0, 3);
+  // Take the first 3 numbers from the history, which are the numbers called *before* the current one.
+  // The `calledNumbers` array has the most recent number at index 0.
+  // If the current number is the most recent, we want to show the numbers from index 1, 2, and 3.
+  const recentThree = calledNumbers.slice(1, 4);
   const displayNumbers: (number | null)[] = [...recentThree];
   while (displayNumbers.length < 3) {
     displayNumbers.push(null);
