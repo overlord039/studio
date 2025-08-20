@@ -202,26 +202,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return user;
     }
     
-    let newStreak: number;
     const yesterday = subDays(today, 1);
+    const lastClaimed = user.stats.lastClaimedDay || 0;
+
+    let newStreak: number;
+    let newLastClaimedDay: number;
 
     if (isSameDay(lastLoginDate, yesterday)) {
         // Streak continues
         newStreak = (user.stats.loginStreak || 0) + 1;
+        newLastClaimedDay = lastClaimed;
     } else {
         // Streak is broken
         newStreak = 1;
-    }
-    
-    // If the streak is now > 7, it means they completed a week yesterday and are starting a new cycle.
-    if (newStreak > 7) {
-        newStreak = 1;
+        newLastClaimedDay = 0; // Reset reward cycle
     }
     
     const updates: { [key: string]: any } = { 
         'stats.lastLogin': today.toISOString(),
         'stats.loginStreak': newStreak,
     };
+    
+    if (newLastClaimedDay === 0 && lastClaimed > 0) {
+        updates['stats.lastClaimedDay'] = 0;
+    }
     
     const userDocRef = doc(db, "users", user.uid);
     try {
@@ -233,7 +237,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             stats: { 
                 ...user.stats, 
                 loginStreak: newStreak, 
-                lastLogin: today.toISOString() 
+                lastLogin: today.toISOString(),
+                lastClaimedDay: newLastClaimedDay
             }
         };
         return updatedUser;
@@ -323,8 +328,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     setCurrentUser(prevUser => areUsersEqual(prevUser, finalUser) ? prevUser : finalUser);
 
                     const canClaimNow = (finalUser.stats.loginStreak || 0) > (finalUser.stats.lastClaimedDay || 0) && (finalUser.stats.lastClaimedDay || 0) < 7;
-                    if (canClaimNow && !isNewUser) {
-                        setTimeout(() => setIsRewardDialogOpen(true), 1500); 
+                    if (canClaimNow) {
+                        setIsRewardDialogOpen(true);
                     }
                 }
                 setLoading(false);
