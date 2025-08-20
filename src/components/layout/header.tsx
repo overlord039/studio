@@ -362,7 +362,7 @@ export default function Header() {
                 </Avatar>
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-fit">
                     <div className="flex items-center gap-0.5 bg-background text-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-border">
-                        <Star className="w-2.5 h-2.5 text-yellow-500" />
+                        
                         <span>{level}</span>
                     </div>
                 </div>
