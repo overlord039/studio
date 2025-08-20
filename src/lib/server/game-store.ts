@@ -1,4 +1,5 @@
 
+
 import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid, CallingMode, OnlineGameTier } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { generateMultipleUniqueTickets } from '@/lib/housie';
@@ -49,6 +50,19 @@ function stopRoomTimer(roomId: string, reason: string) {
     console.log(`Room ${roomId}: Timer stopped. Reason: ${reason}`);
   }
 }
+
+const scheduleNextCall = (roomId: string) => {
+    const timerId = setTimeout(() => {
+        const room = getRoomStore(roomId);
+        if (room && room.isGameStarted && !room.isGameOver) {
+            callNextNumberStore(roomId);
+            scheduleNextCall(roomId); // Schedule the next one
+        } else {
+            stopRoomTimer(roomId, !room ? "Room no longer exists" : "Game not started or already over");
+        }
+    }, SERVER_CALL_INTERVAL);
+    roomTimers.set(roomId, timerId);
+};
 
 export function createRoomStore(host: Player, clientSettings?: Partial<GameSettings>): Room {
   const roomId = generateRoomId();
@@ -155,25 +169,8 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
   room.numberPool = initializeNumberPool();
   
   if (room.settings.callingMode === 'auto') {
-    // Call the first number after 1 second
-    setTimeout(() => {
-        const firstCallResult = callNextNumberStore(roomId);
-        if (firstCallResult && 'error' in firstCallResult) {
-            // Stop if the first call fails (e.g., game ended immediately)
-            return;
-        }
-
-        // Then, set up the regular interval for subsequent numbers
-        const intervalId = setInterval(() => {
-            const currentRoomState = getRoomStore(roomId);
-            if (!currentRoomState || !currentRoomState.isGameStarted || currentRoomState.isGameOver) {
-                stopRoomTimer(roomId, !currentRoomState ? "Room no longer exists" : "Game not started or already over");
-                return;
-            }
-            callNextNumberStore(roomId);
-        }, SERVER_CALL_INTERVAL);
-        roomTimers.set(roomId, intervalId);
-    }, 1000); // 1-second delay for the first call
+    // Start the recursive calling loop
+    scheduleNextCall(roomId);
   }
 
 
@@ -370,24 +367,9 @@ export function updateCallingModeStore(roomId: string, hostId: string, newMode: 
     room.settings.callingMode = newMode;
     rooms.set(roomId, room);
 
-    // If switching to 'auto', start the timer if it isn't already running
     if (newMode === 'auto' && room.isGameStarted && !roomTimers.has(roomId)) {
-        setTimeout(() => {
-            const firstCallResult = callNextNumberStore(roomId);
-            if (firstCallResult && 'error' in firstCallResult) { return; }
-
-            const intervalId = setInterval(() => {
-                const currentRoomState = getRoomStore(roomId);
-                if (!currentRoomState || !currentRoomState.isGameStarted || currentRoomState.isGameOver) {
-                    stopRoomTimer(roomId, !currentRoomState ? "Room no longer exists" : "Game not started or over");
-                    return;
-                }
-                callNextNumberStore(roomId);
-            }, SERVER_CALL_INTERVAL);
-            roomTimers.set(roomId, intervalId);
-        }, 1000); // 1-second delay for the first call
+        scheduleNextCall(roomId);
     } else if (newMode === 'manual') {
-        // If switching to 'manual', stop the timer
         stopRoomTimer(roomId, "Switched to manual calling mode.");
     }
     
