@@ -93,8 +93,9 @@ export async function POST(request: NextRequest) {
         const playersColRef = collection(db, 'rooms', roomId, 'players');
         const playersSnap = await getDocs(playersColRef);
         const playersList = playersSnap.docs.map(d => d.data() as FirestorePlayer);
-
-        const totalTicketsSold = playersList.reduce((acc, p) => acc + (p.tickets || 1), 0);
+        
+        // This includes tickets from human players and bots.
+        const totalTicketsSold = playersList.reduce((acc, p) => acc + (p.tickets || 0), 0);
         const totalPrizePool = (roomData.settings.ticketPrice || 0) * totalTicketsSold;
         
         const finalPrizes = calculatePrizes(totalPrizePool, roomData.settings);
