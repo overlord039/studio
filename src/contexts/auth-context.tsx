@@ -30,6 +30,7 @@ import { isSameDay, subDays, startOfDay } from 'date-fns';
 import { WEEKLY_REWARDS, PERFECT_STREAK_BONUS } from '@/lib/rewards';
 import AnimatedCoin from '@/components/rewards/animated-coin';
 import { useRouter } from 'next/navigation';
+import LevelUpDialog from '@/components/rewards/level-up-dialog';
 
 
 export interface User {
@@ -164,6 +165,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const canClaimReward = currentUser ? (currentUser.stats.loginStreak || 0) > (currentUser.stats.lastClaimedDay || 0) && (currentUser.stats.lastClaimedDay || 0) < 7 : false;
   const sessionWelcomedRef = useRef(false);
+  const previousUserRef = useRef<User | null>(null);
+
+  const [levelUpInfo, setLevelUpInfo] = useState<{ oldLevel: number; newLevel: number } | null>(null);
+
+
+  useEffect(() => {
+    previousUserRef.current = currentUser;
+  }, [currentUser]);
 
 
   const fetchUser = useCallback(async () => {
@@ -206,12 +215,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const lastClaimed = user.stats.lastClaimedDay || 0;
 
     let newStreak: number;
-    let newLastClaimedDay: number;
+    let newLastClaimedDay = lastClaimed;
 
     if (isSameDay(lastLoginDate, yesterday)) {
         // Streak continues
         newStreak = (user.stats.loginStreak || 0) + 1;
-        newLastClaimedDay = lastClaimed;
     } else {
         // Streak is broken
         newStreak = 1;
@@ -325,11 +333,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 if (userForLoginCheck) {
                     const finalUser = await checkDailyLogin(userForLoginCheck);
+
+                    // Check for level up
+                    const prevUser = previousUserRef.current;
+                    if (prevUser && finalUser.stats.level > prevUser.stats.level) {
+                       setLevelUpInfo({ oldLevel: prevUser.stats.level, newLevel: finalUser.stats.level });
+                    }
+                    
                     setCurrentUser(prevUser => areUsersEqual(prevUser, finalUser) ? prevUser : finalUser);
 
                     const canClaimNow = (finalUser.stats.loginStreak || 0) > (finalUser.stats.lastClaimedDay || 0) && (finalUser.stats.lastClaimedDay || 0) < 7;
-                    if (canClaimNow) {
+                    if (canClaimNow && !sessionWelcomedRef.current) {
                         setIsRewardDialogOpen(true);
+                        sessionWelcomedRef.current = true;
                     }
                 }
                 setLoading(false);
@@ -656,6 +672,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {levelUpInfo && (
+        <LevelUpDialog
+          open={!!levelUpInfo}
+          onOpenChange={() => setLevelUpInfo(null)}
+          oldLevel={levelUpInfo.oldLevel}
+          newLevel={levelUpInfo.newLevel}
+        />
+      )}
       {loading && !currentUser ? (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-background">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
