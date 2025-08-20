@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { CheckCircle, Gift, Star, X } from 'lucide-react';
 import { useAuth, useCoinAnimation } from '@/contexts/auth-context';
 import AnimatedCoin from './animated-coin';
+import { Progress } from '@/components/ui/progress';
 
 interface DailyRewardDialogProps {
   user: User;
@@ -26,6 +27,7 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
   
   const canClaimToday = streak > 0 && lastClaimedDay < 7;
   const nextDayToClaim = lastClaimedDay + 1;
+  const progressPercentage = (lastClaimedDay / 7) * 100;
 
   const handleClaimAndAnimate = async () => {
       const result = await onClaim(nextDayToClaim);
@@ -63,6 +65,14 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
           {WEEKLY_REWARDS.slice(4).map((reward, i) => (
             <RewardCard key={i + 4} day={i + 5} reward={reward} lastClaimedDay={lastClaimedDay} />
           ))}
+        </div>
+
+        <div className="my-6 space-y-2">
+            <div className="flex justify-between text-xs font-medium text-muted-foreground">
+                <span>Streak Progress</span>
+                <span>{lastClaimedDay} / 7 Days</span>
+            </div>
+            <Progress value={progressPercentage} className="h-2" />
         </div>
 
         <div className="text-center p-3 bg-yellow-400/20 border-2 border-dashed border-yellow-500/50 rounded-lg">
