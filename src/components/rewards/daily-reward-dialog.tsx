@@ -52,7 +52,7 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
           </div>
           <DialogTitle className="text-2xl">Daily Login Reward</DialogTitle>
           <DialogDescription>
-            Log in every day to earn rewards. Complete the week for a bonus! Current Streak: {streak} day(s)
+            Log in every day to earn rewards. Complete the week for a bonus!
           </DialogDescription>
         </DialogHeader>
 
@@ -67,16 +67,15 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
           ))}
         </div>
 
-        <div className="my-6 space-y-2">
-            <div className="flex justify-between text-xs font-medium text-muted-foreground">
-                <span>Streak Progress</span>
-                <span>{streak} / 7 Days</span>
-            </div>
-            <Progress value={progressPercentage} className="h-2" />
-        </div>
-
-        <div className="text-center p-3 bg-yellow-400/20 border-2 border-dashed border-yellow-500/50 rounded-lg">
+        <div className="text-center p-3 bg-yellow-400/20 border-2 border-dashed border-yellow-500/50 rounded-lg space-y-2">
           <h4 className="font-bold flex items-center justify-center gap-2"><Star className="text-yellow-500"/> Perfect Week Bonus</h4>
+            <div className="space-y-1">
+                <Progress value={progressPercentage} className="h-2" />
+                <div className="flex justify-between text-xs font-medium text-muted-foreground px-1">
+                    <span>Streak: {streak} Day{streak === 1 ? '' : 's'}</span>
+                    <span>{streak} / 7</span>
+                </div>
+            </div>
           <p className="text-sm">Claim all 7 days for an extra <span className="font-bold">{PERFECT_STREAK_BONUS} coins!</span></p>
         </div>
 
@@ -111,7 +110,7 @@ const RewardCard = ({ day, reward, lastClaimedDay, streak }: { day: number, rewa
     return (
         <div className={cn(
             "p-2 rounded-lg text-center border-2 flex flex-col items-center justify-center aspect-square transition-all relative shadow-inner",
-            isClaimed && "bg-green-100 dark:bg-green-900/40 border-green-500/70 text-green-800 dark:text-green-200",
+            isClaimed && "bg-green-600/20 border-green-500/70 text-green-800 dark:text-green-200",
             isNextToClaim && "bg-primary/10 border-primary shadow-lg scale-105 ring-2 ring-primary/50 text-primary-foreground",
             !isClaimed && !isNextToClaim && "bg-card/50 dark:bg-black/20 border-border opacity-60"
         )}>
