@@ -45,7 +45,17 @@ export default function PageLayout({ children }: { children: ReactNode }) {
     }
 
 
-    const showHeaderAndFooter = pathname === '/' || pathname.startsWith('/online') || pathname.endsWith('/lobby') || pathname.startsWith('/create-room');
+    const showHeader = pathname === '/' || 
+                       pathname.startsWith('/online') || 
+                       pathname.endsWith('/lobby') || 
+                       pathname.startsWith('/create-room') ||
+                       pathname.startsWith('/room/');
+
+    const showFooter = pathname === '/' || 
+                       pathname.startsWith('/online') || 
+                       pathname.endsWith('/lobby') || 
+                       pathname.startsWith('/create-room');
+
     const showActionIcons = pathname === '/';
 
     const isSpecialLayoutPage = 
@@ -65,7 +75,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
 
     return (
         <>
-            {showHeaderAndFooter && <Header />}
+            {showHeader && <Header />}
             <main className={mainClassName}>
                  {showActionIcons && (
                     <div className="fixed top-18 right-4 z-40 flex flex-col items-center gap-2">
@@ -104,7 +114,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                 {children}
             </main>
             <Toaster />
-            {showHeaderAndFooter && <Footer />}
+            {showFooter && <Footer />}
         </>
     );
 }
