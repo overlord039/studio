@@ -349,28 +349,21 @@ export default function Header() {
     return (
       <div className="flex items-center gap-2">
         <Link href="/profile" passHref>
-          <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm p-1 pr-3 rounded-full border border-white/20 hover:bg-black/50 transition-colors cursor-pointer">
-            <div className="relative">
-              <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-primary">
-                <AvatarImage 
-                    src={currentUser.photoURL || `https://placehold.co/48x48.png?text=${avatarFallback}`} 
-                    alt={displayName} 
-                    data-ai-hint="profile avatar"
-                />
-                <AvatarFallback>{avatarFallback}</AvatarFallback>
-              </Avatar>
-              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 text-white bg-black/50 px-1.5 rounded-full z-10">
-                  <Star className="h-2.5 w-2.5 text-yellow-400" />
-                  <span className="text-xs font-bold">{currentUser.stats.level || 1}</span>
-              </div>
+          <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm p-1.5 rounded-full border border-white/20 hover:bg-black/50 transition-colors cursor-pointer">
+            <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-primary">
+              <AvatarImage 
+                  src={currentUser.photoURL || `https://placehold.co/48x48.png?text=${avatarFallback}`} 
+                  alt={displayName} 
+                  data-ai-hint="profile avatar"
+              />
+              <AvatarFallback>{avatarFallback}</AvatarFallback>
+            </Avatar>
+            <div className="flex items-center gap-1 sm:gap-1.5 text-white pr-2">
+              <Image src="/coin.png" alt="Coins" width={24} height={24} className="h-5 w-5 sm:h-6 sm:w-6" />
+              <span className="font-bold text-base sm:text-lg">{currentUser.stats.coins ?? 0}</span>
             </div>
-            <span className="font-bold text-lg text-white hidden sm:block">{displayName}</span>
           </div>
         </Link>
-        <div className="flex items-center gap-1 sm:gap-1.5 text-white bg-black/30 backdrop-blur-sm p-2 sm:px-4 rounded-full border border-white/20">
-          <Image src="/coin.png" alt="Coins" width={24} height={24} className="h-5 w-5 sm:h-6 sm:w-6" />
-          <span className="font-bold text-base sm:text-lg">{currentUser.stats.coins ?? 0}</span>
-        </div>
       </div>
     );
   };
