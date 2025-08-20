@@ -35,7 +35,7 @@ function initializePrizeStatus(roomSettings: GameSettings): Record<PrizeType, Pr
   const prizesForFormat = PRIZE_DEFINITIONS[prizeFormat] || Object.values(PRIZE_TYPES);
 
   (prizesForFormat as PrizeType[]).forEach(prize => {
-    status[prize] = null;
+    status[prize] = { claimedBy: [] };
   });
   return status;
 }
@@ -252,6 +252,7 @@ export function callNextNumberStore(roomId: string): Room | { error: string; num
   if (room.numberPool.length === 0) {
     room.isGameOver = true;
     stopRoomTimer(roomId, "All numbers called.");
+    rooms.set(roomId, room);
     return { error: "All numbers called." };
   }
 

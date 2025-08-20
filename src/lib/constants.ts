@@ -63,5 +63,11 @@ export const XP_PER_PRIZE_WIN = {
 };
 
 export const getXpForNextLevel = (level: number) => {
-    return 100 * Math.pow(level, 1.5);
+    // This formula creates a curve where leveling up gets progressively harder.
+    // Level 1 -> 2 needs 100 XP.
+    // Level 10 -> 11 needs ~3162 XP.
+    return Math.floor(100 * Math.pow(level, 1.5));
 };
+
+// New constant to make online play more rewarding
+export const XP_MODIFIER_ONLINE = 1.5;

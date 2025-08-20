@@ -6,7 +6,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { db } from '@/lib/firebase/config';
 import { doc, getDoc, runTransaction, collection, getDocs, increment, writeBatch } from 'firebase/firestore';
 import type { FirestoreRoom, FirestorePlayer, PrizeType, GameSettings, UserStats } from '@/types';
-import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, getXpForNextLevel, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN } from '@/lib/constants';
+import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, getXpForNextLevel, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN, XP_MODIFIER_ONLINE } from '@/lib/constants';
 
 // Helper function to calculate final prize distribution accurately
 function calculatePrizes(totalPool: number, settings: GameSettings): Record<PrizeType, number> {
@@ -94,8 +94,11 @@ export async function POST(request: NextRequest) {
         const playersSnap = await getDocs(playersColRef);
         const playersList = playersSnap.docs.map(d => d.data() as FirestorePlayer);
         
-        // This includes tickets from human players and bots.
-        const totalTicketsSold = playersList.reduce((acc, p) => acc + (p.tickets || 0), 0);
+        const humanPlayers = playersList.filter(p => p.type === 'human');
+        const totalHumanTicketsSold = humanPlayers.reduce((acc, p) => acc + (p.tickets || 0), 0);
+        
+        const botTicketsCount = roomData.botTickets ? Object.values(roomData.botTickets).reduce((acc, tickets) => acc + tickets.length, 0) : 0;
+        const totalTicketsSold = totalHumanTicketsSold + botTicketsCount;
         const totalPrizePool = (roomData.settings.ticketPrice || 0) * totalTicketsSold;
         
         const finalPrizes = calculatePrizes(totalPrizePool, roomData.settings);
@@ -106,13 +109,16 @@ export async function POST(request: NextRequest) {
             'stats.matchesPlayed': increment(1),
         };
         
-        let xpGained = XP_PER_GAME_PARTICIPATION;
+        // Apply 1.5x XP modifier for online games
+        let xpGained = Math.round(XP_PER_GAME_PARTICIPATION * XP_MODIFIER_ONLINE);
 
         prizesForFormat.forEach(prize => {
             const claimInfo = roomData.prizeStatus?.[prize as PrizeType];
             if (claimInfo && claimInfo.claimedBy?.some((c: {id: string}) => c.id === userId)) {
                 statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
-                xpGained += XP_PER_PRIZE_WIN[prize as PrizeType] || 0;
+                
+                const basePrizeXp = XP_PER_PRIZE_WIN[prize as PrizeType] || 0;
+                xpGained += Math.round(basePrizeXp * XP_MODIFIER_ONLINE);
                 
                 const prizeAmount = finalPrizes[prize as PrizeType] || 0;
                 const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.floor(prizeAmount / claimInfo.claimedBy.length) : 0;
