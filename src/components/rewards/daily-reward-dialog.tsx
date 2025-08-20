@@ -70,7 +70,7 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
         <div className="text-center p-3 bg-yellow-400/20 border-2 border-dashed border-yellow-500/50 rounded-lg space-y-2">
           <h4 className="font-bold flex items-center justify-center gap-2"><Star className="text-yellow-500"/> Perfect Week Bonus</h4>
             <div className="space-y-1">
-                <Progress value={progressPercentage} className="h-2" />
+                <Progress value={progressPercentage} className="h-2" variant="segmented" />
                 <div className="flex justify-between text-xs font-medium text-muted-foreground px-1">
                     <span>Streak: {streak} Day{streak === 1 ? '' : 's'}</span>
                     <span>{streak} / 7</span>

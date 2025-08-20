@@ -302,7 +302,7 @@ export default function ProfilePage() {
                                     </div>
                                     <span className="text-sm font-medium text-muted-foreground">{Math.floor(currentXp)} / {Math.floor(xpForNextLevel)} XP</span>
                                 </div>
-                                <Progress value={xpProgressPercentage} className="h-2" />
+                                <Progress value={xpProgressPercentage} className="h-2" variant="solid" />
                              </Card>
                         </div>
                         <div>
