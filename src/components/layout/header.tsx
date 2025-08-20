@@ -377,11 +377,10 @@ export default function Header() {
                   strokeWidth="3"
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeDashoffset}
-                  strokeLinecap="round"
                   style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
                 />
               </svg>
-              <Avatar className="h-full w-full border-2 border-background">
+              <Avatar className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-full scale-[0.85]">
                 <AvatarImage 
                     src={currentUser.photoURL || `https://placehold.co/48x48.png?text=${avatarFallback}`} 
                     alt={displayName} 
@@ -427,7 +426,3 @@ export default function Header() {
     </header>
   );
 }
-
-    
-
-    
