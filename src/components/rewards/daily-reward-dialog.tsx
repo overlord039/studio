@@ -110,17 +110,17 @@ const RewardCard = ({ day, reward, lastClaimedDay, streak }: { day: number, rewa
 
     return (
         <div className={cn(
-            "p-2 rounded-lg text-center border-2 flex flex-col items-center justify-center aspect-square transition-all relative",
-            isClaimed && "bg-green-600/20 border-green-500 text-green-700",
-            isNextToClaim && "bg-primary/20 border-primary shadow-lg scale-105",
-            !isClaimed && !isNextToClaim && "bg-muted/50 border-border/50 opacity-60"
+            "p-2 rounded-lg text-center border-2 flex flex-col items-center justify-center aspect-square transition-all relative shadow-inner",
+            isClaimed && "bg-green-100 dark:bg-green-900/40 border-green-500 text-green-800 dark:text-green-200",
+            isNextToClaim && "bg-primary/10 border-primary shadow-lg scale-105 ring-2 ring-primary/50",
+            !isClaimed && !isNextToClaim && "bg-muted/30 border-border/80 opacity-60"
         )}>
              {isClaimed && (
                 <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-0.5">
                     <CheckCircle className="h-4 w-4" />
                 </div>
             )}
-            <p className="text-xs font-semibold uppercase">Day {day}</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Day {day}</p>
             <Image src="/coin.png" alt="Coin" width={24} height={24} className="my-1"/>
             <p className="text-sm font-bold">{reward}</p>
         </div>
