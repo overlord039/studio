@@ -197,28 +197,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const today = startOfDay(new Date());
     const lastLoginDate = startOfDay(new Date(user.stats.lastLogin || 0));
 
+    // If they already logged in today, no need to do anything.
     if (isSameDay(today, lastLoginDate)) {
         return user;
     }
 
     const yesterday = startOfDay(subDays(today, 1));
-    let newStreak = user.stats.loginStreak || 0;
+    const wasLastLoginYesterday = isSameDay(lastLoginDate, yesterday);
     
-    if (isSameDay(lastLoginDate, yesterday)) {
-        newStreak++;
+    let newStreak: number;
+    let newLastClaimedDay: number;
+    const updates: { [key: string]: any } = { 'stats.lastLogin': today.toISOString() };
+
+    if (wasLastLoginYesterday) {
+        // Continue the streak
+        newStreak = (user.stats.loginStreak || 0) + 1;
+        newLastClaimedDay = user.stats.lastClaimedDay || 0;
+        // If they finished a week and are starting a new streak
+        if (newLastClaimedDay >= 7) {
+            newLastClaimedDay = 0;
+        }
     } else {
+        // Reset the streak
         newStreak = 1;
+        newLastClaimedDay = 0;
     }
 
+    updates['stats.loginStreak'] = newStreak;
+    updates['stats.lastClaimedDay'] = newLastClaimedDay;
+    
     const userDocRef = doc(db, "users", user.uid);
     try {
-        await updateDoc(userDocRef, {
-            'stats.loginStreak': newStreak,
-            'stats.lastLogin': today.toISOString(),
-        });
+        await updateDoc(userDocRef, updates);
 
         // Return the user object with the updated stats for immediate use in the UI.
-        const updatedUser = { ...user, stats: { ...user.stats, loginStreak: newStreak, lastLogin: today.toISOString() }};
+        const updatedUser = { 
+            ...user, 
+            stats: { 
+                ...user.stats, 
+                loginStreak: newStreak, 
+                lastClaimedDay: newLastClaimedDay,
+                lastLogin: today.toISOString() 
+            }
+        };
         return updatedUser;
 
     } catch (error) {
@@ -354,14 +375,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         message = `You completed the week and earned a bonus! Total reward: ${totalReward} coins!`;
     }
 
-    const nextClaimDay = dayToClaim === 7 ? 0 : dayToClaim;
+    const nextClaimDay = dayToClaim;
     
     const userDocRef = doc(db, "users", currentUser.uid);
     try {
         await updateDoc(userDocRef, {
             'stats.coins': increment(totalReward),
             'stats.lastClaimedDay': nextClaimDay,
-            'stats.loginStreak': 0, // Reset streak for today after claiming
         });
         toast({ title: "Reward Claimed!", description: message });
         return { claimedAmount: totalReward };

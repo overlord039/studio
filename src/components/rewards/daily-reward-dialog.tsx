@@ -115,6 +115,11 @@ const RewardCard = ({ day, reward, lastClaimedDay }: { day: number, reward: numb
             isNextToClaim && "bg-primary/20 border-primary shadow-lg scale-105",
             !isClaimed && !isNextToClaim && "bg-muted/50 border-border/50 opacity-60"
         )}>
+             {isClaimed && (
+                <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-0.5">
+                    <CheckCircle className="h-4 w-4" />
+                </div>
+            )}
             <p className="text-xs font-semibold uppercase">Day {day}</p>
             <Image src="/coin.png" alt="Coin" width={24} height={24} className="my-1"/>
             <p className="text-sm font-bold">{reward}</p>
