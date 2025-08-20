@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { getXpForNextLevel } from '@/lib/constants';
 
 export const SettingsModal = ({ open, onOpenChange, activeTab, setActiveTab }: { open: boolean, onOpenChange: (open: boolean) => void, activeTab: string; setActiveTab: (tab: string) => void; }) => {
   const { theme, setTheme } = useTheme();
@@ -346,25 +347,54 @@ export default function Header() {
     const displayName = currentUser.displayName || 'G';
     const avatarFallback = currentUser.isGuest ? 'G' : displayName.substring(0, 2).toUpperCase();
     const level = currentUser.stats.level || 1;
+    const currentXp = currentUser.stats.xp || 0;
+    const xpForNext = getXpForNextLevel(level);
+    const xpProgress = Math.min(100, (currentXp / xpForNext) * 100);
+
+    const circumference = 2 * Math.PI * 18; // 2 * pi * radius
+    const strokeDashoffset = circumference - (xpProgress / 100) * circumference;
     
     return (
       <div className="flex items-center gap-2">
         <Link href="/profile" passHref>
           <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm p-1.5 rounded-full border border-white/20 hover:bg-black/50 transition-colors cursor-pointer">
-            <div className="relative">
-                <Avatar className="h-8 w-8 sm:h-10 sm:w-10 border-2 border-primary">
-                  <AvatarImage 
-                      src={currentUser.photoURL || `https://placehold.co/48x48.png?text=${avatarFallback}`} 
-                      alt={displayName} 
-                      data-ai-hint="profile avatar"
-                  />
-                  <AvatarFallback>{avatarFallback}</AvatarFallback>
-                </Avatar>
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-fit">
-                    <div className="flex items-center gap-0.5 bg-background text-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-border">
-                        <span>{level}</span>
-                    </div>
-                </div>
+            <div className="relative h-10 w-10 sm:h-12 sm:w-12">
+              <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 40 40">
+                <circle
+                  cx="20"
+                  cy="20"
+                  r="18"
+                  fill="none"
+                  className="stroke-primary/20"
+                  strokeWidth="3"
+                />
+                <circle
+                  cx="20"
+                  cy="20"
+                  r="18"
+                  fill="none"
+                  className="stroke-primary"
+                  strokeWidth="3"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  strokeLinecap="round"
+                  style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
+                />
+              </svg>
+              <Avatar className="h-full w-full border-2 border-background">
+                <AvatarImage 
+                    src={currentUser.photoURL || `https://placehold.co/48x48.png?text=${avatarFallback}`} 
+                    alt={displayName} 
+                    data-ai-hint="profile avatar"
+                />
+                <AvatarFallback>{avatarFallback}</AvatarFallback>
+              </Avatar>
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-fit">
+                  <div className="flex items-center gap-0.5 bg-background text-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-border">
+                      <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-500"/>
+                      <span>{level}</span>
+                  </div>
+              </div>
             </div>
           </div>
         </Link>
@@ -397,3 +427,5 @@ export default function Header() {
     </header>
   );
 }
+
+    
