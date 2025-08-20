@@ -40,6 +40,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 import Image from 'next/image';
 import { db } from '@/lib/firebase/config';
@@ -852,6 +853,8 @@ export default function GameRoomPage() {
     const playAgainButtonText = isOnlineGame ? "Find New Match" : (roomData.settings.gameMode === 'multiplayer' ? (isCurrentUserHost ? "New Game" : "To Lobby") : "Play Again");
     
     return (
+      <>
+      <Header />
       <div className="flex-grow p-4 flex flex-col items-center justify-center">
         <Card className="w-full max-w-2xl shadow-xl border-accent">
           <CardHeader className="text-center">
@@ -985,6 +988,7 @@ export default function GameRoomPage() {
           </CardContent>
         </Card>
       </div>
+      </>
     );
   }
 
