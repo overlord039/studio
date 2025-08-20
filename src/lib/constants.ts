@@ -51,3 +51,17 @@ export const TICKET_COLS = 9;
 export const NUMBERS_PER_ROW = 5;
 export const BLANKS_PER_ROW = TICKET_COLS - NUMBERS_PER_ROW; // 4
 export const TOTAL_NUMBERS_PER_TICKET = NUMBERS_PER_ROW * TICKET_ROWS; // 15
+
+// XP and Leveling Constants
+export const XP_PER_GAME_PARTICIPATION = 10;
+export const XP_PER_PRIZE_WIN = {
+  [PRIZE_TYPES.EARLY_5]: 5,
+  [PRIZE_TYPES.FIRST_LINE]: 10,
+  [PRIZE_TYPES.SECOND_LINE]: 10,
+  [PRIZE_TYPES.THIRD_LINE]: 10,
+  [PRIZE_TYPES.FULL_HOUSE]: 25,
+};
+
+export const getXpForNextLevel = (level: number) => {
+    return 100 * Math.pow(level, 1.5);
+};

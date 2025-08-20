@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertTriangle, Calendar, Mail, LogOut, X, Fingerprint, Gamepad2, Award, Loader2, Pencil, Check } from "lucide-react";
+import { AlertTriangle, Calendar, Mail, LogOut, X, Fingerprint, Gamepad2, Award, Loader2, Pencil, Check, Star } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,9 +16,10 @@ import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import type { PrizeType } from '@/types';
 import { Input } from '@/components/ui/input';
-import { PRIZE_DEFINITIONS, DEFAULT_GAME_SETTINGS } from '@/lib/constants';
+import { PRIZE_DEFINITIONS, DEFAULT_GAME_SETTINGS, getXpForNextLevel } from '@/lib/constants';
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
+import { Progress } from '@/components/ui/progress';
 
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -196,6 +197,11 @@ export default function ProfilePage() {
     
     const canChangeName = currentUser.isGuest || !currentUser.stats?.usernameChanged;
 
+    const currentLevel = currentUser.stats?.level || 1;
+    const currentXp = currentUser.stats?.xp || 0;
+    const xpForNextLevel = getXpForNextLevel(currentLevel);
+    const xpProgressPercentage = Math.min(100, (currentXp / xpForNextLevel) * 100);
+
     return (
       <div className="animate-fade-in max-w-lg w-full">
           <Card className="shadow-xl overflow-hidden border-2 border-primary/20 relative">
@@ -286,6 +292,19 @@ export default function ProfilePage() {
               </div>
               <CardContent className="p-6 space-y-6 bg-card">
                    <div className="space-y-6">
+                        <div>
+                             <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider mb-2">Level Progress</h3>
+                             <Card className="bg-secondary p-3">
+                                <div className="flex items-center justify-between mb-1">
+                                    <div className="flex items-center gap-2">
+                                        <Star className="h-5 w-5 text-yellow-500" />
+                                        <span className="font-bold text-lg">Level {currentLevel}</span>
+                                    </div>
+                                    <span className="text-sm font-medium text-muted-foreground">{Math.floor(currentXp)} / {Math.floor(xpForNextLevel)} XP</span>
+                                </div>
+                                <Progress value={xpProgressPercentage} className="h-2" />
+                             </Card>
+                        </div>
                         <div>
                             <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">Statistics</h3>
                             <div className="mt-2 space-y-3">

@@ -5,8 +5,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { db } from '@/lib/firebase/config';
 import { doc, getDoc, runTransaction, collection, getDocs, increment, writeBatch } from 'firebase/firestore';
-import type { FirestoreRoom, FirestorePlayer, PrizeType, GameSettings } from '@/types';
-import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES } from '@/lib/constants';
+import type { FirestoreRoom, FirestorePlayer, PrizeType, GameSettings, UserStats } from '@/types';
+import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, getXpForNextLevel, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN } from '@/lib/constants';
 
 // Helper function to calculate final prize distribution accurately
 function calculatePrizes(totalPool: number, settings: GameSettings): Record<PrizeType, number> {
@@ -79,10 +79,10 @@ export async function POST(request: NextRequest) {
         const playerRef = doc(db, 'users', userId);
         const playerSnap = await transaction.get(playerRef);
         if (!playerSnap.exists()) {
-            // A player (human or guest) should always have a user doc. If not, something is wrong.
             console.warn(`User document for userId ${userId} not found in room ${roomId}. Cannot update stats.`);
             return;
         }
+        const currentStats: UserStats = playerSnap.data().stats || {};
 
         // --- Idempotency: Check if this user's stats have been updated for this room ---
         if (roomData.playersWhoUpdatedStats?.includes(userId)) {
@@ -104,11 +104,14 @@ export async function POST(request: NextRequest) {
         const statsUpdate: { [key: string]: any } = {
             'stats.matchesPlayed': increment(1),
         };
+        
+        let xpGained = XP_PER_GAME_PARTICIPATION;
 
         prizesForFormat.forEach(prize => {
             const claimInfo = roomData.prizeStatus?.[prize as PrizeType];
             if (claimInfo && claimInfo.claimedBy?.some((c: {id: string}) => c.id === userId)) {
                 statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
+                xpGained += XP_PER_PRIZE_WIN[prize as PrizeType] || 0;
                 
                 const prizeAmount = finalPrizes[prize as PrizeType] || 0;
                 const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.floor(prizeAmount / claimInfo.claimedBy.length) : 0;
@@ -119,6 +122,20 @@ export async function POST(request: NextRequest) {
         if (totalWinnings > 0) {
             statsUpdate['stats.coins'] = increment(totalWinnings);
         }
+
+        // Leveling up logic
+        let currentLevel = currentStats.level || 1;
+        let currentXp = (currentStats.xp || 0) + xpGained;
+        let xpForNext = getXpForNextLevel(currentLevel);
+
+        while (currentXp >= xpForNext) {
+            currentLevel++;
+            currentXp -= xpForNext;
+            xpForNext = getXpForNextLevel(currentLevel);
+        }
+
+        statsUpdate['stats.level'] = currentLevel;
+        statsUpdate['stats.xp'] = currentXp;
         
         // --- Update player stats and mark as updated for this room ---
         transaction.update(playerRef, statsUpdate);

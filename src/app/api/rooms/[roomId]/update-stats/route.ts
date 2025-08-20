@@ -3,10 +3,10 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getRoomStore } from '@/lib/server/game-store';
 import { db } from '@/lib/firebase/config';
-import { doc, increment, writeBatch, getDoc, updateDoc } from 'firebase/firestore';
-import type { PrizeType, Room } from '@/types';
+import { doc, increment, writeBatch, getDoc, updateDoc, runTransaction } from 'firebase/firestore';
+import type { PrizeType, Room, UserStats } from '@/types';
 import { PRIZE_TYPES } from '@/types';
-import { PRIZE_DISTRIBUTION_PERCENTAGES } from '@/lib/constants';
+import { PRIZE_DISTRIBUTION_PERCENTAGES, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN, getXpForNextLevel } from '@/lib/constants';
 
 // Define coin rewards for offline games
 const OFFLINE_COIN_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType, number>> = {
@@ -76,67 +76,86 @@ export async function POST(
     }
 
     const playerDocRef = doc(db, "users", userId);
-    const playerDoc = await getDoc(playerDocRef);
-    if (!playerDoc.exists()) {
-        // This could happen if a guest leaves and their anon auth is lost, but their ID is passed.
-        // In a fully robust system, we might log this, but for now we'll just return.
-        console.warn(`User document for userId ${userId} not found. Cannot update stats.`);
-        return NextResponse.json({ message: 'User data not found in database.' }, { status: 404 });
-    }
-    
-    const isBotGame = room.settings.gameMode && ['easy', 'medium', 'hard'].includes(room.settings.gameMode);
-    const isFriendsGame = room.settings.gameMode === 'multiplayer';
-    
-    const statsUpdate: { [key: string]: any } = {
-        'stats.matchesPlayed': increment(1)
-    };
+    let totalWinnings = 0;
 
-    let coinsEarned = 0;
-    const prizesWonByPlayer: PrizeType[] = [];
-
-    for (const prizeType in room.prizeStatus) {
-        const prizeInfo = room.prizeStatus[prizeType as PrizeType];
-        if (prizeInfo && prizeInfo.claimedBy.some(c => c.id === userId)) {
-            prizesWonByPlayer.push(prizeType as PrizeType);
+    await runTransaction(db, async (transaction) => {
+        const playerDoc = await transaction.get(playerDocRef);
+        if (!playerDoc.exists()) {
+            console.warn(`User document for userId ${userId} not found. Cannot update stats.`);
+            return;
         }
-    }
-    
-    prizesWonByPlayer.forEach(prize => {
-        statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
-    });
-    
-    if (isBotGame && room.settings.gameMode) {
-        const gameMode = room.settings.gameMode as 'easy' | 'medium' | 'hard';
-        const modeRewards = OFFLINE_COIN_REWARDS[gameMode];
+
+        const currentStats: UserStats = playerDoc.data().stats || {};
+        const statsUpdate: { [key: string]: any } = {
+            'stats.matchesPlayed': increment(1)
+        };
         
-        coinsEarned += PARTICIPATION_REWARD;
-        prizesWonByPlayer.forEach(prize => {
-            coinsEarned += modeRewards[prize] || 0;
-        });
-    } else if (isFriendsGame) {
-        // Friends game with ticket price
-        if ((room.totalPrizePool || 0) > 0) {
-            prizesWonByPlayer.forEach(prize => {
-                 const claimInfo = room.prizeStatus[prize];
-                 if (claimInfo) {
-                    const percentage = PRIZE_DISTRIBUTION_PERCENTAGES['Format 1'][prize] || 0;
-                    const prizeAmount = ((room.totalPrizePool || 0) * percentage) / 100;
-                    const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.floor(prizeAmount / claimInfo.claimedBy.length) : 0;
-                    coinsEarned += prizePerWinner;
-                 }
-            });
+        let coinsEarned = 0;
+        let xpGained = XP_PER_GAME_PARTICIPATION;
+        const prizesWonByPlayer: PrizeType[] = [];
+
+        for (const prizeType in room.prizeStatus) {
+            const prizeInfo = room.prizeStatus[prizeType as PrizeType];
+            if (prizeInfo && prizeInfo.claimedBy.some(c => c.id === userId)) {
+                prizesWonByPlayer.push(prizeType as PrizeType);
+            }
         }
-    }
-    
-    if (coinsEarned > 0) {
-      statsUpdate['stats.coins'] = increment(coinsEarned);
-    }
-    
-    await updateDoc(playerDocRef, statsUpdate);
+        
+        prizesWonByPlayer.forEach(prize => {
+            statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
+            xpGained += XP_PER_PRIZE_WIN[prize] || 0;
+        });
+        
+        const isBotGame = room.settings.gameMode && ['easy', 'medium', 'hard'].includes(room.settings.gameMode);
+        const isFriendsGame = room.settings.gameMode === 'multiplayer';
+
+        if (isBotGame && room.settings.gameMode) {
+            const gameMode = room.settings.gameMode as 'easy' | 'medium' | 'hard';
+            const modeRewards = OFFLINE_COIN_REWARDS[gameMode];
+            
+            coinsEarned += PARTICIPATION_REWARD;
+            prizesWonByPlayer.forEach(prize => {
+                coinsEarned += modeRewards[prize] || 0;
+            });
+        } else if (isFriendsGame) {
+            if ((room.totalPrizePool || 0) > 0) {
+                prizesWonByPlayer.forEach(prize => {
+                     const claimInfo = room.prizeStatus[prize];
+                     if (claimInfo) {
+                        const percentage = PRIZE_DISTRIBUTION_PERCENTAGES['Format 1'][prize] || 0;
+                        const prizeAmount = ((room.totalPrizePool || 0) * percentage) / 100;
+                        const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.floor(prizeAmount / claimInfo.claimedBy.length) : 0;
+                        coinsEarned += prizePerWinner;
+                     }
+                });
+            }
+        }
+        
+        if (coinsEarned > 0) {
+          statsUpdate['stats.coins'] = increment(coinsEarned);
+        }
+        totalWinnings = coinsEarned;
+
+        // Leveling up logic
+        let currentLevel = currentStats.level || 1;
+        let currentXp = (currentStats.xp || 0) + xpGained;
+        let xpForNext = getXpForNextLevel(currentLevel);
+
+        while (currentXp >= xpForNext) {
+            currentLevel++;
+            currentXp -= xpForNext;
+            xpForNext = getXpForNextLevel(currentLevel);
+        }
+
+        statsUpdate['stats.level'] = currentLevel;
+        statsUpdate['stats.xp'] = currentXp;
+
+        transaction.update(playerDocRef, statsUpdate);
+    });
+
     processedGames.add(processedKey);
 
-    // Return the calculated winnings to the client
-    return NextResponse.json({ success: true, message: 'Stats updated successfully.', winnings: coinsEarned });
+    return NextResponse.json({ success: true, message: 'Stats updated successfully.', winnings: totalWinnings });
 
   } catch (error) {
     console.error(`Error updating stats for room ${roomId}:`, error);

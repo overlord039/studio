@@ -73,6 +73,8 @@ const createDefaultStats = (): UserStats => {
         }, {} as Record<PrizeType, number>),
         usernameChanged: false,
         coins: 0,
+        level: 1,
+        xp: 0,
         lastLogin: new Date(0).toISOString(),
         loginStreak: 0,
         lastClaimedDay: 0,
@@ -108,6 +110,8 @@ function areUsersEqual(a: User | null, b: User | null): boolean {
         a.stats.matchesPlayed !== b.stats.matchesPlayed ||
         a.stats.usernameChanged !== b.stats.usernameChanged ||
         a.stats.coins !== b.stats.coins ||
+        a.stats.level !== b.stats.level ||
+        a.stats.xp !== b.stats.xp ||
         a.stats.lastLogin !== b.stats.lastLogin ||
         a.stats.loginStreak !== b.stats.loginStreak ||
         a.stats.lastClaimedDay !== b.stats.lastClaimedDay

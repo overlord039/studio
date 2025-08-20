@@ -1,11 +1,12 @@
 
 
-
 export interface UserStats {
   matchesPlayed: number;
   prizesWon: Record<PrizeType, number>;
   usernameChanged?: boolean;
   coins: number;
+  level: number;
+  xp: number;
   lastLogin?: string; // ISO string
   loginStreak?: number;
   lastClaimedDay?: number; // Day of the streak (1-7)
@@ -122,6 +123,7 @@ export interface FirestoreRoom {
     preGameEndTime?: Timestamp;
     gameStartTime?: Timestamp;
     playersWhoUpdatedStats?: string[]; // To track who has updated their stats
+    botTickets?: Record<string, HousieTicketGrid[]>;
 }
 
 
