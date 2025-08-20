@@ -52,16 +52,30 @@ function stopRoomTimer(roomId: string, reason: string) {
 }
 
 const scheduleNextCall = (roomId: string) => {
+    // A short, varied delay to make the first call feel more natural
+    const initialDelay = 1000 + Math.random() * 1500; 
+
     const timerId = setTimeout(() => {
         const room = getRoomStore(roomId);
         if (room && room.isGameStarted && !room.isGameOver) {
-            callNextNumberStore(roomId);
-            scheduleNextCall(roomId); // Schedule the next one
+            callNextNumberStore(roomId); // This is the first call
+            
+            // Now set up the regular interval for all subsequent calls
+            const intervalId = setInterval(() => {
+                const currentRoom = getRoomStore(roomId);
+                if (currentRoom && currentRoom.isGameStarted && !currentRoom.isGameOver) {
+                    callNextNumberStore(roomId);
+                } else {
+                    stopRoomTimer(roomId, !currentRoom ? "Room no longer exists" : "Game not started or already over");
+                }
+            }, SERVER_CALL_INTERVAL);
+            roomTimers.set(roomId, intervalId); // Store the interval timer
         } else {
-            stopRoomTimer(roomId, !room ? "Room no longer exists" : "Game not started or already over");
+            stopRoomTimer(roomId, !room ? "Room no longer exists" : "Game not started or already over before first call");
         }
-    }, SERVER_CALL_INTERVAL);
-    roomTimers.set(roomId, timerId);
+    }, initialDelay);
+    
+    roomTimers.set(roomId, timerId); // Store the initial timeout
 };
 
 export function createRoomStore(host: Player, clientSettings?: Partial<GameSettings>): Room {
@@ -258,8 +272,36 @@ export function callNextNumberStore(roomId: string): Room | { error: string; num
   room.calledNumbers.unshift(nextNumber);
   room.lastNumberCalledTimestamp = new Date();
   
-  // Bot logic placeholder
+  // --- Bot Prize Claiming Logic ---
+  const prizeOrder = [PRIZE_TYPES.EARLY_5, PRIZE_TYPES.FIRST_LINE, PRIZE_TYPES.SECOND_LINE, PRIZE_TYPES.THIRD_LINE, PRIZE_TYPES.FULL_HOUSE];
   
+  for (const prize of prizeOrder) {
+    if (room.prizeStatus[prize] && room.prizeStatus[prize]!.claimedBy.length > 0) {
+      continue; // Prize already claimed, skip to next.
+    }
+    
+    // Check all bots to see if any can claim this prize
+    for (const player of room.players) {
+        if (player.isBot) {
+            // Check each of the bot's tickets for the current prize
+            for (let i = 0; i < player.tickets.length; i++) {
+                const ticket = player.tickets[i];
+                const housieLib = require('@/lib/housie');
+                if (housieLib.checkWinningCondition(ticket, room.calledNumbers, prize)) {
+                    // Bot can claim!
+                    claimPrizeStore(roomId, player.id, prize, i);
+                    console.log(`Bot ${player.name} claimed ${prize}.`);
+                    break; // Bot has claimed, move to next prize check
+                }
+            }
+        }
+        // If prize was claimed by a bot, break the inner player loop and check the next prize.
+        if (room.prizeStatus[prize]!.claimedBy.length > 0) {
+            break;
+        }
+    }
+  }
+
   rooms.set(roomId, room);
   return room;
 }
