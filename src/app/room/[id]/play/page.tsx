@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -11,12 +12,12 @@ import type { HousieTicketGrid, PrizeType, Room, GameSettings, CallingMode, Priz
 import { PRIZE_TYPES } from '@/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause, Menu, Ticket } from 'lucide-react';
+import { AlertTriangle, Award, Users, XCircle, CheckCircle2, PartyPopper, RotateCcw, LogOut, MinusSquare, PlusSquare, Loader2, X, Zap, Settings2, Play, Pause, Menu, Ticket, Star } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth, useCoinAnimation } from '@/contexts/auth-context';
 import { useSound } from '@/contexts/sound-context';
-import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, NUMBERS_RANGE_MAX } from '@/lib/constants';
+import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, NUMBERS_RANGE_MAX, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN, XP_MODIFIER_ONLINE } from '@/lib/constants';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -814,27 +815,29 @@ export default function GameRoomPage() {
 
   if (roomData.isGameOver) {
     let totalWinnings = 0;
+    let xpGained = 0;
     const currentUserPrizeNames: PrizeType[] = [];
+    const isOnlineGameMode = gameSettings.gameMode === 'online';
 
     if (currentUser) {
         const isBotGame = gameSettings.gameMode && ['easy', 'medium', 'hard'].includes(gameSettings.gameMode);
         
-        // Find which prizes the current user claimed
+        xpGained += XP_PER_GAME_PARTICIPATION * (isOnlineGameMode ? XP_MODIFIER_ONLINE : 1);
+
         for (const prize in roomData.prizeStatus) {
             const castedPrize = prize as PrizeType;
             if (roomData.prizeStatus[castedPrize]?.claimedBy.some(c => c.id === currentUser.uid)) {
                 currentUserPrizeNames.push(castedPrize);
+                xpGained += (XP_PER_PRIZE_WIN[castedPrize] || 0) * (isOnlineGameMode ? XP_MODIFIER_ONLINE : 1);
             }
         }
         
-        // Calculate winnings based on game mode
         if (isBotGame) {
             currentUserPrizeNames.forEach(prize => {
                 totalWinnings += OFFLINE_COIN_REWARDS[gameSettings.gameMode as 'easy' | 'medium' | 'hard'][prize] || 0;
             });
-            // Everyone gets a participation reward in bot games, even if they didn't win a specific prize.
             totalWinnings += PARTICIPATION_REWARD;
-        } else { // Prize pool games (Online / Friends)
+        } else {
             currentUserPrizeNames.forEach(prize => {
                 const claimInfo = roomData.prizeStatus[prize];
                 if (claimInfo) {
@@ -938,12 +941,19 @@ export default function GameRoomPage() {
               </ul>
             </div>
 
-            {totalWinnings > 0 ? (
-                <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-1">
+            {(totalWinnings > 0 || xpGained > 0) ? (
+                <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-2">
                     <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
-                    <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
-                        You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(totalWinnings)}!
-                    </div>
+                     {totalWinnings > 0 && (
+                        <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
+                            You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(totalWinnings)}!
+                        </div>
+                    )}
+                     {xpGained > 0 && (
+                        <div className="text-lg font-bold text-blue-700 dark:text-blue-300 flex items-center justify-center gap-2">
+                            You earned <Star className="h-5 w-5 fill-yellow-400 text-yellow-500" /> {Math.round(xpGained)} XP!
+                        </div>
+                    )}
                     {currentUserPrizeNames.length > 0 && (
                         <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
                     )}
@@ -951,7 +961,11 @@ export default function GameRoomPage() {
             ) : (
                 <div className="text-center p-4 bg-secondary/50 rounded-lg">
                     <p className="font-semibold text-muted-foreground">You didn't win a prize this time, but well played!</p>
-                    <p className="text-sm text-muted-foreground">Better luck next game!</p>
+                     {xpGained > 0 && (
+                        <p className="text-sm text-blue-700 dark:text-blue-300 flex items-center justify-center gap-2">
+                            You earned <Star className="h-4 w-4 fill-yellow-400 text-yellow-500" /> {Math.round(xpGained)} XP for participating.
+                        </p>
+                    )}
                 </div>
             )}
 
@@ -1328,5 +1342,3 @@ export default function GameRoomPage() {
     </>
   );
 }
-
-    
