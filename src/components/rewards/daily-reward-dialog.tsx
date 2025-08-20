@@ -27,7 +27,7 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
   
   const canClaimToday = streak > lastClaimedDay && lastClaimedDay < 7;
   const nextDayToClaim = lastClaimedDay + 1;
-  const progressPercentage = (lastClaimedDay / 7) * 100;
+  const progressPercentage = (streak / 7) * 100;
 
   const handleClaimAndAnimate = async () => {
       const result = await onClaim(nextDayToClaim);
@@ -70,7 +70,7 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
         <div className="my-6 space-y-2">
             <div className="flex justify-between text-xs font-medium text-muted-foreground">
                 <span>Streak Progress</span>
-                <span>{lastClaimedDay} / 7 Days</span>
+                <span>{streak} / 7 Days</span>
             </div>
             <Progress value={progressPercentage} className="h-2" />
         </div>
