@@ -57,9 +57,9 @@ export default function LevelUpDialog({ open, onOpenChange, oldLevel, newLevel }
           </DialogDescription>
         </DialogHeader>
         <div className="flex items-center justify-center gap-4 my-6">
-            <div className="text-4xl font-bold text-muted-foreground">{oldLevel}</div>
+            <div className="text-4xl font-bold text-muted-foreground">Lv {oldLevel}</div>
             <div className="text-2xl font-bold text-muted-foreground">&rarr;</div>
-            <div className="text-6xl font-extrabold text-primary animate-scale-in-pop">{displayLevel}</div>
+            <div className="text-6xl font-extrabold text-primary animate-scale-in-pop">Lv {displayLevel}</div>
         </div>
         <DialogFooter>
           <Button onClick={() => onOpenChange(false)} className="w-full">
