@@ -362,17 +362,16 @@ export default function Header() {
                 </Avatar>
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-fit">
                     <div className="flex items-center gap-0.5 bg-background text-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-border">
-                        
                         <span>{level}</span>
                     </div>
                 </div>
             </div>
-            <div className="flex items-center gap-1 sm:gap-1.5 text-white pr-2 pl-2">
-              <Image src="/coin.png" alt="Coins" width={24} height={24} className="h-5 w-5 sm:h-6 sm:w-6" />
-              <span className="font-bold text-base sm:text-lg">{currentUser.stats.coins ?? 0}</span>
-            </div>
           </div>
         </Link>
+        <div className="flex items-center gap-1 sm:gap-1.5 text-white bg-black/30 backdrop-blur-sm p-1.5 rounded-full border border-white/20">
+          <Image src="/coin.png" alt="Coins" width={24} height={24} className="h-5 w-5 sm:h-6 sm:w-6" />
+          <span className="font-bold text-base sm:text-lg pr-2">{currentUser.stats.coins ?? 0}</span>
+        </div>
       </div>
     );
   };
