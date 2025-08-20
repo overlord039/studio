@@ -203,8 +203,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     let newStreak: number;
-    // Streak continues, just increment. We don't care if they missed a day.
-    newStreak = (user.stats.loginStreak || 0) + 1;
+    const yesterday = subDays(today, 1);
+
+    if (isSameDay(lastLoginDate, yesterday)) {
+        // Streak continues
+        newStreak = (user.stats.loginStreak || 0) + 1;
+    } else {
+        // Streak is broken
+        newStreak = 1;
+    }
     
     // If the streak is now > 7, it means they completed a week yesterday and are starting a new cycle.
     if (newStreak > 7) {
