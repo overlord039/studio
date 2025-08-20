@@ -4,9 +4,9 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getRoomStore } from '@/lib/server/game-store';
 import { db } from '@/lib/firebase/config';
 import { doc, increment, writeBatch, getDoc, updateDoc, runTransaction } from 'firebase/firestore';
-import type { PrizeType, Room, UserStats } from '@/types';
+import type { PrizeType, Room, UserStats, GameSettings } from '@/types';
 import { PRIZE_TYPES } from '@/types';
-import { PRIZE_DISTRIBUTION_PERCENTAGES, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN, getXpForNextLevel } from '@/lib/constants';
+import { PRIZE_DISTRIBUTION_PERCENTAGES, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN, getXpForNextLevel, PRIZE_DEFINITIONS } from '@/lib/constants';
 
 // Define coin rewards for offline games
 const OFFLINE_COIN_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType, number>> = {
@@ -37,6 +37,36 @@ const PARTICIPATION_REWARD = 1;
 
 // Simple in-memory cache to prevent multiple updates for the same game by the same user.
 const processedGames = new Set<string>();
+
+// Helper function to calculate final prize distribution accurately
+function calculatePrizes(totalPool: number, settings: GameSettings): Record<PrizeType, number> {
+    const prizeFormat = settings.prizeFormat || 'Format 1';
+    const prizeDefs = PRIZE_DEFINITIONS[prizeFormat] || [];
+    const distPercentages = PRIZE_DISTRIBUTION_PERCENTAGES[prizeFormat] || {};
+    
+    const calculatedPrizes: Record<PrizeType, number> = {} as any;
+    let sumOfPrizes = 0;
+    
+    // Calculate all prizes except Full House
+    for (const prize of prizeDefs) {
+        if (prize !== 'Full House') {
+            const percentage = distPercentages[prize] || 0;
+            const amount = Math.floor((totalPool * percentage) / 100);
+            calculatedPrizes[prize] = amount;
+            sumOfPrizes += amount;
+        }
+    }
+    
+    // Full House gets the remainder to ensure the total matches the pool
+    if (prizeDefs.includes('Full House') && totalPool > 0) {
+      calculatedPrizes['Full House'] = totalPool - sumOfPrizes;
+    } else {
+      calculatedPrizes['Full House'] = 0;
+    }
+
+    return calculatedPrizes;
+}
+
 
 export async function POST(
   request: NextRequest,
@@ -119,11 +149,11 @@ export async function POST(
             });
         } else if (isFriendsGame) {
             if ((room.totalPrizePool || 0) > 0) {
-                prizesWonByPlayer.forEach(prize => {
+                 const finalPrizes = calculatePrizes(room.totalPrizePool || 0, room.settings);
+                 prizesWonByPlayer.forEach(prize => {
                      const claimInfo = room.prizeStatus[prize];
                      if (claimInfo) {
-                        const percentage = PRIZE_DISTRIBUTION_PERCENTAGES['Format 1'][prize] || 0;
-                        const prizeAmount = ((room.totalPrizePool || 0) * percentage) / 100;
+                        const prizeAmount = finalPrizes[prize] || 0;
                         const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.floor(prizeAmount / claimInfo.claimedBy.length) : 0;
                         coinsEarned += prizePerWinner;
                      }
@@ -162,3 +192,4 @@ export async function POST(
     return NextResponse.json({ message: 'Error updating stats', error: (error as Error).message }, { status: 500 });
   }
 }
+
