@@ -351,36 +351,37 @@ export default function Header() {
     const xpForNext = getXpForNextLevel(level);
     const xpProgress = Math.min(100, (currentXp / xpForNext) * 100);
 
-    const circumference = 2 * Math.PI * 18; // 2 * pi * radius
+    const circumference = 2 * Math.PI * 22; // 2 * pi * radius (increased radius to 22 from 18)
     const strokeDashoffset = circumference - (xpProgress / 100) * circumference;
     
     return (
       <div className="flex items-center gap-2">
         <Link href="/profile" passHref>
           <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm p-1.5 rounded-full border border-white/20 hover:bg-black/50 transition-colors cursor-pointer">
-            <div className="relative h-10 w-10 sm:h-12 sm:w-12">
-              <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 40 40">
+            <div className="relative h-12 w-12 sm:h-14 sm:w-14">
+              <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 50 50">
                 <circle
-                  cx="20"
-                  cy="20"
-                  r="18"
+                  cx="25"
+                  cy="25"
+                  r="22"
                   fill="none"
                   className="stroke-primary/20"
-                  strokeWidth="3"
+                  strokeWidth="4"
                 />
                 <circle
-                  cx="20"
-                  cy="20"
-                  r="18"
+                  cx="25"
+                  cy="25"
+                  r="22"
                   fill="none"
                   className="stroke-primary"
-                  strokeWidth="3"
+                  strokeWidth="4"
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeDashoffset}
                   style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
+                  strokeLinecap="round"
                 />
               </svg>
-              <Avatar className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-full scale-[0.85]">
+              <Avatar className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-full scale-[0.8]">
                 <AvatarImage 
                     src={currentUser.photoURL || `https://placehold.co/48x48.png?text=${avatarFallback}`} 
                     alt={displayName} 
