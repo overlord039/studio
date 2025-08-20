@@ -45,7 +45,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
     }
 
 
-    const showHeaderAndFooter = pathname === '/' || pathname.startsWith('/online') || pathname.endsWith('/lobby');
+    const showHeaderAndFooter = pathname === '/' || pathname.startsWith('/online') || pathname.endsWith('/lobby') || pathname.startsWith('/create-room');
     const showActionIcons = pathname === '/';
 
     const isSpecialLayoutPage = 
