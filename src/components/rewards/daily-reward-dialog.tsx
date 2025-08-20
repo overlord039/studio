@@ -25,7 +25,7 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
   const streak = user.stats.loginStreak || 0;
   const lastClaimedDay = user.stats.lastClaimedDay || 0;
   
-  const canClaimToday = streak > 0 && lastClaimedDay < 7;
+  const canClaimToday = streak > lastClaimedDay && lastClaimedDay < 7;
   const nextDayToClaim = lastClaimedDay + 1;
   const progressPercentage = (lastClaimedDay / 7) * 100;
 
@@ -58,12 +58,12 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
 
         <div className="grid grid-cols-4 gap-2 my-6">
           {WEEKLY_REWARDS.slice(0, 4).map((reward, i) => (
-            <RewardCard key={i} day={i + 1} reward={reward} lastClaimedDay={lastClaimedDay} />
+            <RewardCard key={i} day={i + 1} reward={reward} lastClaimedDay={lastClaimedDay} streak={streak} />
           ))}
         </div>
         <div className="grid grid-cols-3 gap-2 my-6">
           {WEEKLY_REWARDS.slice(4).map((reward, i) => (
-            <RewardCard key={i + 4} day={i + 5} reward={reward} lastClaimedDay={lastClaimedDay} />
+            <RewardCard key={i + 4} day={i + 5} reward={reward} lastClaimedDay={lastClaimedDay} streak={streak}/>
           ))}
         </div>
 
@@ -104,9 +104,9 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
 }
 
 
-const RewardCard = ({ day, reward, lastClaimedDay }: { day: number, reward: number, lastClaimedDay: number }) => {
+const RewardCard = ({ day, reward, lastClaimedDay, streak }: { day: number, reward: number, lastClaimedDay: number, streak: number }) => {
     const isClaimed = day <= lastClaimedDay;
-    const isNextToClaim = day === lastClaimedDay + 1;
+    const isNextToClaim = day === lastClaimedDay + 1 && streak > lastClaimedDay;
 
     return (
         <div className={cn(
