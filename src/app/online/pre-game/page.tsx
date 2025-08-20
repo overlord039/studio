@@ -171,7 +171,7 @@ function PreGameContent() {
         );
     }
     
-    if (!roomData) return null;
+    if (!roomData) return <Loader2 className="h-8 w-8 animate-spin text-white" />;
 
     const gameSettings = roomData.settings || DEFAULT_GAME_SETTINGS;
     
