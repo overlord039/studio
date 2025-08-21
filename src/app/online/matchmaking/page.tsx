@@ -284,7 +284,6 @@ function MatchmakingContent() {
                       player.id === currentUser.uid && 'text-primary'
                     )}
                   >
-                    {player.type === 'bot' ? <Bot className="h-4 w-4" /> : <div className="w-4 h-4" /> }
                     <span>{player.name}</span>
                   </div>
                 ))}
