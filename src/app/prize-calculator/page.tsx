@@ -18,7 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PRIZE_DISTRIBUTION_PERCENTAGES, PRIZE_DEFINITIONS, DEFAULT_GAME_SETTINGS } from "@/lib/constants";
 import type { PrizeType } from "@/types";
 import { PRIZE_TYPES } from "@/types";
-import { Calculator, Ticket, Users, Percent, Gift, AlertTriangle, Settings2, EyeOff, Speaker, Home } from "lucide-react";
+import { Calculator, Ticket, Users, Percent, Gift, AlertTriangle, Settings2, EyeOff, Speaker, Home, LogOut } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -287,8 +287,8 @@ export default function PrizeCalculatorPage() {
                   </Button>
                 </Link>
                 <Link href="/" passHref>
-                  <Button variant="outline">
-                    <Home className="mr-2 h-4 w-4" /> Go to Homepage
+                  <Button variant="destructive">
+                    <LogOut className="mr-2 h-4 w-4 rotate-180" /> Go to Homepage
                   </Button>
                 </Link>
               </div>
