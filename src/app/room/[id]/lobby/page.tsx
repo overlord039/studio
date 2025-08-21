@@ -126,7 +126,7 @@ export default function LobbyPage() {
         body: JSON.stringify({ 
           playerId: currentUser.uid, 
           playerName: currentUser.displayName || 'Guest',
-          ticketsToBuy: selectedTicketsToBuy 
+          ticketsToBuy: roomDataRef.current.settings.gameMode === 'rush' ? undefined : selectedTicketsToBuy 
         }),
       });
       const updatedRoom: Room | { message: string } = await response.json();
@@ -182,8 +182,8 @@ export default function LobbyPage() {
       const data: Room = await response.json();
       const userInRoomData = data.players.find(p => p.id === currentUser.uid);
       
-      if (isInitialLoad && data.settings.gameMode === 'rush' && !userInRoomData) {
-         handleConfirmOrJoinTickets(); // Auto-join for rush mode
+      if (isInitialLoad && data.settings.gameMode === 'rush' && (!userInRoomData || userInRoomData.tickets.length === 0)) {
+         handleConfirmOrJoinTickets();
       }
       
       const oldPlayers = roomDataRef.current?.players;
