@@ -34,7 +34,7 @@ export default function CreateOrJoinRoomPage() {
   const [activeTab, setActiveTab] = useState<'create' | 'join'>('create');
   
   // Create Room State
-  const [ticketPrice, setTicketPrice] = useState(0);
+  const [ticketPrice, setTicketPrice] = useState(5);
   const [lobbySize, setLobbySize] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showNoCoinsDialog, setShowNoCoinsDialog] = useState(false);
@@ -49,7 +49,7 @@ export default function CreateOrJoinRoomPage() {
     if (gameType === 'rush') {
       setTicketPrice(0); // Default to free rush
     } else {
-      setTicketPrice(0); // Default for classic
+      setTicketPrice(5); // Default for classic
     }
   }, [gameType]);
 
@@ -394,4 +394,3 @@ export default function CreateOrJoinRoomPage() {
     </>
   );
 }
-
