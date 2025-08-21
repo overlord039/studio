@@ -9,15 +9,21 @@ import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Minus, Plus, LogOut, Zap, Users } from 'lucide-react';
+import { Minus, Plus, LogOut, Zap, Users, Lock, Star } from 'lucide-react';
 import { useSound } from '@/contexts/sound-context';
-import type { Player, GameSettings, Room } from '@/types';
+import type { Player, GameSettings, Room, UserStats } from '@/types';
 import Link from 'next/link';
 import Image from 'next/image';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const LOBBY_SIZES = [3, 5, 10, 20];
 type GameType = 'classic' | 'rush';
+
+const RUSH_TIERS = [
+    { name: 'Free', price: 0, unlock: { level: 0, coins: 0 } },
+    { name: 'Silver', price: 5, unlock: { level: 3, coins: 20 } },
+    { name: 'Gold', price: 10, unlock: { level: 7, coins: 50 } },
+];
 
 export default function CreateOrJoinRoomPage() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -39,8 +45,11 @@ export default function CreateOrJoinRoomPage() {
   const [isJoining, setIsJoining] = useState(false);
 
   useEffect(() => {
+    // When switching modes, reset the ticket price
     if (gameType === 'rush') {
-      setTicketPrice(0);
+      setTicketPrice(0); // Default to free rush
+    } else {
+      setTicketPrice(0); // Default for classic
     }
   }, [gameType]);
 
@@ -219,6 +228,51 @@ export default function CreateOrJoinRoomPage() {
     </div>
   );
 
+    const RushTierSelector = ({ userStats }: { userStats: UserStats }) => (
+        <div className="bg-secondary/30 p-4 rounded-lg animate-fade-in space-y-3">
+            <label className="text-sm text-center block font-semibold text-muted-foreground uppercase">Rush Mode Entry Fee</label>
+            <div className="grid grid-cols-3 gap-2">
+                {RUSH_TIERS.map(tier => {
+                    const isUnlocked = userStats.level >= tier.unlock.level && userStats.coins >= tier.unlock.coins;
+                    const isSelected = ticketPrice === tier.price;
+
+                    return (
+                        <div key={tier.name} className="relative">
+                            <Button
+                                onClick={() => {
+                                    if (isUnlocked) setTicketPrice(tier.price);
+                                    else toast({ title: "Tier Locked", description: `Reach Level ${tier.unlock.level} and have ${tier.unlock.coins} coins.` });
+                                }}
+                                variant={isSelected ? 'default' : 'secondary'}
+                                className={cn(
+                                    "w-full h-20 flex flex-col items-center justify-center gap-1 transition-all",
+                                    !isUnlocked && "opacity-60 cursor-not-allowed",
+                                    isSelected && "ring-2 ring-accent"
+                                )}
+                            >
+                                <div className="flex items-center gap-1">
+                                    <Image src="/coin.png" alt="Coins" width={24} height={24} data-ai-hint="gold coin" />
+                                    <span className="text-xl font-bold">{tier.price}</span>
+                                </div>
+                                <span className="text-xs font-semibold">{tier.name}</span>
+                            </Button>
+                            {!isUnlocked && (
+                                <div className="absolute inset-0 bg-black/50 rounded-lg flex flex-col items-center justify-center text-white p-1">
+                                    <Lock className="h-5 w-5" />
+                                    <div className="text-center text-[10px] leading-tight mt-1">
+                                        <div className="flex items-center gap-0.5"><Star className="h-3 w-3" /> Lv {tier.unlock.level}</div>
+                                        <div className="flex items-center gap-0.5"><Image src="/coin.png" alt="c" width={10} height={10}/> {tier.unlock.coins}</div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+            <p className="text-center text-xs text-muted-foreground pt-1">Entry fee is for a prize pool. Tickets are still random for all players.</p>
+        </div>
+    );
+
   return (
     <>
     <div className="flex flex-col items-center justify-center flex-grow p-4">
@@ -256,13 +310,9 @@ export default function CreateOrJoinRoomPage() {
                   </div>
                 </div>
               )}
-               {gameType === 'rush' && (
-                <div className="text-center p-3 bg-secondary/30 rounded-lg animate-fade-in">
-                  <p className="font-semibold">Rush Mode!</p>
-                  <p className="text-sm text-muted-foreground">Entry fee is free. All players get random tickets (1-4).</p>
-                </div>
+               {gameType === 'rush' && currentUser && (
+                 <RushTierSelector userStats={currentUser.stats} />
               )}
-
 
               <div className="bg-secondary/30 p-4 rounded-lg">
                 <div className="space-y-2 text-center">
@@ -344,3 +394,4 @@ export default function CreateOrJoinRoomPage() {
     </>
   );
 }
+
