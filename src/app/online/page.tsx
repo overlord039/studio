@@ -32,7 +32,7 @@ const TIERS: Record<OnlineGameTier, TierConfig & { description: string }> = {
         ticketPrice: 10,
         roomSize: 6,
         matchmakingTime: 30,
-        unlockRequirements: { level: 5, matches: 10, coins: 50 },
+        unlockRequirements: { level: 5, matches: 10, coins: 25 },
         description: "The standard Housie experience. A bigger room for more competition and larger prizes."
     },
     tournament: {
@@ -40,7 +40,7 @@ const TIERS: Record<OnlineGameTier, TierConfig & { description: string }> = {
         ticketPrice: 20,
         roomSize: 10,
         matchmakingTime: 60,
-        unlockRequirements: { level: 10, matches: 25, coins: 150 },
+        unlockRequirements: { level: 10, matches: 25, coins: 100 },
         description: "The ultimate challenge. Compete in a large lobby for the biggest prize pool."
     }
 };
