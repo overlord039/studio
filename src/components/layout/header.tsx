@@ -359,7 +359,7 @@ export default function Header() {
         <Link href="/profile" passHref>
           <div className="flex items-center gap-2 bg-black/30 backdrop-blur-sm p-1.5 rounded-full border border-white/20 hover:bg-black/50 transition-colors cursor-pointer">
             <div className="relative h-12 w-12 sm:h-14 sm:w-14">
-              <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 50 50">
+              <svg className="absolute inset-0 h-full w-full rotate-90" viewBox="0 0 50 50">
                 <circle
                   cx="25"
                   cy="25"
