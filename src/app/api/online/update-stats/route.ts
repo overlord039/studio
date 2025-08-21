@@ -6,7 +6,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { db } from '@/lib/firebase/config';
 import { doc, getDoc, runTransaction, collection, getDocs, increment, writeBatch } from 'firebase/firestore';
 import type { FirestoreRoom, FirestorePlayer, PrizeType, GameSettings, UserStats } from '@/types';
-import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, getXpForNextLevel, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN, XP_MODIFIER_ONLINE } from '@/lib/constants';
+import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, getXpForNextLevel, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN, XP_MODIFIER_ONLINE, getCoinsForLevelUp } from '@/lib/constants';
 
 // Helper function to calculate final prize distribution accurately
 function calculatePrizes(totalPool: number, settings: GameSettings): Record<PrizeType, number> {
@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
         
         // Apply 1.5x XP modifier for online games
         let xpGained = Math.round(XP_PER_GAME_PARTICIPATION * XP_MODIFIER_ONLINE);
+        let coinsEarned = 0;
 
         prizesForFormat.forEach(prize => {
             const claimInfo = roomData.prizeStatus?.[prize as PrizeType];
@@ -122,13 +123,9 @@ export async function POST(request: NextRequest) {
                 
                 const prizeAmount = finalPrizes[prize as PrizeType] || 0;
                 const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.floor(prizeAmount / claimInfo.claimedBy.length) : 0;
-                totalWinnings += prizePerWinner;
+                coinsEarned += prizePerWinner;
             }
         });
-
-        if (totalWinnings > 0) {
-            statsUpdate['stats.coins'] = increment(totalWinnings);
-        }
 
         // Leveling up logic
         let currentLevel = currentStats.level || 1;
@@ -138,8 +135,14 @@ export async function POST(request: NextRequest) {
         while (currentXp >= xpForNext) {
             currentLevel++;
             currentXp -= xpForNext;
+            coinsEarned += getCoinsForLevelUp(currentLevel); // Add level up reward
             xpForNext = getXpForNextLevel(currentLevel);
         }
+
+        if (coinsEarned > 0) {
+            statsUpdate['stats.coins'] = increment(coinsEarned);
+        }
+        totalWinnings = coinsEarned;
 
         statsUpdate['stats.level'] = currentLevel;
         statsUpdate['stats.xp'] = currentXp;

@@ -69,5 +69,11 @@ export const getXpForNextLevel = (level: number) => {
     return Math.floor(100 * Math.pow(level, 1.5));
 };
 
+export const getCoinsForLevelUp = (level: number) => {
+    // Rewards 10 coins per level reached, starting from level 2.
+    // e.g., reaching level 2 gives 20 coins, level 10 gives 100 coins.
+    return level * 10;
+}
+
 // New constant to make online play more rewarding
 export const XP_MODIFIER_ONLINE = 1.5;
