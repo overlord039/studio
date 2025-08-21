@@ -288,7 +288,7 @@ export default function PrizeCalculatorPage() {
                 </Link>
                 <Link href="/" passHref>
                   <Button variant="outline">
-                    <Home className="mr-2 h-4 w-4" /> Leave
+                    <Home className="mr-2 h-4 w-4" /> Go to Homepage
                   </Button>
                 </Link>
               </div>
