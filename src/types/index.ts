@@ -103,6 +103,7 @@ export interface TierConfig {
     unlockRequirements: {
         matches: number;
         coins: number;
+        level: number;
     };
 }
 

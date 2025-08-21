@@ -17,7 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth, useCoinAnimation } from '@/contexts/auth-context';
 import { useSound } from '@/contexts/sound-context';
-import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, NUMBERS_RANGE_MAX, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN, XP_MODIFIER_ONLINE } from '@/lib/constants';
+import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, NUMBERS_RANGE_MAX, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN, XP_MODIFIER_ONLINE, getCoinsForLevelUp, getXpForNextLevel } from '@/lib/constants';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -54,15 +54,15 @@ const MemoizedCalledNumberDisplay = React.memo(CalledNumberDisplay);
 const TIERS: Record<OnlineGameTier, TierConfig> = {
     quick: {
         name: "Quick", ticketPrice: 5, roomSize: 4, matchmakingTime: 15,
-        unlockRequirements: { matches: 0, coins: 0 },
+        unlockRequirements: { level: 1, matches: 0, coins: 0 },
     },
     classic: {
         name: "Classic", ticketPrice: 10, roomSize: 6, matchmakingTime: 30,
-        unlockRequirements: { matches: 5, coins: 50 },
+        unlockRequirements: { level: 5, matches: 10, coins: 50 },
     },
     tournament: {
         name: "Tournament", ticketPrice: 20, roomSize: 10, matchmakingTime: 60,
-        unlockRequirements: { matches: 15, coins: 150 },
+        unlockRequirements: { level: 10, matches: 25, coins: 150 },
     }
 };
 
@@ -847,6 +847,17 @@ export default function GameRoomPage() {
                     totalWinnings += prizePerWinner;
                 }
             });
+        }
+        
+        let currentLevel = currentUser.stats.level || 1;
+        let currentXp = (currentUser.stats.xp || 0) + xpGained;
+        let xpForNext = getXpForNextLevel(currentLevel);
+
+        while (currentXp >= xpForNext) {
+            currentLevel++;
+            currentXp -= xpForNext;
+            totalWinnings += getCoinsForLevelUp(currentLevel);
+            xpForNext = getXpForNextLevel(currentLevel);
         }
     }
     

@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Lock, Play, Users, ArrowLeft, Loader2, Link as LinkIcon, Ticket, LogOut, Info } from 'lucide-react';
+import { Lock, Play, Users, ArrowLeft, Loader2, Link as LinkIcon, Ticket, LogOut, Info, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import type { OnlineGameTier, TierConfig } from '@/types';
@@ -24,7 +24,7 @@ const TIERS: Record<OnlineGameTier, TierConfig & { description: string }> = {
         ticketPrice: 5,
         roomSize: 4,
         matchmakingTime: 15,
-        unlockRequirements: { matches: 0, coins: 0 },
+        unlockRequirements: { level: 1, matches: 0, coins: 0 },
         description: "A fast-paced game for a quick dose of fun. Perfect for when you're short on time."
     },
     classic: {
@@ -32,7 +32,7 @@ const TIERS: Record<OnlineGameTier, TierConfig & { description: string }> = {
         ticketPrice: 10,
         roomSize: 6,
         matchmakingTime: 30,
-        unlockRequirements: { matches: 5, coins: 50 },
+        unlockRequirements: { level: 5, matches: 10, coins: 50 },
         description: "The standard Housie experience. A bigger room for more competition and larger prizes."
     },
     tournament: {
@@ -40,7 +40,7 @@ const TIERS: Record<OnlineGameTier, TierConfig & { description: string }> = {
         ticketPrice: 20,
         roomSize: 10,
         matchmakingTime: 60,
-        unlockRequirements: { matches: 15, coins: 150 },
+        unlockRequirements: { level: 10, matches: 25, coins: 150 },
         description: "The ultimate challenge. Compete in a large lobby for the biggest prize pool."
     }
 };
@@ -55,11 +55,13 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
 
     if (!currentUser) return null;
 
-    const isUnlocked = currentUser.stats.matchesPlayed >= tierConfig.unlockRequirements.matches &&
-        currentUser.stats.coins >= tierConfig.unlockRequirements.coins;
+    const { level: requiredLevel, matches: requiredMatches, coins: requiredCoins } = tierConfig.unlockRequirements;
+    const { level: userLevel, matchesPlayed: userMatches, coins: userCoins } = currentUser.stats;
+
+    const isUnlocked = userLevel >= requiredLevel && userMatches >= requiredMatches && userCoins >= requiredCoins;
     
     const totalCost = tierConfig.ticketPrice * selectedTickets;
-    const hasEnoughCoins = currentUser.stats.coins >= totalCost;
+    const hasEnoughCoins = userCoins >= totalCost;
 
     const handleJoinTier = () => {
         playSound('cards.mp3');
@@ -67,7 +69,7 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
         if (!isUnlocked) {
             toast({
                 title: "Tier Locked",
-                description: `Play ${tierConfig.unlockRequirements.matches} matches and have ${tierConfig.unlockRequirements.coins} coins to unlock.`,
+                description: `Reach Level ${requiredLevel}, play ${requiredMatches} matches, and have ${requiredCoins} coins to unlock.`,
                 variant: "destructive"
             });
             return;
@@ -81,6 +83,12 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
 
         router.push(`/online/matchmaking?tier=${tierKey}&tickets=${selectedTickets}`);
     };
+
+    const Requirement = ({ label, required, current }: { label: string, required: number, current: number }) => (
+        <div className={cn("flex items-center justify-center gap-1", current >= required ? "text-green-600" : "text-destructive")}>
+            {label}: {current} / {required}
+        </div>
+    );
 
     return (
         <>
@@ -143,14 +151,11 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
                                 </div>
                             </div>
                         ) : (
-                            <div className="text-xs text-center p-2 rounded-lg bg-destructive/10 border border-destructive/20">
+                            <div className="text-xs text-center p-2 rounded-lg bg-destructive/10 border border-destructive/20 space-y-1">
                                 <p className="font-semibold text-destructive">Unlock Requirements:</p>
-                                <p>
-                                    {tierConfig.unlockRequirements.matches} matches & {tierConfig.unlockRequirements.coins} coins.
-                                </p>
-                                <p className="text-muted-foreground">
-                                    (Your progress: {currentUser.stats.matchesPlayed} matches & {currentUser.stats.coins} coins)
-                                </p>
+                                <Requirement label="Level" required={requiredLevel} current={userLevel} />
+                                <Requirement label="Matches" required={requiredMatches} current={userMatches} />
+                                <Requirement label="Coins" required={requiredCoins} current={userCoins} />
                             </div>
                         )}
                     </div>

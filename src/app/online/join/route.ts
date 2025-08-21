@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { NextResponse, type NextRequest } from 'next/server';
@@ -24,37 +25,62 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
     ticketPrice: 5,
     roomSize: 4,
     matchmakingTime: 15,
-    unlockRequirements: { matches: 0, coins: 0 },
+    unlockRequirements: { level: 1, matches: 0, coins: 0 },
   },
   classic: {
     name: 'Classic',
     ticketPrice: 10,
     roomSize: 6,
     matchmakingTime: 30,
-    unlockRequirements: { matches: 5, coins: 50 },
+    unlockRequirements: { level: 5, matches: 10, coins: 50 },
   },
   tournament: {
     name: 'Tournament',
     ticketPrice: 20,
     roomSize: 10,
     matchmakingTime: 60,
-    unlockRequirements: { matches: 15, coins: 150 },
+    unlockRequirements: { level: 10, matches: 25, coins: 150 },
   },
 };
 
-// This function cleans up rooms older than 1 hour to prevent clutter.
+// This function cleans up rooms older than 1 hour that are stuck in waiting or finished states.
 async function cleanupOldRooms() {
   if (!db) return;
   const oneHourAgo = Timestamp.fromMillis(Date.now() - 60 * 60 * 1000);
   const roomsRef = collection(db, 'rooms');
-  const q = query(roomsRef, where('createdAt', '<', oneHourAgo));
+  
+  // **FIX:** The query now also targets 'finished' rooms, not just 'waiting' rooms.
+  // This ensures that completed games are also cleaned up after a reasonable time.
+  const q = query(roomsRef, 
+    where('isPublic', '==', true),
+    where('status', 'in', ['waiting', 'finished']), 
+    where('createdAt', '<', oneHourAgo)
+  );
+
   try {
     const oldRoomsSnapshot = await getDocs(q);
     if (oldRoomsSnapshot.empty) return;
+    
+    // We need to delete subcollections as well for finished rooms.
     const batch = writeBatch(db);
-    oldRoomsSnapshot.forEach((doc) => batch.delete(doc.ref));
+    
+    for (const roomDoc of oldRoomsSnapshot.docs) {
+      console.log(`Scheduling deletion for stale room: ${roomDoc.id} with status ${roomDoc.data().status}`);
+
+      // If it's a finished room, we should also delete its players subcollection.
+      if (roomDoc.data().status === 'finished') {
+        const playersRef = collection(db, 'rooms', roomDoc.id, 'players');
+        const playersSnap = await getDocs(playersRef);
+        playersSnap.forEach(playerDoc => {
+            batch.delete(playerDoc.ref);
+        });
+      }
+      
+      batch.delete(roomDoc.ref);
+    }
+    
     await batch.commit();
-    console.log(`Cleaned up ${oldRoomsSnapshot.size} old room(s).`);
+    console.log(`Cleaned up ${oldRoomsSnapshot.size} stale room(s).`);
   } catch (error) {
     console.error('Error cleaning up old rooms:', error);
   }
@@ -135,7 +161,6 @@ export async function POST(request: NextRequest) {
         const roomRef = doc(db, 'rooms', targetRoomId);
         
         transaction.update(roomRef, { 
-            playersCount: increment(1),
             humanCount: increment(1),
         });
 
@@ -168,7 +193,7 @@ export async function POST(request: NextRequest) {
             tier: tier,
           },
           status: 'waiting',
-          playersCount: 1,
+          playersCount: 0, // This will be updated when bots are added
           humanCount: 1,
           tier: tier,
           isPublic: true,
