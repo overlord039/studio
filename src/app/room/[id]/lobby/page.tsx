@@ -96,7 +96,7 @@ export default function LobbyPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const [selectedTicketsToBuy, setSelectedTicketsToBuy] = useState<number>(DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
+  const [selectedTicketsToBuy, setSelectedTicketsToBuy] = useState<number>(DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer || 1);
   const [isJoiningOrUpdating, setIsJoiningOrUpdating] = useState(false);
   const [isEditingTickets, setIsEditingTickets] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -108,120 +108,12 @@ export default function LobbyPage() {
     roomDataRef.current = roomData;
   }, [roomData]);
 
-  const fetchRoomDetails = useCallback(async (isInitialLoad = false) => {
-    if (!roomId || !currentUser) {
-        if (isInitialLoad) {
-            setIsLoading(false);
-            if (!currentUser && !authLoading) setError("Please sign in to access the lobby.");
-        }
+  const handleConfirmOrJoinTickets = useCallback(async () => {
+    if (!currentUser || !roomDataRef.current || (roomDataRef.current.isGameStarted && !roomDataRef.current.isGameOver) || isJoiningOrUpdating) {
         return;
     }
-    
-    try {
-      const response = await fetch(`/api/rooms/${roomId}`);
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Failed to parse error response" }));
-        if (response.status === 404) {
-          setError("Room not found. It might have expired or never existed.");
-          setRoomData(null); 
-        } else {
-            setError(errorData.message || `Failed to fetch room details: ${response.statusText}`);
-            if (isInitialLoad) setRoomData(null);
-        }
-        if(isInitialLoad) setIsLoading(false);
-        return; 
-      }
-      const data: Room = await response.json();
-      
-      const oldPlayers = roomDataRef.current?.players;
-      if (oldPlayers && data.players.length > oldPlayers.length && !isInitialLoad) {
-        const oldPlayerIds = new Set(oldPlayers.map(p => p.id));
-        const joinedPlayers = data.players.filter(p => !oldPlayerIds.has(p.id));
-        
-        joinedPlayers.forEach(player => {
-            if (currentUser && player.id !== currentUser.uid) {
-                playSound('notification.wav');
-                toast({
-                    title: "Player Joined",
-                    description: `${player.name} has joined the lobby.`
-                });
-            }
-        });
-      }
-      
-      if (isInitialLoad) {
-        const userInRoomData = data.players.find(p => p.id === currentUser.uid);
-        if (userInRoomData) {
-          setSelectedTicketsToBuy(userInRoomData.tickets.length > 0 ? userInRoomData.tickets.length : data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
-        } else { 
-          setSelectedTicketsToBuy(data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer);
-        }
-      }
-      
-      if (data.isGameStarted && previousIsGameStartedRef.current === false) {
-        const currentPlayerServerData = data.players.find(p => p.id === currentUser.uid);
-        const ticketsToTake = currentPlayerServerData?.tickets.length || 0;
-        playSound('gamestarting.wav');
-        toast({ title: "Game Started!", description: "Joining the game..." });
-        router.push(`/room/${roomId}/play?playerTickets=${ticketsToTake}`);
-      }
-      
-      setRoomData(data);
-      if (isInitialLoad) setIsLoading(false);
-      setError(null);
-      previousIsGameStartedRef.current = data.isGameStarted;
 
-    } catch (err) {
-      console.error(`Error fetching room ${roomId} details:`, err);
-      if (isInitialLoad || !roomDataRef.current) { 
-         setError((err as Error).message || "An unexpected error occurred while fetching room details.");
-         if (isInitialLoad) {
-             setRoomData(null);
-             setIsLoading(false);
-         }
-      } else {
-        toast({
-            title: "Lobby Update Failed",
-            description: "Could not fetch latest lobby details. Retrying...",
-            variant: "destructive",
-            duration: 2000,
-        });
-        console.warn("Polling error fetching room details:", err);
-      }
-    } 
-  }, [roomId, currentUser, authLoading, router, toast, playSound]); 
-
-  useEffect(() => {
-    if (currentUser && roomId && !authLoading) { 
-        fetchRoomDetails(true).then(() => {
-            if (roomDataRef.current) {
-                previousIsGameStartedRef.current = roomDataRef.current.isGameStarted;
-            }
-        });
-    } else if (!authLoading && !currentUser) {
-        setIsLoading(false);
-        setError("Please sign in to access the lobby.");
-    }
-  }, [currentUser, roomId, authLoading, fetchRoomDetails]);
-
-  useEffect(() => {
-    if (!roomId || !currentUser || (roomData?.isGameStarted && !roomData.isGameOver)) {
-      return;
-    }
-
-    const intervalId = setInterval(() => {
-      if (!document.hidden) fetchRoomDetails(false);
-    }, 3000); 
-    return () => clearInterval(intervalId);
-  }, [roomId, currentUser, roomData?.isGameStarted, roomData?.isGameOver, fetchRoomDetails]);
-
-  const handleConfirmOrJoinTickets = async () => {
-    if (!currentUser || !roomData || (roomData.isGameStarted && !roomData.isGameOver)) {
-        toast({title: "Cannot proceed", description: "Game is active, user not logged in, or no room data.", variant: "destructive"});
-        return;
-    }
-    
-    const cost = selectedTicketsToBuy * roomData.settings.ticketPrice;
+    const cost = roomDataRef.current.settings.ticketPrice > 0 ? selectedTicketsToBuy * roomDataRef.current.settings.ticketPrice : 0;
     if (cost > 0) {
       triggerAnimation(cost, true);
     }
@@ -262,7 +154,118 @@ export default function LobbyPage() {
     } finally {
       setIsJoiningOrUpdating(false);
     }
-  };
+  }, [currentUser, roomId, selectedTicketsToBuy, toast, fetchUser, playSound, triggerAnimation, isJoiningOrUpdating]);
+
+  const fetchRoomDetails = useCallback(async (isInitialLoad = false) => {
+    if (!roomId || !currentUser) {
+        if (isInitialLoad) {
+            setIsLoading(false);
+            if (!currentUser && !authLoading) setError("Please sign in to access the lobby.");
+        }
+        return;
+    }
+    
+    try {
+      const response = await fetch(`/api/rooms/${roomId}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Failed to parse error response" }));
+        if (response.status === 404) {
+          setError("Room not found. It might have expired or never existed.");
+          setRoomData(null); 
+        } else {
+            setError(errorData.message || `Failed to fetch room details: ${response.statusText}`);
+            if (isInitialLoad) setRoomData(null);
+        }
+        if(isInitialLoad) setIsLoading(false);
+        return; 
+      }
+      const data: Room = await response.json();
+      const userInRoomData = data.players.find(p => p.id === currentUser.uid);
+      
+      if (isInitialLoad && data.settings.gameMode === 'rush' && !userInRoomData) {
+         handleConfirmOrJoinTickets(); // Auto-join for rush mode
+      }
+      
+      const oldPlayers = roomDataRef.current?.players;
+      if (oldPlayers && data.players.length > oldPlayers.length && !isInitialLoad) {
+        const oldPlayerIds = new Set(oldPlayers.map(p => p.id));
+        const joinedPlayers = data.players.filter(p => !oldPlayerIds.has(p.id));
+        
+        joinedPlayers.forEach(player => {
+            if (currentUser && player.id !== currentUser.uid) {
+                playSound('notification.wav');
+                toast({
+                    title: "Player Joined",
+                    description: `${player.name} has joined the lobby.`
+                });
+            }
+        });
+      }
+      
+      if (isInitialLoad) {
+        if (userInRoomData) {
+          setSelectedTicketsToBuy(userInRoomData.tickets.length > 0 ? userInRoomData.tickets.length : data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer || 1);
+        } else { 
+          setSelectedTicketsToBuy(data.settings.numberOfTicketsPerPlayer || DEFAULT_GAME_SETTINGS.numberOfTicketsPerPlayer || 1);
+        }
+      }
+      
+      if (data.isGameStarted && previousIsGameStartedRef.current === false) {
+        const currentPlayerServerData = data.players.find(p => p.id === currentUser.uid);
+        const ticketsToTake = currentPlayerServerData?.tickets.length || 0;
+        playSound('gamestarting.wav');
+        toast({ title: "Game Started!", description: "Joining the game..." });
+        router.push(`/room/${roomId}/play?playerTickets=${ticketsToTake}`);
+      }
+      
+      setRoomData(data);
+      if (isInitialLoad) setIsLoading(false);
+      setError(null);
+      previousIsGameStartedRef.current = data.isGameStarted;
+
+    } catch (err) {
+      console.error(`Error fetching room ${roomId} details:`, err);
+      if (isInitialLoad || !roomDataRef.current) { 
+         setError((err as Error).message || "An unexpected error occurred while fetching room details.");
+         if (isInitialLoad) {
+             setRoomData(null);
+             setIsLoading(false);
+         }
+      } else {
+        toast({
+            title: "Lobby Update Failed",
+            description: "Could not fetch latest lobby details. Retrying...",
+            variant: "destructive",
+            duration: 2000,
+        });
+        console.warn("Polling error fetching room details:", err);
+      }
+    } 
+  }, [roomId, currentUser, authLoading, router, toast, playSound, handleConfirmOrJoinTickets]); 
+
+  useEffect(() => {
+    if (currentUser && roomId && !authLoading) { 
+        fetchRoomDetails(true).then(() => {
+            if (roomDataRef.current) {
+                previousIsGameStartedRef.current = roomDataRef.current.isGameStarted;
+            }
+        });
+    } else if (!authLoading && !currentUser) {
+        setIsLoading(false);
+        setError("Please sign in to access the lobby.");
+    }
+  }, [currentUser, roomId, authLoading, fetchRoomDetails]);
+
+  useEffect(() => {
+    if (!roomId || !currentUser || (roomData?.isGameStarted && !roomData.isGameOver)) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      if (!document.hidden) fetchRoomDetails(false);
+    }, 3000); 
+    return () => clearInterval(intervalId);
+  }, [roomId, currentUser, roomData?.isGameStarted, roomData?.isGameOver, fetchRoomDetails]);
 
   const handleStartGame = async () => {
     if (!roomData || !currentUser || !isCurrentUserHost) {
@@ -462,7 +465,7 @@ export default function LobbyPage() {
     );
   }
 
-  const currentPrizeFormat = gameSettings.prizeFormat;
+  const currentPrizeFormat = gameSettings.prizeFormat || 'Format 1';
   const prizesForFormat = PRIZE_DEFINITIONS[currentPrizeFormat] || [];
   
   const totalTicketsBoughtByPlayers = roomData.players.reduce((sum, player) => sum + (player.tickets?.length || 0), 0);
@@ -550,16 +553,13 @@ export default function LobbyPage() {
               </Card>
           </div>
 
-          {gameSettings.gameMode === 'rush' && !roomData.isGameStarted && !doesCurrentUserHaveTickets && (
+          {gameSettings.gameMode === 'rush' && !roomData.isGameStarted && (
             <div className="text-center p-3 bg-secondary/30 rounded-lg">
                 <h3 className="font-semibold flex items-center justify-center gap-2"><Zap className="h-5 w-5 text-primary"/>Rush Mode Active!</h3>
-                <p className="text-sm text-muted-foreground mb-2">Tickets will be assigned randomly to all players when they join.</p>
-                <Button onClick={handleConfirmOrJoinTickets} disabled={isJoiningOrUpdating}>
-                    {isJoiningOrUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                    Get Random Tickets
-                </Button>
+                <p className="text-sm text-muted-foreground">Tickets are assigned randomly to all players.</p>
             </div>
           )}
+
 
           {showTicketSelectionUI && !roomData.isGameOver && (
             <Card className="bg-secondary/20">
