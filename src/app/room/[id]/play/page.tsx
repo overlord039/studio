@@ -1017,26 +1017,41 @@ export default function GameRoomPage() {
           <CardContent className="p-2 sm:p-3 flex justify-between items-center text-sm gap-3">
             <div className="flex-grow">
                <div className="flex items-center gap-2 mb-1">
-                  {roomData.settings.gameMode && ['easy', 'medium', 'hard'].includes(roomData.settings.gameMode) ? (
-                      <div className={cn(
-                          "px-2 py-1 text-xs font-bold text-white rounded-md capitalize",
-                          roomData.settings.gameMode === 'easy' && "bg-green-600",
-                          roomData.settings.gameMode === 'medium' && "bg-yellow-600",
-                          roomData.settings.gameMode === 'hard' && "bg-red-600",
-                      )}>
-                          {BOT_GAME_MODE_NAMES[roomData.settings.gameMode as keyof typeof BOT_GAME_MODE_NAMES] || 'Bot Game'} Mode
-                      </div>
-                  ) : roomData.settings.gameMode === 'online' && roomData.settings.tier ? (
-                      <div className="px-2 py-1 text-xs font-bold text-white rounded-md capitalize bg-blue-600">
-                          Online: {TIERS[roomData.settings.tier]?.name || 'Mode'}
-                      </div>
-                  ) : (
-                      <div className="flex items-center gap-2">
+                  {(() => {
+                    const { gameMode, tier } = roomData.settings;
+                    const isBotGame = gameMode && ['easy', 'medium', 'hard'].includes(gameMode);
+
+                    if (isBotGame) {
+                      return (
+                        <>
+                          <div className="px-2 py-1 text-xs font-bold text-white rounded-md capitalize bg-blue-600">Offline</div>
+                          <div className={cn(
+                            "px-2 py-1 text-xs font-bold text-white rounded-md capitalize",
+                            gameMode === 'easy' && "bg-green-600",
+                            gameMode === 'medium' && "bg-yellow-600",
+                            gameMode === 'hard' && "bg-red-600",
+                          )}>
+                            {BOT_GAME_MODE_NAMES[gameMode as keyof typeof BOT_GAME_MODE_NAMES]}
+                          </div>
+                        </>
+                      );
+                    } else if (gameMode === 'online' && tier) {
+                      return (
+                         <>
+                          <div className="px-2 py-1 text-xs font-bold text-white rounded-md capitalize bg-blue-600">Online</div>
+                          <div className="px-2 py-1 text-xs font-bold text-white rounded-md capitalize bg-green-600">
+                            {TIERS[tier]?.name || 'Mode'}
+                          </div>
+                        </>
+                      );
+                    } else {
+                       return (
                         <div className="px-2 py-1 text-xs font-bold text-white rounded-md capitalize bg-purple-600">
-                            Friends Game
+                            Friends
                         </div>
-                      </div>
-                  )}
+                       );
+                    }
+                  })()}
               </div>
               <div className="font-semibold text-white flex items-center gap-2">
                   <span>{currentUser.displayName}</span>
