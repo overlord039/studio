@@ -11,3 +11,9 @@ export const WEEKLY_REWARDS = [
 ];
 
 export const PERFECT_STREAK_BONUS = 100;
+
+export const getCoinsForLevelUp = (level: number) => {
+    // Rewards 10 coins per level reached, starting from level 2.
+    // e.g., reaching level 2 gives 20 coins, level 10 gives 100 coins.
+    return level * 10;
+}

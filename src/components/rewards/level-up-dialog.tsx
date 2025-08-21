@@ -6,15 +6,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Star } from 'lucide-react';
 import { useSound } from '@/contexts/sound-context';
+import Image from 'next/image';
 
 interface LevelUpDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   oldLevel: number;
   newLevel: number;
+  reward: number;
 }
 
-export default function LevelUpDialog({ open, onOpenChange, oldLevel, newLevel }: LevelUpDialogProps) {
+export default function LevelUpDialog({ open, onOpenChange, oldLevel, newLevel, reward }: LevelUpDialogProps) {
   const [displayLevel, setDisplayLevel] = useState(oldLevel);
   const { playSound } = useSound();
 
@@ -46,22 +48,23 @@ export default function LevelUpDialog({ open, onOpenChange, oldLevel, newLevel }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Star className="h-16 w-16 text-yellow-400 animate-pulse" style={{ animationDuration: '2s' }}/>
-          </div>
-          <DialogTitle className="text-2xl font-bold">Level Up!</DialogTitle>
-          <DialogDescription>
-            Congratulations! You've reached a new level.
-          </DialogDescription>
+      <DialogContent className="text-center">
+        <DialogHeader>
+          <DialogTitle className="text-3xl font-bold">Level Up!</DialogTitle>
         </DialogHeader>
-        <div className="flex items-center justify-center gap-4 my-6">
+        <div className="flex items-center justify-center gap-4 my-4">
             <div className="text-4xl font-bold text-muted-foreground">Lv {oldLevel}</div>
             <div className="text-2xl font-bold text-muted-foreground">&rarr;</div>
             <div className="text-6xl font-extrabold text-primary animate-scale-in-pop">Lv {displayLevel}</div>
         </div>
-        <DialogFooter>
+        <div className="text-center p-3 bg-yellow-400/20 border-2 border-dashed border-yellow-500/50 rounded-lg space-y-1">
+            <h4 className="font-bold text-yellow-600 dark:text-yellow-300">Level Up Reward</h4>
+            <div className="flex items-center justify-center gap-2 text-2xl font-bold">
+                <Image src="/coin.png" alt="Coins" width={28} height={28} />
+                <span>+{reward} Coins</span>
+            </div>
+        </div>
+        <DialogFooter className="mt-4">
           <Button onClick={() => onOpenChange(false)} className="w-full">
             Awesome!
           </Button>

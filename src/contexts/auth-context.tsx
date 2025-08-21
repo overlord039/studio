@@ -27,7 +27,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { isSameDay, subDays, startOfDay } from 'date-fns';
-import { WEEKLY_REWARDS, PERFECT_STREAK_BONUS } from '@/lib/rewards';
+import { WEEKLY_REWARDS, PERFECT_STREAK_BONUS, getCoinsForLevelUp } from '@/lib/rewards';
 import AnimatedCoin from '@/components/rewards/animated-coin';
 import { useRouter } from 'next/navigation';
 import LevelUpDialog from '@/components/rewards/level-up-dialog';
@@ -167,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const sessionWelcomedRef = useRef(false);
   const previousUserRef = useRef<User | null>(null);
 
-  const [levelUpInfo, setLevelUpInfo] = useState<{ oldLevel: number; newLevel: number } | null>(null);
+  const [levelUpInfo, setLevelUpInfo] = useState<{ oldLevel: number; newLevel: number; reward: number; } | null>(null);
 
 
   useEffect(() => {
@@ -337,7 +337,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     // Check for level up
                     const prevUser = previousUserRef.current;
                     if (prevUser && finalUser.stats.level > prevUser.stats.level) {
-                       setLevelUpInfo({ oldLevel: prevUser.stats.level, newLevel: finalUser.stats.level });
+                        let totalReward = 0;
+                        for(let i = prevUser.stats.level + 1; i <= finalUser.stats.level; i++) {
+                            totalReward += getCoinsForLevelUp(i);
+                        }
+                       setLevelUpInfo({ oldLevel: prevUser.stats.level, newLevel: finalUser.stats.level, reward: totalReward });
                     }
                     
                     setCurrentUser(prevUser => areUsersEqual(prevUser, finalUser) ? prevUser : finalUser);
@@ -664,7 +668,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center justify-center gap-2 p-4">
-              <Image src="/coin.png" alt="Coins" width={40} height={40} />
+              <Image src="/coin.png" alt="Coins" width={40} height={40} data-ai-hint="gold coin" />
               <span className="text-4xl font-bold text-yellow-500">{reward?.amount}</span>
           </div>
           <DialogFooter>
@@ -678,6 +682,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           onOpenChange={() => setLevelUpInfo(null)}
           oldLevel={levelUpInfo.oldLevel}
           newLevel={levelUpInfo.newLevel}
+          reward={levelUpInfo.reward}
         />
       )}
       {loading && !currentUser ? (
