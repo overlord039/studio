@@ -351,7 +351,7 @@ export default function Header() {
     const xpForNext = getXpForNextLevel(level);
     const xpProgress = Math.min(100, (currentXp / xpForNext) * 100);
 
-    const circumference = 2 * Math.PI * 22; // 2 * pi * radius (increased radius to 22 from 18)
+    const circumference = 2 * Math.PI * 22; 
     const strokeDashoffset = circumference - (xpProgress / 100) * circumference;
     
     return (
@@ -365,7 +365,7 @@ export default function Header() {
                   cy="25"
                   r="22"
                   fill="none"
-                  className="stroke-primary/20"
+                  className="stroke-accent/20"
                   strokeWidth="4"
                 />
                 <circle
@@ -373,7 +373,7 @@ export default function Header() {
                   cy="25"
                   r="22"
                   fill="none"
-                  className="stroke-primary"
+                  className="stroke-accent"
                   strokeWidth="4"
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeDashoffset}
