@@ -534,7 +534,7 @@ export default function LobbyPage() {
                 <CardContent className="p-2 flex flex-col items-center justify-center text-center">
                     <span className="text-xs text-muted-foreground">Ticket Price</span>
                     <div className="flex items-center gap-1 font-bold text-base">
-                      <Image src="/coin.png" alt="Coins" width={18} height={18} />
+                      <Image src="/coin.png" alt="Coins" width={18} height={18} data-ai-hint="gold coin" />
                       <span>{gameSettings.ticketPrice}</span>
                     </div>
                 </CardContent>
@@ -550,10 +550,14 @@ export default function LobbyPage() {
               </Card>
           </div>
 
-          {gameSettings.gameMode === 'rush' && !roomData.isGameStarted && (
+          {gameSettings.gameMode === 'rush' && !roomData.isGameStarted && !doesCurrentUserHaveTickets && (
             <div className="text-center p-3 bg-secondary/30 rounded-lg">
                 <h3 className="font-semibold flex items-center justify-center gap-2"><Zap className="h-5 w-5 text-primary"/>Rush Mode Active!</h3>
-                <p className="text-sm text-muted-foreground">Tickets will be assigned randomly to all players when you join.</p>
+                <p className="text-sm text-muted-foreground mb-2">Tickets will be assigned randomly to all players when they join.</p>
+                <Button onClick={handleConfirmOrJoinTickets} disabled={isJoiningOrUpdating}>
+                    {isJoiningOrUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                    Get Random Tickets
+                </Button>
             </div>
           )}
 
@@ -632,7 +636,7 @@ export default function LobbyPage() {
                           {player.tickets?.length > 0 
                             ? <>
                                 <span>{player.tickets.length} ticket{player.tickets.length === 1 ? '' : 's'}</span>
-                                <div className="flex items-center gap-0.5">(<Image src="/coin.png" alt="Coins" width={14} height={14} />{player.tickets.length * gameSettings.ticketPrice})</div>
+                                <div className="flex items-center gap-0.5">(<Image src="/coin.png" alt="Coins" width={14} height={14} data-ai-hint="gold coin" />{player.tickets.length * gameSettings.ticketPrice})</div>
                               </>
                             : (roomData.isGameOver ? "Game Over" : "No tickets yet")}
                         </span>
@@ -695,7 +699,7 @@ export default function LobbyPage() {
                   <CardContent className="p-2 md:p-4 space-y-2 text-xs md:text-sm">
                      <div className="font-semibold flex items-center gap-1">
                       <span>Potential Prize Pool:</span>
-                      <Image src="/coin.png" alt="Coins" width={18} height={18} />
+                      <Image src="/coin.png" alt="Coins" width={18} height={18} data-ai-hint="gold coin" />
                       <span>{currentTotalPrizePool.toFixed(0)}</span>
                      </div>
                      <p className="text-xs text-muted-foreground">
@@ -707,7 +711,7 @@ export default function LobbyPage() {
                         <div key={prizeName} className="flex justify-between items-center text-xs md:text-sm">
                           <span>{prizeName}:</span>
                           <div className="font-semibold flex items-center gap-1">
-                            <Image src="/coin.png" alt="Coins" width={18} height={18} />
+                            <Image src="/coin.png" alt="Coins" width={18} height={18} data-ai-hint="gold coin" />
                             <span>{prizeAmount.toFixed(0)}</span>
                           </div>
                         </div>
