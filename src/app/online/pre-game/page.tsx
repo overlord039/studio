@@ -117,7 +117,7 @@ function PreGameContent() {
             unsubPlayers();
         };
 
-    }, [roomId, playSound, router, toast]);
+    }, [roomId, playSound, router, toast, countdown]);
 
     // This effect handles the local ticking of the countdown and triggers the game start
     useEffect(() => {
@@ -126,19 +126,18 @@ function PreGameContent() {
         if (countdown <= 0 && !startGameCalledRef.current) {
             startGameCalledRef.current = true;
             
-            // Best-effort: tell server to start the game
+            if (!navigatedRef.current) {
+                navigatedRef.current = true;
+                router.push(`/room/${roomId}/play`);
+            }
+            
+            // Best-effort: tell server to start the game in the background
             fetch(`/api/online/start-game`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ roomId }),
             }).catch((err) => {
-                console.error('Failed to trigger start-game, but listening for server state change:', err);
-                // Fallback navigation if API fails, though listener should still catch it.
-                if (!navigatedRef.current) {
-                    setTimeout(() => {
-                        if (!navigatedRef.current) router.push(`/room/${roomId}/play`);
-                    }, 1500);
-                }
+                console.error('Failed to trigger start-game, but client has navigated:', err);
             });
             return; // Stop the interval
         }
