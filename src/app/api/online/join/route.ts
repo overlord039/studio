@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { NextResponse, type NextRequest } from 'next/server';
@@ -24,21 +25,21 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
     ticketPrice: 5,
     roomSize: 4,
     matchmakingTime: 15,
-    unlockRequirements: { matches: 0, coins: 0 },
+    unlockRequirements: { level: 1, matches: 0, coins: 0 },
   },
   classic: {
     name: 'Classic',
     ticketPrice: 10,
     roomSize: 6,
     matchmakingTime: 30,
-    unlockRequirements: { matches: 5, coins: 50 },
+    unlockRequirements: { level: 5, matches: 10, coins: 25 },
   },
   tournament: {
     name: 'Tournament',
     ticketPrice: 20,
     roomSize: 10,
     matchmakingTime: 60,
-    unlockRequirements: { matches: 15, coins: 150 },
+    unlockRequirements: { level: 10, matches: 25, coins: 100 },
   },
 };
 
