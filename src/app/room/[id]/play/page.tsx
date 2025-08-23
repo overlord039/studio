@@ -17,7 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { useAuth, useCoinAnimation } from '@/contexts/auth-context';
 import { useSound } from '@/contexts/sound-context';
-import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, NUMBERS_RANGE_MAX, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN, XP_MODIFIER_ONLINE, getCoinsForLevelUp, getXpForNextLevel } from '@/lib/constants';
+import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, NUMBERS_RANGE_MAX, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN, XP_MODIFIER_ONLINE, getCoinsForLevelUp, getXpForNextLevel, SERVER_CALL_INTERVAL } from '@/lib/constants';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -484,39 +484,53 @@ export default function GameRoomPage() {
     }
   }, [currentUser, roomId, authLoading, fetchGameDetails]);
 
-  // Polling for game updates and handling notifications for changes for non-online games
+  // Polling for game updates and handling notifications for changes
   useEffect(() => {
-    if (isOnlineGame || !roomId || !currentUser || roomData?.isGameOver || isLoading ) {
-        if (previousCallingModeRef.current && roomData?.isGameOver) {
-            previousCallingModeRef.current = undefined; // Reset on game over
+    // For online games, use a proactive polling strategy to trigger number calls
+    if (isOnlineGame && roomData?.host.id === currentUser?.uid && !roomData.isGameOver) {
+      const callApi = () => {
+        if (!document.hidden) {
+          fetch(`/api/online/call-number`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId }),
+          }).catch(err => console.error("Error pinging call-number API:", err));
         }
-        return;
+      };
+
+      // Call immediately once, then set interval
+      callApi();
+      const intervalId = setInterval(callApi, SERVER_CALL_INTERVAL - 500); // Poll slightly faster than server cooldown
+
+      return () => clearInterval(intervalId);
     }
-    
-    // Check for calling mode change (non-online games)
-    if (previousCallingModeRef.current && roomData && roomData.settings.callingMode !== previousCallingModeRef.current) {
+
+    // Polling for non-online games
+    if (!isOnlineGame && !isLoading) {
+      if (roomData?.isGameOver) return;
+
+      if (previousCallingModeRef.current && roomData && roomData.settings.callingMode !== previousCallingModeRef.current) {
         playSound('notification.wav');
         toast({
             title: "Mode Switched by Host",
             description: `Number calling is now ${roomData.settings.callingMode}.`
         });
-    }
-    previousCallingModeRef.current = roomData?.settings.callingMode;
-
-    const isManualMode = roomData?.settings.callingMode === 'manual';
-    const isHost = roomData?.host.id === currentUser.uid;
-    const pollInterval = isManualMode && !isHost ? 7000 : 5000;
-
-    const intervalId = setInterval(() => {
-      if (!document.hidden && roomDataRef.current && roomDataRef.current.isGameStarted && !roomDataRef.current.isGameOver) { 
-        fetchGameDetails(false);
       }
-    }, pollInterval); 
-    
-    return () => {
-        clearInterval(intervalId);
-    };
-  }, [roomId, currentUser, roomData, isLoading, fetchGameDetails, playSound, toast, isOnlineGame]);
+      previousCallingModeRef.current = roomData?.settings.callingMode;
+
+      const isManualMode = roomData?.settings.callingMode === 'manual';
+      const isHost = roomData?.host.id === currentUser?.uid;
+      const pollInterval = isManualMode && !isHost ? 7000 : 5000;
+
+      const intervalId = setInterval(() => {
+        if (!document.hidden && roomDataRef.current && roomDataRef.current.isGameStarted && !roomDataRef.current.isGameOver) {
+          fetchGameDetails(false);
+        }
+      }, pollInterval);
+
+      return () => clearInterval(intervalId);
+    }
+  }, [isOnlineGame, roomData, currentUser, roomId, isLoading, playSound, toast, fetchGameDetails]);
 
 
   // Announce new numbers
