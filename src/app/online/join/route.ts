@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { NextResponse, type NextRequest } from 'next/server';
@@ -24,7 +23,7 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
     name: 'Quick',
     ticketPrice: 5,
     roomSize: 4,
-    matchmakingTime: 15,
+    matchmakingTime: 5,
     unlockRequirements: { level: 1, matches: 0, coins: 0 },
   },
   classic: {

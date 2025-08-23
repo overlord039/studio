@@ -56,7 +56,7 @@ function PreGameContent() {
     const [players, setPlayers] = useState<FirestorePlayer[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [countdown, setCountdown] = useState<number | null>(null);
+    const [countdown, setCountdown] = useState<number | null>(5);
     const navigatedRef = useRef(false);
     const startGameCalledRef = useRef(false);
 
