@@ -40,7 +40,7 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
     name: 'Quick',
     ticketPrice: 5,
     roomSize: 4,
-    matchmakingTime: 5,
+    matchmakingTime: 15,
     unlockRequirements: { level: 1, matches: 0, coins: 0 },
   },
   classic: {
