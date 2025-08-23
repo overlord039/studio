@@ -239,7 +239,7 @@ function MatchmakingContent() {
         }
         
         await fetchUser(); // Refresh user data to show refunded coins
-        toast({ title: "Matchmaking Canceled", description: "Your coins have been refunded." });
+        // The success toast has been removed for a seamless experience.
 
     } catch (err) {
         console.error("Error cancelling matchmaking:", err);
