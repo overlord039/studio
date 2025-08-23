@@ -62,7 +62,7 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
 function MatchmakingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { currentUser, updateUserStats } = useAuth();
+  const { currentUser, updateUserStats, fetchUser } = useAuth();
   const { toast } = useToast();
   const { playSound } = useSound();
 
@@ -77,6 +77,7 @@ function MatchmakingContent() {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [navigationTriggered, setNavigationTriggered] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Set initial tier/ticket config from URL params
   useEffect(() => {
@@ -162,7 +163,7 @@ function MatchmakingContent() {
             description: 'The room you were in is no longer available.',
             variant: 'destructive',
           });
-          router.push('/online');
+          if (!isCancelling) router.push('/online');
         }
       }
     });
@@ -183,7 +184,7 @@ function MatchmakingContent() {
       unsubRoom();
       unsubPlayers();
     };
-  }, [roomId, router, navigationTriggered, toast]);
+  }, [roomId, router, navigationTriggered, toast, isCancelling]);
 
   // Main countdown timer effect
   useEffect(() => {
@@ -214,8 +215,38 @@ function MatchmakingContent() {
 
 
   const handleCancel = async () => {
-    // Implement cancellation logic if needed (e.g., removing player from room)
-    router.push('/online');
+    if (!roomId || !currentUser || !tier || !tickets) {
+        router.push('/online');
+        return;
+    }
+
+    setIsCancelling(true);
+    try {
+        const response = await fetch('/api/online/cancel-matchmaking', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                roomId, 
+                playerId: currentUser.uid,
+                tier,
+                tickets
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Failed to cancel matchmaking.");
+        }
+        
+        await fetchUser(); // Refresh user data to show refunded coins
+        toast({ title: "Matchmaking Canceled", description: "Your coins have been refunded." });
+
+    } catch (err) {
+        console.error("Error cancelling matchmaking:", err);
+        toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
+    } finally {
+        router.push('/online');
+    }
   };
 
   if (!currentUser || !tierConfig) {
@@ -292,8 +323,9 @@ function MatchmakingContent() {
           )}
         </div>
 
-        <Button variant="outline" onClick={handleCancel} className="w-full">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Cancel Search
+        <Button variant="outline" onClick={handleCancel} className="w-full" disabled={isCancelling}>
+            {isCancelling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowLeft className="mr-2 h-4 w-4" />}
+            Cancel Search
         </Button>
       </CardContent>
     </Card>
