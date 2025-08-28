@@ -15,20 +15,19 @@ const activeRoomTimers = new Map<string, NodeJS.Timeout>();
 async function callNumberForRoom(roomId: string, host: string) {
     const url = `${host}/api/online/call-number`;
     try {
-        await fetch(url, {
+        const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ roomId }),
         });
+        // Self-perpetuating timer is now handled on the call-number endpoint itself.
+        // The start-game endpoint just gives it the initial kick.
+        if (!response.ok) {
+            console.error(`API call to call number for room ${roomId} failed with status: ${response.status}`);
+        }
+
     } catch (error) {
         console.error(`Failed to call number for room ${roomId}:`, error);
-        // If the call fails, we should consider stopping the timer to prevent hammering a dead endpoint.
-        const timerId = activeRoomTimers.get(roomId);
-        if (timerId) {
-            clearInterval(timerId);
-            activeRoomTimers.delete(roomId);
-            console.log(`Stopped timer for room ${roomId} due to API call failure.`);
-        }
     }
 }
 
@@ -62,25 +61,16 @@ export async function POST(request: Request) {
             }
         });
         
-        // After the transaction succeeds, start the server-side timer
-        if (!activeRoomTimers.has(roomId)) {
-            const host = request.headers.get('host') || 'localhost:3000';
-            const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-            const hostUrl = `${protocol}://${host}`;
+        const host = request.headers.get('host') || 'localhost:3000';
+        const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
+        const hostUrl = `${protocol}://${host}`;
 
-            // Call the first number after 1 second
-            setTimeout(() => {
-                callNumberForRoom(roomId, hostUrl).then(() => {
-                     // Then, set up the regular interval for subsequent numbers
-                    const timerId = setInterval(() => {
-                        callNumberForRoom(roomId, hostUrl);
-                    }, SERVER_CALL_INTERVAL); 
-                    activeRoomTimers.set(roomId, timerId);
-                });
-            }, 1000); // 1-second delay for the first call
-            
-            console.log(`Server-side timer started for room ${roomId}.`);
-        }
+        // Call the first number after a short delay
+        setTimeout(() => {
+            callNumberForRoom(roomId, hostUrl);
+        }, 1000); 
+        
+        console.log(`Initial number call scheduled for room ${roomId}.`);
 
         return NextResponse.json({ success: true, message: 'Game started successfully.'});
 

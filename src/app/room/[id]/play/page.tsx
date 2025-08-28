@@ -1,5 +1,6 @@
 
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -486,8 +487,8 @@ export default function GameRoomPage() {
 
   // Polling for game updates and handling notifications for changes
   useEffect(() => {
-    // --- Host-driven timer for ONLINE games ---
-    if (isOnlineGame && roomData?.host.id === currentUser?.uid && !roomData.isGameOver) {
+    // --- Self-perpetuating timer for ONLINE games ---
+    if (isOnlineGame && roomData?.status === 'in-progress' && !roomData.isGameOver) {
       const callApi = () => {
         if (!document.hidden) { // Only call if tab is active
           fetch(`/api/online/call-number`, {
@@ -498,7 +499,6 @@ export default function GameRoomPage() {
         }
       };
 
-      // Call immediately once, then set interval
       const timerId = setInterval(callApi, SERVER_CALL_INTERVAL); 
       return () => clearInterval(timerId);
     }

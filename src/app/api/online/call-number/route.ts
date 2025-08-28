@@ -30,6 +30,7 @@ export async function POST(request: Request) {
 
         const roomRef = doc(db, 'rooms', roomId);
         let gameFinished = false;
+        let isGameInProgress = false;
 
         await runTransaction(db, async (transaction) => {
             const roomSnap = await transaction.get(roomRef);
@@ -46,8 +47,10 @@ export async function POST(request: Request) {
             
             // Only call a number if the game is in progress
             if (roomData.status !== 'in-progress') {
+                isGameInProgress = false;
                 return; // Not an error, just do nothing.
             }
+            isGameInProgress = true;
             
             // --- Server-side Cooldown ---
             // Enforce a strict cooldown period between number calls to maintain game pace.
@@ -89,7 +92,6 @@ export async function POST(request: Request) {
         
         if (gameFinished) {
             // If the game just finished, we might need to stop a timer or do other cleanup.
-            // For now, just logging it.
             console.log(`Game finished in room ${roomId}. All numbers called.`);
         }
 
