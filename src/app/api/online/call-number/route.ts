@@ -7,10 +7,9 @@ import { doc, runTransaction, arrayUnion, serverTimestamp, Timestamp } from 'fir
 import type { FirestoreRoom } from '@/types';
 import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX, SERVER_CALL_INTERVAL } from '@/lib/constants';
 
-// --- In-memory store for server-side timers ---
-// NOTE: In a multi-instance/serverless environment, a more robust solution like
-// a task queue (Cloud Tasks) would be better. For this app's scope, this is sufficient.
-const activeRoomTimers = new Map<string, NodeJS.Timeout>();
+// This endpoint is now stateless. It does not manage timers.
+// It relies on a client (the host) to "tick" the game forward.
+// It uses a timestamp in Firestore to enforce a cooldown.
 
 // Helper to generate and shuffle a full number pool
 function initializeNumberPool(): number[] {
@@ -22,26 +21,18 @@ function initializeNumberPool(): number[] {
     return pool;
 }
 
-// Function to stop and clear a timer for a room
-function stopTimerForRoom(roomId: string) {
-    if (activeRoomTimers.has(roomId)) {
-        clearTimeout(activeRoomTimers.get(roomId));
-        activeRoomTimers.delete(roomId);
-        console.log(`Timer stopped for room ${roomId}.`);
-    }
-}
-
-// Main function to call a number and perpetuate the timer
-async function callNumberAndScheduleNext(roomId: string) {
+export async function POST(request: Request) {
     if (!db) {
-        console.error('Firestore is not configured. Cannot call number.');
-        return;
+        return NextResponse.json({ message: 'Firestore is not configured.' }, { status: 500 });
     }
-
-    let gameFinished = false;
-    let isGameInProgress = false;
 
     try {
+        const { roomId, hostId } = await request.json();
+        if (!roomId || !hostId) {
+            return NextResponse.json({ message: 'Room ID and Host ID are required.' }, { status: 400 });
+        }
+
+        let numberCalled = false;
         await runTransaction(db, async (transaction) => {
             const roomRef = doc(db, 'rooms', roomId);
             const roomSnap = await transaction.get(roomRef);
@@ -56,11 +47,25 @@ async function callNumberAndScheduleNext(roomId: string) {
                 lastNumberCall?: Timestamp;
             };
 
+            // Security check: Only the host can trigger a number call.
+            if (roomData.host.id !== hostId) {
+                throw new Error('Only the host can call numbers.');
+            }
+
             if (roomData.status !== 'in-progress') {
-                isGameInProgress = false;
+                // Game is not active, so we don't call a number.
+                // This is not an error, just a state where no action is needed.
                 return;
             }
-            isGameInProgress = true;
+            
+            // --- Cooldown Logic ---
+            const now = Date.now();
+            const lastCallTime = roomData.lastNumberCall?.toMillis() || 0;
+            if (now - lastCallTime < SERVER_CALL_INTERVAL - 500) { // Allow a small buffer
+                 // It's too soon to call another number.
+                 // We don't throw an error, just return without doing anything.
+                 return;
+            }
 
             let numberPool = roomData.numberPool || [];
             if (numberPool.length === 0 && (!roomData.calledNumbers || roomData.calledNumbers.length === 0)) {
@@ -72,7 +77,6 @@ async function callNumberAndScheduleNext(roomId: string) {
                     status: 'finished',
                     currentNumber: null,
                 });
-                gameFinished = true;
                 return;
             }
 
@@ -81,47 +85,19 @@ async function callNumberAndScheduleNext(roomId: string) {
                 numberPool: numberPool,
                 calledNumbers: arrayUnion(nextNumber),
                 currentNumber: nextNumber,
-                lastNumberCall: serverTimestamp()
+                lastNumberCall: serverTimestamp() // Update the timestamp
             });
+            numberCalled = true;
         });
 
-        if (gameFinished || !isGameInProgress) {
-            stopTimerForRoom(roomId);
+        if (numberCalled) {
+          return NextResponse.json({ success: true, message: 'Number called successfully.' });
         } else {
-            // Schedule the next call
-            const nextCallTimer = setTimeout(() => {
-                callNumberAndScheduleNext(roomId);
-            }, SERVER_CALL_INTERVAL);
-            activeRoomTimers.set(roomId, nextCallTimer);
+          return NextResponse.json({ success: true, message: 'Cooldown active or game not in progress.' });
         }
-    } catch (error) {
-        console.error(`Error calling number for room ${roomId}:`, error);
-        stopTimerForRoom(roomId);
-    }
-}
-
-
-export async function POST(request: Request) {
-    // This POST endpoint is now only used to INITIATE the timer loop from start-game.
-    // It's a trigger, not the number caller itself.
-    try {
-        const { roomId } = await request.json();
-        if (!roomId) {
-            return NextResponse.json({ message: 'Room ID is required.' }, { status: 400 });
-        }
-        
-        // Prevent duplicate timers
-        if (activeRoomTimers.has(roomId)) {
-             return NextResponse.json({ success: true, message: 'Timer already active.' });
-        }
-
-        console.log(`Initial number call trigger received for room ${roomId}. Starting loop.`);
-        callNumberAndScheduleNext(roomId);
-
-        return NextResponse.json({ success: true, message: 'Number calling loop initiated.' });
 
     } catch (error) {
-        console.error("Error initiating number call loop:", error);
+        console.error(`Error calling number for room:`, error);
         return NextResponse.json({ success: false, message: (error as Error).message }, { status: 500 });
     }
 }

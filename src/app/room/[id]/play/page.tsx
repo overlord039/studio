@@ -417,6 +417,28 @@ export default function GameRoomPage() {
 
 }, [isOnlineGame, roomId, currentUser, db, myTickets.length, toast, playSound]);
 
+  // Client-side "ticker" for online games, only for the host.
+  useEffect(() => {
+      if (!isOnlineGame || !roomData || !currentUser || roomData.host.id !== currentUser.uid) {
+          return;
+      }
+      
+      const intervalId = setInterval(() => {
+          const currentRoom = roomDataRef.current;
+          if (currentRoom && currentRoom.isGameStarted && !currentRoom.isGameOver) {
+              fetch('/api/online/call-number', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ roomId: currentRoom.id, hostId: currentUser.uid }),
+              }).catch(err => {
+                  console.warn("Failed to ping for number call:", err);
+              });
+          }
+      }, SERVER_CALL_INTERVAL);
+
+      return () => clearInterval(intervalId);
+  }, [isOnlineGame, roomData, currentUser]);
+
 
   // This effect runs ONCE when the game is over to trigger the stat update for all game modes.
   useEffect(() => {
@@ -962,7 +984,7 @@ export default function GameRoomPage() {
                      {xpGained > 0 && (
                         <div className="text-lg font-bold text-blue-700 dark:text-blue-300 flex items-center justify-center gap-2">
                             You earned <Star className="h-5 w-5 fill-yellow-400 text-yellow-500" /> {Math.round(xpGained)} XP!
-                        </div>
+                        </p>
                     )}
                     {currentUserPrizeNames.length > 0 && (
                         <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>

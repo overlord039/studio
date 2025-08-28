@@ -30,7 +30,10 @@ export async function POST(request: Request) {
             if (roomData.status === 'pre-game') {
                 transaction.update(roomRef, { 
                     status: 'in-progress',
-                    gameStartTime: serverTimestamp() 
+                    gameStartTime: serverTimestamp(),
+                    // IMPORTANT: We also set the lastNumberCall timestamp to now
+                    // to initialize the cooldown period for the first number.
+                    lastNumberCall: serverTimestamp()
                 });
             } else {
                 // If it's already in-progress or finished, do nothing.
@@ -38,22 +41,7 @@ export async function POST(request: Request) {
             }
         });
         
-        const host = request.headers.get('host') || 'localhost:3000';
-        const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-        const hostUrl = `${protocol}://${host}`;
-
-        // 2. Trigger the self-perpetuating number calling loop
-        // We do this with a fetch so we don't block the response of this endpoint.
-        fetch(`${hostUrl}/api/online/call-number`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roomId }),
-        }).catch(err => {
-            // Log the error but don't fail the request, as the game has officially started.
-            console.error(`Failed to trigger number calling loop for room ${roomId}:`, err);
-        });
-        
-        console.log(`Game started and initial number call triggered for room ${roomId}.`);
+        console.log(`Game started for room ${roomId}. Client host will now trigger number calls.`);
 
         return NextResponse.json({ success: true, message: 'Game started successfully.'});
 
