@@ -486,10 +486,10 @@ export default function GameRoomPage() {
 
   // Polling for game updates and handling notifications for changes
   useEffect(() => {
-    // For online games, use a proactive polling strategy to trigger number calls
+    // --- Host-driven timer for ONLINE games ---
     if (isOnlineGame && roomData?.host.id === currentUser?.uid && !roomData.isGameOver) {
       const callApi = () => {
-        if (!document.hidden) {
+        if (!document.hidden) { // Only call if tab is active
           fetch(`/api/online/call-number`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -499,10 +499,8 @@ export default function GameRoomPage() {
       };
 
       // Call immediately once, then set interval
-      callApi();
-      const intervalId = setInterval(callApi, SERVER_CALL_INTERVAL - 500); // Poll slightly faster than server cooldown
-
-      return () => clearInterval(intervalId);
+      const timerId = setInterval(callApi, SERVER_CALL_INTERVAL); 
+      return () => clearInterval(timerId);
     }
 
     // Polling for non-online games

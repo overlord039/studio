@@ -3,9 +3,9 @@
 
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase/config';
-import { doc, runTransaction, arrayUnion, serverTimestamp } from 'firebase/firestore';
+import { doc, runTransaction, arrayUnion, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { FirestoreRoom } from '@/types';
-import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX } from '@/lib/constants';
+import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX, SERVER_CALL_INTERVAL } from '@/lib/constants';
 
 // Helper to generate and shuffle a full number pool
 function initializeNumberPool(): number[] {
@@ -41,13 +41,25 @@ export async function POST(request: Request) {
                 numberPool?: number[];
                 calledNumbers?: number[];
                 currentNumber?: number;
-                lastNumberCall?: any;
+                lastNumberCall?: Timestamp;
             };
             
             // Only call a number if the game is in progress
             if (roomData.status !== 'in-progress') {
                 return; // Not an error, just do nothing.
             }
+            
+            // --- Server-side Cooldown ---
+            // Enforce a strict cooldown period between number calls to maintain game pace.
+            const now = Timestamp.now();
+            if (roomData.lastNumberCall) {
+                const timeSinceLastCall = now.toMillis() - roomData.lastNumberCall.toMillis();
+                if (timeSinceLastCall < SERVER_CALL_INTERVAL - 1000) { // Allow a 1s buffer
+                    // It's too soon to call another number. Silently exit.
+                    return;
+                }
+            }
+
 
             let numberPool = roomData.numberPool || [];
             
@@ -71,7 +83,7 @@ export async function POST(request: Request) {
                 numberPool: numberPool, // Save the updated (shorter) pool back to Firestore
                 calledNumbers: arrayUnion(nextNumber),
                 currentNumber: nextNumber,
-                lastNumberCall: serverTimestamp()
+                lastNumberCall: now // Use the server's authoritative timestamp
             });
         });
         
