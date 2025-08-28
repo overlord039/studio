@@ -3,6 +3,7 @@
 
 
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -884,140 +885,140 @@ export default function GameRoomPage() {
     
     return (
       <>
-      <Header />
-      <div className="flex-grow p-4 flex flex-col items-center justify-center">
-        <Card className="w-full max-w-2xl shadow-xl border-accent">
-          <CardHeader className="text-center">
-            <CardTitle className="text-4xl font-bold flex items-center justify-center">
-              <PartyPopper className="mr-3 h-10 w-10 text-primary" /> Game Over!
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <h3 className="text-xl font-semibold text-center mb-2 flex items-center justify-center">
-                <Award className="mr-2 h-5 w-5 text-accent"/>
-                Final Prize Summary
-            </h3>
-            <div className="border rounded-md p-3">
-              {(hasPrizePool) && (
-              <div className="flex justify-between items-center text-lg font-bold mb-2 pb-2 border-b">
-                <span>Total Prize Pool:</span>
-                <div className="flex items-center gap-1">
-                  <Image src="/coin.png" alt="Coins" width={20} height={20} />
-                  <span>{formatCoins(totalPrizePool)}</span>
+        <Header />
+        <div className="flex-grow p-4 flex flex-col items-center justify-center">
+          <Card className="w-full max-w-2xl shadow-xl border-accent">
+            <CardHeader className="text-center">
+              <CardTitle className="text-4xl font-bold flex items-center justify-center">
+                <PartyPopper className="mr-3 h-10 w-10 text-primary" /> Game Over!
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <h3 className="text-xl font-semibold text-center mb-2 flex items-center justify-center">
+                  <Award className="mr-2 h-5 w-5 text-accent"/>
+                  Final Prize Summary
+              </h3>
+              <div className="border rounded-md p-3">
+                {(hasPrizePool) && (
+                <div className="flex justify-between items-center text-lg font-bold mb-2 pb-2 border-b">
+                  <span>Total Prize Pool:</span>
+                  <div className="flex items-center gap-1">
+                    <Image src="/coin.png" alt="Coins" width={20} height={20} />
+                    <span>{formatCoins(totalPrizePool)}</span>
+                  </div>
                 </div>
-              </div>
-              )}
-              <ul className="space-y-2">
-                {prizesForFormat.map(prize => {
-                  const claimInfo = roomData.prizeStatus[prize as PrizeType];
-                  const isClaimed = claimInfo && claimInfo.claimedBy.length > 0;
-                  
-                  let prizeStatusText = "Not Claimed";
-                  if (isClaimed) {
-                    const winnerNames = claimInfo.claimedBy.map(c => c.id === currentUser?.uid ? 'You' : c.name).join(', ');
-                    prizeStatusText = `Claimed by ${winnerNames}`;
-                  }
-                  
-                  if (!hasPrizePool) { // Bot games
-                     const rewardAmount = (roomData.settings.gameMode && OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS]) ? OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS][prize as PrizeType] : 0;
-                     return (
-                         <li key={prize} className="flex flex-col text-sm bg-secondary/20 p-1.5 rounded-md">
-                             <div className="flex justify-between items-center w-full">
-                                <span className="font-medium">{prize}</span>
-                                <div className="font-semibold flex items-center gap-1">
-                                    <Image src="/coin.png" alt="Coin" width={16} height={16} />
-                                    <span>{rewardAmount}</span>
-                                </div>
+                )}
+                <ul className="space-y-2">
+                  {prizesForFormat.map(prize => {
+                    const claimInfo = roomData.prizeStatus[prize as PrizeType];
+                    const isClaimed = claimInfo && claimInfo.claimedBy.length > 0;
+                    
+                    let prizeStatusText = "Not Claimed";
+                    if (isClaimed) {
+                      const winnerNames = claimInfo.claimedBy.map(c => c.id === currentUser?.uid ? 'You' : c.name).join(', ');
+                      prizeStatusText = `Claimed by ${winnerNames}`;
+                    }
+                    
+                    if (!hasPrizePool) { // Bot games
+                       const rewardAmount = (roomData.settings.gameMode && OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS]) ? OFFLINE_COIN_REWARDS[roomData.settings.gameMode as keyof typeof OFFLINE_COIN_REWARDS][prize as PrizeType] : 0;
+                       return (
+                           <li key={prize} className="flex flex-col text-sm bg-secondary/20 p-1.5 rounded-md">
+                               <div className="flex justify-between items-center w-full">
+                                  <span className="font-medium">{prize}</span>
+                                  <div className="font-semibold flex items-center gap-1">
+                                      <Image src="/coin.png" alt="Coin" width={16} height={16} />
+                                      <span>{rewardAmount}</span>
+                                  </div>
+                               </div>
+                               <span className={cn("text-xs text-right w-full", isClaimed ? "text-green-600 font-medium" : "text-muted-foreground/80")}>
+                                  {prizeStatusText}
+                              </span>
+                          </li>
+                        );
+                    }
+
+                    const prizeAmount = finalPrizes[prize as PrizeType] || 0;
+                    const prizePerWinner = (claimInfo && claimInfo.claimedBy.length > 0) ? prizeAmount / claimInfo.claimedBy.length : 0;
+                    
+                    return (
+                       <li key={prize} className="flex flex-col bg-secondary/20 p-1.5 rounded-md text-sm">
+                          <div className="flex justify-between items-center w-full">
+                             <div className="flex items-center gap-1">
+                               <span>{prize}</span>
                              </div>
-                             <span className={cn("text-xs text-right w-full", isClaimed ? "text-green-600 font-medium" : "text-muted-foreground/80")}>
-                                {prizeStatusText}
-                            </span>
-                        </li>
-                      );
-                  }
-
-                  const prizeAmount = finalPrizes[prize as PrizeType] || 0;
-                  const prizePerWinner = (claimInfo && claimInfo.claimedBy.length > 0) ? prizeAmount / claimInfo.claimedBy.length : 0;
-                  
-                  return (
-                     <li key={prize} className="flex flex-col bg-secondary/20 p-1.5 rounded-md text-sm">
-                        <div className="flex justify-between items-center w-full">
-                           <div className="flex items-center gap-1">
-                             <span>{prize}</span>
-                           </div>
-                           <div className="font-semibold flex items-center gap-1">
-                             <Image src="/coin.png" alt="Coins" width={16} height={16} />
-                             <span>{formatCoins(prizeAmount)}</span>
-                           </div>
-                        </div>
-                        <span className={cn("text-xs text-right w-full", isClaimed ? "text-green-600 font-medium" : "text-muted-foreground/80")}>
-                           {prizeStatusText}
-                           {prizePerWinner > 0 && claimInfo && claimInfo.claimedBy.length > 1 && ` (${formatCoins(prizePerWinner)} each)`}
-                        </span>
-                     </li>
-                  );
-                })}
-                {!hasPrizePool && (
-                  <li className="flex flex-col text-sm bg-green-500/10 p-1.5 rounded-md border border-green-500/20 mt-2">
-                      <div className="flex justify-between items-center w-full">
-                          <span className="font-medium">Participation Reward</span>
-                          <div className="font-semibold flex items-center gap-1 text-green-600">
-                              <Image src="/coin.png" alt="Coin" width={16} height={16} />
-                              <span>{PARTICIPATION_REWARD}</span>
+                             <div className="font-semibold flex items-center gap-1">
+                               <Image src="/coin.png" alt="Coins" width={16} height={16} />
+                               <span>{formatCoins(prizeAmount)}</span>
+                             </div>
                           </div>
-                      </div>
-                      <span className="text-xs text-right w-full text-muted-foreground/80">
-                          Awarded for every game played
-                      </span>
-                  </li>
-                )}
-              </ul>
-            </div>
-
-            {(totalWinnings > 0 || xpGained > 0) ? (
-                <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-2">
-                    <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
-                     {totalWinnings > 0 && (
-                        <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
-                            You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(totalWinnings)}!
+                          <span className={cn("text-xs text-right w-full", isClaimed ? "text-green-600 font-medium" : "text-muted-foreground/80")}>
+                             {prizeStatusText}
+                             {prizePerWinner > 0 && claimInfo && claimInfo.claimedBy.length > 1 && ` (${formatCoins(prizePerWinner)} each)`}
+                          </span>
+                       </li>
+                    );
+                  })}
+                  {!hasPrizePool && (
+                    <li className="flex flex-col text-sm bg-green-500/10 p-1.5 rounded-md border border-green-500/20 mt-2">
+                        <div className="flex justify-between items-center w-full">
+                            <span className="font-medium">Participation Reward</span>
+                            <div className="font-semibold flex items-center gap-1 text-green-600">
+                                <Image src="/coin.png" alt="Coin" width={16} height={16} />
+                                <span>{PARTICIPATION_REWARD}</span>
+                            </div>
                         </div>
-                    )}
-                     {xpGained > 0 && (
-                        <div className="text-lg font-bold text-blue-700 dark:text-blue-300 flex items-center justify-center gap-2">
-                            You earned <Star className="h-5 w-5 fill-yellow-400 text-yellow-500" /> {Math.round(xpGained)} XP!
-                        </div>
-                    )}
-                    {currentUserPrizeNames.length > 0 && (
-                        <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
-                    )}
-                </div>
-            ) : (
-                <div className="text-center p-4 bg-secondary/50 rounded-lg">
-                    <p className="font-semibold text-muted-foreground">You didn't win a prize this time, but well played!</p>
-                     {xpGained > 0 && (
-                        <p className="text-sm text-blue-700 dark:text-blue-300 flex items-center justify-center gap-2">
-                            You earned <Star className="h-4 w-4 fill-yellow-400 text-yellow-500" /> {Math.round(xpGained)} XP for participating.
-                        </p>
-                    )}
-                </div>
-            )}
+                        <span className="text-xs text-right w-full text-muted-foreground/80">
+                            Awarded for every game played
+                        </span>
+                    </li>
+                  )}
+                </ul>
+              </div>
 
-            <div className="flex flex-row gap-4 mt-6">
-              <Button onClick={handlePlayAgain} className="flex-1" size="lg" disabled={isResetting}>
-                {isResetting ? (
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                ) : (
-                  <RotateCcw className="mr-2 h-5 w-5" />
-                )}
-                {isResetting ? "Starting..." : playAgainButtonText}
-              </Button>
-              <Button variant="destructive" className="flex-1" size="lg" onClick={handleLeaveRoom}>
-                <LogOut className="mr-2 h-5 w-5" /> Leave
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              {(totalWinnings > 0 || xpGained > 0) ? (
+                  <div className="text-center p-4 bg-green-100 dark:bg-green-900/40 rounded-lg border border-green-500/50 space-y-2">
+                      <p className="text-lg font-semibold">Congratulations, {currentUser.displayName}!</p>
+                       {totalWinnings > 0 && (
+                          <div className="text-2xl font-bold text-green-700 dark:text-green-300 flex items-center justify-center gap-2">
+                              You won a total of <Image src="/coin.png" alt="Coins" width={24} height={24} /> {formatCoins(totalWinnings)}!
+                          </div>
+                      )}
+                       {xpGained > 0 && (
+                          <div className="text-lg font-bold text-blue-700 dark:text-blue-300 flex items-center justify-center gap-2">
+                              You earned <Star className="h-5 w-5 fill-yellow-400 text-yellow-500" /> {Math.round(xpGained)} XP!
+                          </div>
+                      )}
+                      {currentUserPrizeNames.length > 0 && (
+                          <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
+                      )}
+                  </div>
+              ) : (
+                  <div className="text-center p-4 bg-secondary/50 rounded-lg">
+                      <p className="font-semibold text-muted-foreground">You didn't win a prize this time, but well played!</p>
+                       {xpGained > 0 && (
+                          <p className="text-sm text-blue-700 dark:text-blue-300 flex items-center justify-center gap-2">
+                              You earned <Star className="h-4 w-4 fill-yellow-400 text-yellow-500" /> {Math.round(xpGained)} XP for participating.
+                          </p>
+                      )}
+                  </div>
+              )}
+
+              <div className="flex flex-row gap-4 mt-6">
+                <Button onClick={handlePlayAgain} className="flex-1" size="lg" disabled={isResetting}>
+                  {isResetting ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <RotateCcw className="mr-2 h-5 w-5" />
+                  )}
+                  {isResetting ? "Starting..." : playAgainButtonText}
+                </Button>
+                <Button variant="destructive" className="flex-1" size="lg" onClick={handleLeaveRoom}>
+                  <LogOut className="mr-2 h-5 w-5" /> Leave
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </>
     );
   }
