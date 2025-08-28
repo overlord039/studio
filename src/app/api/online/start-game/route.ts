@@ -4,33 +4,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase/config";
 import { doc, runTransaction, serverTimestamp } from "firebase/firestore";
-import { SERVER_CALL_INTERVAL } from "@/lib/constants";
-
-// This will store timers on the server instance.
-// NOTE: In a serverless/multi-instance environment, this is not a robust solution for long-running tasks.
-// A more durable solution would involve a cron job service (e.g., Cloud Scheduler) or a task queue.
-// For the scope of this app, we'll manage timers in-memory per instance.
-const activeRoomTimers = new Map<string, NodeJS.Timeout>();
-
-async function callNumberForRoom(roomId: string, host: string) {
-    const url = `${host}/api/online/call-number`;
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roomId }),
-        });
-        // Self-perpetuating timer is now handled on the call-number endpoint itself.
-        // The start-game endpoint just gives it the initial kick.
-        if (!response.ok) {
-            console.error(`API call to call number for room ${roomId} failed with status: ${response.status}`);
-        }
-
-    } catch (error) {
-        console.error(`Failed to call number for room ${roomId}:`, error);
-    }
-}
-
 
 export async function POST(request: Request) {
     if (!db) {
@@ -45,6 +18,7 @@ export async function POST(request: Request) {
 
         const roomRef = doc(db, 'rooms', roomId);
 
+        // 1. Transition the room state to 'in-progress'
         await runTransaction(db, async (transaction) => {
             const roomSnap = await transaction.get(roomRef);
             if (!roomSnap.exists()) {
@@ -58,6 +32,9 @@ export async function POST(request: Request) {
                     status: 'in-progress',
                     gameStartTime: serverTimestamp() 
                 });
+            } else {
+                // If it's already in-progress or finished, do nothing.
+                console.log(`Game start for room ${roomId} was already triggered. Current status: ${roomData.status}`);
             }
         });
         
@@ -65,12 +42,18 @@ export async function POST(request: Request) {
         const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
         const hostUrl = `${protocol}://${host}`;
 
-        // Call the first number after a short delay
-        setTimeout(() => {
-            callNumberForRoom(roomId, hostUrl);
-        }, 1000); 
+        // 2. Trigger the self-perpetuating number calling loop
+        // We do this with a fetch so we don't block the response of this endpoint.
+        fetch(`${hostUrl}/api/online/call-number`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId }),
+        }).catch(err => {
+            // Log the error but don't fail the request, as the game has officially started.
+            console.error(`Failed to trigger number calling loop for room ${roomId}:`, err);
+        });
         
-        console.log(`Initial number call scheduled for room ${roomId}.`);
+        console.log(`Game started and initial number call triggered for room ${roomId}.`);
 
         return NextResponse.json({ success: true, message: 'Game started successfully.'});
 

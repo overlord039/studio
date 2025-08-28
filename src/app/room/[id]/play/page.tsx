@@ -1,6 +1,7 @@
 
 
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -487,26 +488,9 @@ export default function GameRoomPage() {
 
   // Polling for game updates and handling notifications for changes
   useEffect(() => {
-    // --- Self-perpetuating timer for ONLINE games ---
-    if (isOnlineGame && roomData?.status === 'in-progress' && !roomData.isGameOver) {
-      const callApi = () => {
-        if (!document.hidden) { // Only call if tab is active
-          fetch(`/api/online/call-number`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roomId }),
-          }).catch(err => console.error("Error pinging call-number API:", err));
-        }
-      };
-
-      const timerId = setInterval(callApi, SERVER_CALL_INTERVAL); 
-      return () => clearInterval(timerId);
-    }
-
-    // Polling for non-online games
-    if (!isOnlineGame && !isLoading) {
-      if (roomData?.isGameOver) return;
-
+    // This effect is now only for non-online games.
+    // Online games are handled by the Firestore listener.
+    if (!isOnlineGame && !isLoading && !roomData?.isGameOver) {
       if (previousCallingModeRef.current && roomData && roomData.settings.callingMode !== previousCallingModeRef.current) {
         playSound('notification.wav');
         toast({
