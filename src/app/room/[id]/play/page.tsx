@@ -2,6 +2,7 @@
 
 
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -984,7 +985,7 @@ export default function GameRoomPage() {
                      {xpGained > 0 && (
                         <div className="text-lg font-bold text-blue-700 dark:text-blue-300 flex items-center justify-center gap-2">
                             You earned <Star className="h-5 w-5 fill-yellow-400 text-yellow-500" /> {Math.round(xpGained)} XP!
-                        </p>
+                        </div>
                     )}
                     {currentUserPrizeNames.length > 0 && (
                         <p className="text-sm text-muted-foreground">Your prizes: <span className="font-medium text-foreground">{currentUserPrizeNames.join(', ')}</span></p>
