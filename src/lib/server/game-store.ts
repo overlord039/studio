@@ -52,8 +52,8 @@ function stopRoomTimer(roomId: string, reason: string) {
 }
 
 const scheduleNextCall = (roomId: string) => {
-    // A short, varied delay to make the first call feel more natural
-    const initialDelay = 1000 + Math.random() * 1500; 
+    // Set a consistent 1-second delay before the first number call.
+    const initialDelay = 1000; 
 
     const timerId = setTimeout(() => {
         const room = getRoomStore(roomId);
