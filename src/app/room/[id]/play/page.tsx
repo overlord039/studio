@@ -5,6 +5,7 @@
 
 
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -1227,7 +1228,7 @@ export default function GameRoomPage() {
                                           <li key={player.id} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
                                           <span className={cn("font-medium", player.id === currentUser?.uid && "text-primary font-bold")}>
                                               {player.name}
-                                              {player.isHost && <span className="ml-1 font-semibold text-primary">*</span>}
+                                              {player.isHost && gameSettings.gameMode !== 'online' && <span className="ml-1 font-semibold text-primary">*</span>}
                                           </span>
                                           <div className="text-muted-foreground flex items-center gap-1">
                                             <span>{playerTickets} {ticketsText(playerTickets)}</span>

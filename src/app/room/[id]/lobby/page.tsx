@@ -608,7 +608,7 @@ export default function LobbyPage() {
                 </div>
                 <CardDescription className="text-xs md:text-sm flex items-center justify-between">
                    <span>You have {currentUserInRoom?.tickets.length} {ticketsText(currentUserInRoom?.tickets.length ?? 0)} confirmed.
-                    {!isCurrentUserHost && " Waiting for host..."}
+                    {roomData.settings.gameMode !== 'online' && !isCurrentUserHost && " Waiting for host..."}
                    </span>
                    <Button onClick={() => setIsEditingTickets(true)} variant="outline" className="text-xs h-7 px-2">
                       <Edit className="mr-1.5 h-3 w-3" />
@@ -630,7 +630,7 @@ export default function LobbyPage() {
                       <div className="flex flex-col">
                         <div className="flex items-center">
                           <span className={cn("font-medium", player.id === currentUser?.uid && "text-primary font-bold")}>{player.name}</span>
-                          {player.isHost && <span className="text-xs font-semibold text-primary ml-1.5">(Host)</span>}
+                          {player.isHost && gameSettings.gameMode !== 'online' && <span className="text-xs font-semibold text-primary ml-1.5">(Host)</span>}
                         </div>
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
                           {player.tickets?.length > 0 
@@ -642,7 +642,7 @@ export default function LobbyPage() {
                         </span>
                       </div>
                       
-                      {isCurrentUserHost && !player.isBot && player.id !== currentUser?.uid && !roomData.isGameStarted && (
+                      {isCurrentUserHost && !player.isBot && player.id !== currentUser?.uid && !roomData.isGameStarted && gameSettings.gameMode !== 'online' && (
                         <div className="flex items-center gap-1">
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
