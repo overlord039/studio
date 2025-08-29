@@ -47,14 +47,14 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
     name: 'Classic',
     ticketPrice: 10,
     roomSize: 6,
-    matchmakingTime: 30,
+    matchmakingTime: 15,
     unlockRequirements: { level: 5, matches: 10, coins: 50 },
   },
   tournament: {
     name: 'Tournament',
     ticketPrice: 20,
     roomSize: 10,
-    matchmakingTime: 60,
+    matchmakingTime: 15,
     unlockRequirements: { level: 10, matches: 25, coins: 150 },
   },
 };

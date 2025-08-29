@@ -31,7 +31,7 @@ const TIERS: Record<OnlineGameTier, TierConfig & { description: string }> = {
         name: "Classic",
         ticketPrice: 10,
         roomSize: 6,
-        matchmakingTime: 30,
+        matchmakingTime: 15,
         unlockRequirements: { level: 5, matches: 10, coins: 25 },
         description: "The standard Housie experience. A bigger room for more competition and larger prizes."
     },
@@ -39,7 +39,7 @@ const TIERS: Record<OnlineGameTier, TierConfig & { description: string }> = {
         name: "Tournament",
         ticketPrice: 20,
         roomSize: 10,
-        matchmakingTime: 60,
+        matchmakingTime: 15,
         unlockRequirements: { level: 10, matches: 25, coins: 100 },
         description: "The ultimate challenge. Compete in a large lobby for the biggest prize pool."
     }
@@ -76,7 +76,7 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
         }
 
         if (!hasEnoughCoins) {
-            playSound('error.wav');
+            playSound('notification.wav');
             setShowNoCoinsDialog(true);
             return;
         }
