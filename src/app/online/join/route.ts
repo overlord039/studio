@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { NextResponse, type NextRequest } from 'next/server';
@@ -23,21 +24,21 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
     name: 'Quick',
     ticketPrice: 5,
     roomSize: 4,
-    matchmakingTime: 15,
+    matchmakingTime: 10,
     unlockRequirements: { level: 1, matches: 0, coins: 0 },
   },
   classic: {
     name: 'Classic',
     ticketPrice: 10,
     roomSize: 6,
-    matchmakingTime: 30,
+    matchmakingTime: 10,
     unlockRequirements: { level: 5, matches: 10, coins: 50 },
   },
   tournament: {
     name: 'Tournament',
     ticketPrice: 20,
     roomSize: 10,
-    matchmakingTime: 60,
+    matchmakingTime: 10,
     unlockRequirements: { level: 10, matches: 25, coins: 150 },
   },
 };
@@ -180,9 +181,11 @@ export async function POST(request: NextRequest) {
         const newRoomRef = doc(collection(db, 'rooms'));
         targetRoomId = newRoomRef.id;
 
+        const hostPlayer: Player = { id: player.id, name: player.name };
+
         const newRoomData: FirestoreRoom = {
           id: targetRoomId,
-          host: { id: 'system', name: 'System' }, // System is the host
+          host: hostPlayer, // The first player becomes the host
           settings: {
             lobbySize: tierConfig.roomSize,
             isPublic: true,
@@ -192,7 +195,7 @@ export async function POST(request: NextRequest) {
             tier: tier,
           },
           status: 'waiting',
-          playersCount: 0, // This will be updated when bots are added
+          playersCount: 0, 
           humanCount: 1,
           tier: tier,
           isPublic: true,

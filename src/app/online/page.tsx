@@ -23,7 +23,7 @@ const TIERS: Record<OnlineGameTier, TierConfig & { description: string }> = {
         name: "Quick",
         ticketPrice: 5,
         roomSize: 4,
-        matchmakingTime: 15,
+        matchmakingTime: 10,
         unlockRequirements: { level: 1, matches: 0, coins: 0 },
         description: "A fast-paced game for a quick dose of fun. Perfect for when you're short on time."
     },
@@ -31,7 +31,7 @@ const TIERS: Record<OnlineGameTier, TierConfig & { description: string }> = {
         name: "Classic",
         ticketPrice: 10,
         roomSize: 6,
-        matchmakingTime: 15,
+        matchmakingTime: 10,
         unlockRequirements: { level: 5, matches: 10, coins: 25 },
         description: "The standard Housie experience. A bigger room for more competition and larger prizes."
     },
@@ -39,7 +39,7 @@ const TIERS: Record<OnlineGameTier, TierConfig & { description: string }> = {
         name: "Tournament",
         ticketPrice: 20,
         roomSize: 10,
-        matchmakingTime: 15,
+        matchmakingTime: 10,
         unlockRequirements: { level: 10, matches: 25, coins: 100 },
         description: "The ultimate challenge. Compete in a large lobby for the biggest prize pool."
     }
