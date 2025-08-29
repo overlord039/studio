@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
         const humanPlayers = playersList.filter(p => p.type === 'human');
         const totalHumanTicketsSold = humanPlayers.reduce((acc, p) => acc + (p.tickets || 0), 0);
         
-        const botTicketsCount = roomData.botTickets ? Object.values(roomData.botTickets).reduce((acc, tickets) => acc + tickets.length, 0) : 0;
+        const botTicketsCount = roomData.botTickets ? Object.values(roomData.botTickets).reduce((acc: number, tickets: any) => acc + tickets.length, 0) : 0;
         const totalTicketsSold = totalHumanTicketsSold + botTicketsCount;
         const totalPrizePool = (roomData.settings.ticketPrice || 0) * totalTicketsSold;
         
