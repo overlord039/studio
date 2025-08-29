@@ -32,14 +32,14 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
     ticketPrice: 10,
     roomSize: 6,
     matchmakingTime: 30,
-    unlockRequirements: { level: 5, matches: 10, coins: 25 },
+    unlockRequirements: { level: 5, matches: 10, coins: 50 },
   },
   tournament: {
     name: 'Tournament',
     ticketPrice: 20,
     roomSize: 10,
     matchmakingTime: 60,
-    unlockRequirements: { level: 10, matches: 25, coins: 100 },
+    unlockRequirements: { level: 10, matches: 25, coins: 150 },
   },
 };
 
@@ -49,10 +49,8 @@ async function cleanupOldRooms() {
   const oneHourAgo = Timestamp.fromMillis(Date.now() - 60 * 60 * 1000);
   const roomsRef = collection(db, 'rooms');
   
-  // **FIX:** The query now also targets 'finished' rooms, not just 'waiting' rooms.
-  // This ensures that completed games are also cleaned up after a reasonable time.
+  // Query for rooms that are either 'waiting' or 'finished' and are older than an hour.
   const q = query(roomsRef, 
-    where('isPublic', '==', true),
     where('status', 'in', ['waiting', 'finished']), 
     where('createdAt', '<', oneHourAgo)
   );
@@ -61,20 +59,18 @@ async function cleanupOldRooms() {
     const oldRoomsSnapshot = await getDocs(q);
     if (oldRoomsSnapshot.empty) return;
     
-    // We need to delete subcollections as well for finished rooms.
+    // We need to delete subcollections as well.
     const batch = writeBatch(db);
     
     for (const roomDoc of oldRoomsSnapshot.docs) {
       console.log(`Scheduling deletion for stale room: ${roomDoc.id} with status ${roomDoc.data().status}`);
 
-      // If it's a finished room, we should also delete its players subcollection.
-      if (roomDoc.data().status === 'finished') {
-        const playersRef = collection(db, 'rooms', roomDoc.id, 'players');
-        const playersSnap = await getDocs(playersRef);
-        playersSnap.forEach(playerDoc => {
-            batch.delete(playerDoc.ref);
-        });
-      }
+      // Delete the 'players' subcollection for each stale room.
+      const playersRef = collection(db, 'rooms', roomDoc.id, 'players');
+      const playersSnap = await getDocs(playersRef);
+      playersSnap.forEach(playerDoc => {
+          batch.delete(playerDoc.ref);
+      });
       
       batch.delete(roomDoc.ref);
     }
@@ -181,9 +177,11 @@ export async function POST(request: NextRequest) {
         const newRoomRef = doc(collection(db, 'rooms'));
         targetRoomId = newRoomRef.id;
 
+        const hostPlayer: Player = { id: player.id, name: player.name };
+
         const newRoomData: FirestoreRoom = {
           id: targetRoomId,
-          host: { id: 'system', name: 'System' }, // System is the host
+          host: hostPlayer, // The first player becomes the host
           settings: {
             lobbySize: tierConfig.roomSize,
             isPublic: true,
@@ -193,7 +191,7 @@ export async function POST(request: NextRequest) {
             tier: tier,
           },
           status: 'waiting',
-          playersCount: 0, // This will be updated when bots are added
+          playersCount: 0, 
           humanCount: 1,
           tier: tier,
           isPublic: true,

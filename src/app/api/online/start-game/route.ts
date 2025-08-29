@@ -3,7 +3,9 @@
 
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase/config";
-import { doc, runTransaction, serverTimestamp } from "firebase/firestore";
+import { doc, runTransaction, serverTimestamp, getDoc, collection, getDocs } from "firebase/firestore";
+import { MIN_LOBBY_SIZE } from "@/lib/constants";
+import type { FirestoreRoom, FirestorePlayer } from "@/types";
 
 export async function POST(request: Request) {
     if (!db) {
@@ -11,34 +13,49 @@ export async function POST(request: Request) {
     }
 
     try {
-        const { roomId } = await request.json();
-        if (!roomId) {
-            return NextResponse.json({ message: 'Room ID is required.'}, { status: 400 });
+        const { roomId, hostId } = await request.json();
+        if (!roomId || !hostId) {
+            return NextResponse.json({ message: 'Room ID and Host ID are required.'}, { status: 400 });
         }
 
         const roomRef = doc(db, 'rooms', roomId);
 
-        // 1. Transition the room state to 'in-progress'
         await runTransaction(db, async (transaction) => {
             const roomSnap = await transaction.get(roomRef);
             if (!roomSnap.exists()) {
                 throw new Error('Room does not exist.');
             }
 
-            const roomData = roomSnap.data();
-            // Idempotency: only transition from pre-game to in-progress
-            if (roomData.status === 'pre-game') {
-                transaction.update(roomRef, { 
-                    status: 'in-progress',
-                    gameStartTime: serverTimestamp(),
-                    // IMPORTANT: We also set the lastNumberCall timestamp to now
-                    // to initialize the cooldown period for the first number.
-                    lastNumberCall: serverTimestamp()
-                });
-            } else {
-                // If it's already in-progress or finished, do nothing.
-                console.log(`Game start for room ${roomId} was already triggered. Current status: ${roomData.status}`);
+            const roomData = roomSnap.data() as FirestoreRoom;
+            
+            // Security check: Only the host can start the game.
+            if (roomData.host.id !== hostId) {
+                throw new Error('Only the host can start the game.');
             }
+
+            // Idempotency: only transition from pre-game to in-progress
+            if (roomData.status !== 'pre-game') {
+                console.log(`Game start for room ${roomId} was attempted, but status is not 'pre-game'. Current status: ${roomData.status}`);
+                return;
+            }
+
+            // Player count check
+            const playersRef = collection(db, 'rooms', roomId, 'players');
+            const playersSnap = await getDocs(playersRef);
+            const players = playersSnap.docs.map(d => d.data() as FirestorePlayer);
+
+            const playersWithTickets = players.filter(p => p.tickets > 0).length;
+
+            if (playersWithTickets < MIN_LOBBY_SIZE) {
+                throw new Error(`Need at least ${MIN_LOBBY_SIZE} players with tickets to start. Currently: ${playersWithTickets}.`);
+            }
+            
+            transaction.update(roomRef, { 
+                status: 'in-progress',
+                gameStartTime: serverTimestamp(),
+                // Initialize the cooldown period for the first number.
+                lastNumberCall: serverTimestamp()
+            });
         });
         
         console.log(`Game started for room ${roomId}. Client host will now trigger number calls.`);

@@ -147,10 +147,8 @@ function MatchmakingContent() {
         const data = docSnap.data() as FirestoreRoom;
         setRoomData(data);
         
-        // **FIX:** Navigation is now only triggered when the room moves to the 'pre-game' state.
-        // The responsibility of navigating to the final game page is now handled by the PreGamePage.
         if (data.status === 'pre-game' && !navigationTriggered) {
-          setNavigationTriggered(true); // Prevent multiple navigations
+          setNavigationTriggered(true);
           toast({ title: "Match Found!", description: "Preparing the game..." });
           router.push(`/online/pre-game?roomId=${roomId}`);
         }
@@ -188,30 +186,35 @@ function MatchmakingContent() {
 
   // Main countdown timer effect
   useEffect(() => {
-    if (countdown === null || countdown < 0) return;
-
-    if (countdown > 0) {
-        const timer = setInterval(() => {
-            setCountdown(c => (c !== null ? c - 1 : 0));
-        }, 1000);
-        return () => clearInterval(timer);
-    }
+    if (countdown === null) return;
     
-    // Timer expired, trigger bot-fill if not already done
-    if (countdown === 0 && roomId && !navigationTriggered) {
-      console.log("Client timer expired. Triggering fill-room API.");
-      
-      fetch(`/api/online/fill-room`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomId }),
-      }).catch((err) => {
-        // The listener will handle navigation even if this fails, but we should log it.
-        console.error('Failed to trigger fill-room, but listening for server state change:', err);
-      });
+    let timer: NodeJS.Timeout;
+
+    if (roomData && roomData.timerEnd) {
+        const updateTimer = () => {
+            const serverEndTime = roomData.timerEnd!.toMillis();
+            const now = Date.now();
+            const newCountdown = Math.max(0, Math.ceil((serverEndTime - now) / 1000));
+            setCountdown(newCountdown);
+
+            if (newCountdown <= 0 && roomId && !navigationTriggered) {
+              console.log("Client timer expired based on server time. Triggering fill-room API.");
+              fetch(`/api/online/fill-room`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ roomId }),
+              }).catch((err) => {
+                  console.error('Failed to trigger fill-room, but listening for server state change:', err);
+              });
+            }
+        };
+        updateTimer();
+        timer = setInterval(updateTimer, 1000);
     }
 
-  }, [countdown, roomId, navigationTriggered]);
+    return () => clearInterval(timer);
+
+  }, [roomData, roomId, navigationTriggered]);
 
 
   const handleCancel = async () => {
@@ -239,7 +242,6 @@ function MatchmakingContent() {
         }
         
         await fetchUser(); // Refresh user data to show refunded coins
-        // The success toast has been removed for a seamless experience.
 
     } catch (err) {
         console.error("Error cancelling matchmaking:", err);
@@ -271,9 +273,10 @@ function MatchmakingContent() {
   }
 
   const displayCountdown = countdown !== null ? Math.max(0, countdown) : tierConfig.matchmakingTime;
-  const progressPercentage = roomData
-    ? ((tierConfig.matchmakingTime - displayCountdown) / tierConfig.matchmakingTime) * 100
-    : 0;
+  const progressValue = roomData && roomData.timerEnd
+    ? Math.max(0, ( (roomData.timerEnd.toMillis() - Date.now()) / (tierConfig.matchmakingTime * 1000)) * 100)
+    : 100;
+    
   const playersFound = players.length;
 
   return (
@@ -290,7 +293,7 @@ function MatchmakingContent() {
       </CardHeader>
       <CardContent className="space-y-6 flex flex-col items-center">
         <div className="w-full space-y-2">
-          <Progress value={progressPercentage} className="h-2" />
+          <Progress value={100 - progressValue} className="h-2" />
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>Searching...</span>
             <span>Est. time: {displayCountdown}s</span>

@@ -4,6 +4,7 @@
 
 
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -419,26 +420,36 @@ export default function GameRoomPage() {
 
 }, [isOnlineGame, roomId, currentUser, db, myTickets.length, toast, playSound]);
 
-  // Client-side "ticker" for online games, only for the host.
+  // Client-side "ticker" for all game modes, only for the host.
   useEffect(() => {
-      if (!isOnlineGame || !roomData || !currentUser || roomData.host.id !== currentUser.uid) {
-          return;
-      }
-      
-      const intervalId = setInterval(() => {
-          const currentRoom = roomDataRef.current;
-          if (currentRoom && currentRoom.isGameStarted && !currentRoom.isGameOver) {
-              fetch('/api/online/call-number', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ roomId: currentRoom.id, hostId: currentUser.uid }),
-              }).catch(err => {
-                  console.warn("Failed to ping for number call:", err);
-              });
-          }
-      }, SERVER_CALL_INTERVAL);
+    if (!roomData || !currentUser || roomData.host.id !== currentUser.uid) {
+        return;
+    }
 
-      return () => clearInterval(intervalId);
+    const intervalId = setInterval(() => {
+        const currentRoom = roomDataRef.current;
+        if (currentRoom && currentRoom.isGameStarted && !currentRoom.isGameOver) {
+            const endpoint = isOnlineGame ? '/api/online/call-number' : `/api/rooms/${currentRoom.id}/call-number`;
+            const body = isOnlineGame ? { roomId: currentRoom.id, hostId: currentUser.uid } : { hostId: currentUser.uid };
+            
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data && !data.success && !isOnlineGame) { // Online game handles its own state
+                 setRoomData(data);
+              }
+            })
+            .catch(err => {
+                console.warn("Failed to ping for number call:", err);
+            });
+        }
+    }, SERVER_CALL_INTERVAL);
+
+    return () => clearInterval(intervalId);
   }, [isOnlineGame, roomData, currentUser]);
 
 
@@ -512,8 +523,8 @@ export default function GameRoomPage() {
 
   // Polling for game updates and handling notifications for changes
   useEffect(() => {
-    // This effect is now only for non-online games.
-    // Online games are handled by the Firestore listener.
+    // This effect is now only for non-online games with MANUAL mode.
+    // Auto modes (both online and offline) are handled by host-driven ticker.
     if (!isOnlineGame && !isLoading && !roomData?.isGameOver) {
       if (previousCallingModeRef.current && roomData && roomData.settings.callingMode !== previousCallingModeRef.current) {
         playSound('notification.wav');
@@ -526,15 +537,16 @@ export default function GameRoomPage() {
 
       const isManualMode = roomData?.settings.callingMode === 'manual';
       const isHost = roomData?.host.id === currentUser?.uid;
-      const pollInterval = isManualMode && !isHost ? 7000 : 5000;
 
-      const intervalId = setInterval(() => {
-        if (!document.hidden && roomDataRef.current && roomDataRef.current.isGameStarted && !roomDataRef.current.isGameOver) {
-          fetchGameDetails(false);
-        }
-      }, pollInterval);
+      if(isManualMode && !isHost) {
+          const intervalId = setInterval(() => {
+            if (!document.hidden && roomDataRef.current && roomDataRef.current.isGameStarted && !roomDataRef.current.isGameOver) {
+              fetchGameDetails(false);
+            }
+          }, 7000); // Slower polling for non-hosts in manual mode
 
-      return () => clearInterval(intervalId);
+          return () => clearInterval(intervalId);
+      }
     }
   }, [isOnlineGame, roomData, currentUser, roomId, isLoading, playSound, toast, fetchGameDetails]);
 
@@ -1233,7 +1245,7 @@ export default function GameRoomPage() {
                               )}
                           </CardContent>
                       </Card>
-                       {isCurrentUserHost && roomData.settings.gameMode === 'multiplayer' && !roomData.isGameOver && (
+                       {isCurrentUserHost && (gameSettings.gameMode === 'multiplayer' || isOnlineGame) && !roomData.isGameOver && (
                         <Card className="bg-secondary/30">
                           <CardHeader className="p-3 pb-2">
                              <CardTitle className="text-sm font-semibold flex items-center"><Settings2 className="mr-2 h-4 w-4 text-primary" />Host Controls</CardTitle>

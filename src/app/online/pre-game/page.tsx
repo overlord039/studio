@@ -5,7 +5,7 @@ import React, { useState, useEffect, Suspense, useCallback, useRef } from 'react
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import type { Room, PrizeType, GameSettings, OnlineGameTier, TierConfig, Player, FirestoreRoom, FirestorePlayer } from '@/types';
-import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS } from '@/lib/constants';
+import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE } from '@/lib/constants';
 import { Loader2, AlertTriangle, Gift, Users, Trophy, Bot, Ticket as TicketIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -84,7 +84,6 @@ function PreGameContent() {
                 if (data.status === 'in-progress' && !navigatedRef.current) {
                     navigatedRef.current = true;
                     toast({ title: "Match Starting!", description: "Let's go!" });
-                    // **FIX**: The navigation now includes the search params to pass ticket info
                     router.push(`/room/${roomId}/play`);
                 }
                 
@@ -121,33 +120,31 @@ function PreGameContent() {
 
     // This effect handles the local ticking of the countdown and triggers the game start
     useEffect(() => {
-        if (countdown === null) return;
-
-        if (countdown <= 0 && !startGameCalledRef.current) {
-            startGameCalledRef.current = true;
-            
-            if (!navigatedRef.current) {
-                navigatedRef.current = true;
-                router.push(`/room/${roomId}/play`);
-            }
-            
-            // Best-effort: tell server to start the game in the background
-            fetch(`/api/online/start-game`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ roomId }),
-            }).catch((err) => {
-                console.error('Failed to trigger start-game, but client has navigated:', err);
-            });
-            return; // Stop the interval
-        }
-
-        const interval = setInterval(() => {
-            setCountdown((prev) => (prev !== null && prev > 0 ? prev - 1 : 0));
-        }, 1000);
-
-        return () => clearInterval(interval);
-    }, [countdown, router, roomId]);
+      if (countdown === null || !roomData || !currentUser) return;
+  
+      if (countdown <= 0 && !startGameCalledRef.current) {
+          startGameCalledRef.current = true;
+          
+          // Only the designated host should trigger the start game API call
+          if (roomData.host.id === currentUser.uid) {
+              fetch(`/api/online/start-game`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ roomId, hostId: currentUser.uid }),
+              }).catch((err) => {
+                  console.error('Failed to trigger start-game, but client has navigated:', err);
+                  toast({title: "Start Error", description: "Failed to start game automatically. The host may need to start it from the lobby.", variant: "destructive"});
+              });
+          }
+          return; // Stop the interval
+      }
+  
+      const interval = setInterval(() => {
+          setCountdown((prev) => (prev !== null && prev > 0 ? prev - 1 : 0));
+      }, 1000);
+  
+      return () => clearInterval(interval);
+    }, [countdown, router, roomId, roomData, currentUser]);
     
     if (isLoading || !currentUser) {
         return <Loader2 className="h-8 w-8 animate-spin text-white" />;
@@ -227,8 +224,12 @@ function PreGameContent() {
                                 {players.map((player) => (
                                     <div key={player.id} className="flex justify-between items-center text-xs p-1.5 bg-secondary/20 rounded-md">
                                         <div className="flex items-center gap-1.5 truncate">
-                                            <span className={cn("font-semibold truncate", player.id === currentUser.uid && "text-primary")}>
-                                                {player.name}
+                                            <span className={cn(
+                                                "font-semibold truncate", 
+                                                player.id === currentUser.uid && "text-primary",
+                                                player.id === roomData.host.id && "text-amber-600"
+                                            )}>
+                                                {player.name}{player.id === roomData.host.id && ' (Host)'}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-1 font-medium text-muted-foreground flex-shrink-0">
