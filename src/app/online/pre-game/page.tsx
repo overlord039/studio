@@ -226,10 +226,9 @@ function PreGameContent() {
                                         <div className="flex items-center gap-1.5 truncate">
                                             <span className={cn(
                                                 "font-semibold truncate", 
-                                                player.id === currentUser.uid && "text-primary",
-                                                player.id === roomData.host.id && "text-amber-600"
+                                                player.id === currentUser.uid && "text-primary"
                                             )}>
-                                                {player.name}{player.id === roomData.host.id && ' (Host)'}
+                                                {player.name}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-1 font-medium text-muted-foreground flex-shrink-0">
