@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -61,7 +60,7 @@ export default function LevelUpDialog({ open, onOpenChange, oldLevel, newLevel, 
             <h4 className="font-bold text-yellow-600 dark:text-yellow-300">Level Up Reward</h4>
             <div className="flex items-center justify-center gap-2 text-2xl font-bold">
                 <Image src="/coin.png" alt="Coins" width={28} height={28} />
-                <span>+{reward} Coins</span>
+                <span>{reward} Coins</span>
             </div>
         </div>
         <DialogFooter className="mt-4">
