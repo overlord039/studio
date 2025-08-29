@@ -6,6 +6,7 @@
 
 
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -1246,27 +1247,6 @@ export default function GameRoomPage() {
                               )}
                           </CardContent>
                       </Card>
-                       {isCurrentUserHost && (gameSettings.gameMode === 'multiplayer' || isOnlineGame) && !roomData.isGameOver && (
-                        <Card className="bg-secondary/30">
-                          <CardHeader className="p-3 pb-2">
-                             <CardTitle className="text-sm font-semibold flex items-center"><Settings2 className="mr-2 h-4 w-4 text-primary" />Host Controls</CardTitle>
-                          </CardHeader>
-                          <CardContent className="p-3 pt-0">
-                              <div className="flex items-center gap-1.5 p-1 rounded-md">
-                                  <Label htmlFor="calling-mode-switch" className="text-xs font-medium text-foreground cursor-pointer flex-grow">
-                                      Auto-Call Numbers
-                                  </Label>
-                                  <Switch
-                                      id="calling-mode-switch"
-                                      checked={isAutoCalling}
-                                      onCheckedChange={handleToggleCallingMode}
-                                      disabled={isUpdatingMode}
-                                      aria-label="Toggle automatic number calling"
-                                  />
-                              </div>
-                          </CardContent>
-                        </Card>
-                       )}
                   </div>
                   <div className="border-t pt-2">
                       <AlertDialog>
