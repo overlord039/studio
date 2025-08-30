@@ -18,11 +18,11 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
   },
   BRONZE_COMPETITOR: {
     name: "Bronze Competitor",
-    description: "Reached Level 5 and won over 10 prizes.",
+    description: "Reached Level 5 and won over 2 prizes.",
     icon: "Award",
     criteria: (stats) => {
       const totalPrizes = Object.values(stats.prizesWon || {}).reduce((a, b) => a + b, 0);
-      return (stats.level || 0) >= 5 && totalPrizes >= 10;
+      return (stats.level || 0) >= 5 && totalPrizes >= 2;
     },
   },
   SILVER_VETERAN: {
