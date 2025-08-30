@@ -59,106 +59,6 @@ const AvatarSelectionDialog = ({ onSelect, children, disabled }: { onSelect: (sr
   );
 };
 
-const BadgeIconComponent = ({ iconName, badgeName, hasBadge, ...props }: { iconName: string, badgeName: string, hasBadge: boolean } & Omit<React.ComponentProps<typeof Shield>, 'color' | 'fill'>) => {
-    const badgeColors = {
-        "Bronze Competitor": "text-[#CD7F32] fill-[#CD7F32]",
-        "Silver Veteran": "text-[#C0C0C0] fill-[#C0C0C0]",
-        "Gold Master": "text-[#FFD700] fill-[#FFD700]",
-        "Platinum Player": "text-blue-500 fill-blue-500",
-    };
-
-    const colorClass = hasBadge
-        ? badgeColors[badgeName as keyof typeof badgeColors] || "text-green-500 fill-green-500"
-        : "text-muted-foreground";
-
-    const finalClassName = cn(props.className, colorClass);
-
-    const renderIcon = () => {
-        const iconProps = { ...props, className: finalClassName };
-        switch (iconName) {
-            case 'Shield': return <Shield {...iconProps} />;
-            case 'Award': return <Award {...iconProps} />;
-            case 'Badge': return <BadgeIcon {...iconProps} />;
-            case 'Medal': return <Medal {...iconProps} />;
-            case 'Trophy': return <Trophy {...iconProps} />;
-            default: return <Star {...iconProps} />;
-        }
-    };
-    return renderIcon();
-};
-
-const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>, stats: UserStats }) => (
-    <DialogContent className="max-w-xl">
-        <DialogHeader>
-            <DialogTitle className="text-center text-2xl font-bold tracking-wider">Achievements</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
-            {Object.values(BADGE_DEFINITIONS).map(badgeDef => {
-                const hasBadge = earnedBadges.has(badgeDef.name);
-                return (
-                    <Card
-                        key={badgeDef.name}
-                        className={cn(
-                            "transition-all bg-secondary/30",
-                            hasBadge && "bg-gradient-to-br from-green-500/20 to-green-500/5 border-green-500/50"
-                        )}
-                    >
-                        <CardHeader className="p-4 flex flex-row items-center gap-4 space-y-0">
-                           <div className="flex-shrink-0">
-                                <BadgeIconComponent 
-                                    iconName={badgeDef.icon}
-                                    badgeName={badgeDef.name}
-                                    hasBadge={hasBadge} 
-                                    className="h-12 w-12"
-                                />
-                           </div>
-                           <div className="flex-grow space-y-1">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <CardTitle className={cn(
-                                            "text-md font-bold",
-                                            hasBadge ? 'text-green-800 dark:text-green-200' : 'text-foreground'
-                                        )}>{badgeDef.name}</CardTitle>
-                                        <p className="text-xs text-muted-foreground">{badgeDef.description}</p>
-                                    </div>
-                                    {hasBadge && <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0" />}
-                                </div>
-                               
-                               <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 pt-1 bg-amber-400/20 px-2 py-1 rounded-full w-fit">
-                                   <Image src="/coin.png" alt="Coin" width={16} height={16} />
-                                   <span>Reward: {badgeDef.reward} Coins</span>
-                               </div>
-                           </div>
-                        </CardHeader>
-                        {!hasBadge && (
-                          <CardContent className="p-4 pt-0">
-                            <div className="space-y-2">
-                              {badgeDef.criteria.map((criterion, index) => {
-                                const current = criterion.getCurrent(stats);
-                                const target = criterion.target;
-                                const progress = Math.min(100, (current / target) * 100);
-
-                                return (
-                                  <div key={index} className="text-xs">
-                                    <div className="flex justify-between items-center mb-1">
-                                      <span className="font-medium text-muted-foreground">{criterion.label}</span>
-                                      <span className="font-semibold">{current} / {target}</span>
-                                    </div>
-                                    <Progress value={progress} className="h-1.5" />
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </CardContent>
-                        )}
-                    </Card>
-                );
-            })}
-        </div>
-    </DialogContent>
-);
-
-
 export default function ProfilePage() {
   const { currentUser, loading, logout, linkGoogleAccount, isSigningIn, updateUserProfile, setLocalGuestAvatar, setLocalGuestUsername } = useAuth();
   const router = useRouter();
@@ -395,14 +295,6 @@ export default function ProfilePage() {
               </div>
               <CardContent className="p-6 space-y-6 bg-card">
                    <div className="space-y-6">
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <Button variant="outline" className="w-full">
-                                    <Award className="mr-2 h-4 w-4" /> Achievements
-                                </Button>
-                            </DialogTrigger>
-                            <AchievementsDialog earnedBadges={earnedBadges} stats={currentUser.stats} />
-                        </Dialog>
                         <div>
                              <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider mb-2">Level Progress</h3>
                              <Card className="bg-secondary p-3">
@@ -490,4 +382,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
