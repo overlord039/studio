@@ -56,7 +56,7 @@ function PreGameContent() {
     const [players, setPlayers] = useState<FirestorePlayer[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [countdown, setCountdown] = useState<number | null>(5);
+    const [countdown, setCountdown] = useState<number | null>(null);
     const navigatedRef = useRef(false);
     const startGameCalledRef = useRef(false);
 
@@ -87,7 +87,7 @@ function PreGameContent() {
                     router.push(`/room/${roomId}/play`);
                 }
                 
-                // Set initial countdown value from server timestamp
+                // Set initial countdown value from server timestamp if it's not already set
                 if (data.preGameEndTime && countdown === null) {
                     const endTime = data.preGameEndTime.toMillis();
                     const now = Date.now();
@@ -118,24 +118,21 @@ function PreGameContent() {
 
     }, [roomId, playSound, router, toast, countdown]);
 
-    // This effect handles the local ticking of the countdown and triggers the game start
+    // This effect handles the local ticking of the countdown and triggers the game start API call from the host
     useEffect(() => {
       if (countdown === null || !roomData || !currentUser) return;
   
-      if (countdown <= 0 && !startGameCalledRef.current) {
-          startGameCalledRef.current = true;
+      if (countdown <= 0 && roomData.host.id === currentUser.uid && !startGameCalledRef.current) {
+          startGameCalledRef.current = true; // Prevent multiple calls
           
-          // Only the designated host should trigger the start game API call
-          if (roomData.host.id === currentUser.uid) {
-              fetch(`/api/online/start-game`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ roomId, hostId: currentUser.uid }),
-              }).catch((err) => {
-                  console.error('Failed to trigger start-game, but client has navigated:', err);
-                  toast({title: "Start Error", description: "Failed to start game automatically. The host may need to start it from the lobby.", variant: "destructive"});
-              });
-          }
+          fetch(`/api/online/start-game`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ roomId, hostId: currentUser.uid }),
+          }).catch((err) => {
+              console.error('Failed to trigger start-game, but client is listening for state change:', err);
+              // No need to toast here, the listener will either see the game start or fail gracefully.
+          });
           return; // Stop the interval
       }
   

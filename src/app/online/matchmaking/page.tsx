@@ -40,21 +40,21 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
     name: 'Quick',
     ticketPrice: 5,
     roomSize: 4,
-    matchmakingTime: 10,
+    matchmakingTime: 15,
     unlockRequirements: { level: 1, matches: 0, coins: 0 },
   },
   classic: {
     name: 'Classic',
     ticketPrice: 10,
     roomSize: 6,
-    matchmakingTime: 10,
+    matchmakingTime: 15,
     unlockRequirements: { level: 5, matches: 10, coins: 50 },
   },
   tournament: {
     name: 'Tournament',
     ticketPrice: 20,
     roomSize: 10,
-    matchmakingTime: 10,
+    matchmakingTime: 15,
     unlockRequirements: { level: 10, matches: 25, coins: 150 },
   },
 };
@@ -88,7 +88,6 @@ function MatchmakingContent() {
       setTier(tierParam);
       setTierConfig(config);
       setTickets(parseInt(ticketsParam, 10));
-      setCountdown(config.matchmakingTime); // Start countdown immediately
     } else {
       setError('Invalid game tier or ticket count specified.');
     }
@@ -186,10 +185,6 @@ function MatchmakingContent() {
 
   // Main countdown timer effect
   useEffect(() => {
-    if (countdown === null) return;
-    
-    let timer: NodeJS.Timeout;
-
     if (roomData && roomData.timerEnd) {
         const updateTimer = () => {
             const serverEndTime = roomData.timerEnd!.toMillis();
@@ -197,7 +192,7 @@ function MatchmakingContent() {
             const newCountdown = Math.max(0, Math.ceil((serverEndTime - now) / 1000));
             setCountdown(newCountdown);
 
-            if (newCountdown <= 0 && roomId && !navigationTriggered) {
+            if (newCountdown <= 0 && roomData.host.id === currentUser?.uid && !navigationTriggered) {
               console.log("Client timer expired based on server time. Triggering fill-room API.");
               fetch(`/api/online/fill-room`, {
                   method: 'POST',
@@ -209,12 +204,11 @@ function MatchmakingContent() {
             }
         };
         updateTimer();
-        timer = setInterval(updateTimer, 1000);
+        const timer = setInterval(updateTimer, 1000);
+        return () => clearInterval(timer);
     }
 
-    return () => clearInterval(timer);
-
-  }, [roomData, roomId, navigationTriggered]);
+  }, [roomData, roomId, navigationTriggered, currentUser]);
 
 
   const handleCancel = async () => {
@@ -272,8 +266,8 @@ function MatchmakingContent() {
     );
   }
 
-  const displayCountdown = countdown !== null ? Math.max(0, countdown) : tierConfig.matchmakingTime;
-  const progressValue = roomData && roomData.timerEnd
+  const displayCountdown = countdown !== null ? Math.max(0, countdown) : (tierConfig?.matchmakingTime || 0);
+  const progressValue = roomData && roomData.timerEnd && tierConfig
     ? Math.max(0, ( (roomData.timerEnd.toMillis() - Date.now()) / (tierConfig.matchmakingTime * 1000)) * 100)
     : 100;
     
