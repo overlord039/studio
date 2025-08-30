@@ -9,6 +9,7 @@
 
 
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -17,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import HousieTicket from '@/components/game/housie-ticket';
 import CalledNumberDisplay from '@/components/game/called-number-display';
-import type { HousieTicketGrid, PrizeType, Room, GameSettings, CallingMode, PrizeClaimant, OnlineGameTier, TierConfig, FirestoreRoom, FirestorePlayer } from '@/types';
+import type { HousieTicketGrid, PrizeType, Room, GameSettings, CallingMode, PrizeClaimant, OnlineGameTier, TierConfig, FirestoreRoom, FirestorePlayer, User } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,7 +55,7 @@ import Footer from '@/components/layout/footer';
 import Image from 'next/image';
 import { db } from '@/lib/firebase/config';
 import { onSnapshot, doc, collection, getDocs, QuerySnapshot, DocumentData, getDoc } from 'firebase/firestore';
-import type { Badge } from '@/lib/badges';
+import { BADGE_DEFINITIONS, type Badge } from '@/lib/badges';
 import BadgeUnlockedDialog from '@/components/rewards/badge-unlocked-dialog';
 
 
@@ -73,7 +74,7 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
     },
     tournament: {
         name: "Tournament", ticketPrice: 20, roomSize: 10, matchmakingTime: 60,
-        unlockRequirements: { level: 10, matches: 25, coins: 150 },
+        unlockRequirements: { level: 10, matches: 25, coins: 100 },
     }
 };
 
@@ -173,6 +174,7 @@ export default function GameRoomPage() {
   const [error, setError] = useState<string | null>(null);
   const [isOnlineGame, setIsOnlineGame] = useState(false);
   const [onlinePlayers, setOnlinePlayers] = useState<FirestorePlayer[]>([]);
+  const [playerProfiles, setPlayerProfiles] = useState<Map<string, User>>(new Map());
 
   const [myTickets, setMyTickets] = useState<HousieTicketGrid[]>([]);
   const [markedNumbers, setMarkedNumbers] = useState<Set<string>>(new Set());
@@ -342,6 +344,25 @@ export default function GameRoomPage() {
     const roomDocRef = doc(db, 'rooms', roomId);
     const playersColRef = collection(db, 'rooms', roomId, 'players');
 
+    const fetchPlayerProfiles = async (playerList: FirestorePlayer[]) => {
+      const newProfiles = new Map<string, User>();
+      for (const p of playerList) {
+          if (!playerProfiles.has(p.id)) {
+              try {
+                  const playerDoc = await getDoc(doc(db, 'users', p.id));
+                  if (playerDoc.exists()) {
+                      newProfiles.set(p.id, playerDoc.data() as User);
+                  }
+              } catch (e) {
+                  console.warn(`Could not fetch profile for player ${p.id}`, e);
+              }
+          } else {
+             newProfiles.set(p.id, playerProfiles.get(p.id)!);
+          }
+      }
+      setPlayerProfiles(new Map([...playerProfiles, ...newProfiles]));
+    };
+
     const unsubRoom = onSnapshot(roomDocRef, async (docSnap) => {
         if (!docSnap.exists()) {
             setError('Room has been deleted.');
@@ -354,6 +375,7 @@ export default function GameRoomPage() {
         const playersSnap = await getDocs(playersColRef);
         const playersList = playersSnap.docs.map(d => d.data() as FirestorePlayer);
         setOnlinePlayers(playersList);
+        fetchPlayerProfiles(playersList);
 
         const me = playersList.find(p => p.id === currentUser?.uid);
         
@@ -1240,12 +1262,19 @@ export default function GameRoomPage() {
                                       {[...roomData.players].sort((a,b) => (a.isHost ? -1 : b.isHost ? 1 : 0)).map((player) => {
                                          const playerTickets = isOnlineGame ? (onlinePlayers.find(p => p.id === player.id)?.tickets || 0) : (player.tickets?.length || 0);
                                          const ticketCost = playerTickets * gameSettings.ticketPrice;
+                                         const playerProfile = playerProfiles.get(player.id);
+                                         const badgeOrder = ['PLATINUM_PLAYER', 'GOLD_MASTER', 'SILVER_VETERAN', 'BRONZE_COMPETITOR', 'NOVICE'];
+                                         const highestBadge = playerProfile ? badgeOrder.map(key => BADGE_DEFINITIONS[key]).find(badge => playerProfile.stats.badges?.includes(badge.name)) : undefined;
+
                                          return (
                                           <li key={player.id} className="flex justify-between items-center bg-background/50 p-1.5 rounded-md">
-                                          <span className={cn("font-medium", player.id === currentUser?.uid && "text-primary font-bold")}>
-                                              {player.name}
-                                              {player.isHost && gameSettings.gameMode !== 'online' && <span className="ml-1 font-semibold text-primary">*</span>}
-                                          </span>
+                                          <div className="flex items-center gap-1.5">
+                                            {highestBadge && <Image src={highestBadge.icon} alt={highestBadge.name} width={16} height={16} />}
+                                            <span className={cn("font-medium", player.id === currentUser?.uid && "text-primary font-bold")}>
+                                                {player.name}
+                                                {player.isHost && gameSettings.gameMode !== 'online' && <span className="ml-1 font-semibold text-primary">*</span>}
+                                            </span>
+                                          </div>
                                           <div className="text-muted-foreground flex items-center gap-1">
                                             <span>{playerTickets} {ticketsText(playerTickets)}</span>
                                             {hasPrizePool && 
