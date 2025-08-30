@@ -49,15 +49,15 @@ const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>
                                 <div className="flex justify-between items-start">
                                     <div>
                                         <CardTitle className={cn(
-                                            "text-md font-bold",
+                                            "text-lg font-bold",
                                             hasBadge ? 'text-green-800 dark:text-green-200' : 'text-foreground'
                                         )}>{badgeDef.name}</CardTitle>
-                                        <p className="text-xs text-muted-foreground">{badgeDef.description}</p>
+                                        <p className="text-sm text-muted-foreground">{badgeDef.description}</p>
                                     </div>
                                     {hasBadge && <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0" />}
                                 </div>
                                
-                               <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 pt-1 bg-amber-400/20 px-2 py-1 rounded-full w-fit mx-auto md:mx-0">
+                               <div className="flex items-center gap-1.5 text-sm font-semibold text-amber-700 dark:text-amber-400 pt-1 bg-amber-400/20 px-2 py-1 rounded-full w-fit mx-auto md:mx-0">
                                    <Image src="/coin.png" alt="Coin" width={16} height={16} />
                                    <span>Reward: {badgeDef.reward} Coins</span>
                                </div>
