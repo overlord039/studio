@@ -20,7 +20,7 @@ export interface Badge {
 export const BADGE_DEFINITIONS: Record<string, Badge> = {
   NOVICE: {
     name: "Novice Player",
-    description: "Claim Early 5 (x5), any Line (x5 total), and Full House (x1).",
+    description: "",
     icon: "Shield",
     criteria: [
         { label: 'Early 5 Claims', target: 5, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
@@ -35,7 +35,7 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
   },
   BRONZE_COMPETITOR: {
     name: "Bronze Competitor",
-    description: "Claim Early 5 (x10), First Line (x5), Second Line (x5), Third Line (x5), and Full House (x3).",
+    description: "",
     icon: "Award",
     criteria: [
         { label: 'Early 5 Claims', target: 10, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
@@ -55,7 +55,7 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
   },
   SILVER_VETERAN: {
     name: "Silver Veteran",
-    description: "Claim Early 5 (x20), First Line (x10), Second Line (x10), Third Line (x10), and Full House (x7).",
+    description: "",
     icon: "Badge",
     criteria: [
         { label: 'Early 5 Claims', target: 20, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
@@ -75,7 +75,7 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
   },
   GOLD_MASTER: {
     name: "Gold Master",
-    description: "Claim Early 5 (x50), First Line (x25), Second Line (x25), Third Line (x25), and Full House (x15).",
+    description: "",
     icon: "Medal",
     criteria: [
         { label: 'Early 5 Claims', target: 50, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
@@ -95,7 +95,7 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
   },
   FULL_HOUSE_PRO: {
     name: "Full House Pro",
-    description: "Won Full House 25 times.",
+    description: "",
     icon: "Trophy",
     criteria: [
         { label: 'Full House Claims', target: 25, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FULL_HOUSE] || 0 },
