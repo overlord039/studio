@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,6 +7,7 @@ import { Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React from 'react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { SERVER_CALL_INTERVAL } from '@/lib/constants';
 
 interface CalledNumberDisplayProps {
   currentNumber: number | null;
@@ -29,6 +31,7 @@ const BORDER_COLORS = [
 
 export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMuted, onToggleMute, animationKey }: CalledNumberDisplayProps) {
   const recentHistory = calledNumbers.slice(1, 11);
+  const animationDuration = `${SERVER_CALL_INTERVAL / 1000}s`;
 
   return (
     <Card className="shadow-lg bg-primary text-primary-foreground overflow-hidden">
@@ -61,6 +64,7 @@ export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMu
                     strokeDasharray="214"
                     strokeDashoffset="214"
                     className="animate-progress-ring"
+                    style={{ animationDuration }}
                   ></circle>
                 </svg>
               )}

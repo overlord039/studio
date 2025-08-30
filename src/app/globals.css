@@ -161,7 +161,7 @@ body {
 }
 
 .animate-progress-ring {
-  animation: progress-ring 6s linear forwards;
+  animation: progress-ring linear forwards;
 }
 
 
