@@ -20,87 +20,103 @@ export interface Badge {
 export const BADGE_DEFINITIONS: Record<string, Badge> = {
   NOVICE: {
     name: "Novice Player",
-    description: "",
+    description: "Beginner – quick to earn",
     icon: "Shield",
     criteria: [
-        { label: 'Early 5 Claims', target: 5, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
-        { label: 'Total Line Claims', target: 5, getCurrent: (stats) => (stats.prizesWon?.[PRIZE_TYPES.FIRST_LINE] || 0) + (stats.prizesWon?.[PRIZE_TYPES.SECOND_LINE] || 0) + (stats.prizesWon?.[PRIZE_TYPES.THIRD_LINE] || 0) },
-        { label: 'Full House Claims', target: 1, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FULL_HOUSE] || 0 },
+        { label: 'Early 5', target: 3, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
+        { label: 'First Line', target: 2, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FIRST_LINE] || 0 },
+        { label: 'Second Line', target: 2, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.SECOND_LINE] || 0 },
+        { label: 'Third Line', target: 2, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.THIRD_LINE] || 0 },
+        { label: 'Full House', target: 1, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FULL_HOUSE] || 0 },
     ],
     isAchieved: (stats) => {
         const prizesWon = stats.prizesWon || {};
-        const linePrizesCount = (prizesWon[PRIZE_TYPES.FIRST_LINE] || 0) + (prizesWon[PRIZE_TYPES.SECOND_LINE] || 0) + (prizesWon[PRIZE_TYPES.THIRD_LINE] || 0);
-        return (prizesWon[PRIZE_TYPES.EARLY_5] || 0) >= 5 && linePrizesCount >= 5 && (prizesWon[PRIZE_TYPES.FULL_HOUSE] || 0) >= 1;
+        return (prizesWon[PRIZE_TYPES.EARLY_5] || 0) >= 3 &&
+               (prizesWon[PRIZE_TYPES.FIRST_LINE] || 0) >= 2 &&
+               (prizesWon[PRIZE_TYPES.SECOND_LINE] || 0) >= 2 &&
+               (prizesWon[PRIZE_TYPES.THIRD_LINE] || 0) >= 2 &&
+               (prizesWon[PRIZE_TYPES.FULL_HOUSE] || 0) >= 1;
     },
   },
   BRONZE_COMPETITOR: {
     name: "Bronze Competitor",
-    description: "",
+    description: "Starter grind – encourages play variety",
     icon: "Medal",
     criteria: [
-        { label: 'Early 5 Claims', target: 10, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
-        { label: 'First Line Claims', target: 5, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FIRST_LINE] || 0 },
-        { label: 'Second Line Claims', target: 5, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.SECOND_LINE] || 0 },
-        { label: 'Third Line Claims', target: 5, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.THIRD_LINE] || 0 },
-        { label: 'Full House Claims', target: 3, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FULL_HOUSE] || 0 },
+        { label: 'Early 5', target: 10, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
+        { label: 'First Line', target: 7, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FIRST_LINE] || 0 },
+        { label: 'Second Line', target: 7, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.SECOND_LINE] || 0 },
+        { label: 'Third Line', target: 7, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.THIRD_LINE] || 0 },
+        { label: 'Full House', target: 5, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FULL_HOUSE] || 0 },
     ],
     isAchieved: (stats) => {
       const prizesWon = stats.prizesWon || {};
       return (prizesWon[PRIZE_TYPES.EARLY_5] || 0) >= 10 &&
-             (prizesWon[PRIZE_TYPES.FIRST_LINE] || 0) >= 5 &&
-             (prizesWon[PRIZE_TYPES.SECOND_LINE] || 0) >= 5 &&
-             (prizesWon[PRIZE_TYPES.THIRD_LINE] || 0) >= 5 &&
-             (prizesWon[PRIZE_TYPES.FULL_HOUSE] || 0) >= 3;
+             (prizesWon[PRIZE_TYPES.FIRST_LINE] || 0) >= 7 &&
+             (prizesWon[PRIZE_TYPES.SECOND_LINE] || 0) >= 7 &&
+             (prizesWon[PRIZE_TYPES.THIRD_LINE] || 0) >= 7 &&
+             (prizesWon[PRIZE_TYPES.FULL_HOUSE] || 0) >= 5;
     },
   },
   SILVER_VETERAN: {
     name: "Silver Veteran",
-    description: "",
+    description: "Intermediate – steady players",
     icon: "Medal",
     criteria: [
-        { label: 'Early 5 Claims', target: 20, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
-        { label: 'First Line Claims', target: 10, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FIRST_LINE] || 0 },
-        { label: 'Second Line Claims', target: 10, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.SECOND_LINE] || 0 },
-        { label: 'Third Line Claims', target: 10, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.THIRD_LINE] || 0 },
-        { label: 'Full House Claims', target: 7, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FULL_HOUSE] || 0 },
+        { label: 'Early 5', target: 25, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
+        { label: 'First Line', target: 15, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FIRST_LINE] || 0 },
+        { label: 'Second Line', target: 15, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.SECOND_LINE] || 0 },
+        { label: 'Third Line', target: 15, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.THIRD_LINE] || 0 },
+        { label: 'Full House', target: 10, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FULL_HOUSE] || 0 },
     ],
     isAchieved: (stats) => {
       const prizesWon = stats.prizesWon || {};
-      return (prizesWon[PRIZE_TYPES.EARLY_5] || 0) >= 20 &&
-             (prizesWon[PRIZE_TYPES.FIRST_LINE] || 0) >= 10 &&
-             (prizesWon[PRIZE_TYPES.SECOND_LINE] || 0) >= 10 &&
-             (prizesWon[PRIZE_TYPES.THIRD_LINE] || 0) >= 10 &&
-             (prizesWon[PRIZE_TYPES.FULL_HOUSE] || 0) >= 7;
+      return (prizesWon[PRIZE_TYPES.EARLY_5] || 0) >= 25 &&
+             (prizesWon[PRIZE_TYPES.FIRST_LINE] || 0) >= 15 &&
+             (prizesWon[PRIZE_TYPES.SECOND_LINE] || 0) >= 15 &&
+             (prizesWon[PRIZE_TYPES.THIRD_LINE] || 0) >= 15 &&
+             (prizesWon[PRIZE_TYPES.FULL_HOUSE] || 0) >= 10;
     },
   },
   GOLD_MASTER: {
     name: "Gold Master",
-    description: "",
+    description: "Advanced – consistent winners",
     icon: "Medal",
     criteria: [
-        { label: 'Early 5 Claims', target: 50, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
-        { label: 'First Line Claims', target: 25, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FIRST_LINE] || 0 },
-        { label: 'Second Line Claims', target: 25, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.SECOND_LINE] || 0 },
-        { label: 'Third Line Claims', target: 25, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.THIRD_LINE] || 0 },
-        { label: 'Full House Claims', target: 15, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FULL_HOUSE] || 0 },
+        { label: 'Early 5', target: 50, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
+        { label: 'First Line', target: 30, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FIRST_LINE] || 0 },
+        { label: 'Second Line', target: 30, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.SECOND_LINE] || 0 },
+        { label: 'Third Line', target: 30, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.THIRD_LINE] || 0 },
+        { label: 'Full House', target: 20, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FULL_HOUSE] || 0 },
     ],
     isAchieved: (stats) => {
       const prizesWon = stats.prizesWon || {};
       return (prizesWon[PRIZE_TYPES.EARLY_5] || 0) >= 50 &&
-             (prizesWon[PRIZE_TYPES.FIRST_LINE] || 0) >= 25 &&
-             (prizesWon[PRIZE_TYPES.SECOND_LINE] || 0) >= 25 &&
-             (prizesWon[PRIZE_TYPES.THIRD_LINE] || 0) >= 25 &&
-             (prizesWon[PRIZE_TYPES.FULL_HOUSE] || 0) >= 15;
+             (prizesWon[PRIZE_TYPES.FIRST_LINE] || 0) >= 30 &&
+             (prizesWon[PRIZE_TYPES.SECOND_LINE] || 0) >= 30 &&
+             (prizesWon[PRIZE_TYPES.THIRD_LINE] || 0) >= 30 &&
+             (prizesWon[PRIZE_TYPES.FULL_HOUSE] || 0) >= 20;
     },
   },
-  FULL_HOUSE_PRO: {
-    name: "Full House Pro",
-    description: "",
+  PLATINUM_PLAYER: {
+    name: "Platinum Player",
+    description: "Elite Tier – true masters",
     icon: "Trophy",
     criteria: [
-        { label: 'Full House Claims', target: 25, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FULL_HOUSE] || 0 },
+        { label: 'Early 5', target: 100, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
+        { label: 'First Line', target: 60, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FIRST_LINE] || 0 },
+        { label: 'Second Line', target: 60, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.SECOND_LINE] || 0 },
+        { label: 'Third Line', target: 60, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.THIRD_LINE] || 0 },
+        { label: 'Full House', target: 40, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FULL_HOUSE] || 0 },
     ],
-    isAchieved: (stats) => (stats.prizesWon?.[PRIZE_TYPES.FULL_HOUSE] || 0) >= 25,
+    isAchieved: (stats) => {
+        const prizesWon = stats.prizesWon || {};
+        return (prizesWon[PRIZE_TYPES.EARLY_5] || 0) >= 100 &&
+               (prizesWon[PRIZE_TYPES.FIRST_LINE] || 0) >= 60 &&
+               (prizesWon[PRIZE_TYPES.SECOND_LINE] || 0) >= 60 &&
+               (prizesWon[PRIZE_TYPES.THIRD_LINE] || 0) >= 60 &&
+               (prizesWon[PRIZE_TYPES.FULL_HOUSE] || 0) >= 40;
+    },
   },
 };
 

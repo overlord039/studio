@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { type FormEvent, useState, useEffect } from 'react';
@@ -63,6 +64,7 @@ const BadgeIconComponent = ({ iconName, badgeName, hasBadge, ...props }: { iconN
         "Bronze Competitor": "text-[#CD7F32] fill-[#CD7F32]",
         "Silver Veteran": "text-[#C0C0C0] fill-[#C0C0C0]",
         "Gold Master": "text-[#FFD700] fill-[#FFD700]",
+        "Platinum Player": "text-blue-500 fill-blue-500/30",
     };
 
     const colorClass = hasBadge
