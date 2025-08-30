@@ -25,10 +25,10 @@ import Image from 'next/image';
 
 const BadgeIconComponent = ({ iconName, badgeName, hasBadge, ...props }: { iconName: string, badgeName: string, hasBadge: boolean } & Omit<React.ComponentProps<typeof Shield>, 'color' | 'fill'>) => {
     const badgeColors: Record<string, string> = {
-        "Bronze Competitor": "text-yellow-600 dark:text-yellow-500 fill-yellow-600/20 dark:fill-yellow-500/20",
-        "Silver Veteran": "text-slate-500 dark:text-slate-400 fill-slate-500/20 dark:fill-slate-400/20",
-        "Gold Master": "text-amber-500 dark:text-amber-400 fill-amber-500/20 dark:fill-amber-400/20",
-        "Platinum Player": "text-blue-500 dark:text-blue-400 fill-blue-500/20 dark:fill-blue-400/20",
+        "Bronze Competitor": "text-yellow-600 dark:text-yellow-500 fill-yellow-600/30 dark:fill-yellow-500/30",
+        "Silver Veteran": "text-slate-500 dark:text-slate-400 fill-slate-500/30 dark:fill-slate-400/30",
+        "Gold Master": "text-amber-500 dark:text-amber-400 fill-amber-500/30 dark:fill-amber-400/30",
+        "Platinum Player": "text-blue-500 dark:text-blue-400 fill-blue-500/30 dark:fill-blue-400/30",
     };
 
     const unlockedColorClass = hasBadge
@@ -56,7 +56,7 @@ const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>
         <DialogHeader>
             <DialogTitle className="text-center text-2xl font-bold tracking-wider">Achievements</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 py-4 max-h-[80vh] md:max-h-[70vh] overflow-y-auto">
+        <div className="space-y-4 py-4 max-h-[80vh] md:max-h-[70vh] overflow-y-auto scrollbar-hide">
             {Object.values(BADGE_DEFINITIONS).map(badgeDef => {
                 const hasBadge = earnedBadges.has(badgeDef.name);
                 return (
