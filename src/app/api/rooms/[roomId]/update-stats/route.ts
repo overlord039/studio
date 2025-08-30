@@ -1,5 +1,6 @@
 
 
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { getRoomStore } from '@/lib/server/game-store';
 import { db } from '@/lib/firebase/config';
@@ -7,6 +8,7 @@ import { doc, increment, writeBatch, getDoc, updateDoc, runTransaction } from 'f
 import type { PrizeType, Room, UserStats, GameSettings } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { PRIZE_DISTRIBUTION_PERCENTAGES, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN, getXpForNextLevel, PRIZE_DEFINITIONS, getCoinsForLevelUp } from '@/lib/constants';
+import { checkAndAwardBadges } from '@/lib/badges';
 
 // Define coin rewards for offline games
 const OFFLINE_COIN_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType, number>> = {
@@ -161,7 +163,6 @@ export async function POST(
             }
         }
         
-        // Leveling up logic
         let currentLevel = currentStats.level || 1;
         let currentXp = (currentStats.xp || 0) + xpGained;
         let xpForNext = getXpForNextLevel(currentLevel);
@@ -169,8 +170,7 @@ export async function POST(
         while (currentXp >= xpForNext) {
             currentLevel++;
             currentXp -= xpForNext;
-            coinsEarned += getCoinsForLevelUp(currentLevel); // Add level up reward
-            xpForNext = getXpForNextLevel(currentLevel);
+            coinsEarned += getCoinsForLevelUp(currentLevel);
         }
 
         if (coinsEarned > 0) {
@@ -180,6 +180,18 @@ export async function POST(
 
         statsUpdate['stats.level'] = currentLevel;
         statsUpdate['stats.xp'] = currentXp;
+
+        const prospectiveStats: UserStats = {
+          ...currentStats,
+          matchesPlayed: (currentStats.matchesPlayed || 0) + 1,
+          prizesWon: prizesWonByPlayer.reduce((acc, prize) => {
+              acc[prize] = (currentStats.prizesWon?.[prize] || 0) + 1;
+              return acc;
+          }, { ...currentStats.prizesWon }),
+          level: currentLevel,
+          xp: currentXp
+        };
+        statsUpdate['stats.badges'] = checkAndAwardBadges(prospectiveStats);
 
         transaction.update(playerDocRef, statsUpdate);
     });

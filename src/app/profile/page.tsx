@@ -1,5 +1,6 @@
 
 
+
 "use client";
 
 import React, { type FormEvent, useState, useEffect } from 'react';
@@ -8,7 +9,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertTriangle, Calendar, Mail, LogOut, X, Fingerprint, Gamepad2, Award, Loader2, Pencil, Check, Star } from "lucide-react";
+import { AlertTriangle, Calendar, Mail, LogOut, X, Fingerprint, Gamepad2, Award, Loader2, Pencil, Check, Star, Shield, Badge as BadgeIcon, Medal, Trophy } from "lucide-react";
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,6 +21,8 @@ import { PRIZE_DEFINITIONS, DEFAULT_GAME_SETTINGS, getXpForNextLevel } from '@/l
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
+import { BADGE_DEFINITIONS } from '@/lib/badges';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -55,6 +58,17 @@ const AvatarSelectionDialog = ({ onSelect, children, disabled }: { onSelect: (sr
       </DialogContent>
     </Dialog>
   );
+};
+
+const BadgeIconComponent = ({ iconName, ...props }: { iconName: string } & React.ComponentProps<typeof Shield>) => {
+    switch (iconName) {
+        case 'Shield': return <Shield {...props} />;
+        case 'Award': return <Award {...props} />;
+        case 'Badge': return <BadgeIcon {...props} />;
+        case 'Medal': return <Medal {...props} />;
+        case 'Trophy': return <Trophy {...props} />;
+        default: return <Star {...props} />;
+    }
 };
 
 
@@ -292,6 +306,34 @@ export default function ProfilePage() {
               </div>
               <CardContent className="p-6 space-y-6 bg-card">
                    <div className="space-y-6">
+                        <div>
+                            <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider mb-2">Badges</h3>
+                            {currentUser.stats.badges && currentUser.stats.badges.length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                    <TooltipProvider>
+                                    {currentUser.stats.badges.map(badgeName => {
+                                        const badgeDef = Object.values(BADGE_DEFINITIONS).find(b => b.name === badgeName);
+                                        if (!badgeDef) return null;
+                                        return (
+                                            <Tooltip key={badgeName}>
+                                                <TooltipTrigger asChild>
+                                                    <div className="flex items-center gap-1.5 p-1.5 pr-2.5 rounded-full bg-secondary text-secondary-foreground border border-border">
+                                                        <BadgeIconComponent iconName={badgeDef.icon} className="h-5 w-5 text-primary" />
+                                                        <span className="text-xs font-bold">{badgeDef.name}</span>
+                                                    </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>{badgeDef.description}</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        );
+                                    })}
+                                    </TooltipProvider>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-center text-muted-foreground pt-2">Play more games to earn badges!</p>
+                            )}
+                        </div>
                         <div>
                              <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider mb-2">Level Progress</h3>
                              <Card className="bg-secondary p-3">

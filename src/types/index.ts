@@ -1,6 +1,7 @@
 
 
 
+
 export interface UserStats {
   matchesPlayed: number;
   prizesWon: Record<PrizeType, number>;
@@ -11,6 +12,7 @@ export interface UserStats {
   lastLogin?: string; // ISO string
   loginStreak?: number;
   lastClaimedDay?: number; // Day of the streak (1-7)
+  badges?: string[]; // To store earned badge names
 }
 
 export interface User {
@@ -139,4 +141,3 @@ export interface FirestorePlayer {
 
 
     
-

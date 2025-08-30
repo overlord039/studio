@@ -1,5 +1,6 @@
 
 
+
 'use server';
 
 import { NextResponse, type NextRequest } from 'next/server';
@@ -7,6 +8,7 @@ import { db } from '@/lib/firebase/config';
 import { doc, getDoc, runTransaction, collection, getDocs, increment, writeBatch } from 'firebase/firestore';
 import type { FirestoreRoom, FirestorePlayer, PrizeType, GameSettings, UserStats } from '@/types';
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, getXpForNextLevel, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN, XP_MODIFIER_ONLINE, getCoinsForLevelUp } from '@/lib/constants';
+import { checkAndAwardBadges } from '@/lib/badges';
 
 // Helper function to calculate final prize distribution accurately
 function calculatePrizes(totalPool: number, settings: GameSettings): Record<PrizeType, number> {
@@ -109,13 +111,14 @@ export async function POST(request: NextRequest) {
             'stats.matchesPlayed': increment(1),
         };
         
-        // Apply 1.5x XP modifier for online games
         let xpGained = Math.round(XP_PER_GAME_PARTICIPATION * XP_MODIFIER_ONLINE);
         let coinsEarned = 0;
+        const prizesWonByPlayer: PrizeType[] = [];
 
         prizesForFormat.forEach(prize => {
             const claimInfo = roomData.prizeStatus?.[prize as PrizeType];
             if (claimInfo && claimInfo.claimedBy?.some((c: {id: string}) => c.id === userId)) {
+                prizesWonByPlayer.push(prize as PrizeType);
                 statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
                 
                 const basePrizeXp = XP_PER_PRIZE_WIN[prize as PrizeType] || 0;
@@ -146,6 +149,18 @@ export async function POST(request: NextRequest) {
 
         statsUpdate['stats.level'] = currentLevel;
         statsUpdate['stats.xp'] = currentXp;
+
+        const prospectiveStats: UserStats = {
+          ...currentStats,
+          matchesPlayed: (currentStats.matchesPlayed || 0) + 1,
+          prizesWon: prizesWonByPlayer.reduce((acc, prize) => {
+              acc[prize] = (currentStats.prizesWon?.[prize] || 0) + 1;
+              return acc;
+          }, { ...currentStats.prizesWon }),
+          level: currentLevel,
+          xp: currentXp
+        };
+        statsUpdate['stats.badges'] = checkAndAwardBadges(prospectiveStats);
         
         // --- Update player stats and mark as updated for this room ---
         transaction.update(playerRef, statsUpdate);
