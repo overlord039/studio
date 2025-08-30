@@ -12,7 +12,8 @@ export interface BadgeCriterion {
 export interface Badge {
   name: string;
   description: string;
-  icon: string; // URL or name of the icon component
+  icon: string;
+  reward: number; // Coins awarded for achieving the badge
   criteria: BadgeCriterion[];
   isAchieved: (stats: UserStats) => boolean;
 }
@@ -22,6 +23,7 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
     name: "Novice Player",
     description: "Beginner – quick to earn",
     icon: "Shield",
+    reward: 10,
     criteria: [
         { label: 'Early 5', target: 3, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
         { label: 'First Line', target: 2, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FIRST_LINE] || 0 },
@@ -42,6 +44,7 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
     name: "Bronze Competitor",
     description: "Starter grind – encourages play variety",
     icon: "Medal",
+    reward: 25,
     criteria: [
         { label: 'Early 5', target: 10, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
         { label: 'First Line', target: 7, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FIRST_LINE] || 0 },
@@ -62,6 +65,7 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
     name: "Silver Veteran",
     description: "Intermediate – steady players",
     icon: "Medal",
+    reward: 50,
     criteria: [
         { label: 'Early 5', target: 25, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
         { label: 'First Line', target: 15, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FIRST_LINE] || 0 },
@@ -82,6 +86,7 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
     name: "Gold Master",
     description: "Advanced – consistent winners",
     icon: "Medal",
+    reward: 100,
     criteria: [
         { label: 'Early 5', target: 50, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
         { label: 'First Line', target: 30, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FIRST_LINE] || 0 },
@@ -102,6 +107,7 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
     name: "Platinum Player",
     description: "Elite Tier – true masters",
     icon: "Trophy",
+    reward: 250,
     criteria: [
         { label: 'Early 5', target: 100, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
         { label: 'First Line', target: 60, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FIRST_LINE] || 0 },
@@ -120,20 +126,25 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
   },
 };
 
+interface BadgeCheckResult {
+    badgeNames: string[];
+    coinsAwarded: number;
+}
 
-export function checkAndAwardBadges(stats: UserStats): string[] {
+export function checkAndAwardBadges(stats: UserStats): BadgeCheckResult {
     const currentBadges = new Set(stats.badges || []);
-    let newBadgesAwarded = false;
+    let coinsAwarded = 0;
 
     Object.keys(BADGE_DEFINITIONS).forEach(badgeKey => {
         const badge = BADGE_DEFINITIONS[badgeKey];
         if (!currentBadges.has(badge.name) && badge.isAchieved(stats)) {
             currentBadges.add(badge.name);
-            newBadgesAwarded = true;
+            coinsAwarded += badge.reward;
         }
     });
     
-    // The function can optionally return information about whether new badges were awarded,
-    // but for now, we just return the full list of badges the user should have.
-    return Array.from(currentBadges);
+    return {
+        badgeNames: Array.from(currentBadges),
+        coinsAwarded: coinsAwarded,
+    };
 }

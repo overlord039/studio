@@ -1,6 +1,7 @@
 
 
 
+
 'use server';
 
 import { NextResponse, type NextRequest } from 'next/server';
@@ -142,14 +143,6 @@ export async function POST(request: NextRequest) {
             xpForNext = getXpForNextLevel(currentLevel);
         }
 
-        if (coinsEarned > 0) {
-            statsUpdate['stats.coins'] = increment(coinsEarned);
-        }
-        totalWinnings = coinsEarned;
-
-        statsUpdate['stats.level'] = currentLevel;
-        statsUpdate['stats.xp'] = currentXp;
-
         const prospectiveStats: UserStats = {
           ...currentStats,
           matchesPlayed: (currentStats.matchesPlayed || 0) + 1,
@@ -160,7 +153,18 @@ export async function POST(request: NextRequest) {
           level: currentLevel,
           xp: currentXp
         };
-        statsUpdate['stats.badges'] = checkAndAwardBadges(prospectiveStats);
+
+        const { badgeNames, coinsAwarded: badgeCoins } = checkAndAwardBadges(prospectiveStats);
+        coinsEarned += badgeCoins;
+        statsUpdate['stats.badges'] = badgeNames;
+        
+        if (coinsEarned > 0) {
+            statsUpdate['stats.coins'] = increment(coinsEarned);
+        }
+        totalWinnings = coinsEarned;
+
+        statsUpdate['stats.level'] = currentLevel;
+        statsUpdate['stats.xp'] = currentXp;
         
         // --- Update player stats and mark as updated for this room ---
         transaction.update(playerRef, statsUpdate);

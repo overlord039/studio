@@ -64,11 +64,11 @@ const BadgeIconComponent = ({ iconName, badgeName, hasBadge, ...props }: { iconN
         "Bronze Competitor": "text-[#CD7F32] fill-[#CD7F32]",
         "Silver Veteran": "text-[#C0C0C0] fill-[#C0C0C0]",
         "Gold Master": "text-[#FFD700] fill-[#FFD700]",
-        "Platinum Player": "text-blue-500 fill-blue-500/30",
+        "Platinum Player": "text-blue-500 fill-blue-500",
     };
 
     const colorClass = hasBadge
-        ? badgeColors[badgeName as keyof typeof badgeColors] || "text-green-500 fill-green-500/30"
+        ? badgeColors[badgeName as keyof typeof badgeColors] || "text-green-500 fill-green-500"
         : "text-muted-foreground";
 
     const finalClassName = cn(props.className, colorClass);
@@ -118,6 +118,10 @@ const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>
                                     hasBadge ? 'text-green-800 dark:text-green-300' : 'text-foreground'
                                 )}>{badgeDef.name}</CardTitle>
                                <p className="text-xs text-muted-foreground">{badgeDef.description}</p>
+                               <div className="flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400 pt-1">
+                                   <Image src="/coin.png" alt="Coin" width={16} height={16} />
+                                   <span>Reward: {badgeDef.reward} Coins</span>
+                               </div>
                            </div>
                            {hasBadge && <CheckCircle className="h-5 w-5 text-green-500" />}
                         </CardHeader>
