@@ -55,7 +55,7 @@ export default function BadgeUnlockedDialog({ badges, open, onOpenChange }: Badg
                     <p className="text-xs text-muted-foreground">{badge.description}</p>
                     <div className="mt-2 flex items-center justify-center gap-2 text-lg font-bold text-yellow-600 dark:text-yellow-400 bg-amber-400/20 px-3 py-1 rounded-full">
                         <Image src="/coin.png" alt="Coins" width={20} height={20} />
-                        <span>+{badge.reward} Coins</span>
+                        <span>{badge.reward} Coins</span>
                     </div>
                   </div>
                 </div>
