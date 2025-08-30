@@ -1,6 +1,7 @@
 
 
 import type { UserStats, PrizeType } from '@/types';
+import { PRIZE_TYPES } from '@/types';
 
 export interface Badge {
   name: string;
@@ -18,36 +19,39 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
   },
   BRONZE_COMPETITOR: {
     name: "Bronze Competitor",
-    description: "Reached Level 5 and won over 2 prizes.",
+    description: "Reached Level 5 and won at least 2 different prize types (e.g., Early 5 and a Line).",
     icon: "Award",
     criteria: (stats) => {
-      const totalPrizes = Object.values(stats.prizesWon || {}).reduce((a, b) => a + b, 0);
-      return (stats.level || 0) >= 5 && totalPrizes >= 2;
+      const prizesWon = stats.prizesWon || {};
+      const uniquePrizesWon = Object.keys(prizesWon).filter(p => prizesWon[p as PrizeType] > 0).length;
+      return (stats.level || 0) >= 5 && uniquePrizesWon >= 2;
     },
   },
   SILVER_VETERAN: {
     name: "Silver Veteran",
-    description: "Reached Level 20, played 50 matches, and won over 50 prizes.",
+    description: "Reached Level 20, played 50 matches, and won at least 3 different prize types.",
     icon: "Badge",
     criteria: (stats) => {
-      const totalPrizes = Object.values(stats.prizesWon || {}).reduce((a, b) => a + b, 0);
-      return (stats.level || 0) >= 20 && (stats.matchesPlayed || 0) >= 50 && totalPrizes >= 50;
+      const prizesWon = stats.prizesWon || {};
+      const uniquePrizesWon = Object.keys(prizesWon).filter(p => prizesWon[p as PrizeType] > 0).length;
+      return (stats.level || 0) >= 20 && (stats.matchesPlayed || 0) >= 50 && uniquePrizesWon >= 3;
     },
   },
   GOLD_MASTER: {
     name: "Gold Master",
-    description: "Reached Level 50, played 100 matches, and won over 150 prizes.",
+    description: "Reached Level 50, played 100 matches, and won all 5 prize types.",
     icon: "Medal",
     criteria: (stats) => {
-      const totalPrizes = Object.values(stats.prizesWon || {}).reduce((a, b) => a + b, 0);
-      return (stats.level || 0) >= 50 && (stats.matchesPlayed || 0) >= 100 && totalPrizes >= 150;
+      const prizesWon = stats.prizesWon || {};
+      const uniquePrizesWon = Object.keys(prizesWon).filter(p => prizesWon[p as PrizeType] > 0).length;
+      return (stats.level || 0) >= 50 && (stats.matchesPlayed || 0) >= 100 && uniquePrizesWon >= 5;
     },
   },
   FULL_HOUSE_PRO: {
     name: "Full House Pro",
     description: "Won Full House 10 times.",
     icon: "Trophy",
-    criteria: (stats) => (stats.prizesWon?.['Full House'] || 0) >= 10,
+    criteria: (stats) => (stats.prizesWon?.[PRIZE_TYPES.FULL_HOUSE] || 0) >= 10,
   },
 };
 
