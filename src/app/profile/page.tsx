@@ -32,6 +32,12 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 const AVATAR_IMAGES = Array.from({ length: 8 }, (_, i) => `/userimages/ui${i + 1}.png`);
 
+const BadgeImageDialog = ({ src, alt }: { src: string, alt: string }) => (
+    <DialogContent className="p-0 bg-transparent border-none shadow-none w-auto flex items-center justify-center">
+        <Image src={src} alt={alt} width={256} height={256} className="rounded-lg" />
+    </DialogContent>
+);
+
 const AvatarSelectionDialog = ({ onSelect, children, disabled }: { onSelect: (src: string) => void; children: React.ReactNode, disabled?: boolean }) => {
   const [open, setOpen] = useState(false);
 
@@ -291,18 +297,25 @@ export default function ProfilePage() {
                                     <span className="font-bold text-base sm:text-lg">{currentUser.stats?.coins || 0}</span>
                                   </div>
                                    {highestBadge && (
+                                    <Dialog>
                                       <TooltipProvider>
-                                          <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                  <div className="bg-secondary p-1 rounded-full border">
-                                                    <Image src={highestBadge.icon} alt={highestBadge.name} width={28} height={28} />
-                                                  </div>
-                                              </TooltipTrigger>
-                                              <TooltipContent>
-                                                  <p className="font-semibold">{highestBadge.name}</p>
-                                              </TooltipContent>
-                                          </Tooltip>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <DialogTrigger asChild>
+                                              <button className="transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring rounded-full">
+                                                <div className="bg-secondary p-1 rounded-full border">
+                                                  <Image src={highestBadge.icon} alt={highestBadge.name} width={28} height={28} />
+                                                </div>
+                                              </button>
+                                            </DialogTrigger>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p className="font-semibold">{highestBadge.name}</p>
+                                          </TooltipContent>
+                                        </Tooltip>
                                       </TooltipProvider>
+                                      <BadgeImageDialog src={highestBadge.icon} alt={highestBadge.name} />
+                                    </Dialog>
                                   )}
                                </div>
                             </div>
