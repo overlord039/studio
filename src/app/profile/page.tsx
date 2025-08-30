@@ -69,6 +69,42 @@ const BadgeIconComponent = ({ iconName, ...props }: { iconName: string } & React
     }
 };
 
+const AchievementsDialog = ({ earnedBadges }: { earnedBadges: Set<string> }) => (
+    <DialogContent className="max-w-md">
+        <DialogHeader>
+            <DialogTitle className="text-center text-xl">Achievements</DialogTitle>
+        </DialogHeader>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-4 max-h-[60vh] overflow-y-auto">
+            {Object.values(BADGE_DEFINITIONS).map(badgeDef => {
+                const hasBadge = earnedBadges.has(badgeDef.name);
+                return (
+                    <div 
+                        key={badgeDef.name}
+                        className={cn(
+                            "flex flex-col items-center justify-center text-center gap-1.5 p-3 rounded-lg border-2 transition-all",
+                            hasBadge 
+                                ? 'border-green-500/50 bg-green-500/10'
+                                : 'border-border bg-secondary/30 opacity-60'
+                        )}
+                    >
+                        <BadgeIconComponent 
+                            iconName={badgeDef.icon} 
+                            className={cn("h-8 w-8", hasBadge ? 'text-green-500' : 'text-muted-foreground')} 
+                        />
+                        <div className="space-y-1">
+                            <p className={cn(
+                                "text-sm font-bold",
+                                hasBadge ? 'text-green-800 dark:text-green-300' : 'text-muted-foreground'
+                            )}>{badgeDef.name}</p>
+                            <p className="text-xs text-muted-foreground">{badgeDef.description}</p>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    </DialogContent>
+);
+
 
 export default function ProfilePage() {
   const { currentUser, loading, logout, linkGoogleAccount, isSigningIn, updateUserProfile, setLocalGuestAvatar, setLocalGuestUsername } = useAuth();
@@ -306,40 +342,14 @@ export default function ProfilePage() {
               </div>
               <CardContent className="p-6 space-y-6 bg-card">
                    <div className="space-y-6">
-                        <div>
-                            <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider mb-2">Achievements</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                {Object.values(BADGE_DEFINITIONS).map(badgeDef => {
-                                    const hasBadge = earnedBadges.has(badgeDef.name);
-                                    return (
-                                        <TooltipProvider key={badgeDef.name}>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <div className={cn(
-                                                        "flex flex-col items-center justify-center text-center gap-1.5 p-3 rounded-lg border-2 transition-all",
-                                                        hasBadge 
-                                                            ? 'border-green-500/50 bg-green-500/10'
-                                                            : 'border-border bg-secondary/30 opacity-60'
-                                                    )}>
-                                                        <BadgeIconComponent 
-                                                            iconName={badgeDef.icon} 
-                                                            className={cn("h-7 w-7", hasBadge ? 'text-green-500' : 'text-muted-foreground')} 
-                                                        />
-                                                        <span className={cn(
-                                                            "text-xs font-bold",
-                                                            hasBadge ? 'text-green-800 dark:text-green-300' : 'text-muted-foreground'
-                                                        )}>{badgeDef.name}</span>
-                                                    </div>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>{badgeDef.description}</p>
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" className="w-full">
+                                    <Award className="mr-2 h-4 w-4" /> Achievements
+                                </Button>
+                            </DialogTrigger>
+                            <AchievementsDialog earnedBadges={earnedBadges} />
+                        </Dialog>
                         <div>
                              <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider mb-2">Level Progress</h3>
                              <Card className="bg-secondary p-3">
