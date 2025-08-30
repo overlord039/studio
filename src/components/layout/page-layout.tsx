@@ -23,6 +23,13 @@ import { BADGE_DEFINITIONS } from '@/lib/badges';
 import type { UserStats } from '@/types';
 import Image from 'next/image';
 
+const BadgeImageDialog = ({ src, alt }: { src: string, alt: string }) => (
+    <DialogContent className="p-0 bg-transparent border-none shadow-none w-auto flex items-center justify-center">
+        <Image src={src} alt={alt} width={256} height={256} className="rounded-lg" />
+    </DialogContent>
+);
+
+
 const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>, stats: UserStats }) => (
     <DialogContent className="max-w-xl w-[95vw] md:w-full">
         <DialogHeader>
@@ -43,7 +50,14 @@ const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>
                     >
                         <CardHeader className="p-4 flex flex-col md:flex-row items-center gap-4 space-y-0">
                            <div className="flex-shrink-0">
-                                <Image src={badgeDef.icon} alt={badgeDef.name} width={64} height={64} />
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <button className="transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring rounded-full">
+                                            <Image src={badgeDef.icon} alt={badgeDef.name} width={64} height={64} />
+                                        </button>
+                                    </DialogTrigger>
+                                    <BadgeImageDialog src={badgeDef.icon} alt={badgeDef.name} />
+                                </Dialog>
                            </div>
                            <div className="flex-grow space-y-1 w-full text-center md:text-left">
                                 <div className="flex justify-between items-start">
