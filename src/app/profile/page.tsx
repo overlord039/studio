@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
-import type { PrizeType } from '@/types';
+import type { PrizeType, UserStats } from '@/types';
 import { Input } from '@/components/ui/input';
 import { PRIZE_DEFINITIONS, DEFAULT_GAME_SETTINGS, getXpForNextLevel } from '@/lib/constants';
 import { useToast } from "@/hooks/use-toast";
@@ -69,36 +69,60 @@ const BadgeIconComponent = ({ iconName, ...props }: { iconName: string } & React
     }
 };
 
-const AchievementsDialog = ({ earnedBadges }: { earnedBadges: Set<string> }) => (
-    <DialogContent className="max-w-md">
+const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>, stats: UserStats }) => (
+    <DialogContent className="max-w-xl">
         <DialogHeader>
             <DialogTitle className="text-center text-xl">Achievements</DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-4 max-h-[60vh] overflow-y-auto">
+        <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto">
             {Object.values(BADGE_DEFINITIONS).map(badgeDef => {
                 const hasBadge = earnedBadges.has(badgeDef.name);
                 return (
-                    <div 
+                    <Card
                         key={badgeDef.name}
                         className={cn(
-                            "flex flex-col items-center justify-center text-center gap-1.5 p-3 rounded-lg border-2 transition-all",
+                            "transition-all",
                             hasBadge 
                                 ? 'border-green-500/50 bg-green-500/10'
-                                : 'border-border bg-secondary/30 opacity-60'
+                                : 'border-border bg-secondary/30'
                         )}
                     >
-                        <BadgeIconComponent 
-                            iconName={badgeDef.icon} 
-                            className={cn("h-8 w-8", hasBadge ? 'text-green-500' : 'text-muted-foreground')} 
-                        />
-                        <div className="space-y-1">
-                            <p className={cn(
-                                "text-sm font-bold",
-                                hasBadge ? 'text-green-800 dark:text-green-300' : 'text-muted-foreground'
-                            )}>{badgeDef.name}</p>
-                            <p className="text-xs text-muted-foreground">{badgeDef.description}</p>
-                        </div>
-                    </div>
+                        <CardHeader className="p-4 flex flex-row items-start gap-4 space-y-0">
+                           <BadgeIconComponent 
+                                iconName={badgeDef.icon} 
+                                className={cn("h-10 w-10 flex-shrink-0", hasBadge ? 'text-green-500' : 'text-muted-foreground')} 
+                            />
+                           <div className="flex-grow space-y-1">
+                                <CardTitle className={cn(
+                                    "text-base",
+                                    hasBadge ? 'text-green-800 dark:text-green-300' : 'text-foreground'
+                                )}>{badgeDef.name}</CardTitle>
+                               <p className="text-xs text-muted-foreground">{badgeDef.description}</p>
+                           </div>
+                           {hasBadge && <CheckCircle className="h-5 w-5 text-green-500" />}
+                        </CardHeader>
+                        {!hasBadge && (
+                          <CardContent className="p-4 pt-0">
+                            <div className="space-y-2">
+                              {badgeDef.criteria.map((criterion, index) => {
+                                const current = criterion.getCurrent(stats);
+                                const target = criterion.target;
+                                const progress = Math.min(100, (current / target) * 100);
+
+                                return (
+                                  <div key={index} className="text-xs">
+                                    <div className="flex justify-between items-center mb-1">
+                                      <span className="font-medium text-muted-foreground">{criterion.label}</span>
+                                      <span className="font-semibold">{current} / {target}</span>
+                                    </div>
+                                    <Progress value={progress} className="h-1.5" />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </CardContent>
+                        )}
+                    </Card>
                 );
             })}
         </div>
@@ -348,7 +372,7 @@ export default function ProfilePage() {
                                     <Award className="mr-2 h-4 w-4" /> Achievements
                                 </Button>
                             </DialogTrigger>
-                            <AchievementsDialog earnedBadges={earnedBadges} />
+                            <AchievementsDialog earnedBadges={earnedBadges} stats={currentUser.stats} />
                         </Dialog>
                         <div>
                              <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider mb-2">Level Progress</h3>
