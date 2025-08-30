@@ -20,7 +20,7 @@ import { PRIZE_DEFINITIONS, DEFAULT_GAME_SETTINGS, getXpForNextLevel } from '@/l
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
-import { BADGE_DEFINITIONS } from '@/lib/badges';
+import { BADGE_DEFINITIONS, type Badge as BadgeType } from '@/lib/badges';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
@@ -31,6 +31,35 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 const AVATAR_IMAGES = Array.from({ length: 8 }, (_, i) => `/userimages/ui${i + 1}.png`);
+
+const BadgeIconComponent = ({ iconName, badgeName, hasBadge, ...props }: { iconName: string, badgeName: string, hasBadge: boolean } & Omit<React.ComponentProps<typeof Shield>, 'color' | 'fill'>) => {
+    const badgeColors: Record<string, string> = {
+        "Bronze Competitor": "text-yellow-600 fill-yellow-600/30",
+        "Silver Veteran": "text-slate-400 fill-slate-400/30",
+        "Gold Master": "text-amber-400 fill-amber-400/30",
+        "Platinum Player": "text-blue-400 fill-blue-400/30",
+    };
+
+    const unlockedColorClass = hasBadge
+        ? badgeColors[badgeName] || "text-green-500 fill-green-500/20"
+        : "text-muted-foreground";
+
+    const finalClassName = cn(props.className, unlockedColorClass);
+
+    const renderIcon = () => {
+        const iconProps = { ...props, className: finalClassName };
+        switch (iconName) {
+            case 'Shield': return <Shield {...iconProps} />;
+            case 'Award': return <Award {...iconProps} />;
+            case 'Badge': return <BadgeIcon {...iconProps} />;
+            case 'Medal': return <Medal {...iconProps} />;
+            case 'Trophy': return <Trophy {...iconProps} />;
+            default: return <Star {...iconProps} />;
+        }
+    };
+    return renderIcon();
+};
+
 
 const AvatarSelectionDialog = ({ onSelect, children, disabled }: { onSelect: (src: string) => void; children: React.ReactNode, disabled?: boolean }) => {
   const [open, setOpen] = useState(false);
@@ -203,7 +232,9 @@ export default function ProfilePage() {
     const xpForNextLevel = getXpForNextLevel(currentLevel);
     const xpProgressPercentage = Math.min(100, (currentXp / xpForNextLevel) * 100);
 
-    const earnedBadges = new Set(currentUser.stats.badges || []);
+    const badgeOrder = ['PLATINUM_PLAYER', 'GOLD_MASTER', 'SILVER_VETERAN', 'BRONZE_COMPETITOR', 'NOVICE'];
+    const highestBadge = badgeOrder.map(key => BADGE_DEFINITIONS[key]).find(badge => currentUser.stats.badges?.includes(badge.name));
+
 
     return (
       <div className="animate-fade-in max-w-lg w-full">
@@ -283,10 +314,26 @@ export default function ProfilePage() {
                                   <Pencil className="h-3.5 w-3.5"/>
                                 </Button>
                               </div>
-                               <div className="bg-amber-400/20 border border-amber-500/30 text-amber-800 dark:text-amber-300 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full flex items-center gap-2">
-                                <Image src="/coin.png" alt="Coins" width={16} height={16} className="sm:w-5 sm:h-5" />
-                                <span className="font-bold text-base sm:text-lg">{currentUser.stats?.coins || 0}</span>
-                              </div>
+                               <div className="flex items-center gap-2">
+                                  <div className="bg-amber-400/20 border border-amber-500/30 text-amber-800 dark:text-amber-300 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full flex items-center gap-2">
+                                    <Image src="/coin.png" alt="Coins" width={16} height={16} className="sm:w-5 sm:h-5" />
+                                    <span className="font-bold text-base sm:text-lg">{currentUser.stats?.coins || 0}</span>
+                                  </div>
+                                   {highestBadge && (
+                                      <TooltipProvider>
+                                          <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                  <div className="bg-secondary p-1.5 rounded-full border">
+                                                    <BadgeIconComponent iconName={highestBadge.icon} badgeName={highestBadge.name} hasBadge={true} className="h-6 w-6" />
+                                                  </div>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                  <p className="font-semibold">{highestBadge.name}</p>
+                                              </TooltipContent>
+                                          </Tooltip>
+                                      </TooltipProvider>
+                                  )}
+                               </div>
                             </div>
                           )}
                       </div>
