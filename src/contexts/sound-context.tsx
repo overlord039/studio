@@ -30,7 +30,7 @@ interface SoundContextType {
 const SoundContext = createContext<SoundContextType | undefined>(undefined);
 
 export function SoundProvider({ children }: { children: ReactNode }) {
-  const [isSfxMuted, setIsSfxMuted] = useState(false);
+  const [isSfxMuted, setIsSfxMuted] = useState(true);
   const [isBgmEnabled, setIsBgmEnabled] = useState(true);
   const audioCache = useRef<Map<string, HTMLAudioElement>>(new Map());
 
@@ -49,16 +49,11 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const storedSfxMuteState = localStorage.getItem(SFX_MUTED_KEY);
-      if (storedSfxMuteState !== null) {
-        setIsSfxMuted(storedSfxMuteState === 'true');
-      } else {
-        setIsSfxMuted(false); // Default to not muted if nothing is stored
-      }
+      setIsSfxMuted(storedSfxMuteState === 'true');
+      
       const storedBgmEnabledState = localStorage.getItem(BGM_ENABLED_KEY);
       if (storedBgmEnabledState !== null) {
         setIsBgmEnabled(storedBgmEnabledState === 'true');
-      } else {
-        setIsBgmEnabled(true); // Default to enabled if nothing is stored
       }
     } catch (error) {
       console.error("Could not read sound settings from localStorage", error);
