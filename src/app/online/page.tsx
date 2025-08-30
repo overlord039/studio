@@ -142,12 +142,12 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
                                             variant={selectedTickets === ticketCount ? 'default' : 'outline'}
                                             onClick={() => handleTicketChange(ticketCount)}
                                             className={cn(
-                                                "h-12 w-12 flex-col gap-0.5",
+                                                "h-12 w-12 flex-col",
                                                 selectedTickets === ticketCount && "ring-2 ring-primary-foreground"
                                             )}
                                         >
                                             <span className="font-bold text-lg">{ticketCount}</span>
-                                            <span className="text-[9px] uppercase tracking-wider">{ticketCount === 1 ? 'Ticket' : 'Tickets'}</span>
+                                            <span className="text-[8px] uppercase tracking-wider">{ticketCount === 1 ? 'Ticket' : 'Tickets'}</span>
                                         </Button>
                                      ))}
                                 </div>
