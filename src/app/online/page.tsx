@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Lock, Play, Users, ArrowLeft, Loader2, Link as LinkIcon, Ticket, LogOut, Info, Star } from 'lucide-react';
+import { Lock, Play, Users, ArrowLeft, Loader2, Link as LinkIcon, Ticket, LogOut, Info, Star, Plus, Minus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import type { OnlineGameTier, TierConfig } from '@/types';
@@ -84,6 +84,16 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
         router.push(`/online/matchmaking?tier=${tierKey}&tickets=${selectedTickets}`);
     };
 
+    const handleTicketChange = (increment: number) => {
+        playSound('cards.mp3');
+        setSelectedTickets(prev => {
+            const newValue = prev + increment;
+            if (newValue < 1) return 1;
+            if (newValue > 4) return 4;
+            return newValue;
+        });
+    };
+
     const Requirement = ({ label, required, current }: { label: string, required: number, current: number }) => (
         <div className={cn("flex items-center justify-center gap-1", current >= required ? "text-green-600" : "text-destructive")}>
             {label}: {current} / {required}
@@ -129,25 +139,18 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
                         </div>
                          {isUnlocked ? (
                             <div className="space-y-3 pt-2">
-                                <div className="flex items-center gap-2">
-                                    <Label htmlFor={`tickets-${tierKey}`} className="flex-shrink-0 text-sm flex items-center gap-1">
-                                        <Ticket className="h-4 w-4"/> Tickets
-                                    </Label>
-                                    <Select
-                                        value={String(selectedTickets)}
-                                        onValueChange={(value) => setSelectedTickets(Number(value))}
-                                    >
-                                        <SelectTrigger id={`tickets-${tierKey}`} className="h-9">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {[1, 2, 3, 4].map(num => (
-                                                <SelectItem key={num} value={String(num)}>
-                                                    {num} {num === 1 ? 'ticket' : 'tickets'}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                <Label className="text-sm font-semibold text-center block">Tickets</Label>
+                                <div className="flex items-center justify-center gap-4">
+                                    <Button size="icon" variant="outline" onClick={() => handleTicketChange(-1)} disabled={selectedTickets <= 1}>
+                                        <Minus className="h-4 w-4" />
+                                    </Button>
+                                    <div className="flex flex-col items-center justify-center w-24">
+                                        <div className="text-2xl font-bold">{selectedTickets}</div>
+                                        <div className="text-xs text-muted-foreground">{selectedTickets === 1 ? 'ticket' : 'tickets'}</div>
+                                    </div>
+                                    <Button size="icon" variant="outline" onClick={() => handleTicketChange(1)} disabled={selectedTickets >= 4}>
+                                        <Plus className="h-4 w-4" />
+                                    </Button>
                                 </div>
                             </div>
                         ) : (
