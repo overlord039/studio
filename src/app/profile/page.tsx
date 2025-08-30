@@ -1,6 +1,4 @@
 
-
-
 "use client";
 
 import React, { type FormEvent, useState, useEffect } from 'react';
@@ -216,6 +214,8 @@ export default function ProfilePage() {
     const xpForNextLevel = getXpForNextLevel(currentLevel);
     const xpProgressPercentage = Math.min(100, (currentXp / xpForNextLevel) * 100);
 
+    const earnedBadges = new Set(currentUser.stats.badges || []);
+
     return (
       <div className="animate-fade-in max-w-lg w-full">
           <Card className="shadow-xl overflow-hidden border-2 border-primary/20 relative">
@@ -307,32 +307,38 @@ export default function ProfilePage() {
               <CardContent className="p-6 space-y-6 bg-card">
                    <div className="space-y-6">
                         <div>
-                            <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider mb-2">Badges</h3>
-                            {currentUser.stats.badges && currentUser.stats.badges.length > 0 ? (
-                                <div className="flex flex-wrap gap-2">
-                                    <TooltipProvider>
-                                    {currentUser.stats.badges.map(badgeName => {
-                                        const badgeDef = Object.values(BADGE_DEFINITIONS).find(b => b.name === badgeName);
-                                        if (!badgeDef) return null;
-                                        return (
-                                            <Tooltip key={badgeName}>
+                            <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider mb-2">Achievements</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                {Object.values(BADGE_DEFINITIONS).map(badgeDef => {
+                                    const hasBadge = earnedBadges.has(badgeDef.name);
+                                    return (
+                                        <TooltipProvider key={badgeDef.name}>
+                                            <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <div className="flex items-center gap-1.5 p-1.5 pr-2.5 rounded-full bg-secondary text-secondary-foreground border border-border">
-                                                        <BadgeIconComponent iconName={badgeDef.icon} className="h-5 w-5 text-primary" />
-                                                        <span className="text-xs font-bold">{badgeDef.name}</span>
+                                                    <div className={cn(
+                                                        "flex flex-col items-center justify-center text-center gap-1.5 p-3 rounded-lg border-2 transition-all",
+                                                        hasBadge 
+                                                            ? 'border-green-500/50 bg-green-500/10'
+                                                            : 'border-border bg-secondary/30 opacity-60'
+                                                    )}>
+                                                        <BadgeIconComponent 
+                                                            iconName={badgeDef.icon} 
+                                                            className={cn("h-7 w-7", hasBadge ? 'text-green-500' : 'text-muted-foreground')} 
+                                                        />
+                                                        <span className={cn(
+                                                            "text-xs font-bold",
+                                                            hasBadge ? 'text-green-800 dark:text-green-300' : 'text-muted-foreground'
+                                                        )}>{badgeDef.name}</span>
                                                     </div>
                                                 </TooltipTrigger>
                                                 <TooltipContent>
                                                     <p>{badgeDef.description}</p>
                                                 </TooltipContent>
                                             </Tooltip>
-                                        );
-                                    })}
-                                    </TooltipProvider>
-                                </div>
-                            ) : (
-                                <p className="text-sm text-center text-muted-foreground pt-2">Play more games to earn badges!</p>
-                            )}
+                                        </TooltipProvider>
+                                    );
+                                })}
+                            </div>
                         </div>
                         <div>
                              <h3 className="text-xs uppercase text-muted-foreground font-semibold tracking-wider mb-2">Level Progress</h3>
