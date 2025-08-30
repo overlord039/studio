@@ -32,35 +32,6 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 const AVATAR_IMAGES = Array.from({ length: 8 }, (_, i) => `/userimages/ui${i + 1}.png`);
 
-const BadgeIconComponent = ({ iconName, badgeName, hasBadge, ...props }: { iconName: string, badgeName: string, hasBadge: boolean } & Omit<React.ComponentProps<typeof Shield>, 'color' | 'fill'>) => {
-    const badgeColors: Record<string, string> = {
-        "Bronze Competitor": "text-yellow-600 fill-yellow-600/30",
-        "Silver Veteran": "text-slate-400 fill-slate-400/30",
-        "Gold Master": "text-amber-400 fill-amber-400/30",
-        "Platinum Player": "text-blue-400 fill-blue-400/30",
-    };
-
-    const unlockedColorClass = hasBadge
-        ? badgeColors[badgeName] || "text-green-500 fill-green-500/20"
-        : "text-muted-foreground";
-
-    const finalClassName = cn(props.className, unlockedColorClass);
-
-    const renderIcon = () => {
-        const iconProps = { ...props, className: finalClassName };
-        switch (iconName) {
-            case 'Shield': return <Shield {...iconProps} />;
-            case 'Award': return <Award {...iconProps} />;
-            case 'Badge': return <BadgeIcon {...iconProps} />;
-            case 'Medal': return <Medal {...iconProps} />;
-            case 'Trophy': return <Trophy {...iconProps} />;
-            default: return <Star {...iconProps} />;
-        }
-    };
-    return renderIcon();
-};
-
-
 const AvatarSelectionDialog = ({ onSelect, children, disabled }: { onSelect: (src: string) => void; children: React.ReactNode, disabled?: boolean }) => {
   const [open, setOpen] = useState(false);
 
@@ -323,8 +294,8 @@ export default function ProfilePage() {
                                       <TooltipProvider>
                                           <Tooltip>
                                               <TooltipTrigger asChild>
-                                                  <div className="bg-secondary p-1.5 rounded-full border">
-                                                    <BadgeIconComponent iconName={highestBadge.icon} badgeName={highestBadge.name} hasBadge={true} className="h-6 w-6" />
+                                                  <div className="bg-secondary p-1 rounded-full border">
+                                                    <Image src={highestBadge.icon} alt={highestBadge.name} width={28} height={28} />
                                                   </div>
                                               </TooltipTrigger>
                                               <TooltipContent>

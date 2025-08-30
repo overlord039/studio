@@ -12,7 +12,7 @@ export interface BadgeCriterion {
 export interface Badge {
   name: string;
   description: string;
-  icon: string;
+  icon: string; // Changed from icon name to image path
   reward: number; // Coins awarded for achieving the badge
   criteria: BadgeCriterion[];
   isAchieved: (stats: UserStats) => boolean;
@@ -22,7 +22,7 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
   NOVICE: {
     name: "Novice Player",
     description: "Beginner – quick to earn",
-    icon: "Shield",
+    icon: "/badges/novice.png",
     reward: 10,
     criteria: [
         { label: 'Early 5', target: 3, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
@@ -43,7 +43,7 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
   BRONZE_COMPETITOR: {
     name: "Bronze Competitor",
     description: "Starter grind – encourages play variety",
-    icon: "Medal",
+    icon: "/badges/bronze.png",
     reward: 25,
     criteria: [
         { label: 'Early 5', target: 10, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
@@ -64,7 +64,7 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
   SILVER_VETERAN: {
     name: "Silver Veteran",
     description: "Intermediate – steady players",
-    icon: "Medal",
+    icon: "/badges/silver.png",
     reward: 50,
     criteria: [
         { label: 'Early 5', target: 25, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
@@ -85,7 +85,7 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
   GOLD_MASTER: {
     name: "Gold Master",
     description: "Advanced – consistent winners",
-    icon: "Medal",
+    icon: "/badges/gold.png",
     reward: 100,
     criteria: [
         { label: 'Early 5', target: 50, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
@@ -106,7 +106,7 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
   PLATINUM_PLAYER: {
     name: "Platinum Player",
     description: "Elite Tier – true masters",
-    icon: "Trophy",
+    icon: "/badges/platinum.png",
     reward: 250,
     criteria: [
         { label: 'Early 5', target: 100, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
