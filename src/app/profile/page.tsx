@@ -98,8 +98,8 @@ export default function ProfilePage() {
         return;
     }
 
-    if (trimmedName.length < 3 || trimmedName.length > 20) {
-        setUsernameError("Name must be between 3 and 20 characters.");
+    if (trimmedName.length < 4 || trimmedName.length > 12) {
+        setUsernameError("Name must be between 4 and 12 characters.");
         return;
     }
     
@@ -265,7 +265,7 @@ export default function ProfilePage() {
                                           "text-2xl font-bold h-12",
                                           usernameError && "border-destructive focus-visible:ring-destructive"
                                       )}
-                                      maxLength={20}
+                                      maxLength={12}
                                   />
                                   <Button size="icon" onClick={handleNameChange} disabled={isSavingName}>
                                       {isSavingName ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4"/>}
