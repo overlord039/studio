@@ -84,14 +84,9 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
         router.push(`/online/matchmaking?tier=${tierKey}&tickets=${selectedTickets}`);
     };
 
-    const handleTicketChange = (increment: number) => {
+    const handleTicketChange = (ticketCount: number) => {
         playSound('cards.mp3');
-        setSelectedTickets(prev => {
-            const newValue = prev + increment;
-            if (newValue < 1) return 1;
-            if (newValue > 4) return 4;
-            return newValue;
-        });
+        setSelectedTickets(ticketCount);
     };
 
     const Requirement = ({ label, required, current }: { label: string, required: number, current: number }) => (
@@ -139,18 +134,22 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
                         </div>
                          {isUnlocked ? (
                             <div className="space-y-3 pt-2">
-                                <Label className="text-sm font-semibold text-center block">Tickets</Label>
-                                <div className="flex items-center justify-center gap-4">
-                                    <Button size="icon" variant="outline" onClick={() => handleTicketChange(-1)} disabled={selectedTickets <= 1}>
-                                        <Minus className="h-4 w-4" />
-                                    </Button>
-                                    <div className="flex flex-col items-center justify-center w-24">
-                                        <div className="text-2xl font-bold">{selectedTickets}</div>
-                                        <div className="text-xs text-muted-foreground">{selectedTickets === 1 ? 'ticket' : 'tickets'}</div>
-                                    </div>
-                                    <Button size="icon" variant="outline" onClick={() => handleTicketChange(1)} disabled={selectedTickets >= 4}>
-                                        <Plus className="h-4 w-4" />
-                                    </Button>
+                                <Label className="text-sm font-semibold text-center block">How many tickets?</Label>
+                                <div className="flex items-center justify-center gap-2">
+                                     {Array.from({ length: 4 }, (_, i) => i + 1).map(ticketCount => (
+                                        <Button
+                                            key={ticketCount}
+                                            variant={selectedTickets === ticketCount ? 'default' : 'outline'}
+                                            onClick={() => handleTicketChange(ticketCount)}
+                                            className={cn(
+                                                "h-12 w-12 flex-col gap-0.5",
+                                                selectedTickets === ticketCount && "ring-2 ring-primary-foreground"
+                                            )}
+                                        >
+                                            <span className="font-bold text-lg">{ticketCount}</span>
+                                            <span className="text-[10px] uppercase tracking-wider">{ticketCount === 1 ? 'Ticket' : 'Tickets'}</span>
+                                        </Button>
+                                     ))}
                                 </div>
                             </div>
                         ) : (
