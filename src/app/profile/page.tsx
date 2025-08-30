@@ -58,17 +58,21 @@ const AvatarSelectionDialog = ({ onSelect, children, disabled }: { onSelect: (sr
   );
 };
 
-const BadgeIconComponent = ({ iconName, badgeName, hasBadge, ...props }: { iconName: string, badgeName: string, hasBadge: boolean } & Omit<React.ComponentProps<typeof Shield>, 'color'>) => {
-    const iconColorClass = hasBadge
-        ? {
-            "Bronze Competitor": "text-[#CD7F32]",
-            "Silver Veteran": "text-[#C0C0C0]",
-            "Gold Master": "text-[#FFD700]",
-          }[badgeName] || 'text-green-500'
-        : 'text-muted-foreground';
+const BadgeIconComponent = ({ iconName, badgeName, hasBadge, ...props }: { iconName: string, badgeName: string, hasBadge: boolean } & Omit<React.ComponentProps<typeof Shield>, 'color' | 'fill'>) => {
+    const badgeColors = {
+        "Bronze Competitor": "text-[#CD7F32] fill-[#CD7F32]",
+        "Silver Veteran": "text-[#C0C0C0] fill-[#C0C0C0]",
+        "Gold Master": "text-[#FFD700] fill-[#FFD700]",
+    };
+
+    const colorClass = hasBadge
+        ? badgeColors[badgeName as keyof typeof badgeColors] || "text-green-500 fill-green-500/30"
+        : "text-muted-foreground";
+
+    const finalClassName = cn(props.className, colorClass);
 
     const renderIcon = () => {
-        const iconProps = { ...props, className: cn(props.className, iconColorClass) };
+        const iconProps = { ...props, className: finalClassName };
         switch (iconName) {
             case 'Shield': return <Shield {...iconProps} />;
             case 'Award': return <Award {...iconProps} />;
