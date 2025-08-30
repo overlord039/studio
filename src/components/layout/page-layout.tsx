@@ -43,7 +43,7 @@ const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>
                     >
                         <CardHeader className="p-4 flex flex-col md:flex-row items-center gap-4 space-y-0">
                            <div className="flex-shrink-0">
-                                <Image src={badgeDef.icon} alt={badgeDef.name} width={40} height={40} />
+                                <Image src={badgeDef.icon} alt={badgeDef.name} width={64} height={64} />
                            </div>
                            <div className="flex-grow space-y-1 w-full text-center md:text-left">
                                 <div className="flex justify-between items-start">
