@@ -147,7 +147,7 @@ const TierCard = ({ tierKey, tierConfig }: { tierKey: OnlineGameTier; tierConfig
                                             )}
                                         >
                                             <span className="font-bold text-lg">{ticketCount}</span>
-                                            <span className="text-[10px] uppercase tracking-wider">{ticketCount === 1 ? 'Ticket' : 'Tickets'}</span>
+                                            <span className="text-[9px] uppercase tracking-wider">{ticketCount === 1 ? 'Ticket' : 'Tickets'}</span>
                                         </Button>
                                      ))}
                                 </div>
