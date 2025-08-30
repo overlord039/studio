@@ -126,25 +126,30 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
   },
 };
 
-interface BadgeCheckResult {
+export interface BadgeCheckResult {
     badgeNames: string[];
+    newlyEarnedBadges: Badge[];
     coinsAwarded: number;
 }
 
-export function checkAndAwardBadges(stats: UserStats): BadgeCheckResult {
-    const currentBadges = new Set(stats.badges || []);
+export function checkAndAwardBadges(currentStats: UserStats, prospectiveStats: UserStats): BadgeCheckResult {
+    const currentBadges = new Set(currentStats.badges || []);
+    const prospectiveBadges = new Set(currentStats.badges || []);
+    const newlyEarnedBadges: Badge[] = [];
     let coinsAwarded = 0;
 
     Object.keys(BADGE_DEFINITIONS).forEach(badgeKey => {
         const badge = BADGE_DEFINITIONS[badgeKey];
-        if (!currentBadges.has(badge.name) && badge.isAchieved(stats)) {
-            currentBadges.add(badge.name);
+        if (!currentBadges.has(badge.name) && badge.isAchieved(prospectiveStats)) {
+            prospectiveBadges.add(badge.name);
+            newlyEarnedBadges.push(badge);
             coinsAwarded += badge.reward;
         }
     });
     
     return {
-        badgeNames: Array.from(currentBadges),
-        coinsAwarded: coinsAwarded,
+        badgeNames: Array.from(prospectiveBadges),
+        newlyEarnedBadges,
+        coinsAwarded,
     };
 }

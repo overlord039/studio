@@ -2,6 +2,7 @@
 
 
 
+
 'use server';
 
 import { NextResponse, type NextRequest } from 'next/server';
@@ -9,7 +10,7 @@ import { db } from '@/lib/firebase/config';
 import { doc, getDoc, runTransaction, collection, getDocs, increment, writeBatch } from 'firebase/firestore';
 import type { FirestoreRoom, FirestorePlayer, PrizeType, GameSettings, UserStats } from '@/types';
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, getXpForNextLevel, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN, XP_MODIFIER_ONLINE, getCoinsForLevelUp } from '@/lib/constants';
-import { checkAndAwardBadges } from '@/lib/badges';
+import { checkAndAwardBadges, type Badge } from '@/lib/badges';
 
 // Helper function to calculate final prize distribution accurately
 function calculatePrizes(totalPool: number, settings: GameSettings): Record<PrizeType, number> {
@@ -63,6 +64,7 @@ export async function POST(request: NextRequest) {
     }
     
     let totalWinnings = 0;
+    let newlyEarnedBadges: Badge[] = [];
     
     await runTransaction(db, async (transaction) => {
         const roomRef = doc(db, 'rooms', roomId);
@@ -154,9 +156,10 @@ export async function POST(request: NextRequest) {
           xp: currentXp
         };
 
-        const { badgeNames, coinsAwarded: badgeCoins } = checkAndAwardBadges(prospectiveStats);
-        coinsEarned += badgeCoins;
-        statsUpdate['stats.badges'] = badgeNames;
+        const badgeResult = checkAndAwardBadges(currentStats, prospectiveStats);
+        coinsEarned += badgeResult.coinsAwarded;
+        statsUpdate['stats.badges'] = badgeResult.badgeNames;
+        newlyEarnedBadges = badgeResult.newlyEarnedBadges;
         
         if (coinsEarned > 0) {
             statsUpdate['stats.coins'] = increment(coinsEarned);
@@ -175,7 +178,7 @@ export async function POST(request: NextRequest) {
         });
     });
     
-    return NextResponse.json({ success: true, winnings: totalWinnings });
+    return NextResponse.json({ success: true, winnings: totalWinnings, newlyEarnedBadges });
 
   } catch (error) {
     console.error('Error updating online game stats:', error);

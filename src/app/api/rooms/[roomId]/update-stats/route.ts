@@ -2,6 +2,7 @@
 
 
 
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { getRoomStore } from '@/lib/server/game-store';
 import { db } from '@/lib/firebase/config';
@@ -9,7 +10,7 @@ import { doc, increment, writeBatch, getDoc, updateDoc, runTransaction } from 'f
 import type { PrizeType, Room, UserStats, GameSettings } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { PRIZE_DISTRIBUTION_PERCENTAGES, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN, getXpForNextLevel, PRIZE_DEFINITIONS, getCoinsForLevelUp } from '@/lib/constants';
-import { checkAndAwardBadges } from '@/lib/badges';
+import { checkAndAwardBadges, type Badge } from '@/lib/badges';
 
 // Define coin rewards for offline games
 const OFFLINE_COIN_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType, number>> = {
@@ -110,6 +111,7 @@ export async function POST(
 
     const playerDocRef = doc(db, "users", userId);
     let totalWinnings = 0;
+    let newlyEarnedBadges: Badge[] = [];
 
     await runTransaction(db, async (transaction) => {
         const playerDoc = await transaction.get(playerDocRef);
@@ -184,9 +186,10 @@ export async function POST(
           level: currentLevel,
           xp: currentXp
         };
-        const { badgeNames, coinsAwarded: badgeCoins } = checkAndAwardBadges(prospectiveStats);
-        coinsEarned += badgeCoins;
-        statsUpdate['stats.badges'] = badgeNames;
+        const badgeResult = checkAndAwardBadges(currentStats, prospectiveStats);
+        coinsEarned += badgeResult.coinsAwarded;
+        statsUpdate['stats.badges'] = badgeResult.badgeNames;
+        newlyEarnedBadges = badgeResult.newlyEarnedBadges;
 
         if (coinsEarned > 0) {
           statsUpdate['stats.coins'] = increment(coinsEarned);
@@ -201,7 +204,7 @@ export async function POST(
 
     processedGames.add(processedKey);
 
-    return NextResponse.json({ success: true, message: 'Stats updated successfully.', winnings: totalWinnings });
+    return NextResponse.json({ success: true, message: 'Stats updated successfully.', winnings: totalWinnings, newlyEarnedBadges });
 
   } catch (error) {
     console.error(`Error updating stats for room ${roomId}:`, error);

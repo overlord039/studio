@@ -7,6 +7,7 @@
 
 
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -52,6 +53,8 @@ import Footer from '@/components/layout/footer';
 import Image from 'next/image';
 import { db } from '@/lib/firebase/config';
 import { onSnapshot, doc, collection, getDocs, QuerySnapshot, DocumentData, getDoc } from 'firebase/firestore';
+import type { Badge } from '@/lib/badges';
+import BadgeUnlockedDialog from '@/components/rewards/badge-unlocked-dialog';
 
 
 const MemoizedHousieTicket = React.memo(HousieTicket);
@@ -177,6 +180,7 @@ export default function GameRoomPage() {
   const [isResetting, setIsResetting] = useState(false);
   const [animationKey, setAnimationKey] = useState(0);
   const [isVoiceMuted, setIsVoiceMuted] = useState(false);
+  const [newlyEarnedBadges, setNewlyEarnedBadges] = useState<Badge[]>([]);
 
   const previousCurrentNumberRef = useRef<number | null>(null);
   const roomDataRef = useRef(roomData);
@@ -471,8 +475,13 @@ export default function GameRoomPage() {
         })
         .then(res => res.json())
         .then(data => {
-            if (data.success && data.winnings > 0) {
+            if (data.success) {
+              if (data.winnings > 0) {
                 triggerAnimation(data.winnings);
+              }
+              if (data.newlyEarnedBadges && data.newlyEarnedBadges.length > 0) {
+                setNewlyEarnedBadges(data.newlyEarnedBadges);
+              }
             }
             fetchUser(); // Refresh user data after stats are updated
         })
@@ -891,7 +900,6 @@ export default function GameRoomPage() {
             currentLevel++;
             currentXp -= xpForNext;
             totalWinnings += getCoinsForLevelUp(currentLevel);
-            xpForNext = getXpForNextLevel(currentLevel);
         }
     }
     
@@ -1016,6 +1024,12 @@ export default function GameRoomPage() {
                       )}
                   </div>
               )}
+
+              <BadgeUnlockedDialog
+                badges={newlyEarnedBadges}
+                open={newlyEarnedBadges.length > 0}
+                onOpenChange={() => setNewlyEarnedBadges([])}
+              />
 
               <div className="flex flex-row gap-4 mt-6">
                 <Button onClick={handlePlayAgain} className="flex-1" size="lg" disabled={isResetting}>
