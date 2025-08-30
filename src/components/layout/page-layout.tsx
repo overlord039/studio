@@ -24,7 +24,7 @@ import type { UserStats } from '@/types';
 import Image from 'next/image';
 
 const BadgeIconComponent = ({ iconName, badgeName, hasBadge, ...props }: { iconName: string, badgeName: string, hasBadge: boolean } & Omit<React.ComponentProps<typeof Shield>, 'color' | 'fill'>) => {
-    const badgeColors = {
+    const badgeColors: Record<string, string> = {
         "Bronze Competitor": "text-yellow-600 dark:text-yellow-500 fill-yellow-600/20 dark:fill-yellow-500/20",
         "Silver Veteran": "text-slate-500 dark:text-slate-400 fill-slate-500/20 dark:fill-slate-400/20",
         "Gold Master": "text-amber-500 dark:text-amber-400 fill-amber-500/20 dark:fill-amber-400/20",
@@ -32,7 +32,7 @@ const BadgeIconComponent = ({ iconName, badgeName, hasBadge, ...props }: { iconN
     };
 
     const unlockedColorClass = hasBadge
-        ? badgeColors[badgeName as keyof typeof badgeColors] || "text-green-500 fill-green-500/20"
+        ? badgeColors[badgeName] || "text-green-500 fill-green-500/20"
         : "text-muted-foreground";
 
     const finalClassName = cn(props.className, unlockedColorClass);
@@ -52,22 +52,24 @@ const BadgeIconComponent = ({ iconName, badgeName, hasBadge, ...props }: { iconN
 };
 
 const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>, stats: UserStats }) => (
-    <DialogContent className="max-w-xl">
+    <DialogContent className="max-w-xl w-[95vw] md:w-full">
         <DialogHeader>
             <DialogTitle className="text-center text-2xl font-bold tracking-wider">Achievements</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
+        <div className="space-y-4 py-4 max-h-[80vh] md:max-h-[70vh] overflow-y-auto">
             {Object.values(BADGE_DEFINITIONS).map(badgeDef => {
                 const hasBadge = earnedBadges.has(badgeDef.name);
                 return (
                     <Card
                         key={badgeDef.name}
                         className={cn(
-                            "transition-all bg-secondary/30",
-                            hasBadge && "bg-gradient-to-br from-green-500/20 to-green-500/5 border-green-500/50"
+                            "transition-all",
+                            hasBadge 
+                                ? "bg-gradient-to-br from-green-500/20 to-green-500/5 border-green-500/50"
+                                : "bg-secondary/30"
                         )}
                     >
-                        <CardHeader className="p-4 flex flex-row items-center gap-4 space-y-0">
+                        <CardHeader className="p-4 flex flex-col md:flex-row items-center gap-4 space-y-0">
                            <div className="flex-shrink-0">
                                 <BadgeIconComponent 
                                     iconName={badgeDef.icon}
@@ -76,7 +78,7 @@ const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>
                                     className="h-10 w-10"
                                 />
                            </div>
-                           <div className="flex-grow space-y-1">
+                           <div className="flex-grow space-y-1 w-full text-center md:text-left">
                                 <div className="flex justify-between items-start">
                                     <div>
                                         <CardTitle className={cn(
@@ -88,7 +90,7 @@ const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>
                                     {hasBadge && <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0" />}
                                 </div>
                                
-                               <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 pt-1 bg-amber-400/20 px-2 py-1 rounded-full w-fit">
+                               <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 pt-1 bg-amber-400/20 px-2 py-1 rounded-full w-fit mx-auto md:mx-0">
                                    <Image src="/coin.png" alt="Coin" width={16} height={16} />
                                    <span>Reward: {badgeDef.reward} Coins</span>
                                </div>
