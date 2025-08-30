@@ -90,40 +90,45 @@ const BadgeIconComponent = ({ iconName, badgeName, hasBadge, ...props }: { iconN
 const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>, stats: UserStats }) => (
     <DialogContent className="max-w-xl">
         <DialogHeader>
-            <DialogTitle className="text-center text-xl">Achievements</DialogTitle>
+            <DialogTitle className="text-center text-2xl font-bold tracking-wider">Achievements</DialogTitle>
         </DialogHeader>
-        <div className="space-y-6 py-4 max-h-[70vh] overflow-y-auto">
+        <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
             {Object.values(BADGE_DEFINITIONS).map(badgeDef => {
                 const hasBadge = earnedBadges.has(badgeDef.name);
                 return (
                     <Card
                         key={badgeDef.name}
                         className={cn(
-                            "transition-all",
-                            hasBadge 
-                                ? 'border-green-500/50 bg-green-500/10'
-                                : 'border-border bg-secondary/30'
+                            "transition-all bg-secondary/30",
+                            hasBadge && "bg-gradient-to-br from-green-500/20 to-green-500/5 border-green-500/50"
                         )}
                     >
-                        <CardHeader className="p-4 flex flex-row items-start gap-4 space-y-0">
-                           <BadgeIconComponent 
-                                iconName={badgeDef.icon}
-                                badgeName={badgeDef.name}
-                                hasBadge={hasBadge} 
-                                className="h-10 w-10 flex-shrink-0"
-                            />
+                        <CardHeader className="p-4 flex flex-row items-center gap-4 space-y-0">
+                           <div className="flex-shrink-0">
+                                <BadgeIconComponent 
+                                    iconName={badgeDef.icon}
+                                    badgeName={badgeDef.name}
+                                    hasBadge={hasBadge} 
+                                    className="h-12 w-12"
+                                />
+                           </div>
                            <div className="flex-grow space-y-1">
-                                <CardTitle className={cn(
-                                    "text-base",
-                                    hasBadge ? 'text-green-800 dark:text-green-300' : 'text-foreground'
-                                )}>{badgeDef.name}</CardTitle>
-                               <p className="text-xs text-muted-foreground">{badgeDef.description}</p>
-                               <div className="flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400 pt-1">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <CardTitle className={cn(
+                                            "text-md font-bold",
+                                            hasBadge ? 'text-green-800 dark:text-green-200' : 'text-foreground'
+                                        )}>{badgeDef.name}</CardTitle>
+                                        <p className="text-xs text-muted-foreground">{badgeDef.description}</p>
+                                    </div>
+                                    {hasBadge && <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0" />}
+                                </div>
+                               
+                               <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 pt-1 bg-amber-400/20 px-2 py-1 rounded-full w-fit">
                                    <Image src="/coin.png" alt="Coin" width={16} height={16} />
                                    <span>Reward: {badgeDef.reward} Coins</span>
                                </div>
                            </div>
-                           {hasBadge && <CheckCircle className="h-5 w-5 text-green-500" />}
                         </CardHeader>
                         {!hasBadge && (
                           <CardContent className="p-4 pt-0">
@@ -485,3 +490,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
