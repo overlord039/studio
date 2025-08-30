@@ -36,7 +36,7 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
   BRONZE_COMPETITOR: {
     name: "Bronze Competitor",
     description: "",
-    icon: "Award",
+    icon: "Medal",
     criteria: [
         { label: 'Early 5 Claims', target: 10, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
         { label: 'First Line Claims', target: 5, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FIRST_LINE] || 0 },
@@ -56,7 +56,7 @@ export const BADGE_DEFINITIONS: Record<string, Badge> = {
   SILVER_VETERAN: {
     name: "Silver Veteran",
     description: "",
-    icon: "Badge",
+    icon: "Medal",
     criteria: [
         { label: 'Early 5 Claims', target: 20, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.EARLY_5] || 0 },
         { label: 'First Line Claims', target: 10, getCurrent: (stats) => stats.prizesWon?.[PRIZE_TYPES.FIRST_LINE] || 0 },

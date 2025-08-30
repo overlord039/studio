@@ -58,15 +58,27 @@ const AvatarSelectionDialog = ({ onSelect, children, disabled }: { onSelect: (sr
   );
 };
 
-const BadgeIconComponent = ({ iconName, ...props }: { iconName: string } & React.ComponentProps<typeof Shield>) => {
-    switch (iconName) {
-        case 'Shield': return <Shield {...props} />;
-        case 'Award': return <Award {...props} />;
-        case 'Badge': return <BadgeIcon {...props} />;
-        case 'Medal': return <Medal {...props} />;
-        case 'Trophy': return <Trophy {...props} />;
-        default: return <Star {...props} />;
-    }
+const BadgeIconComponent = ({ iconName, badgeName, hasBadge, ...props }: { iconName: string, badgeName: string, hasBadge: boolean } & Omit<React.ComponentProps<typeof Shield>, 'color'>) => {
+    const iconColorClass = hasBadge
+        ? {
+            "Bronze Competitor": "text-[#CD7F32]",
+            "Silver Veteran": "text-[#C0C0C0]",
+            "Gold Master": "text-[#FFD700]",
+          }[badgeName] || 'text-green-500'
+        : 'text-muted-foreground';
+
+    const renderIcon = () => {
+        const iconProps = { ...props, className: cn(props.className, iconColorClass) };
+        switch (iconName) {
+            case 'Shield': return <Shield {...iconProps} />;
+            case 'Award': return <Award {...iconProps} />;
+            case 'Badge': return <BadgeIcon {...iconProps} />;
+            case 'Medal': return <Medal {...iconProps} />;
+            case 'Trophy': return <Trophy {...iconProps} />;
+            default: return <Star {...iconProps} />;
+        }
+    };
+    return renderIcon();
 };
 
 const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>, stats: UserStats }) => (
@@ -89,8 +101,10 @@ const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>
                     >
                         <CardHeader className="p-4 flex flex-row items-start gap-4 space-y-0">
                            <BadgeIconComponent 
-                                iconName={badgeDef.icon} 
-                                className={cn("h-10 w-10 flex-shrink-0", hasBadge ? 'text-green-500' : 'text-muted-foreground')} 
+                                iconName={badgeDef.icon}
+                                badgeName={badgeDef.name}
+                                hasBadge={hasBadge} 
+                                className="h-10 w-10 flex-shrink-0"
                             />
                            <div className="flex-grow space-y-1">
                                 <CardTitle className={cn(
