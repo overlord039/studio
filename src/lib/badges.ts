@@ -13,45 +13,58 @@ export interface Badge {
 export const BADGE_DEFINITIONS: Record<string, Badge> = {
   NOVICE: {
     name: "Novice Player",
-    description: "Played your first game.",
+    description: "Claim Early 5 (x5), any Line (x5 total), and Full House (x1).",
     icon: "Shield",
-    criteria: (stats) => (stats.matchesPlayed || 0) >= 1,
+    criteria: (stats) => {
+        const prizesWon = stats.prizesWon || {};
+        const linePrizesCount = (prizesWon[PRIZE_TYPES.FIRST_LINE] || 0) + (prizesWon[PRIZE_TYPES.SECOND_LINE] || 0) + (prizesWon[PRIZE_TYPES.THIRD_LINE] || 0);
+        return (prizesWon[PRIZE_TYPES.EARLY_5] || 0) >= 5 && linePrizesCount >= 5 && (prizesWon[PRIZE_TYPES.FULL_HOUSE] || 0) >= 1;
+    },
   },
   BRONZE_COMPETITOR: {
     name: "Bronze Competitor",
-    description: "Reached Level 5 and won at least 2 different prize types (e.g., Early 5 and a Line).",
+    description: "Claim Early 5 (x10), First Line (x5), Second Line (x5), Third Line (x5), and Full House (x3).",
     icon: "Award",
     criteria: (stats) => {
       const prizesWon = stats.prizesWon || {};
-      const uniquePrizesWon = Object.keys(prizesWon).filter(p => prizesWon[p as PrizeType] > 0).length;
-      return (stats.level || 0) >= 5 && uniquePrizesWon >= 2;
+      return (prizesWon[PRIZE_TYPES.EARLY_5] || 0) >= 10 &&
+             (prizesWon[PRIZE_TYPES.FIRST_LINE] || 0) >= 5 &&
+             (prizesWon[PRIZE_TYPES.SECOND_LINE] || 0) >= 5 &&
+             (prizesWon[PRIZE_TYPES.THIRD_LINE] || 0) >= 5 &&
+             (prizesWon[PRIZE_TYPES.FULL_HOUSE] || 0) >= 3;
     },
   },
   SILVER_VETERAN: {
     name: "Silver Veteran",
-    description: "Reached Level 20, played 50 matches, and won at least 3 different prize types.",
+    description: "Claim Early 5 (x20), First Line (x10), Second Line (x10), Third Line (x10), and Full House (x7).",
     icon: "Badge",
     criteria: (stats) => {
       const prizesWon = stats.prizesWon || {};
-      const uniquePrizesWon = Object.keys(prizesWon).filter(p => prizesWon[p as PrizeType] > 0).length;
-      return (stats.level || 0) >= 20 && (stats.matchesPlayed || 0) >= 50 && uniquePrizesWon >= 3;
+      return (prizesWon[PRIZE_TYPES.EARLY_5] || 0) >= 20 &&
+             (prizesWon[PRIZE_TYPES.FIRST_LINE] || 0) >= 10 &&
+             (prizesWon[PRIZE_TYPES.SECOND_LINE] || 0) >= 10 &&
+             (prizesWon[PRIZE_TYPES.THIRD_LINE] || 0) >= 10 &&
+             (prizesWon[PRIZE_TYPES.FULL_HOUSE] || 0) >= 7;
     },
   },
   GOLD_MASTER: {
     name: "Gold Master",
-    description: "Reached Level 50, played 100 matches, and won all 5 prize types.",
+    description: "Claim Early 5 (x50), First Line (x25), Second Line (x25), Third Line (x25), and Full House (x15).",
     icon: "Medal",
     criteria: (stats) => {
       const prizesWon = stats.prizesWon || {};
-      const uniquePrizesWon = Object.keys(prizesWon).filter(p => prizesWon[p as PrizeType] > 0).length;
-      return (stats.level || 0) >= 50 && (stats.matchesPlayed || 0) >= 100 && uniquePrizesWon >= 5;
+      return (prizesWon[PRIZE_TYPES.EARLY_5] || 0) >= 50 &&
+             (prizesWon[PRIZE_TYPES.FIRST_LINE] || 0) >= 25 &&
+             (prizesWon[PRIZE_TYPES.SECOND_LINE] || 0) >= 25 &&
+             (prizesWon[PRIZE_TYPES.THIRD_LINE] || 0) >= 25 &&
+             (prizesWon[PRIZE_TYPES.FULL_HOUSE] || 0) >= 15;
     },
   },
   FULL_HOUSE_PRO: {
     name: "Full House Pro",
-    description: "Won Full House 10 times.",
+    description: "Won Full House 25 times.",
     icon: "Trophy",
-    criteria: (stats) => (stats.prizesWon?.[PRIZE_TYPES.FULL_HOUSE] || 0) >= 10,
+    criteria: (stats) => (stats.prizesWon?.[PRIZE_TYPES.FULL_HOUSE] || 0) >= 25,
   },
 };
 
