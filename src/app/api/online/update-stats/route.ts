@@ -1,8 +1,4 @@
 
-
-
-
-
 'use server';
 
 import { NextResponse, type NextRequest } from 'next/server';
@@ -132,6 +128,10 @@ export async function POST(request: NextRequest) {
                 coinsEarned += prizePerWinner;
             }
         });
+        
+        if (prizesWonByPlayer.length > 0) {
+            statsUpdate['stats.totalPrizesWon'] = increment(prizesWonByPlayer.length);
+        }
 
         // Leveling up logic
         let currentLevel = currentStats.level || 1;
@@ -152,6 +152,7 @@ export async function POST(request: NextRequest) {
               acc[prize] = (currentStats.prizesWon?.[prize] || 0) + 1;
               return acc;
           }, { ...currentStats.prizesWon }),
+          totalPrizesWon: (currentStats.totalPrizesWon || 0) + prizesWonByPlayer.length,
           level: currentLevel,
           xp: currentXp
         };

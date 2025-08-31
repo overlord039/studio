@@ -2,6 +2,7 @@
 export interface UserStats {
   matchesPlayed: number;
   prizesWon: Record<PrizeType, number>;
+  totalPrizesWon?: number; // New field for efficient ranking
   usernameChangeCount?: number;
   coins: number;
   level: number;
@@ -123,7 +124,7 @@ export interface FirestoreRoom {
     timerEnd?: Timestamp;
     preGameEndTime?: Timestamp;
     gameStartTime?: Timestamp;
-    playersWhoUpdatedStats?: string[]; // To track who has updated their stats
+    playersWhoUpdatedStats?: string[]; // To track who has updated stats
     botTickets?: Record<string, HousieTicketGrid[]>;
 }
 

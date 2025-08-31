@@ -1,7 +1,5 @@
 
-
-
-
+'use server';
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { getRoomStore } from '@/lib/server/game-store';
@@ -140,6 +138,10 @@ export async function POST(
             statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
             xpGained += XP_PER_PRIZE_WIN[prize] || 0;
         });
+
+        if (prizesWonByPlayer.length > 0) {
+            statsUpdate['stats.totalPrizesWon'] = increment(prizesWonByPlayer.length);
+        }
         
         const isBotGame = room.settings.gameMode && ['easy', 'medium', 'hard'].includes(room.settings.gameMode);
         const isFriendsGame = room.settings.gameMode === 'multiplayer';
@@ -183,6 +185,7 @@ export async function POST(
               acc[prize] = (currentStats.prizesWon?.[prize] || 0) + 1;
               return acc;
           }, { ...currentStats.prizesWon }),
+          totalPrizesWon: (currentStats.totalPrizesWon || 0) + prizesWonByPlayer.length,
           level: currentLevel,
           xp: currentXp
         };

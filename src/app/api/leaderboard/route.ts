@@ -1,22 +1,50 @@
 
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { db } from '@/lib/firebase/config';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import type { User } from '@/types';
 
-export async function GET(request: Request) {
+export type RankingType = 'xp' | 'wins' | 'coins';
+
+export async function GET(request: NextRequest) {
     if (!db) {
         return NextResponse.json({ message: 'Firestore is not configured.' }, { status: 500 });
     }
 
     try {
+        const { searchParams } = new URL(request.url);
+        const rankingType = (searchParams.get('type') as RankingType) || 'xp';
+
         const usersRef = collection(db, 'users');
-        const q = query(
-            usersRef,
-            orderBy('stats.level', 'desc'),
-            orderBy('stats.xp', 'desc'),
-            limit(10) // Get top 10 players
-        );
+        let q;
+
+        switch (rankingType) {
+            case 'wins':
+                q = query(
+                    usersRef,
+                    orderBy('stats.totalPrizesWon', 'desc'),
+                    orderBy('stats.level', 'desc'),
+                    limit(10)
+                );
+                break;
+            case 'coins':
+                q = query(
+                    usersRef,
+                    orderBy('stats.coins', 'desc'),
+                    orderBy('stats.level', 'desc'),
+                    limit(10)
+                );
+                break;
+            case 'xp':
+            default:
+                 q = query(
+                    usersRef,
+                    orderBy('stats.level', 'desc'),
+                    orderBy('stats.xp', 'desc'),
+                    limit(10)
+                );
+                break;
+        }
 
         const querySnapshot = await getDocs(q);
 
@@ -31,6 +59,8 @@ export async function GET(request: Request) {
                 stats: {
                     level: data.stats.level,
                     xp: data.stats.xp,
+                    coins: data.stats.coins,
+                    totalPrizesWon: data.stats.totalPrizesWon || 0,
                     badges: data.stats.badges || [],
                 }
             };
