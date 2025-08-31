@@ -65,6 +65,8 @@ const AvatarSelectionDialog = ({ onSelect, children, disabled }: { onSelect: (sr
   );
 };
 
+const USERNAME_CHANGE_COSTS = [0, 100, 500]; // 1st change free, 2nd is 100, 3rd is 500
+
 export default function ProfilePage() {
   const { currentUser, loading, logout, linkGoogleAccount, isSigningIn, updateUserProfile, setLocalGuestAvatar, setLocalGuestUsername } = useAuth();
   const router = useRouter();
@@ -102,6 +104,15 @@ export default function ProfilePage() {
         setUsernameError("Name must be between 4 and 12 characters.");
         return;
     }
+
+    const changeCount = currentUser.stats?.usernameChangeCount || 0;
+    const cost = USERNAME_CHANGE_COSTS[changeCount] || 500; // Default to 500 for subsequent changes
+    const userCoins = currentUser.stats.coins || 0;
+
+    if (userCoins < cost) {
+        setUsernameError(`You need ${cost} coins to change your name again.`);
+        return;
+    }
     
     setIsSavingName(true);
     setUsernameError(null);
@@ -124,7 +135,12 @@ export default function ProfilePage() {
           const updateResponse = await fetch('/api/users/check-username', {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ username: trimmedName, userId: currentUser.uid, oldUsername: currentUser.displayName }),
+              body: JSON.stringify({ 
+                  username: trimmedName, 
+                  userId: currentUser.uid, 
+                  oldUsername: currentUser.displayName,
+                  cost,
+              }),
           });
 
           const updateData = await updateResponse.json();
@@ -202,7 +218,9 @@ export default function ProfilePage() {
             .map(prize => [prize, prizesWon[prize] ?? 0] as [string, number])
         : [];
     
-    const canChangeName = currentUser.isGuest || !currentUser.stats?.usernameChanged;
+    const usernameChangeCount = currentUser.stats.usernameChangeCount || 0;
+    const canChangeName = currentUser.isGuest || usernameChangeCount < USERNAME_CHANGE_COSTS.length;
+    const changeCost = USERNAME_CHANGE_COSTS[usernameChangeCount] || 500;
 
     const currentLevel = currentUser.stats?.level || 1;
     const currentXp = currentUser.stats?.xp || 0;
@@ -275,6 +293,7 @@ export default function ProfilePage() {
                                   </Button>
                                 </div>
                                 {usernameError && <p className="text-xs text-destructive mt-1">{usernameError}</p>}
+                                {changeCost > 0 && <p className="text-xs text-muted-foreground mt-1">This change will cost {changeCost} coins.</p>}
                             </div>
                           ) : (
                             <div className="flex flex-col items-start gap-2">
@@ -285,8 +304,8 @@ export default function ProfilePage() {
                                   variant="ghost" 
                                   className="h-5 w-5 sm:h-6 sm:w-6" 
                                   onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); setUsernameError(null); }}
-                                  disabled={!canChangeName}
-                                  title={canChangeName ? "Edit username" : "Username can only be changed once"}
+                                  disabled={!canChangeName && !currentUser.isGuest}
+                                  title={canChangeName ? (changeCost > 0 ? `Edit username for ${changeCost} coins` : 'Edit username for free') : 'Further changes are not available'}
                                 >
                                   <Pencil className="h-3.5 w-3.5"/>
                                 </Button>

@@ -72,7 +72,7 @@ const createDefaultStats = (): UserStats => {
             acc[prize] = 0;
             return acc;
         }, {} as Record<PrizeType, number>),
-        usernameChanged: false,
+        usernameChangeCount: 0,
         coins: 0,
         level: 1,
         xp: 0,
@@ -110,7 +110,7 @@ function areUsersEqual(a: User | null, b: User | null): boolean {
         a.isGuest !== b.isGuest ||
         a.createdAt !== b.createdAt ||
         a.stats.matchesPlayed !== b.stats.matchesPlayed ||
-        a.stats.usernameChanged !== b.stats.usernameChanged ||
+        a.stats.usernameChangeCount !== b.stats.usernameChangeCount ||
         a.stats.coins !== b.stats.coins ||
         a.stats.level !== b.stats.level ||
         a.stats.xp !== b.stats.xp ||
@@ -440,23 +440,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!currentUser || !db) return;
 
     const userDocRef = doc(db, "users", currentUser.uid);
-    const updates: { [key: string]: any } = { ...data };
-    
-    // For non-guests, handle username change logic with Firestore
-    if (!currentUser.isGuest && data.displayName && currentUser.stats?.usernameChanged !== true) {
-        updates['stats.usernameChanged'] = true;
-    }
-
-    try {
-      await updateDoc(userDocRef, updates);
-    } catch (err) {
-      console.error("Failed to update user profile:", err);
-      toast({
-        title: "Update Failed",
-        description: "Your profile could not be updated.",
-        variant: "destructive",
-      });
-    }
+    await updateDoc(userDocRef, data);
   };
 
   const updateUserStats = (newStats: Partial<UserStats>) => {

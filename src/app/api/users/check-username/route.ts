@@ -1,7 +1,8 @@
 
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { db } from '@/lib/firebase/config';
-import { collection, query, where, getDocs, limit, doc, runTransaction } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, doc, runTransaction, increment } from 'firebase/firestore';
 
 export async function POST(request: NextRequest) {
   if (!db) {
@@ -51,7 +52,7 @@ export async function PUT(request: NextRequest) {
     }
 
     try {
-        const { username, userId, oldUsername } = await request.json();
+        const { username, userId, oldUsername, cost } = await request.json();
 
         if (!username || !userId) {
             return NextResponse.json({ message: 'New username and user ID are required.' }, { status: 400 });
@@ -62,6 +63,15 @@ export async function PUT(request: NextRequest) {
         const oldUsernameDocRef = oldUsername ? doc(db, 'usernames', oldUsername.trim().toLowerCase()) : null;
         
         await runTransaction(db, async (transaction) => {
+            const userRef = doc(db, 'users', userId);
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) throw new Error("User not found.");
+
+            const currentCoins = userDoc.data().stats?.coins || 0;
+            if (currentCoins < cost) {
+                throw new Error(`You need ${cost} coins to change your name.`);
+            }
+
             const usernameDoc = await transaction.get(usernameDocRef);
             if (usernameDoc.exists() && usernameDoc.data().userId !== userId) {
                 throw new Error("This username is already taken.");
@@ -76,6 +86,13 @@ export async function PUT(request: NextRequest) {
                 userId: userId,
                 updatedAt: new Date(),
             });
+
+            // Deduct coins and increment change count
+            const newStats = {
+                'stats.coins': increment(-cost),
+                'stats.usernameChangeCount': increment(1)
+            };
+            transaction.update(userRef, newStats);
         });
 
         return NextResponse.json({ success: true, message: 'Username updated successfully.' });

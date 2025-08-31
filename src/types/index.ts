@@ -2,10 +2,11 @@
 
 
 
+
 export interface UserStats {
   matchesPlayed: number;
   prizesWon: Record<PrizeType, number>;
-  usernameChanged?: boolean;
+  usernameChangeCount?: number;
   coins: number;
   level: number;
   xp: number;
