@@ -39,8 +39,8 @@ export async function GET(request: NextRequest) {
             default:
                  q = query(
                     usersRef,
-                    orderBy('stats.level', 'desc'),
-                    orderBy('stats.xp', 'desc'),
+                    orderBy('stats.totalPrizesWon', 'desc'),
+                    orderBy('stats.coins', 'desc'),
                     limit(10)
                 );
                 break;

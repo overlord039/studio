@@ -73,7 +73,7 @@ const LeaderboardTable = ({ type, title }: { type: RankingType, title: string })
                 return { value: player.stats.coins, icon: <Image src="/coin.png" alt="Coins" width={16} height={16} data-ai-hint="gold coin" /> };
             case 'xp':
             default:
-                return { value: player.stats.xp.toLocaleString(), icon: <Star className="h-4 w-4 text-yellow-500" /> };
+                return { value: player.stats.totalPrizesWon || 0, icon: <Award className="h-4 w-4 text-primary" /> };
         }
     }
 
@@ -179,7 +179,7 @@ export default function LeaderboardPage() {
                             <TabsTrigger value="coins">Coin Masters</TabsTrigger>
                         </TabsList>
                         <TabsContent value="xp" className="mt-4">
-                            <LeaderboardTable type="xp" title="XP" />
+                            <LeaderboardTable type="xp" title="Total Wins" />
                         </TabsContent>
                         <TabsContent value="wins" className="mt-4">
                            <LeaderboardTable type="wins" title="Total Wins" />
