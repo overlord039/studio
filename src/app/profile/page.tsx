@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { BADGE_DEFINITIONS, type Badge as BadgeType } from '@/lib/badges';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -91,6 +92,29 @@ export default function ProfilePage() {
       });
     }
   };
+
+  const handleInitiateNameChange = () => {
+    if (!currentUser) return;
+    const changeCount = currentUser.stats?.usernameChangeCount || 0;
+    const cost = USERNAME_CHANGE_COSTS[changeCount] || 500;
+    const userCoins = currentUser.stats.coins || 0;
+
+    if (cost > 0 && userCoins < cost) {
+      toast({
+        title: "Not Enough Coins",
+        description: `You need ${cost} coins to change your username.`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // If there is a cost, the dialog will be shown. If free, this just proceeds.
+    // The actual state change to show the input is now in the onConfirm function for the dialog.
+    setIsEditingName(true); 
+    setNewDisplayName(currentUser.displayName || ''); 
+    setUsernameError(null);
+  };
+
 
   const handleNameChange = async () => {
     const trimmedName = newDisplayName.trim();
@@ -231,6 +255,30 @@ export default function ProfilePage() {
     const highestBadge = badgeOrder.map(key => BADGE_DEFINITIONS[key]).find(badge => currentUser.stats.badges?.includes(badge.name));
 
 
+    const EditButtonWrapper = ({ children }: { children: React.ReactNode }) => {
+        if (changeCost > 0) {
+            return (
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Change Username?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will cost <span className="font-bold">{changeCost} coins</span>. This action cannot be undone. Are you sure you want to continue?
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleInitiateNameChange}>Continue</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            );
+        }
+        return <div onClick={handleInitiateNameChange}>{children}</div>;
+    };
+
+
     return (
       <div className="animate-fade-in max-w-lg w-full">
           <Card className="shadow-xl overflow-hidden border-2 border-primary/20 relative">
@@ -299,16 +347,17 @@ export default function ProfilePage() {
                             <div className="flex flex-col items-start gap-2">
                               <div className="flex items-baseline gap-1">
                                 <h1 className="text-2xl sm:text-3xl font-bold">{displayName}</h1>
-                                <Button 
-                                  size="icon" 
-                                  variant="ghost" 
-                                  className="h-5 w-5 sm:h-6 sm:w-6" 
-                                  onClick={() => { setIsEditingName(true); setNewDisplayName(displayName); setUsernameError(null); }}
-                                  disabled={!canChangeName && !currentUser.isGuest}
-                                  title={canChangeName ? (changeCost > 0 ? `Edit username for ${changeCost} coins` : 'Edit username for free') : 'Further changes are not available'}
-                                >
-                                  <Pencil className="h-3.5 w-3.5"/>
-                                </Button>
+                                 <EditButtonWrapper>
+                                    <Button 
+                                        size="icon" 
+                                        variant="ghost" 
+                                        className="h-5 w-5 sm:h-6 sm:w-6" 
+                                        disabled={!canChangeName && !currentUser.isGuest}
+                                        title={canChangeName ? (changeCost > 0 ? `Edit username for ${changeCost} coins` : 'Edit username for free') : 'Further changes are not available'}
+                                    >
+                                        <Pencil className="h-3.5 w-3.5"/>
+                                    </Button>
+                                </EditButtonWrapper>
                               </div>
                                <div className="flex items-center gap-2">
                                   <div className="bg-amber-400/20 border border-amber-500/30 text-amber-800 dark:text-amber-300 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full flex items-center gap-2">
