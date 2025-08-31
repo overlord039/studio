@@ -174,9 +174,9 @@ export default function LeaderboardPage() {
                 <CardContent>
                     <Tabs defaultValue="xp" className="w-full">
                         <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="xp">Overall Rank</TabsTrigger>
-                            <TabsTrigger value="wins">Top Winners</TabsTrigger>
-                            <TabsTrigger value="coins">Richest Players</TabsTrigger>
+                            <TabsTrigger value="xp">Top Players</TabsTrigger>
+                            <TabsTrigger value="wins">Most Wins</TabsTrigger>
+                            <TabsTrigger value="coins">Coin Masters</TabsTrigger>
                         </TabsList>
                         <TabsContent value="xp" className="mt-4">
                             <LeaderboardTable type="xp" title="XP" />
