@@ -79,6 +79,7 @@ const createDefaultStats = (): UserStats => {
         lastLogin: new Date(0).toISOString(),
         loginStreak: 0,
         lastClaimedDay: 0,
+        badges: [],
     };
 };
 
@@ -117,6 +118,13 @@ function areUsersEqual(a: User | null, b: User | null): boolean {
         a.stats.loginStreak !== b.stats.loginStreak ||
         a.stats.lastClaimedDay !== b.stats.lastClaimedDay
     ) {
+        return false;
+    }
+    
+    // Compare badges array
+    const badgesA = a.stats.badges || [];
+    const badgesB = b.stats.badges || [];
+    if (badgesA.length !== badgesB.length || !badgesA.every(b => badgesB.includes(b))) {
         return false;
     }
 
@@ -294,7 +302,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     
                 } else {
                     const isGuest = firebaseUser.isAnonymous;
-                    const displayName = isGuest ? `Guest#${firebaseUser.uid.substring(0,5)}` : (firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`);
+                    let displayName = isGuest ? `Guest#${firebaseUser.uid.substring(0,5)}` : (firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`);
+                    
+                    // Truncate display name if it's too long
+                    if (displayName.length > 12) {
+                        displayName = displayName.substring(0, 12);
+                    }
                     
                     const today = new Date();
                     const newUserProfile: User = {
@@ -517,8 +530,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const firebaseUser = result.user;
       
       const oldGuestUsername = guestData.displayName || '';
-      const newDisplayName = firebaseUser.displayName || oldGuestUsername;
+      let newDisplayName = firebaseUser.displayName || oldGuestUsername;
       
+      // Truncate display name if it's too long
+      if (newDisplayName.length > 12) {
+          newDisplayName = newDisplayName.substring(0, 12);
+      }
+
       const guestStats = guestData.stats || createDefaultStats();
       guestStats.coins = (guestStats.coins || 0) + 10; // Linking reward
 
