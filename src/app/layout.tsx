@@ -10,6 +10,7 @@ import { SoundProvider } from '@/contexts/sound-context';
 import BackgroundMusicPlayer from '@/components/layout/background-music-player';
 import SplashScreen from '@/components/layout/splash-screen';
 import AnimatedCoin from '@/components/rewards/animated-coin';
+import { QueryProvider } from '@/components/layout/query-provider';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -45,10 +46,12 @@ export default function RootLayout({
               disableTransitionOnChange
             >
             <AuthProvider>
-              <CoinAnimationProvider>
-                <PageLayout>{children}</PageLayout>
-                <BackgroundMusicPlayer />
-              </CoinAnimationProvider>
+              <QueryProvider>
+                <CoinAnimationProvider>
+                  <PageLayout>{children}</PageLayout>
+                  <BackgroundMusicPlayer />
+                </CoinAnimationProvider>
+              </QueryProvider>
             </AuthProvider>
             </ThemeProvider>
         </SoundProvider>
