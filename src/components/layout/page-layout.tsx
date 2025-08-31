@@ -11,8 +11,8 @@ import type { ReactNode } from 'react';
 import React, { useState, useEffect } from 'react';
 import FeedbackForm from './feedback-form';
 import { Button } from '@/components/ui/button';
-import { Settings, MessageSquare, Calendar, Award, Shield, Badge as BadgeIcon, Medal, Trophy, Star, CheckCircle } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import { Settings, MessageSquare, Calendar, Award, Shield, Badge as BadgeIcon, Medal, Trophy, Star, CheckCircle, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { SettingsModal } from './header';
 import DailyRewardDialog from '../rewards/daily-reward-dialog';
 import { useAuth } from '@/contexts/auth-context';
@@ -35,6 +35,10 @@ const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>
         <DialogHeader>
             <DialogTitle className="text-center text-2xl font-bold tracking-wider">Achievements</DialogTitle>
         </DialogHeader>
+        <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+        </DialogClose>
         <div className="space-y-4 py-4 max-h-[80vh] md:max-h-[70vh] overflow-y-auto scrollbar-hide">
             {Object.values(BADGE_DEFINITIONS).map(badgeDef => {
                 const hasBadge = earnedBadges.has(badgeDef.name);
