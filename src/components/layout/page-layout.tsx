@@ -34,11 +34,11 @@ const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>
     <DialogContent className="max-w-xl w-[95vw] md:w-full">
         <DialogHeader>
             <DialogTitle className="text-center text-2xl font-bold tracking-wider">Achievements</DialogTitle>
+            <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+            </DialogClose>
         </DialogHeader>
-        <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-        </DialogClose>
         <div className="space-y-4 py-4 max-h-[80vh] md:max-h-[70vh] overflow-y-auto scrollbar-hide">
             {Object.values(BADGE_DEFINITIONS).map(badgeDef => {
                 const hasBadge = earnedBadges.has(badgeDef.name);
@@ -57,7 +57,7 @@ const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>
                                 <Dialog>
                                     <DialogTrigger asChild>
                                         <button className="transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring rounded-full">
-                                            <Image src={badgeDef.icon} alt={badgeDef.name} width={64} height={64} />
+                                            <Image src={badgeDef.icon} alt={badgeDef.name} width={64} height={64} className="h-12 w-12 md:h-16 md:w-16" />
                                         </button>
                                     </DialogTrigger>
                                     <BadgeImageDialog src={badgeDef.icon} alt={badgeDef.name} />
