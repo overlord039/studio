@@ -2,7 +2,9 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { db } from '@/lib/firebase/config';
-import { collection, query, where, getDocs, limit, doc, runTransaction, increment } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, doc, runTransaction, increment } from 'firestore';
+
+const USERNAME_CHANGE_COSTS = [0, 100, 500]; // Free, 100, 500
 
 export async function POST(request: NextRequest) {
   if (!db) {
@@ -52,7 +54,7 @@ export async function PUT(request: NextRequest) {
     }
 
     try {
-        const { username, userId, oldUsername, cost } = await request.json();
+        const { username, userId, oldUsername } = await request.json();
 
         if (!username || !userId) {
             return NextResponse.json({ message: 'New username and user ID are required.' }, { status: 400 });
@@ -67,7 +69,10 @@ export async function PUT(request: NextRequest) {
             const userDoc = await transaction.get(userRef);
             if (!userDoc.exists()) throw new Error("User not found.");
 
+            const changeCount = userDoc.data().stats?.usernameChangeCount || 0;
+            const cost = USERNAME_CHANGE_COSTS[changeCount] || 500; // Default to 500 for subsequent changes
             const currentCoins = userDoc.data().stats?.coins || 0;
+
             if (currentCoins < cost) {
                 throw new Error(`You need ${cost} coins to change your name.`);
             }
@@ -88,10 +93,13 @@ export async function PUT(request: NextRequest) {
             });
 
             // Deduct coins and increment change count
-            const newStats = {
-                'stats.coins': increment(-cost),
+            const newStats: { [key: string]: any } = {
                 'stats.usernameChangeCount': increment(1)
             };
+            if (cost > 0) {
+              newStats['stats.coins'] = increment(-cost);
+            }
+            
             transaction.update(userRef, newStats);
         });
 

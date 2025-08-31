@@ -130,7 +130,7 @@ export default function ProfilePage() {
     }
 
     const changeCount = currentUser.stats?.usernameChangeCount || 0;
-    const cost = USERNAME_CHANGE_COSTS[changeCount] || 500; // Default to 500 for subsequent changes
+    const cost = USERNAME_CHANGE_COSTS[changeCount] || 500;
     const userCoins = currentUser.stats.coins || 0;
 
     if (userCoins < cost) {
@@ -163,7 +163,6 @@ export default function ProfilePage() {
                   username: trimmedName, 
                   userId: currentUser.uid, 
                   oldUsername: currentUser.displayName,
-                  cost,
               }),
           });
 
@@ -243,7 +242,6 @@ export default function ProfilePage() {
         : [];
     
     const usernameChangeCount = currentUser.stats.usernameChangeCount || 0;
-    const canChangeName = currentUser.isGuest || usernameChangeCount < USERNAME_CHANGE_COSTS.length;
     const changeCost = USERNAME_CHANGE_COSTS[usernameChangeCount] || 500;
 
     const currentLevel = currentUser.stats?.level || 1;
@@ -352,8 +350,7 @@ export default function ProfilePage() {
                                         size="icon" 
                                         variant="ghost" 
                                         className="h-5 w-5 sm:h-6 sm:w-6" 
-                                        disabled={!canChangeName && !currentUser.isGuest}
-                                        title={canChangeName ? (changeCost > 0 ? `Edit username for ${changeCost} coins` : 'Edit username for free') : 'Further changes are not available'}
+                                        title={changeCost > 0 ? `Edit username for ${changeCost} coins` : 'Edit username for free'}
                                     >
                                         <Pencil className="h-3.5 w-3.5"/>
                                     </Button>
@@ -481,5 +478,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
