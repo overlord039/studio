@@ -70,7 +70,7 @@ const LeaderboardTable = ({ type, title }: { type: RankingType, title: string })
             case 'wins':
                 return { value: player.stats.totalPrizesWon || 0, icon: <Award className="h-4 w-4 text-primary" /> };
             case 'coins':
-                return { value: player.stats.coins, icon: <Coins className="h-4 w-4 text-yellow-500" /> };
+                return { value: player.stats.coins, icon: <Image src="/coin.png" alt="Coins" width={16} height={16} data-ai-hint="gold coin" /> };
             case 'xp':
             default:
                 return { value: player.stats.xp.toLocaleString(), icon: <Star className="h-4 w-4 text-yellow-500" /> };
