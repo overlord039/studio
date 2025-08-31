@@ -15,7 +15,7 @@ export async function GET(request: Request) {
             usersRef,
             orderBy('stats.level', 'desc'),
             orderBy('stats.xp', 'desc'),
-            limit(50) // Get top 50 players
+            limit(10) // Get top 10 players
         );
 
         const querySnapshot = await getDocs(q);

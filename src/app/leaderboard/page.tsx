@@ -15,6 +15,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/auth-context';
 
 interface LeaderboardPlayer extends User {
     rank: number;
@@ -47,6 +48,7 @@ const LeaderboardRowSkeleton = () => (
 );
 
 export default function LeaderboardPage() {
+    const { currentUser } = useAuth();
     const { data: players, error, isLoading } = useQuery<LeaderboardPlayer[], Error>({
         queryKey: ['leaderboard'],
         queryFn: fetchLeaderboard,
@@ -95,11 +97,13 @@ export default function LeaderboardPage() {
                                 ) : (
                                     players?.map((player, index) => {
                                         const badge = getPlayerBadge(player);
+                                        const isCurrentUser = player.uid === currentUser?.uid;
                                         return (
                                             <TableRow key={player.uid} className={cn(
-                                                index === 0 && 'bg-yellow-400/20',
-                                                index === 1 && 'bg-gray-400/20',
-                                                index === 2 && 'bg-orange-400/20',
+                                                isCurrentUser ? 'bg-primary/20' : '',
+                                                !isCurrentUser && index === 0 && 'bg-yellow-400/20',
+                                                !isCurrentUser && index === 1 && 'bg-gray-400/20',
+                                                !isCurrentUser && index === 2 && 'bg-orange-400/20',
                                             )}>
                                                 <TableCell className="w-12 text-center font-bold text-lg">
                                                     {player.rank}
@@ -155,4 +159,3 @@ export default function LeaderboardPage() {
         </div>
     );
 }
-
