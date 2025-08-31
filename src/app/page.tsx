@@ -10,7 +10,8 @@ import {
   Speaker,
   Calculator,
   Bot,
-  Globe
+  Globe,
+  Trophy
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
@@ -139,7 +140,16 @@ export default function HomePage() {
             <p className="text-xs font-bold">Number Caller</p>
           </CardContent>
         </Card>
-
+        <Card
+            className="bg-purple-600 text-white hover:bg-purple-700 transition-colors cursor-pointer rounded-2xl shadow-lg w-32"
+            onClick={() => handleNavigateWithAuth('/leaderboard')}
+            role="button"
+        >
+            <CardContent className="flex flex-col items-center justify-center p-2 text-center">
+                <Trophy className="h-6 w-6 mb-1" />
+                <p className="text-xs font-bold">Leaderboard</p>
+            </CardContent>
+        </Card>
         <Card 
           className="bg-yellow-600 text-white hover:bg-yellow-700 transition-colors cursor-pointer rounded-2xl shadow-lg w-32"
           onClick={() => handleFreeToolsNavigation('/prize-calculator')}
