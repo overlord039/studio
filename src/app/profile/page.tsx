@@ -241,6 +241,8 @@ export default function ProfilePage() {
             .map(prize => [prize, prizesWon[prize] ?? 0] as [string, number])
         : [];
     
+    const totalPrizesWon = currentUser.stats?.totalPrizesWon || 0;
+    
     const usernameChangeCount = currentUser.stats.usernameChangeCount || 0;
     const changeCost = USERNAME_CHANGE_COSTS[usernameChangeCount] || 500;
 
@@ -433,6 +435,10 @@ export default function ProfilePage() {
                                                     </div>
                                                 ))}
                                             </div>
+                                            <div className="border-t mt-2 pt-2 flex justify-between items-center">
+                                                <span className="text-sm font-bold text-primary">Total Prizes</span>
+                                                <span className="font-bold text-lg text-primary">{totalPrizesWon}</span>
+                                            </div>
                                         </CardContent>
                                     </Card>
                                 ) : (
@@ -454,7 +460,7 @@ export default function ProfilePage() {
                                 disabled={!!isSigningIn}
                                 className="bg-white text-black hover:bg-gray-200 w-full h-9 text-sm"
                             >
-                                {isSigningIn === 'google' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
+                                {isSigningIn === 'google' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-5 w-5" />}
                                 Continue with Google
                             </Button>
                         </div>
