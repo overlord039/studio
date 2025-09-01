@@ -10,6 +10,7 @@
 
 
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -451,7 +452,7 @@ export default function GameRoomPage() {
 
   // Client-side "ticker" for all game modes, only for the host.
   useEffect(() => {
-    if (!roomData || !currentUser || roomData.host.id !== currentUser.uid) {
+    if (!roomData || !currentUser || !roomData.host || roomData.host.id !== currentUser.uid) {
         return;
     }
 
