@@ -186,7 +186,7 @@ function MatchmakingContent() {
   // Main countdown timer effect
   useEffect(() => {
     if (roomData && roomData.timerEnd) {
-        const updateTimer = () => {
+        const timer = setInterval(() => {
             const serverEndTime = roomData.timerEnd!.toMillis();
             const now = Date.now();
             const newCountdown = Math.max(0, Math.ceil((serverEndTime - now) / 1000));
@@ -201,10 +201,9 @@ function MatchmakingContent() {
               }).catch((err) => {
                   console.error('Failed to trigger fill-room, but listening for server state change:', err);
               });
+              clearInterval(timer); // Stop this interval once it triggers
             }
-        };
-        updateTimer();
-        const timer = setInterval(updateTimer, 1000);
+        }, 1000);
         return () => clearInterval(timer);
     }
 
