@@ -241,7 +241,7 @@ export default function ProfilePage() {
             .map(prize => [prize, prizesWon[prize] ?? 0] as [string, number])
         : [];
     
-    const totalPrizesWon = prizesWon ? Object.values(prizesWon).reduce((sum, count) => sum + count, 0) : 0;
+    const totalPrizesWon = currentUser.stats.totalPrizesWon || 0;
     
     const usernameChangeCount = currentUser.stats.usernameChangeCount || 0;
     const changeCost = USERNAME_CHANGE_COSTS[usernameChangeCount] || 500;
