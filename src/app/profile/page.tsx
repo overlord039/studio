@@ -15,7 +15,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import type { PrizeType, UserStats } from '@/types';
-import { Input } from '@/components/ui/input';
 import { PRIZE_DEFINITIONS, DEFAULT_GAME_SETTINGS, getXpForNextLevel } from '@/lib/constants';
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
@@ -23,6 +22,7 @@ import { Progress } from '@/components/ui/progress';
 import { BADGE_DEFINITIONS, type Badge as BadgeType } from '@/lib/badges';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
 
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (

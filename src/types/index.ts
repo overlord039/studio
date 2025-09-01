@@ -3,7 +3,7 @@
 export interface UserStats {
   matchesPlayed: number;
   prizesWon: Record<PrizeType, number>;
-  totalPrizesWon?: number; // New field for efficient ranking
+  totalPrizesWon: number;
   usernameChangeCount?: number;
   coins: number;
   level: number;
