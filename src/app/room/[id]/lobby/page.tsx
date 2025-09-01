@@ -114,6 +114,12 @@ export default function LobbyPage() {
     }
 
     const cost = roomDataRef.current.settings.ticketPrice > 0 ? selectedTicketsToBuy * roomDataRef.current.settings.ticketPrice : 0;
+    if (cost > 0 && currentUser.stats.coins < cost) {
+        playSound('error.wav');
+        setShowNoCoinsDialog(true);
+        return;
+    }
+
     if (cost > 0) {
       triggerAnimation(cost, true);
     }
@@ -149,8 +155,9 @@ export default function LobbyPage() {
       if ((err as Error).message.includes('Not enough coins')) {
           playSound('error.wav');
           setShowNoCoinsDialog(true);
+      } else {
+        toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
       }
-      toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
     } finally {
       setIsJoiningOrUpdating(false);
     }
