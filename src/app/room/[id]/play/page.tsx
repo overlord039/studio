@@ -759,7 +759,7 @@ export default function GameRoomPage() {
     }
   };
 
-  const isCurrentUserHost = roomData?.host.id === currentUser?.uid;
+  const isCurrentUserHost = roomData?.host?.id === currentUser?.uid;
 
   const handlePlayAgain = async () => {
     if (!currentUser || !roomData) return;
