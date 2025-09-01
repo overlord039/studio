@@ -72,6 +72,7 @@ const createDefaultStats = (): UserStats => {
             acc[prize] = 0;
             return acc;
         }, {} as Record<PrizeType, number>),
+        totalPrizesWon: 0,
         usernameChangeCount: 0,
         coins: 0,
         level: 1,
@@ -110,6 +111,7 @@ function areUsersEqual(a: User | null, b: User | null): boolean {
         a.isGuest !== b.isGuest ||
         a.createdAt !== b.createdAt ||
         a.stats.matchesPlayed !== b.stats.matchesPlayed ||
+        a.stats.totalPrizesWon !== b.stats.totalPrizesWon ||
         a.stats.usernameChangeCount !== b.stats.usernameChangeCount ||
         a.stats.coins !== b.stats.coins ||
         a.stats.level !== b.stats.level ||
@@ -754,5 +756,3 @@ export function useCoinAnimation() {
   }
   return context;
 }
-
-    

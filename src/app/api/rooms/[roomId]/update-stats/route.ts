@@ -134,15 +134,15 @@ export async function POST(
             }
         }
         
+        if (prizesWonByPlayer.length > 0) {
+            statsUpdate['stats.totalPrizesWon'] = increment(prizesWonByPlayer.length);
+        }
+
         prizesWonByPlayer.forEach(prize => {
             statsUpdate[`stats.prizesWon.${prize}`] = increment(1);
             xpGained += XP_PER_PRIZE_WIN[prize] || 0;
         });
 
-        if (prizesWonByPlayer.length > 0) {
-            statsUpdate['stats.totalPrizesWon'] = increment(prizesWonByPlayer.length);
-        }
-        
         const isBotGame = room.settings.gameMode && ['easy', 'medium', 'hard'].includes(room.settings.gameMode);
         const isFriendsGame = room.settings.gameMode === 'multiplayer';
 

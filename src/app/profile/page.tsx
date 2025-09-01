@@ -240,7 +240,7 @@ export default function ProfilePage() {
             .map(prize => [prize, prizesWon[prize] ?? 0] as [string, number])
         : [];
     
-    const totalPrizesWon = prizesWonArray.reduce((sum, [, count]) => sum + count, 0);
+    const totalPrizesWon = currentUser.stats?.totalPrizesWon || 0;
     
     const usernameChangeCount = currentUser.stats.usernameChangeCount || 0;
     const changeCost = USERNAME_CHANGE_COSTS[usernameChangeCount] || 500;
@@ -483,5 +483,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
