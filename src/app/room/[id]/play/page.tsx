@@ -11,6 +11,7 @@
 
 
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -455,6 +456,9 @@ export default function GameRoomPage() {
     if (!roomData || !currentUser || !roomData.host || roomData.host.id !== currentUser.uid) {
         return;
     }
+
+    const isAutoMode = roomData.settings.callingMode === 'auto';
+    if (!isAutoMode) return;
 
     const intervalId = setInterval(() => {
         const currentRoom = roomDataRef.current;

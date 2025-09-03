@@ -1,5 +1,6 @@
 
 
+
 import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid, CallingMode, OnlineGameTier } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { generateMultipleUniqueTickets } from '@/lib/housie';
@@ -10,12 +11,9 @@ import { NUMBERS_RANGE_MIN, NUMBERS_RANGE_MAX, DEFAULT_GAME_SETTINGS, MIN_LOBBY_
 declare global {
   // eslint-disable-next-line no-var
   var housieRooms: Map<string, Room>;
-  // eslint-disable-next-line no-var
-  var roomTimers: Map<string, NodeJS.Timeout>;
 }
 
 const rooms = global.housieRooms || (global.housieRooms = new Map<string, Room>());
-const roomTimers = global.roomTimers || (global.roomTimers = new Map<string, NodeJS.Timeout>());
 
 function generateRoomId(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -40,43 +38,6 @@ function initializePrizeStatus(roomSettings: GameSettings): Record<PrizeType, Pr
   });
   return status;
 }
-
-function stopRoomTimer(roomId: string, reason: string) {
-  const timerId = roomTimers.get(roomId);
-  if (timerId) {
-    clearInterval(timerId);
-    clearTimeout(timerId); // Also clear timeout for matchmaking
-    roomTimers.delete(roomId);
-    console.log(`Room ${roomId}: Timer stopped. Reason: ${reason}`);
-  }
-}
-
-const scheduleNextCall = (roomId: string) => {
-    // Set a consistent 1-second delay before the first number call.
-    const initialDelay = 1000; 
-
-    const timerId = setTimeout(() => {
-        const room = getRoomStore(roomId);
-        if (room && room.isGameStarted && !room.isGameOver) {
-            callNextNumberStore(roomId); // This is the first call
-            
-            // Now set up the regular interval for all subsequent calls
-            const intervalId = setInterval(() => {
-                const currentRoom = getRoomStore(roomId);
-                if (currentRoom && currentRoom.isGameStarted && !currentRoom.isGameOver) {
-                    callNextNumberStore(roomId);
-                } else {
-                    stopRoomTimer(roomId, !currentRoom ? "Room no longer exists" : "Game not started or already over");
-                }
-            }, SERVER_CALL_INTERVAL);
-            roomTimers.set(roomId, intervalId); // Store the interval timer
-        } else {
-            stopRoomTimer(roomId, !room ? "Room no longer exists" : "Game not started or already over before first call");
-        }
-    }, initialDelay);
-    
-    roomTimers.set(roomId, timerId); // Store the initial timeout
-};
 
 export function createRoomStore(host: Player, clientSettings?: Partial<GameSettings>): Room {
   const roomId = generateRoomId();
@@ -114,7 +75,6 @@ export function createRoomStore(host: Player, clientSettings?: Partial<GameSetti
 export function getRoomStore(roomId: string): Room | undefined {
   const room = rooms.get(roomId);
   if (room && !room.isGameStarted && (new Date().getTime() - new Date(room.createdAt).getTime()) > 24 * 60 * 60 * 1000) {
-    stopRoomTimer(roomId, "Room expired due to inactivity");
     rooms.delete(roomId);
     console.log(`Room ${roomId} expired and deleted.`);
     return undefined;
@@ -181,12 +141,7 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
   
   room.isGameStarted = true;
   room.numberPool = initializeNumberPool();
-  
-  if (room.settings.callingMode === 'auto') {
-    // Start the recursive calling loop
-    scheduleNextCall(roomId);
-  }
-
+  room.lastNumberCalledTimestamp = new Date(); // Initialize cooldown
 
   rooms.set(roomId, room);
   console.log(`Game started in room: ${roomId}.`);
@@ -212,7 +167,6 @@ export function resetRoomStore(roomId: string, hostId: string): Room | { error: 
     player.confirmedTicketCost = 0;
   });
   
-  stopRoomTimer(roomId, "Room was reset by the host.");
   rooms.set(roomId, room);
   return room;
 }
@@ -236,7 +190,6 @@ export function removePlayerFromRoomStore(roomId: string, playerId: string): { s
     
     // If the room becomes empty, delete it
     if (room.players.length === 0) {
-        stopRoomTimer(roomId, "Room is empty.");
         rooms.delete(roomId);
         console.log(`Room ${roomId} is empty and has been deleted.`);
         return { success: true };
@@ -260,9 +213,15 @@ export function callNextNumberStore(roomId: string): Room | { error: string; num
   const room = rooms.get(roomId);
   if (!room) return { error: "Room not found." };
   if (!room.isGameStarted || room.isGameOver) return { error: "Game not active." };
+  
+  const now = Date.now();
+  const lastCallTime = room.lastNumberCalledTimestamp ? new Date(room.lastNumberCalledTimestamp).getTime() : 0;
+  if (now - lastCallTime < SERVER_CALL_INTERVAL - 500) { // Allow a small buffer
+      return { error: 'Cooldown active or game not in progress.', number: room.currentNumber || undefined };
+  }
+
   if (room.numberPool.length === 0) {
     room.isGameOver = true;
-    stopRoomTimer(roomId, "All numbers called.");
     rooms.set(roomId, room);
     return { error: "All numbers called." };
   }
@@ -351,7 +310,6 @@ export function claimPrizeStore(
 
   if (prizeType === PRIZE_TYPES.FULL_HOUSE) {
     room.isGameOver = true;
-    stopRoomTimer(roomId, "Full House claimed");
   }
 
   rooms.set(roomId, room);
@@ -408,12 +366,6 @@ export function updateCallingModeStore(roomId: string, hostId: string, newMode: 
 
     room.settings.callingMode = newMode;
     rooms.set(roomId, room);
-
-    if (newMode === 'auto' && room.isGameStarted && !roomTimers.has(roomId)) {
-        scheduleNextCall(roomId);
-    } else if (newMode === 'manual') {
-        stopRoomTimer(roomId, "Switched to manual calling mode.");
-    }
     
     return room;
 }

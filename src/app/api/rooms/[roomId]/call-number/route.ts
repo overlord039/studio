@@ -1,4 +1,5 @@
 
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { callNextNumberStore, getRoomStateForClient, getRoomStore } from '@/lib/server/game-store';
 
@@ -19,10 +20,7 @@ export async function POST(
       return NextResponse.json({ message: "Room not found." }, { status: 404 });
     }
     if (room.host.id !== hostId) {
-      return NextResponse.json({ message: 'Only the host can call numbers manually' }, { status: 403 });
-    }
-    if (room.settings.callingMode !== 'manual') {
-        return NextResponse.json({ message: 'This room is in automatic calling mode.' }, { status: 400 });
+      return NextResponse.json({ message: 'Only the host can call numbers' }, { status: 403 });
     }
 
     const result = callNextNumberStore(roomId);
@@ -31,6 +29,10 @@ export async function POST(
       const errorResponse: { message: string, currentNumber?: number } = { message: result.error };
       if (result.number !== undefined) {
         errorResponse.currentNumber = result.number;
+      }
+      // For cooldown errors, we don't treat it as a hard error.
+      if (result.error === 'Cooldown active or game not in progress.') {
+          return NextResponse.json(getRoomStateForClient(roomId), { status: 200 });
       }
       return NextResponse.json(errorResponse, { status: 400 });
     }
