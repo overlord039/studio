@@ -216,9 +216,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const today = startOfDay(new Date());
     const lastLoginDate = startOfDay(new Date(user.stats.lastLogin || 0));
 
-    // If they already logged in today, no need to do anything.
     if (isSameDay(today, lastLoginDate)) {
-        return user;
+        return user; // Already logged in today.
     }
     
     const yesterday = subDays(today, 1);
@@ -228,29 +227,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let newLastClaimedDay = lastClaimed;
 
     if (isSameDay(lastLoginDate, yesterday)) {
-        // Streak continues
         newStreak = (user.stats.loginStreak || 0) + 1;
     } else {
-        // Streak is broken
-        newStreak = 1;
-        newLastClaimedDay = 0; // Reset reward cycle
+        newStreak = 1; // Streak is broken, reset to 1
+        // **KEY CHANGE**: Do NOT reset `newLastClaimedDay`. Progress is paused, not reset.
     }
     
+    // If the reward cycle was completed, reset it for the new login.
+    if (newLastClaimedDay >= 7) {
+        newLastClaimedDay = 0;
+    }
+
     const updates: { [key: string]: any } = { 
         'stats.lastLogin': today.toISOString(),
         'stats.loginStreak': newStreak,
+        'stats.lastClaimedDay': newLastClaimedDay,
     };
-    
-    if (newLastClaimedDay === 0 && lastClaimed > 0) {
-        updates['stats.lastClaimedDay'] = 0;
-    }
     
     const userDocRef = doc(db, "users", user.uid);
     try {
         await updateDoc(userDocRef, updates);
-
-        // Return the user object with the updated stats for immediate use in the UI.
-        const updatedUser = { 
+        
+        return { 
             ...user, 
             stats: { 
                 ...user.stats, 
@@ -259,7 +257,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 lastClaimedDay: newLastClaimedDay
             }
         };
-        return updatedUser;
 
     } catch (error) {
         console.error("Error updating daily login stats:", error);
