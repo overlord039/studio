@@ -35,7 +35,7 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
         triggerAnimation(result.claimedAmount);
         setTimeout(() => {
             handleClose();
-        }, 500); // Close dialog after animation has a moment to start
+        }, 800); // Close dialog after animation has a moment to start
       }
   };
 
