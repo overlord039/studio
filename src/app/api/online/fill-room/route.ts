@@ -67,11 +67,10 @@ export async function POST(request: NextRequest) {
       
       // --- Add Bots ---
       if (botsNeeded > 0) {
-        const namePool = shuffleArray([...ONLINE_BOT_NAMES]);
         for (let i = 0; i < botsNeeded; i++) {
           const botId = `bot_${Date.now()}_${i}`;
           const botRef = doc(playersCollectionRef, botId);
-          const botName = namePool[i % namePool.length];
+          const botName = `Guest#${Math.random().toString(36).substring(2, 7)}`;
           transaction.set(botRef, {
             id: botId,
             name: botName,
