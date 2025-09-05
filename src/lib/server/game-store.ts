@@ -133,7 +133,7 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
 
   const playersWithTickets = room.players.filter(p => p.tickets.length > 0).length;
   // For online games that are being auto-started, we might not have a ticketed player yet, so we allow it to proceed.
-  const minPlayersToStart = room.settings.gameMode === 'online' ? 0 : (room.settings.gameMode === 'multiplayer' ? MIN_LOBBY_SIZE : 1);
+  const minPlayersToStart = room.settings.gameMode === 'multiplayer' ? MIN_LOBBY_SIZE : 1;
 
   if (playersWithTickets < minPlayersToStart) {
      return { error: `Need at least ${minPlayersToStart} player(s) with tickets. Currently: ${playersWithTickets}` };

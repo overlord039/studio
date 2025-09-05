@@ -305,7 +305,10 @@ export default function LobbyPage() {
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to start game.");
       }
-      // No need to handle routing or sound here, the effect will pick up the change
+      
+      const startedRoomData = await response.json();
+      setRoomData(startedRoomData);
+      
     } catch (err) {
       console.error("Error starting game:", err);
       toast({ title: "Error Starting Game", description: (err as Error).message, variant: "destructive" });
