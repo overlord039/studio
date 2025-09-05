@@ -214,5 +214,3 @@ export async function POST(
     return NextResponse.json({ message: 'Error updating stats', error: (error as Error).message }, { status: 500 });
   }
 }
-
-    
