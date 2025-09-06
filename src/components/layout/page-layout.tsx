@@ -142,7 +142,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                        pathname.endsWith('/lobby') || 
                        pathname.startsWith('/create-room');
 
-    const showFooter = pathname === '/' || 
+    const showFooter = 
                        pathname.startsWith('/online') || 
                        pathname.endsWith('/lobby') || 
                        pathname.startsWith('/create-room');
