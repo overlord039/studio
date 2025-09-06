@@ -70,8 +70,6 @@ function PreGameContent() {
             return;
         }
 
-        playSound('notification.wav');
-
         const roomRef = doc(db, "rooms", roomId);
         const playersRef = collection(db, "rooms", roomId, "players");
 
@@ -116,7 +114,7 @@ function PreGameContent() {
             unsubPlayers();
         };
 
-    }, [roomId, playSound, router, toast, countdown]);
+    }, [roomId, router, toast, countdown]);
 
     // This effect handles the local ticking of the countdown and triggers the game start API call from the host
     useEffect(() => {
