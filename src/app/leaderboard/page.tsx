@@ -5,7 +5,6 @@ import React, { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Trophy, Star, AlertTriangle, ArrowLeft, Coins, Award } from 'lucide-react';
@@ -38,13 +37,14 @@ const LeaderboardRowSkeleton = () => (
         <TableCell className="w-12 text-center"><Skeleton className="h-5 w-5 rounded-full" /></TableCell>
         <TableCell className="font-medium">
             <div className="flex items-center gap-3">
-                <Skeleton className="h-10 w-10 rounded-full" />
                 <div className="space-y-1">
                     <Skeleton className="h-4 w-32" />
                     <Skeleton className="h-3 w-24" />
                 </div>
             </div>
         </TableCell>
+        <TableCell className="hidden text-right md:table-cell"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+        <TableCell className="hidden text-right md:table-cell"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
         <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
     </TableRow>
 );
@@ -95,7 +95,9 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                     <TableRow>
                         <TableHead className="w-12 text-center">Rank</TableHead>
                         <TableHead>Player</TableHead>
-                        <TableHead className="text-right">{title}</TableHead>
+                        <TableHead className="hidden text-right md:table-cell">Total Wins</TableHead>
+                        <TableHead className="hidden text-right md:table-cell">Total Coins</TableHead>
+                        <TableHead className="text-right">Level</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -105,7 +107,6 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                         players?.map((player, index) => {
                             const badge = getPlayerBadge(player);
                             const isCurrentUser = player.uid === currentUser?.uid;
-                            const stat = getStatForType(player);
                             return (
                                 <TableRow key={player.uid} className={cn(
                                     isCurrentUser ? 'bg-primary/20' : '',
@@ -117,27 +118,24 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                                         {player.rank}
                                     </TableCell>
                                     <TableCell className="font-medium">
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-10 w-10 border-2">
-                                                <AvatarImage src={player.photoURL || undefined} alt={player.displayName || 'Player'} />
-                                                <AvatarFallback>{player.displayName?.charAt(0) || 'P'}</AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex flex-col">
-                                                <span className="font-semibold">{player.displayName}</span>
-                                                {badge && (
-                                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                        <Image src={badge.icon} alt={badge.name} width={14} height={14} />
-                                                        <span>{badge.name}</span>
-                                                    </div>
-                                                )}
-                                            </div>
+                                        <div className="flex flex-col">
+                                            <span className="font-semibold">{player.displayName}</span>
+                                            {badge && (
+                                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                    <Image src={badge.icon} alt={badge.name} width={14} height={14} />
+                                                    <span>{badge.name}</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="font-bold flex items-center justify-end gap-1">
-                                            {stat.icon}
-                                            {stat.value}
-                                        </div>
+                                    <TableCell className="hidden text-right md:table-cell">
+                                      {player.stats.totalPrizesWon || 0}
+                                    </TableCell>
+                                     <TableCell className="hidden text-right md:table-cell">
+                                      {player.stats.coins || 0}
+                                    </TableCell>
+                                    <TableCell className="text-right font-bold">
+                                       {player.stats.level || 0}
                                     </TableCell>
                                 </TableRow>
                             )
