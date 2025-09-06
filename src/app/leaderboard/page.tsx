@@ -52,7 +52,7 @@ const LeaderboardRowSkeleton = () => (
 );
 
 
-const LeaderboardTable = ({ type, title }: { type: RankingType, title: string }) => {
+const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title: string, isActive: boolean }) => {
     const { currentUser } = useAuth();
     const { data: players, error, isLoading } = useQuery<LeaderboardPlayer[], Error>({
         queryKey: ['leaderboard', type],
@@ -91,7 +91,7 @@ const LeaderboardTable = ({ type, title }: { type: RankingType, title: string })
     }
     
     return (
-        <div className="border rounded-lg">
+        <div className={cn("border rounded-lg transition-all", isActive && "border-accent shadow-md")}>
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -171,6 +171,8 @@ const LeaderboardTable = ({ type, title }: { type: RankingType, title: string })
 
 
 export default function LeaderboardPage() {
+    const [activeTab, setActiveTab] = useState<RankingType>('xp');
+    
     return (
         <div className="container mx-auto py-8">
             <Card className="shadow-lg">
@@ -182,20 +184,20 @@ export default function LeaderboardPage() {
                     <CardDescription>See who's leading the pack in HousieHub!</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Tabs defaultValue="xp" className="w-full">
+                    <Tabs defaultValue="xp" className="w-full" onValueChange={(value) => setActiveTab(value as RankingType)}>
                         <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="xp">Top Players</TabsTrigger>
-                            <TabsTrigger value="wins">Most Wins</TabsTrigger>
-                            <TabsTrigger value="coins">Coin Masters</TabsTrigger>
+                            <TabsTrigger value="xp" className="data-[state=active]:border-b-2 data-[state=active]:border-accent">Top Players</TabsTrigger>
+                            <TabsTrigger value="wins" className="data-[state=active]:border-b-2 data-[state=active]:border-accent">Most Wins</TabsTrigger>
+                            <TabsTrigger value="coins" className="data-[state=active]:border-b-2 data-[state=active]:border-accent">Coin Masters</TabsTrigger>
                         </TabsList>
                         <TabsContent value="xp" className="mt-4">
-                            <LeaderboardTable type="xp" title="Level" />
+                            <LeaderboardTable type="xp" title="Level" isActive={activeTab === 'xp'} />
                         </TabsContent>
                         <TabsContent value="wins" className="mt-4">
-                           <LeaderboardTable type="wins" title="Total Wins" />
+                           <LeaderboardTable type="wins" title="Total Wins" isActive={activeTab === 'wins'} />
                         </TabsContent>
                         <TabsContent value="coins" className="mt-4">
-                           <LeaderboardTable type="coins" title="Coins" />
+                           <LeaderboardTable type="coins" title="Coins" isActive={activeTab === 'coins'} />
                         </TabsContent>
                     </Tabs>
                 </CardContent>
