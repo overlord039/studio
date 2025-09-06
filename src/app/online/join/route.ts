@@ -43,17 +43,16 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
   },
 };
 
-// This function cleans up rooms older than 1 hour that are stuck in waiting or finished states.
+// This function cleans up rooms older than 1 hour that are stuck in the 'waiting' state.
 async function cleanupOldRooms() {
   if (!db) return;
   const oneHourAgo = Timestamp.fromMillis(Date.now() - 60 * 60 * 1000);
   const roomsRef = collection(db, 'rooms');
   
-  // **FIX:** The query now also targets 'finished' rooms, not just 'waiting' rooms.
-  // This ensures that completed games are also cleaned up after a reasonable time.
+  // **FIX:** The query now only targets 'waiting' rooms to prevent deleting 'finished' rooms too early.
   const q = query(roomsRef, 
     where('isPublic', '==', true),
-    where('status', 'in', ['waiting', 'finished']), 
+    where('status', '==', 'waiting'), 
     where('createdAt', '<', oneHourAgo)
   );
 
@@ -61,26 +60,23 @@ async function cleanupOldRooms() {
     const oldRoomsSnapshot = await getDocs(q);
     if (oldRoomsSnapshot.empty) return;
     
-    // We need to delete subcollections as well for finished rooms.
     const batch = writeBatch(db);
     
     for (const roomDoc of oldRoomsSnapshot.docs) {
-      console.log(`Scheduling deletion for stale room: ${roomDoc.id} with status ${roomDoc.data().status}`);
+      console.log(`Scheduling deletion for stale waiting room: ${roomDoc.id}`);
 
-      // If it's a finished room, we should also delete its players subcollection.
-      if (roomDoc.data().status === 'finished') {
-        const playersRef = collection(db, 'rooms', roomDoc.id, 'players');
-        const playersSnap = await getDocs(playersRef);
-        playersSnap.forEach(playerDoc => {
-            batch.delete(playerDoc.ref);
-        });
-      }
+      // Since these are waiting rooms, players are in a sub-collection and should be deleted.
+      const playersRef = collection(db, 'rooms', roomDoc.id, 'players');
+      const playersSnap = await getDocs(playersRef);
+      playersSnap.forEach(playerDoc => {
+          batch.delete(playerDoc.ref);
+      });
       
       batch.delete(roomDoc.ref);
     }
     
     await batch.commit();
-    console.log(`Cleaned up ${oldRoomsSnapshot.size} stale room(s).`);
+    console.log(`Cleaned up ${oldRoomsSnapshot.size} stale waiting room(s).`);
   } catch (error) {
     console.error('Error cleaning up old rooms:', error);
   }
