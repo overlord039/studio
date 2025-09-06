@@ -510,8 +510,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       provider.setCustomParameters({ prompt: 'select_account' });
       
       const guestDocRef = doc(db, 'users', guestUser.uid);
-      const guestDoc = await getDoc(guestDocRef);
-      const guestStats = guestDoc.exists() ? guestDoc.data().stats : createDefaultStats();
       
       const result = await linkWithPopup(guestUser, provider);
       const firebaseUser = result.user;
@@ -520,6 +518,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const newUsername = firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`;
 
       await runTransaction(db, async (transaction) => {
+        const guestDoc = await transaction.get(guestDocRef);
+        if (!guestDoc.exists()) {
+            throw new Error("Guest user data not found. Cannot merge.");
+        }
+        const guestStats = guestDoc.data().stats || createDefaultStats();
+        
         const permanentUserDoc = await transaction.get(newPermanentUserDocRef);
         if (permanentUserDoc.exists()) {
             throw new Error("This Google account is already linked to another HousieHub user.");
