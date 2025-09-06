@@ -43,15 +43,16 @@ const TIERS: Record<OnlineGameTier, TierConfig> = {
   },
 };
 
-// This function cleans up rooms older than 1 hour that are stuck in waiting or finished states.
+// This function cleans up rooms older than 1 hour that are stuck in the 'waiting' state.
 async function cleanupOldRooms() {
   if (!db) return;
   const oneHourAgo = Timestamp.fromMillis(Date.now() - 60 * 60 * 1000);
   const roomsRef = collection(db, 'rooms');
   
-  // Query for rooms that are either 'waiting' or 'finished' and are older than an hour.
+  // **FIX:** The query now only targets 'waiting' rooms to prevent deleting 'finished' rooms too early.
   const q = query(roomsRef, 
-    where('status', 'in', ['waiting', 'finished']), 
+    where('isPublic', '==', true),
+    where('status', '==', 'waiting'), 
     where('createdAt', '<', oneHourAgo)
   );
 
@@ -59,13 +60,12 @@ async function cleanupOldRooms() {
     const oldRoomsSnapshot = await getDocs(q);
     if (oldRoomsSnapshot.empty) return;
     
-    // We need to delete subcollections as well.
     const batch = writeBatch(db);
     
     for (const roomDoc of oldRoomsSnapshot.docs) {
-      console.log(`Scheduling deletion for stale room: ${roomDoc.id} with status ${roomDoc.data().status}`);
+      console.log(`Scheduling deletion for stale waiting room: ${roomDoc.id}`);
 
-      // Delete the 'players' subcollection for each stale room.
+      // Since these are waiting rooms, players are in a sub-collection and should be deleted.
       const playersRef = collection(db, 'rooms', roomDoc.id, 'players');
       const playersSnap = await getDocs(playersRef);
       playersSnap.forEach(playerDoc => {
@@ -76,7 +76,7 @@ async function cleanupOldRooms() {
     }
     
     await batch.commit();
-    console.log(`Cleaned up ${oldRoomsSnapshot.size} stale room(s).`);
+    console.log(`Cleaned up ${oldRoomsSnapshot.size} stale waiting room(s).`);
   } catch (error) {
     console.error('Error cleaning up old rooms:', error);
   }
