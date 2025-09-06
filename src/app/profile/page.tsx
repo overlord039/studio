@@ -420,23 +420,22 @@ export default function ProfilePage() {
                                 
                                 {prizesWonArray.length > 0 ? (
                                     <Card className="bg-secondary">
-                                        <CardHeader className="p-3 pb-1">
-                                            <CardTitle className="text-sm font-semibold flex items-center gap-2 text-primary">
-                                                <Award className="h-4 w-4" /> Prizes Won
+                                        <CardHeader className="p-3">
+                                            <CardTitle className="text-sm font-semibold flex items-center gap-2 text-primary justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <Award className="h-4 w-4" /> Prizes Won
+                                                </div>
+                                                <span className="font-bold text-lg">{totalPrizesWon}</span>
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent className="p-3 pt-0">
-                                            <div className="grid grid-cols-2 gap-2 mt-2">
+                                            <div className="grid grid-cols-2 gap-2 mt-1">
                                                 {prizesWonArray.map(([prize, count]) => (
                                                     <div key={prize} className="bg-background/50 rounded-md p-2 flex justify-between items-center">
                                                         <span className="text-xs font-medium text-muted-foreground">{prize}</span>
                                                         <span className="font-bold text-sm text-foreground">{count}</span>
                                                     </div>
                                                 ))}
-                                            </div>
-                                            <div className="border-t mt-2 pt-2 flex justify-between items-center">
-                                                <span className="text-sm font-bold text-primary">Total Prizes</span>
-                                                <span className="font-bold text-lg text-primary">{totalPrizesWon}</span>
                                             </div>
                                         </CardContent>
                                     </Card>
