@@ -24,6 +24,7 @@ import type { UserStats } from '@/types';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useSound } from '@/contexts/sound-context';
+import { useToast } from "@/hooks/use-toast";
 
 const BadgeImageDialog = ({ src, alt }: { src: string, alt: string }) => (
     <DialogContent className="p-0 bg-transparent border-none shadow-none w-auto flex items-center justify-center">
