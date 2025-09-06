@@ -23,7 +23,6 @@ export async function GET(request: NextRequest) {
                 q = query(
                     usersRef,
                     orderBy('stats.totalPrizesWon', 'desc'),
-                    orderBy('stats.level', 'desc'),
                     limit(10)
                 );
                 break;
@@ -31,7 +30,6 @@ export async function GET(request: NextRequest) {
                 q = query(
                     usersRef,
                     orderBy('stats.coins', 'desc'),
-                    orderBy('stats.level', 'desc'),
                     limit(10)
                 );
                 break;
@@ -39,8 +37,7 @@ export async function GET(request: NextRequest) {
             default:
                  q = query(
                     usersRef,
-                    orderBy('stats.totalPrizesWon', 'desc'),
-                    orderBy('stats.coins', 'desc'),
+                    orderBy('stats.level', 'desc'),
                     limit(10)
                 );
                 break;

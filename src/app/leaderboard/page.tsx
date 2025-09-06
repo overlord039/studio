@@ -74,7 +74,7 @@ const LeaderboardTable = ({ type, title }: { type: RankingType, title: string })
                 return { value: player.stats.coins, icon: <Image src="/coin.png" alt="Coins" width={16} height={16} data-ai-hint="gold coin" /> };
             case 'xp':
             default:
-                return { value: player.stats.totalPrizesWon || 0, icon: <Award className="h-4 w-4 text-primary" /> };
+                return { value: player.stats.level || 0, icon: <Star className="h-4 w-4 text-primary" /> };
         }
     }
 
@@ -97,7 +97,7 @@ const LeaderboardTable = ({ type, title }: { type: RankingType, title: string })
                     <TableRow>
                         <TableHead className="w-12 text-center">Rank</TableHead>
                         <TableHead>Player</TableHead>
-                        <TableHead className="text-center hidden sm:table-cell">Level</TableHead>
+                        <TableHead className="text-center hidden sm:table-cell">Total Wins</TableHead>
                          {type === 'xp' && <TableHead className="text-right hidden md:table-cell">Total Coins</TableHead>}
                         <TableHead className="text-right">{title}</TableHead>
                     </TableRow>
@@ -138,7 +138,7 @@ const LeaderboardTable = ({ type, title }: { type: RankingType, title: string })
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-center hidden sm:table-cell">
-                                        <div className="font-bold text-primary">{player.stats.level}</div>
+                                        <div className="font-bold text-primary">{player.stats.totalPrizesWon}</div>
                                     </TableCell>
                                     {type === 'xp' && (
                                         <TableCell className="text-right hidden md:table-cell">
@@ -189,7 +189,7 @@ export default function LeaderboardPage() {
                             <TabsTrigger value="coins">Coin Masters</TabsTrigger>
                         </TabsList>
                         <TabsContent value="xp" className="mt-4">
-                            <LeaderboardTable type="xp" title="Total Wins" />
+                            <LeaderboardTable type="xp" title="Level" />
                         </TabsContent>
                         <TabsContent value="wins" className="mt-4">
                            <LeaderboardTable type="wins" title="Total Wins" />
