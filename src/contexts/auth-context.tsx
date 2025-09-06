@@ -508,48 +508,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      const result = await linkWithPopup(guestUser, provider);
       
+      const guestDocRef = doc(db, 'users', guestUser.uid);
+      const guestDoc = await getDoc(guestDocRef);
+      const guestStats = guestDoc.exists() ? guestDoc.data().stats : createDefaultStats();
+      
+      const result = await linkWithPopup(guestUser, provider);
       const firebaseUser = result.user;
       
-      const oldGuestUsername = guestData.displayName || '';
-      let newDisplayName = firebaseUser.displayName || oldGuestUsername;
-      
-      // Truncate display name if it's too long
-      if (newDisplayName.length > 12) {
-          newDisplayName = newDisplayName.substring(0, 12);
-      }
+      const newPermanentUserDocRef = doc(db, 'users', firebaseUser.uid);
+      const newUsername = firebaseUser.displayName || `User#${firebaseUser.uid.substring(0,5)}`;
 
-      const guestStats = guestData.stats || createDefaultStats();
-      guestStats.coins = (guestStats.coins || 0) + 10; // Linking reward
+      await runTransaction(db, async (transaction) => {
+        const permanentUserDoc = await transaction.get(newPermanentUserDocRef);
+        if (permanentUserDoc.exists()) {
+            throw new Error("This Google account is already linked to another HousieHub user.");
+        }
 
-      const batch = writeBatch(db);
-      
-      const userDocRef = doc(db, "users", firebaseUser.uid);
-      const usernameDocRef = doc(db, "usernames", newDisplayName.toLowerCase());
-      const oldGuestUsernameRef = doc(db, "usernames", oldGuestUsername.toLowerCase());
+        const mergedStats = {
+          ...guestStats,
+          coins: (guestStats.coins || 0) + 10, // Linking reward
+        };
 
-      const newUserProfile: User = {
-        uid: firebaseUser.uid,
-        displayName: newDisplayName,
-        email: firebaseUser.email,
-        photoURL: firebaseUser.photoURL || guestData.photoURL,
-        isGuest: false,
-        createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
-        stats: guestStats,
-      };
+        const newUserProfile: User = {
+          uid: firebaseUser.uid,
+          displayName: newUsername,
+          email: firebaseUser.email,
+          photoURL: firebaseUser.photoURL,
+          isGuest: false,
+          createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+          stats: mergedStats,
+        };
 
-      batch.set(userDocRef, newUserProfile);
-      batch.delete(oldGuestUsernameRef);
-      batch.set(usernameDocRef, { userId: firebaseUser.uid, username: newDisplayName });
-
-      await batch.commit();
+        transaction.set(newPermanentUserDocRef, newUserProfile);
+        transaction.delete(guestDocRef);
+        if(guestData.displayName) {
+          transaction.delete(doc(db, "usernames", guestData.displayName.toLowerCase()));
+        }
+        transaction.set(doc(db, "usernames", newUsername.toLowerCase()), { userId: firebaseUser.uid, username: newUsername });
+      });
 
       setReward({ amount: 10, message: 'Thanks for linking your account!' });
-      router.push('/profile');
-
+      // The onAuthStateChanged listener will handle the user state update automatically
     } catch (error: any) {
-      if (error.code === 'auth/credential-already-in-use') {
+      if (error.code === 'auth/credential-already-in-use' || error.message.includes("already linked")) {
         const handleSwitchAccount = async () => {
             await logout();
             await loginWithGoogle();
