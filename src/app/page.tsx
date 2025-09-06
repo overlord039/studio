@@ -128,25 +128,6 @@ export default function HomePage() {
         </Card>
       )}
     </div>
-    {/* Bottom navigation for mobile, above footer */}
-      <div className="mt-auto px-4 pb-4 w-full max-w-md mx-auto">
-        <Card className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-full shadow-lg">
-          <CardContent className="p-2 flex justify-around items-center">
-            <Button variant="ghost" className="flex-col h-auto text-white" onClick={() => handleFreeToolsNavigation('/number-caller')}>
-              <Speaker className="h-6 w-6 mb-1" />
-              <span className="text-xs">Caller</span>
-            </Button>
-            <Button variant="ghost" className="flex-col h-auto text-white" onClick={() => handleNavigateWithAuth('/leaderboard')}>
-              <Trophy className="h-6 w-6 mb-1" />
-              <span className="text-xs">Leaders</span>
-            </Button>
-            <Button variant="ghost" className="flex-col h-auto text-white" onClick={() => handleFreeToolsNavigation('/prize-calculator')}>
-              <Calculator className="h-6 w-6 mb-1" />
-              <span className="text-xs">Calculator</span>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
     </>
   );
 }

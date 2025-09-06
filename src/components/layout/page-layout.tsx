@@ -11,7 +11,7 @@ import type { ReactNode } from 'react';
 import React, { useState, useEffect } from 'react';
 import FeedbackForm from './feedback-form';
 import { Button } from '@/components/ui/button';
-import { Settings, MessageSquare, Calendar, Award, Shield, Badge as BadgeIcon, Medal, Trophy, Star, CheckCircle, X } from 'lucide-react';
+import { Settings, MessageSquare, Calendar, Award, Shield, Badge as BadgeIcon, Medal, Trophy, Star, CheckCircle, X, Speaker, Calculator } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { SettingsModal } from './header';
 import DailyRewardDialog from '../rewards/daily-reward-dialog';
@@ -22,6 +22,8 @@ import { Progress } from '@/components/ui/progress';
 import { BADGE_DEFINITIONS } from '@/lib/badges';
 import type { UserStats } from '@/types';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useSound } from '@/contexts/sound-context';
 
 const BadgeImageDialog = ({ src, alt }: { src: string, alt: string }) => (
     <DialogContent className="p-0 bg-transparent border-none shadow-none w-auto flex items-center justify-center">
@@ -114,6 +116,9 @@ export default function PageLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const { currentUser, handleClaimReward, isRewardDialogOpen, setIsRewardDialogOpen, canClaimReward } = useAuth();
+    const router = useRouter();
+    const { toast } = useToast();
+    const { playSound } = useSound();
 
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('general');
@@ -136,16 +141,31 @@ export default function PageLayout({ children }: { children: ReactNode }) {
         await handleClaimReward(day);
     }
 
+    const handleNavigateWithAuth = (path: string) => {
+        playSound('cards.mp3');
+        if (!currentUser) {
+        toast({
+            title: "Login Required",
+            description: "Please sign in to play.",
+            variant: "destructive",
+        });
+        return;
+        }
+        router.push(path);
+    };
+
+    const handleFreeToolsNavigation = (path: string) => {
+        playSound('cards.mp3');
+        router.push(path);
+    };
+
 
     const showHeader = pathname === '/' || 
                        pathname.startsWith('/online') || 
                        pathname.endsWith('/lobby') || 
                        pathname.startsWith('/create-room');
 
-    const showFooter = 
-                       pathname.startsWith('/online') || 
-                       pathname.endsWith('/lobby') || 
-                       pathname.startsWith('/create-room');
+    const showFooter = pathname === '/';
 
     const showActionIcons = pathname === '/';
 
@@ -224,7 +244,26 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                 {children}
             </main>
             <Toaster />
-            {showFooter && <Footer />}
+            {showFooter && (
+                 <footer className="mt-auto px-4 pb-4 w-full max-w-md mx-auto sticky bottom-4 z-10">
+                    <Card className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-full shadow-lg">
+                    <CardContent className="p-2 flex justify-around items-center">
+                        <Button variant="ghost" className="flex-col h-auto text-white" onClick={() => handleFreeToolsNavigation('/number-caller')}>
+                        <Speaker className="h-6 w-6 mb-1" />
+                        <span className="text-xs">Caller</span>
+                        </Button>
+                        <Button variant="ghost" className="flex-col h-auto text-white" onClick={() => handleNavigateWithAuth('/leaderboard')}>
+                        <Trophy className="h-6 w-6 mb-1" />
+                        <span className="text-xs">Leaders</span>
+                        </Button>
+                        <Button variant="ghost" className="flex-col h-auto text-white" onClick={() => handleFreeToolsNavigation('/prize-calculator')}>
+                        <Calculator className="h-6 w-6 mb-1" />
+                        <span className="text-xs">Calculator</span>
+                        </Button>
+                    </CardContent>
+                    </Card>
+                </footer>
+            )}
         </>
     );
 }
