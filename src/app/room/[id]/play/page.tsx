@@ -14,6 +14,7 @@
 
 
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -566,8 +567,8 @@ export default function GameRoomPage() {
   useEffect(() => {
     // This effect is now only for non-online games with MANUAL mode.
     // Auto modes (both online and offline) are handled by host-driven ticker.
-    if (!isOnlineGame && !isLoading && roomData && !roomData.isGameOver) {
-      if (previousCallingModeRef.current && roomData.settings && roomData.settings.callingMode !== previousCallingModeRef.current) {
+    if (!isOnlineGame && !isLoading && roomData && roomData.settings && !roomData.isGameOver) {
+      if (previousCallingModeRef.current && roomData.settings.callingMode !== previousCallingModeRef.current) {
         playSound('notification.wav');
         toast({
             title: "Mode Switched by Host",
@@ -754,7 +755,7 @@ export default function GameRoomPage() {
       }, 500); // 500ms delay before first call
       return () => clearTimeout(timer);
     }
-  }, [roomData?.isGameStarted, roomData?.calledNumbers.length, currentUser?.uid, roomData?.host.id, handleCallNextNumber]);
+  }, [roomData?.isGameStarted, roomData?.calledNumbers?.length, currentUser?.uid, roomData?.host?.id, handleCallNextNumber]);
 
 
   const handleToggleCallingMode = async () => {
