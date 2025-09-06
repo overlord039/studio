@@ -129,35 +129,21 @@ export default function HomePage() {
       )}
     </div>
     {/* Bottom navigation for mobile, above footer */}
-      <div className="mt-auto px-4 pb-4 flex justify-between items-center">
-        <Card 
-          className="bg-accent text-accent-foreground hover:bg-accent/90 transition-colors cursor-pointer rounded-2xl shadow-lg w-32"
-          onClick={() => handleFreeToolsNavigation('/number-caller')}
-          role="button"
-        >
-          <CardContent className="flex flex-col items-center justify-center p-2 text-center">
-            <Speaker className="h-6 w-6 mb-1" />
-            <p className="text-xs font-bold">Number Caller</p>
-          </CardContent>
-        </Card>
-        <Card
-            className="bg-purple-600 text-white hover:bg-purple-700 transition-colors cursor-pointer rounded-2xl shadow-lg w-32"
-            onClick={() => handleNavigateWithAuth('/leaderboard')}
-            role="button"
-        >
-            <CardContent className="flex flex-col items-center justify-center p-2 text-center">
-                <Trophy className="h-6 w-6 mb-1" />
-                <p className="text-xs font-bold">Leaderboard</p>
-            </CardContent>
-        </Card>
-        <Card 
-          className="bg-yellow-600 text-white hover:bg-yellow-700 transition-colors cursor-pointer rounded-2xl shadow-lg w-32"
-          onClick={() => handleFreeToolsNavigation('/prize-calculator')}
-          role="button"
-        >
-          <CardContent className="flex flex-col items-center justify-center p-2 text-center">
-            <Calculator className="h-6 w-6 mb-1" />
-            <p className="text-xs font-bold">Prize Calculator</p>
+      <div className="mt-auto px-4 pb-4 w-full max-w-md mx-auto">
+        <Card className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-full shadow-lg">
+          <CardContent className="p-2 flex justify-around items-center">
+            <Button variant="ghost" className="flex-col h-auto text-white" onClick={() => handleFreeToolsNavigation('/number-caller')}>
+              <Speaker className="h-6 w-6 mb-1" />
+              <span className="text-xs">Caller</span>
+            </Button>
+            <Button variant="ghost" className="flex-col h-auto text-white" onClick={() => handleNavigateWithAuth('/leaderboard')}>
+              <Trophy className="h-6 w-6 mb-1" />
+              <span className="text-xs">Leaders</span>
+            </Button>
+            <Button variant="ghost" className="flex-col h-auto text-white" onClick={() => handleFreeToolsNavigation('/prize-calculator')}>
+              <Calculator className="h-6 w-6 mb-1" />
+              <span className="text-xs">Calculator</span>
+            </Button>
           </CardContent>
         </Card>
       </div>
