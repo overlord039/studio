@@ -1,21 +1,4 @@
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -748,7 +731,7 @@ export default function GameRoomPage() {
       roomData.host?.id === currentUser.uid &&
       roomData.isGameStarted &&
       !roomData.isGameOver &&
-      roomData.calledNumbers.length === 0
+      roomData.calledNumbers?.length === 0
     ) {
       // Use a timeout to ensure the UI has mounted before the first call
       const timer = setTimeout(() => {
@@ -756,7 +739,7 @@ export default function GameRoomPage() {
       }, 500); // 500ms delay before first call
       return () => clearTimeout(timer);
     }
-  }, [roomData?.isGameStarted, roomData?.calledNumbers.length, currentUser?.uid, roomData?.host?.id, handleCallNextNumber]);
+  }, [roomData?.isGameStarted, roomData?.calledNumbers?.length, currentUser?.uid, roomData?.host?.id, handleCallNextNumber]);
 
 
   const handleToggleCallingMode = async () => {
