@@ -45,8 +45,6 @@ const LeaderboardRowSkeleton = () => (
                 </div>
             </div>
         </TableCell>
-        <TableCell className="text-center hidden sm:table-cell"><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
-        <TableCell className="text-right hidden md:table-cell"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
         <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
     </TableRow>
 );
@@ -97,8 +95,6 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                     <TableRow>
                         <TableHead className="w-12 text-center">Rank</TableHead>
                         <TableHead>Player</TableHead>
-                        <TableHead className="text-center hidden sm:table-cell">Total Wins</TableHead>
-                         {type === 'xp' && <TableHead className="text-right hidden md:table-cell">Total Coins</TableHead>}
                         <TableHead className="text-right">{title}</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -137,17 +133,6 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                                             </div>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="text-center hidden sm:table-cell">
-                                        <div className="font-bold text-primary">{player.stats.totalPrizesWon}</div>
-                                    </TableCell>
-                                    {type === 'xp' && (
-                                        <TableCell className="text-right hidden md:table-cell">
-                                            <div className="font-bold flex items-center justify-end gap-1">
-                                                <Image src="/coin.png" alt="Coins" width={16} height={16} data-ai-hint="gold coin" />
-                                                {player.stats.coins}
-                                            </div>
-                                        </TableCell>
-                                    )}
                                     <TableCell className="text-right">
                                         <div className="font-bold flex items-center justify-end gap-1">
                                             {stat.icon}
