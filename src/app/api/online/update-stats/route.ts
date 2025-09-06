@@ -98,8 +98,10 @@ export async function POST(request: NextRequest) {
         const humanPlayers = playersList.filter(p => p.type === 'human');
         const totalHumanTicketsSold = humanPlayers.reduce((acc, p) => acc + (p.tickets || 0), 0);
         
-        const botTicketsCount = roomData.botTickets ? Object.values(roomData.botTickets).reduce((acc: number, tickets: any) => acc + tickets.length, 0) : 0;
-        const totalTicketsSold = totalHumanTicketsSold + botTicketsCount;
+        const botPlayers = playersList.filter(p => p.type === 'bot');
+        const totalBotTickets = botPlayers.reduce((acc, p) => acc + p.tickets, 0);
+
+        const totalTicketsSold = totalHumanTicketsSold + totalBotTickets;
         const totalPrizePool = (roomData.settings.ticketPrice || 0) * totalTicketsSold;
         
         const finalPrizes = calculatePrizes(totalPrizePool, roomData.settings);
@@ -111,7 +113,7 @@ export async function POST(request: NextRequest) {
         };
         
         let xpGained = Math.round(XP_PER_GAME_PARTICIPATION * XP_MODIFIER_ONLINE);
-        let coinsEarned = 0;
+        let coinsEarnedFromPrizes = 0;
         const prizesWonByPlayer: PrizeType[] = [];
 
         prizesForFormat.forEach(prize => {
@@ -125,7 +127,7 @@ export async function POST(request: NextRequest) {
                 
                 const prizeAmount = finalPrizes[prize as PrizeType] || 0;
                 const prizePerWinner = claimInfo.claimedBy.length > 0 ? Math.floor(prizeAmount / claimInfo.claimedBy.length) : 0;
-                coinsEarned += prizePerWinner;
+                coinsEarnedFromPrizes += prizePerWinner;
             }
         });
         
@@ -134,6 +136,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Leveling up logic
+        let coinsFromLevelUp = 0;
         let currentLevel = currentStats.level || 1;
         let currentXp = (currentStats.xp || 0) + xpGained;
         let xpForNext = getXpForNextLevel(currentLevel);
@@ -141,7 +144,7 @@ export async function POST(request: NextRequest) {
         while (currentXp >= xpForNext) {
             currentLevel++;
             currentXp -= xpForNext;
-            coinsEarned += getCoinsForLevelUp(currentLevel); // Add level up reward
+            coinsFromLevelUp += getCoinsForLevelUp(currentLevel); // Add level up reward
             xpForNext = getXpForNextLevel(currentLevel);
         }
 
@@ -158,14 +161,15 @@ export async function POST(request: NextRequest) {
         };
 
         const badgeResult = checkAndAwardBadges(currentStats, prospectiveStats);
-        coinsEarned += badgeResult.coinsAwarded;
         statsUpdate['stats.badges'] = badgeResult.badgeNames;
         newlyEarnedBadges = badgeResult.newlyEarnedBadges;
         
-        if (coinsEarned > 0) {
-            statsUpdate['stats.coins'] = increment(coinsEarned);
+        const totalCoinsEarned = coinsEarnedFromPrizes + coinsFromLevelUp + badgeResult.coinsAwarded;
+        
+        if (totalCoinsEarned > 0) {
+            statsUpdate['stats.coins'] = increment(totalCoinsEarned);
         }
-        totalWinnings = coinsEarned;
+        totalWinnings = totalCoinsEarned;
 
         statsUpdate['stats.level'] = currentLevel;
         statsUpdate['stats.xp'] = currentXp;
