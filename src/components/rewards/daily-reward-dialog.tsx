@@ -50,7 +50,7 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
           <div className="flex justify-center mb-2">
               <Gift className="h-12 w-12 text-primary"/>
           </div>
-          <DialogTitle className="text-2xl">Daily Login Reward</DialogTitle>
+          <DialogTitle className="text-2xl">Daily Bonus</DialogTitle>
           <DialogDescription>
             Log in every day to earn rewards. Complete the week for a bonus!
           </DialogDescription>
