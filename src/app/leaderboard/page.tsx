@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Trophy, Star, AlertTriangle, ArrowLeft, Coins, Award } from 'lucide-react';
+import { Trophy, Star, AlertTriangle, ArrowLeft, Coins, Award, Info } from 'lucide-react';
 import type { User } from '@/types';
 import { BADGE_DEFINITIONS } from '@/lib/badges';
 import Image from 'next/image';
@@ -17,6 +17,14 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import type { RankingType } from '@/app/api/leaderboard/route';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface LeaderboardPlayer extends User {
     rank: number;
@@ -144,12 +152,62 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
 export default function LeaderboardPage() {
     const [activeTab, setActiveTab] = useState<RankingType>('xp');
     
+    const RankingInfo = () => {
+        switch (activeTab) {
+            case 'xp':
+                return (
+                    <>
+                        <DialogTitle>Top Players Ranking</DialogTitle>
+                        <DialogDescription>
+                            This leaderboard uses a normalized score to rank players, providing a balanced view of performance.
+                            <br/><br/>
+                            <strong>Score = (0.7 * Player Wins / Max Wins) + (0.3 * Player Coins / Max Coins)</strong>
+                            <br/><br/>
+                            This ensures that both wins and coins contribute fairly to the rank.
+                        </DialogDescription>
+                    </>
+                );
+            case 'wins':
+                return (
+                    <>
+                        <DialogTitle>Most Wins Ranking</DialogTitle>
+                        <DialogDescription>
+                            This leaderboard ranks players based on their total number of prizes won. In case of a tie, the player with the higher level is ranked first.
+                        </DialogDescription>
+                    </>
+                );
+            case 'coins':
+                 return (
+                    <>
+                        <DialogTitle>Coin Masters Ranking</DialogTitle>
+                        <DialogDescription>
+                           This leaderboard ranks players based on their total number of coins. In case of a tie, the player with the higher level is ranked first.
+                        </DialogDescription>
+                    </>
+                );
+            default:
+                return null;
+        }
+    };
+    
     return (
         <div className="container mx-auto py-8">
             <Card className="shadow-lg">
-                <CardHeader className="text-center">
+                <CardHeader className="text-center relative">
                     <CardTitle className="text-3xl font-bold">Leaderboard</CardTitle>
                     <CardDescription>See who's leading the pack in HousieHub!</CardDescription>
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="absolute top-2 right-2">
+                                <Info className="h-5 w-5" />
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <RankingInfo />
+                            </DialogHeader>
+                        </DialogContent>
+                    </Dialog>
                 </CardHeader>
                 <CardContent>
                     <Tabs defaultValue="xp" className="w-full" onValueChange={(value) => setActiveTab(value as RankingType)}>
