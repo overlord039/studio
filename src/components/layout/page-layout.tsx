@@ -190,7 +190,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
             {showHeader && <Header />}
             <main className={mainClassName}>
                  {showActionIcons && currentUser && (
-                    <div className="fixed top-1/2 -translate-y-1/2 right-0 z-40 flex flex-col items-center gap-4">
+                    <div className="fixed top-36 right-0 z-40 flex flex-col items-center gap-4">
                         <div className="flex flex-col items-center gap-1">
                             <Dialog open={isRewardDialogOpen} onOpenChange={setIsRewardDialogOpen}>
                                 <TooltipProvider>
