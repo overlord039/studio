@@ -199,7 +199,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                 <Tooltip>
                                 <TooltipTrigger asChild>
                                     <DialogTrigger asChild>
-                                        <Button variant="ghost" className="flex-col h-auto text-white rounded-full aspect-square">
+                                        <Button variant="ghost" className="flex-col text-white rounded-full p-2">
                                             {canClaimReward && !isRewardDialogOpen && (
                                                 <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
                                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -207,9 +207,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                                 </span>
                                             )}
                                             <Calendar className="h-5 w-5 mb-0.5" />
-                                            <div className="text-[10px] leading-tight text-center">
-                                                <span className="text-[10px]">Daily Bonus</span>
-                                            </div>
+                                            <span className="text-[10px] leading-tight">Daily Bonus</span>
                                         </Button>
                                     </DialogTrigger>
                                 </TooltipTrigger>
@@ -226,9 +224,9 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                 <Tooltip>
                                 <TooltipTrigger asChild>
                                     <DialogTrigger asChild>
-                                        <Button variant="ghost" className="flex-col h-auto text-white rounded-full aspect-square">
+                                        <Button variant="ghost" className="flex-col text-white rounded-full p-2">
                                             <Award className="h-5 w-5 mb-0.5" />
-                                            <span className="text-[10px]">Achievements</span>
+                                            <span className="text-[10px] leading-tight">Achievements</span>
                                         </Button>
                                     </DialogTrigger>
                                 </TooltipTrigger>
@@ -242,14 +240,14 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                             <TooltipTrigger asChild>
                                 <Button 
                                     variant="ghost" 
-                                    className="flex-col h-auto text-white rounded-full aspect-square"
-                                    onClick={() => handleFreeToolsNavigation('/number-caller')}
+                                    className="flex-col text-white rounded-full p-2"
+                                    onClick={() => handleNavigateWithAuth('/leaderboard')}
                                 >
-                                    <Speaker className="h-5 w-5 mb-0.5" />
-                                    <span className="text-[10px]">Caller</span>
+                                    <Trophy className="h-5 w-5 mb-0.5" />
+                                    <span className="text-[10px] leading-tight">Leaderboard</span>
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent><p>Number Caller</p></TooltipContent>
+                            <TooltipContent><p>Leaderboard</p></TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
                         <TooltipProvider>
@@ -257,16 +255,17 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                             <TooltipTrigger asChild>
                                 <Button 
                                     variant="ghost" 
-                                    className="flex-col h-auto text-white rounded-full aspect-square"
-                                    onClick={() => handleNavigateWithAuth('/leaderboard')}
+                                    className="flex-col text-white rounded-full p-2"
+                                    onClick={() => handleFreeToolsNavigation('/number-caller')}
                                 >
-                                    <Trophy className="h-5 w-5 mb-0.5" />
-                                    <span className="text-[10px]">Leaderboard</span>
+                                    <Speaker className="h-5 w-5 mb-0.5" />
+                                    <span className="text-[10px] leading-tight">Caller</span>
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent><p>Leaderboard</p></TooltipContent>
+                            <TooltipContent><p>Number Caller</p></TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
+                        <FeedbackForm />
                     </CardContent>
                     </Card>
                 </footer>
