@@ -112,9 +112,19 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                                         </div>
                                     </TableCell>
                                     {type === 'xp' && <TableCell className="text-right font-bold p-2 text-xs sm:text-sm">{player.stats.totalPrizesWon || 0}</TableCell>}
-                                    {type === 'xp' && <TableCell className="text-right font-bold p-2 text-xs sm:text-sm">{player.stats.coins || 0}</TableCell>}
+                                    {type === 'xp' && <TableCell className="text-right font-bold p-2 text-xs sm:text-sm">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Image src="/coin.png" alt="Coins" width={14} height={14} data-ai-hint="gold coin" />
+                                            <span>{player.stats.coins || 0}</span>
+                                        </div>
+                                    </TableCell>}
                                     {type === 'wins' && <TableCell className="text-right font-bold p-2 text-xs sm:text-sm">{player.stats.totalPrizesWon || 0}</TableCell>}
-                                    {type === 'coins' && <TableCell className="text-right font-bold p-2 text-xs sm:text-sm">{player.stats.coins || 0}</TableCell>}
+                                    {type === 'coins' && <TableCell className="text-right font-bold p-2 text-xs sm:text-sm">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Image src="/coin.png" alt="Coins" width={14} height={14} data-ai-hint="gold coin" />
+                                            <span>{player.stats.coins || 0}</span>
+                                        </div>
+                                    </TableCell>}
                                 </TableRow>
                             )
                         })
