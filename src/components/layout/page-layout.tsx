@@ -190,21 +190,21 @@ export default function PageLayout({ children }: { children: ReactNode }) {
             {showHeader && <Header />}
             <main className={mainClassName}>
                  {showActionIcons && currentUser && (
-                    <div className="fixed top-28 right-0 z-40 flex flex-col items-center gap-4">
+                    <div className="fixed top-28 right-0 z-40 flex flex-col items-center gap-2 md:gap-4">
                         <div className="flex flex-col items-center gap-1">
                             <Dialog open={isRewardDialogOpen} onOpenChange={setIsRewardDialogOpen}>
                                 <TooltipProvider>
                                     <Tooltip>
                                     <TooltipTrigger asChild>
                                         <DialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-12 w-12 relative bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white">
+                                            <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 relative bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white">
                                                 {currentUser && canClaimReward && !isRewardDialogOpen && (
                                                     <span className="absolute top-1 right-1 flex h-3 w-3">
                                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                                                         <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                                                     </span>
                                                 )}
-                                                <Calendar className="h-7 w-7" />
+                                                <Calendar className="h-6 w-6 md:h-7 md:w-7" />
                                             </Button>
                                         </DialogTrigger>
                                     </TooltipTrigger>
@@ -218,7 +218,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                     />
                                 )}
                             </Dialog>
-                            <span className="text-white text-[10px] font-bold uppercase tracking-wider bg-black/20 px-2 py-0.5 rounded-full">Daily</span>
+                            <span className="text-white text-[8px] md:text-[10px] font-bold uppercase tracking-wider bg-black/20 px-1.5 md:px-2 py-0.5 rounded-full">Daily</span>
                         </div>
 
                          <div className="flex flex-col items-center gap-1">
@@ -227,8 +227,8 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                     <Tooltip>
                                     <TooltipTrigger asChild>
                                         <DialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-12 w-12 bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white">
-                                                <Award className="h-7 w-7" />
+                                            <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white">
+                                                <Award className="h-6 w-6 md:h-7 md:w-7" />
                                             </Button>
                                         </DialogTrigger>
                                     </TooltipTrigger>
@@ -237,12 +237,12 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                 </TooltipProvider>
                                 <AchievementsDialog earnedBadges={new Set(currentUser.stats.badges || [])} stats={currentUser.stats} />
                             </Dialog>
-                            <span className="text-white text-[10px] font-bold uppercase tracking-wider bg-black/20 px-2 py-0.5 rounded-full">Badges</span>
+                            <span className="text-white text-[8px] md:text-[10px] font-bold uppercase tracking-wider bg-black/20 px-1.5 md:px-2 py-0.5 rounded-full">Badges</span>
                         </div>
 
                         <div className="flex flex-col items-center gap-1">
                             <FeedbackForm />
-                            <span className="text-white text-[10px] font-bold uppercase tracking-wider bg-black/20 px-2 py-0.5 rounded-full">Feedback</span>
+                            <span className="text-white text-[8px] md:text-[10px] font-bold uppercase tracking-wider bg-black/20 px-1.5 md:px-2 py-0.5 rounded-full">Feedback</span>
                         </div>
                     </div>
                 )}
