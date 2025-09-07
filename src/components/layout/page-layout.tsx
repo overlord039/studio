@@ -235,7 +235,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                 </TooltipProvider>
                                 <AchievementsDialog earnedBadges={new Set(currentUser.stats.badges || [])} stats={currentUser.stats} />
                             </Dialog>
-                            <span className="text-white text-[8px] md:text-[10px] font-bold uppercase tracking-wider bg-black/20 px-1.5 md:px-2 py-0.5 rounded-full">Badges</span>
+                            <span className="text-white text-[8px] md:text-[10px] font-bold uppercase tracking-wider bg-black/20 px-1.5 md:px-2 py-0.5 rounded-full">Achievements</span>
                         </div>
 
                         <div className="flex flex-col items-center gap-1">
