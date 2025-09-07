@@ -109,7 +109,7 @@ export default function FeedbackForm() {
       <DialogTrigger asChild>
         <Button variant="ghost" className="flex-col h-auto text-white">
             <MessageSquare className="h-6 w-6 mb-1" />
-            <span className="text-xs">Feedback</span>
+            <span className="text-[10px]">Feedback</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
