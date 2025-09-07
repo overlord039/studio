@@ -45,34 +45,32 @@ export async function GET(request: NextRequest) {
                 q = query(
                     usersRef,
                     orderBy('stats.totalPrizesWon', 'desc'),
-                    orderBy('stats.level', 'desc'), // Firestore requires index for this
-                    limit(50) // Fetch more to sort in backend
+                    limit(50) 
                 );
                 const winsSnapshot = await getDocs(q);
                 players = winsSnapshot.docs.map(doc => doc.data());
-                // No need to sort again if Firestore handles it
+                sortLeaderboard(players, 'totalPrizesWon', 'level');
                 break;
             case 'coins':
                 q = query(
                     usersRef,
                     orderBy('stats.coins', 'desc'),
-                    orderBy('stats.level', 'desc'), // Firestore requires index for this
                     limit(50)
                 );
                 const coinsSnapshot = await getDocs(q);
                 players = coinsSnapshot.docs.map(doc => doc.data());
-                 // No need to sort again if Firestore handles it
+                sortLeaderboard(players, 'coins', 'level');
                 break;
             case 'xp': // Top Players
             default:
                  q = query(
                     usersRef,
                     orderBy('stats.totalPrizesWon', 'desc'),
-                    orderBy('stats.coins', 'desc'),
-                    limit(50) // Firestore requires index
+                    limit(50)
                 );
                 const xpSnapshot = await getDocs(q);
                 players = xpSnapshot.docs.map(doc => doc.data());
+                sortLeaderboard(players, 'totalPrizesWon', 'coins');
                 break;
         }
 
@@ -102,7 +100,7 @@ export async function GET(request: NextRequest) {
         console.error('Error fetching leaderboard:', error);
         
         let errorMessage = (error as Error).message;
-        if (errorMessage.includes('requires an index')) {
+        if (errorMessage.includes('requires an index') || errorMessage.includes('inequality filter')) {
              errorMessage = 'The leaderboard query needs a database index. Please create it in your Firebase console.';
         }
 
