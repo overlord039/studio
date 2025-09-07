@@ -190,56 +190,60 @@ export default function PageLayout({ children }: { children: ReactNode }) {
             {showHeader && <Header />}
             <main className={mainClassName}>
                  {showActionIcons && currentUser && (
-                    <div className="fixed top-18 right-4 z-40 flex flex-col items-center gap-2">
-                        <Dialog open={isRewardDialogOpen} onOpenChange={setIsRewardDialogOpen}>
-                            <TooltipProvider>
-                                <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <DialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-12 w-12 relative">
-                                             {currentUser && canClaimReward && !isRewardDialogOpen && (
-                                                <span className="absolute top-2 right-2 flex h-3 w-3">
-                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                                                </span>
-                                            )}
-                                            <Calendar className="h-7 w-7 text-white" />
-                                            <span className="sr-only">Daily Rewards</span>
-                                        </Button>
-                                    </DialogTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Daily Rewards</p>
-                                </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            {currentUser && (
-                                <DailyRewardDialog 
-                                    user={currentUser} 
-                                    onClaim={handleClaimAndClose}
-                                />
-                            )}
-                        </Dialog>
-                        <Dialog>
-                            <TooltipProvider>
-                                <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <DialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-12 w-12">
-                                            <Award className="h-7 w-7 text-white" />
-                                            <span className="sr-only">Achievements</span>
-                                        </Button>
-                                    </DialogTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Achievements</p>
-                                </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            <AchievementsDialog earnedBadges={new Set(currentUser.stats.badges || [])} stats={currentUser.stats} />
-                        </Dialog>
+                    <div className="fixed top-1/2 -translate-y-1/2 right-0 z-40 flex flex-col items-center gap-4">
+                        <div className="flex flex-col items-center gap-1">
+                            <Dialog open={isRewardDialogOpen} onOpenChange={setIsRewardDialogOpen}>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <DialogTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-12 w-12 relative bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white">
+                                                {currentUser && canClaimReward && !isRewardDialogOpen && (
+                                                    <span className="absolute top-1 right-1 flex h-3 w-3">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                                    </span>
+                                                )}
+                                                <Calendar className="h-7 w-7" />
+                                            </Button>
+                                        </DialogTrigger>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left"><p>Daily Rewards</p></TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                                {currentUser && (
+                                    <DailyRewardDialog 
+                                        user={currentUser} 
+                                        onClaim={handleClaimAndClose}
+                                    />
+                                )}
+                            </Dialog>
+                            <span className="text-white text-[10px] font-bold uppercase tracking-wider bg-black/20 px-2 py-0.5 rounded-full">Daily</span>
+                        </div>
 
-                        <FeedbackForm />
+                         <div className="flex flex-col items-center gap-1">
+                            <Dialog>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <DialogTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-12 w-12 bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white">
+                                                <Award className="h-7 w-7" />
+                                            </Button>
+                                        </DialogTrigger>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left"><p>Achievements</p></TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                                <AchievementsDialog earnedBadges={new Set(currentUser.stats.badges || [])} stats={currentUser.stats} />
+                            </Dialog>
+                            <span className="text-white text-[10px] font-bold uppercase tracking-wider bg-black/20 px-2 py-0.5 rounded-full">Badges</span>
+                        </div>
+
+                        <div className="flex flex-col items-center gap-1">
+                            <FeedbackForm />
+                            <span className="text-white text-[10px] font-bold uppercase tracking-wider bg-black/20 px-2 py-0.5 rounded-full">Feedback</span>
+                        </div>
                     </div>
                 )}
                 {children}

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -104,13 +105,13 @@ export default function FeedbackForm() {
         <Tooltip>
           <TooltipTrigger asChild>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-12 w-12">
-                  <MessageSquare className="h-7 w-7 text-white" />
+                <Button variant="ghost" size="icon" className="h-12 w-12 bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white">
+                  <MessageSquare className="h-7 w-7" />
                   <span className="sr-only">Feedback</span>
               </Button>
             </DialogTrigger>
           </TooltipTrigger>
-          <TooltipContent>
+          <TooltipContent side="left">
             <p>Feedback</p>
           </TooltipContent>
         </Tooltip>
