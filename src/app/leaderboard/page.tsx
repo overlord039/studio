@@ -194,6 +194,11 @@ export default function LeaderboardPage() {
         <div className="container mx-auto py-8">
             <Card className="shadow-lg">
                 <CardHeader className="text-center relative">
+                    <Link href="/" passHref className="absolute top-2 left-2">
+                        <Button variant="ghost" size="icon">
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                    </Link>
                     <CardTitle className="text-3xl font-bold">Leaderboard</CardTitle>
                     <CardDescription>See who's leading the pack in HousieHub!</CardDescription>
                     <Dialog>
