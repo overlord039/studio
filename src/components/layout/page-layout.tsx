@@ -28,7 +28,8 @@ import { useToast } from "@/hooks/use-toast";
 
 const BadgeImageDialog = ({ src, alt }: { src: string, alt: string }) => (
     <DialogContent className="p-0 bg-transparent border-none shadow-none w-auto flex items-center justify-center">
-        <Image src={src} alt={alt} width={256} height={256} className="rounded-lg" />
+      <DialogTitle className="sr-only">{alt}</DialogTitle>
+      <Image src={src} alt={alt} width={256} height={256} className="rounded-lg" />
     </DialogContent>
 );
 
@@ -55,33 +56,32 @@ const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>
                                 : "bg-secondary/30"
                         )}
                     >
-                        <CardHeader className="p-4 flex flex-col md:flex-row items-center gap-4 space-y-0">
+                        <CardHeader className="p-4 flex flex-row items-center gap-4 space-y-0">
                            <div className="flex-shrink-0">
                                 <Dialog>
                                     <DialogTrigger asChild>
                                         <button className="transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring rounded-full">
-                                            <Image src={badgeDef.icon} alt={badgeDef.name} width={64} height={64} className="h-12 w-12 md:h-16 md:w-16" />
+                                            <Image src={badgeDef.icon} alt={badgeDef.name} width={64} height={64} className="h-16 w-16" />
                                         </button>
                                     </DialogTrigger>
                                     <BadgeImageDialog src={badgeDef.icon} alt={badgeDef.name} />
                                 </Dialog>
                            </div>
-                           <div className="flex-grow space-y-1 w-full text-center md:text-left">
+                           <div className="flex-grow space-y-1 w-full text-left">
                                 <div className="flex justify-between items-start">
-                                    <div>
+                                    <div className="flex flex-col gap-1">
                                         <CardTitle className={cn(
                                             "text-lg font-bold",
                                             hasBadge ? 'text-green-800 dark:text-green-200' : 'text-foreground'
                                         )}>{badgeDef.name}</CardTitle>
-                                        <p className="text-sm text-muted-foreground">{badgeDef.description}</p>
+                                        <div className="flex items-center gap-1.5 text-sm font-semibold text-amber-700 dark:text-amber-400 bg-amber-400/20 px-2 py-1 rounded-full w-fit">
+                                            <Image src="/coin.png" alt="Coin" width={16} height={16} />
+                                            <span>Reward: {badgeDef.reward} Coins</span>
+                                        </div>
                                     </div>
                                     {hasBadge && <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0" />}
                                 </div>
-                               
-                               <div className="flex items-center gap-1.5 text-sm font-semibold text-amber-700 dark:text-amber-400 pt-1 bg-amber-400/20 px-2 py-1 rounded-full w-fit mx-auto md:mx-0">
-                                   <Image src="/coin.png" alt="Coin" width={16} height={16} />
-                                   <span>Reward: {badgeDef.reward} Coins</span>
-                               </div>
+                               <p className="text-sm text-muted-foreground pt-1">{badgeDef.description}</p>
                            </div>
                         </CardHeader>
                         {!hasBadge && (
