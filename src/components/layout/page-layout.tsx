@@ -235,9 +235,9 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                             </TooltipProvider>
                             <AchievementsDialog earnedBadges={new Set(currentUser.stats.badges || [])} stats={currentUser.stats} />
                         </Dialog>
-                        <Button variant="ghost" className="flex-col h-auto text-white rounded-full aspect-square" onClick={() => handleFreeToolsNavigation('/')}>
-                            <Home className="h-5 w-5 mb-0.5" />
-                            <span className="text-[10px]">Home</span>
+                        <Button variant="ghost" className="flex-col h-auto text-white rounded-full aspect-square" onClick={() => handleFreeToolsNavigation('/number-caller')}>
+                            <Speaker className="h-5 w-5 mb-0.5" />
+                            <span className="text-[10px]">Caller</span>
                         </Button>
                         <TooltipProvider>
                             <Tooltip>
