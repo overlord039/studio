@@ -27,12 +27,7 @@ export default function FeedbackForm() {
   useEffect(() => {
     if (currentUser && !currentUser.isGuest) {
         const matchesPlayed = currentUser.stats?.matchesPlayed || 0;
-        const hasSubmitted = localStorage.getItem('feedbackSubmitted');
         const lastPromptedAt = parseInt(localStorage.getItem('feedbackLastPromptedAt') || '-1', 10);
-
-        if (hasSubmitted) {
-            return; // Never show again if they have submitted.
-        }
 
         // Logic for the first-time prompt after 3 games
         const shouldPromptForFirstTime = matchesPlayed === 3 && lastPromptedAt < 3;
@@ -86,6 +81,7 @@ export default function FeedbackForm() {
         userName: currentUser.displayName || 'Guest',
         rating,
         feedback: feedback.trim(),
+        matchesPlayedAtSubmission: currentUser.stats?.matchesPlayed || 0,
         createdAt: serverTimestamp(),
       });
 
@@ -93,7 +89,6 @@ export default function FeedbackForm() {
         title: "Thank You!",
         description: "Your feedback has been submitted successfully.",
       });
-      localStorage.setItem('feedbackSubmitted', 'true');
       setOpen(false);
       setRating(0);
       setFeedback('');
