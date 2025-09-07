@@ -56,7 +56,7 @@ const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>
                                 : "bg-secondary/30"
                         )}
                     >
-                        <CardHeader className="p-4 flex flex-row items-center gap-4 space-y-0">
+                        <CardHeader className="p-4 flex flex-col md:flex-row items-center md:items-start gap-4 space-y-0">
                            <div className="flex-shrink-0">
                                 <Dialog>
                                     <DialogTrigger asChild>
@@ -67,21 +67,19 @@ const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>
                                     <BadgeImageDialog src={badgeDef.icon} alt={badgeDef.name} />
                                 </Dialog>
                            </div>
-                           <div className="flex-grow space-y-1 w-full text-left">
-                                <div className="flex justify-between items-start">
-                                    <div className="flex flex-col gap-1">
-                                        <CardTitle className={cn(
-                                            "text-lg font-bold",
-                                            hasBadge ? 'text-green-800 dark:text-green-200' : 'text-foreground'
-                                        )}>{badgeDef.name}</CardTitle>
-                                        <div className="flex items-center gap-1.5 text-sm font-semibold text-amber-700 dark:text-amber-400 bg-amber-400/20 px-2 py-1 rounded-full w-fit">
-                                            <Image src="/coin.png" alt="Coin" width={16} height={16} />
-                                            <span>Reward: {badgeDef.reward} Coins</span>
-                                        </div>
+                           <div className="flex-grow space-y-1 w-full text-center md:text-left">
+                                <div className="flex flex-col md:flex-row justify-between items-center">
+                                    <CardTitle className={cn(
+                                        "text-lg font-bold",
+                                        hasBadge ? 'text-green-800 dark:text-green-200' : 'text-foreground'
+                                    )}>{badgeDef.name}</CardTitle>
+                                    <div className="flex items-center gap-1.5 text-sm font-semibold text-amber-700 dark:text-amber-400 bg-amber-400/20 px-2 py-1 rounded-full w-fit mt-1 md:mt-0">
+                                        <Image src="/coin.png" alt="Coin" width={16} height={16} />
+                                        <span>Reward: {badgeDef.reward} Coins</span>
                                     </div>
-                                    {hasBadge && <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0" />}
                                 </div>
                                <p className="text-sm text-muted-foreground pt-1">{badgeDef.description}</p>
+                               {hasBadge && <CheckCircle className="h-6 w-6 text-green-500 mx-auto md:mx-0 mt-2" />}
                            </div>
                         </CardHeader>
                         {!hasBadge && (
@@ -218,7 +216,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                     />
                                 )}
                             </Dialog>
-                            <span className="text-white text-[8px] md:text-[10px] font-bold uppercase tracking-wider bg-black/20 px-1.5 md:px-2 py-0.5 rounded-full">Daily</span>
+                            <span className="text-white text-[8px] md:text-[10px] font-bold uppercase tracking-wider bg-black/20 px-1.5 md:px-2 py-0.5 rounded-full">Daily Bonus</span>
                         </div>
 
                          <div className="flex flex-col items-center gap-1">
