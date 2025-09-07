@@ -255,7 +255,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                         </Button>
                         <Button variant="ghost" className="flex-col h-auto text-white" onClick={() => handleNavigateWithAuth('/leaderboard')}>
                         <Trophy className="h-6 w-6 mb-1" />
-                        <span className="text-xs">Leaders</span>
+                        <span className="text-xs">Leaderboard</span>
                         </Button>
                         <Button variant="ghost" className="flex-col h-auto text-white" onClick={() => handleFreeToolsNavigation('/prize-calculator')}>
                         <Calculator className="h-6 w-6 mb-1" />
