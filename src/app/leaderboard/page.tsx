@@ -17,8 +17,6 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import type { RankingType } from '@/app/api/leaderboard/route';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
 
 interface LeaderboardPlayer extends User {
     rank: number;
@@ -38,7 +36,6 @@ const LeaderboardRowSkeleton = () => (
         <TableCell className="w-12 text-center"><Skeleton className="h-5 w-5 rounded-full" /></TableCell>
         <TableCell className="font-medium">
             <div className="flex items-center gap-3">
-                <Skeleton className="h-10 w-10 rounded-full" />
                 <div className="space-y-1">
                     <Skeleton className="h-4 w-32" />
                     <Skeleton className="h-3 w-24" />
@@ -84,7 +81,7 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                         <TableHead className="w-12 text-center">Rank</TableHead>
                         <TableHead>Player</TableHead>
                         {type === 'xp' && <TableHead className="text-right">Total Wins</TableHead>}
-                        {type === 'xp' && <TableHead className="text-right">Total Coins</TableHead>}
+                        {type === 'xp' && <TableHead className="text-right" suppressHydrationWarning>Total Coins</TableHead>}
                         {type === 'wins' && <TableHead className="text-right">Total Wins</TableHead>}
                         {type === 'coins' && <TableHead className="text-right">Total Coins</TableHead>}
                     </TableRow>
@@ -108,10 +105,6 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                                     </TableCell>
                                     <TableCell className="font-medium">
                                         <div className="flex items-center gap-3">
-                                            <Avatar className="h-10 w-10">
-                                                <AvatarImage src={player.photoURL || `https://placehold.co/40x40.png?text=${player.displayName?.charAt(0)}`} alt={player.displayName || ''} />
-                                                <AvatarFallback>{player.displayName?.charAt(0)}</AvatarFallback>
-                                            </Avatar>
                                             <div className="flex flex-col">
                                                 <span className="font-semibold">{player.displayName}</span>
                                                 {badge && (
