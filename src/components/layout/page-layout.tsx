@@ -191,7 +191,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
             </main>
             <Toaster />
             {showFooter && currentUser && (
-                 <footer className="mt-auto px-2 pb-2 w-full max-w-lg mx-auto sticky bottom-2 z-10">
+                 <footer className="mt-auto px-2 pb-2 w-full max-w-md mx-auto sticky bottom-2 z-10">
                     <Card className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-full shadow-lg">
                     <CardContent className="p-1 flex justify-around items-center">
                         <Dialog open={isRewardDialogOpen} onOpenChange={setIsRewardDialogOpen}>
