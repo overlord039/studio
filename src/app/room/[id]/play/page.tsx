@@ -1151,7 +1151,6 @@ export default function GameRoomPage() {
                   {roomData.settings.gameMode === 'multiplayer' && (
                     <span className="font-mono text-xs opacity-80">#{roomId}</span>
                   )}
-                  <span>({myTickets.length} {ticketsText(myTickets.length)})</span>
               </div>
             </div>
             <div className="flex-shrink-0 flex items-center gap-2">
