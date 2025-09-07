@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useCallback } from 'react';
@@ -146,7 +145,7 @@ export default function LeaderboardPage() {
                     <div className="flex justify-center items-center gap-2 text-primary mb-2">
                         <Trophy className="h-10 w-10" />
                     </div>
-                    <CardTitle className="text-3xl font-bold">Leaderboards</CardTitle>
+                    <CardTitle className="text-3xl font-bold">Leaderboard</CardTitle>
                     <CardDescription>See who's leading the pack in HousieHub!</CardDescription>
                 </CardHeader>
                 <CardContent>
