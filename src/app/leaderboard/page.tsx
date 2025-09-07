@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import type { RankingType } from '@/app/api/leaderboard/route';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 interface LeaderboardPlayer extends User {
