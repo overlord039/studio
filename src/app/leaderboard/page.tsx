@@ -33,15 +33,16 @@ const fetchLeaderboard = async (type: RankingType): Promise<LeaderboardPlayer[]>
 
 const LeaderboardRowSkeleton = () => (
     <TableRow>
-        <TableCell className="w-12 text-center"><Skeleton className="h-5 w-5 rounded-full" /></TableCell>
-        <TableCell className="font-medium">
-            <div className="flex items-center gap-3">
+        <TableCell className="w-12 text-center p-2"><Skeleton className="h-5 w-5 rounded-full" /></TableCell>
+        <TableCell className="font-medium p-2">
+            <div className="flex items-center gap-2">
                 <div className="space-y-1">
-                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-24" />
                 </div>
             </div>
         </TableCell>
-        <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+        <TableCell className="text-right p-2"><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
+        <TableCell className="text-right p-2 hidden sm:table-cell"><Skeleton className="h-4 w-12 ml-auto" /></TableCell>
     </TableRow>
 );
 
@@ -77,12 +78,12 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead className="w-12 text-center">Rank</TableHead>
-                        <TableHead>Player</TableHead>
-                        {type === 'xp' && <TableHead className="text-right hidden sm:table-cell">Total Wins</TableHead>}
-                        {type === 'xp' && <TableHead className="text-right hidden sm:table-cell" suppressHydrationWarning>Total Coins</TableHead>}
-                        {type === 'wins' && <TableHead className="text-right">Total Wins</TableHead>}
-                        {type === 'coins' && <TableHead className="text-right">Total Coins</TableHead>}
+                        <TableHead className="w-12 text-center p-2 text-xs sm:text-sm">Rank</TableHead>
+                        <TableHead className="p-2 text-xs sm:text-sm">Player</TableHead>
+                        {type === 'xp' && <TableHead className="text-right p-2 text-xs sm:text-sm">Total Wins</TableHead>}
+                        {type === 'xp' && <TableHead className="text-right p-2 text-xs sm:text-sm" suppressHydrationWarning>Total Coins</TableHead>}
+                        {type === 'wins' && <TableHead className="text-right p-2 text-xs sm:text-sm">Total Wins</TableHead>}
+                        {type === 'coins' && <TableHead className="text-right p-2 text-xs sm:text-sm">Total Coins</TableHead>}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -99,10 +100,10 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                                     !isCurrentUser && index === 1 && 'bg-gray-400/20',
                                     !isCurrentUser && index === 2 && 'bg-orange-400/20',
                                 )}>
-                                    <TableCell className="w-12 text-center font-bold text-lg">
+                                    <TableCell className="w-12 text-center font-bold text-sm sm:text-lg p-2">
                                         {player.rank}
                                     </TableCell>
-                                    <TableCell className="font-medium">
+                                    <TableCell className="font-medium p-2 text-xs sm:text-sm">
                                         <div className="flex items-center gap-2">
                                             <span className="font-semibold">{player.displayName}</span>
                                             {badge && (
@@ -110,10 +111,10 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                                             )}
                                         </div>
                                     </TableCell>
-                                    {type === 'xp' && <TableCell className="text-right font-bold hidden sm:table-cell">{player.stats.totalPrizesWon || 0}</TableCell>}
-                                    {type === 'xp' && <TableCell className="text-right font-bold hidden sm:table-cell">{player.stats.coins || 0}</TableCell>}
-                                    {type === 'wins' && <TableCell className="text-right font-bold">{player.stats.totalPrizesWon || 0}</TableCell>}
-                                    {type === 'coins' && <TableCell className="text-right font-bold">{player.stats.coins || 0}</TableCell>}
+                                    {type === 'xp' && <TableCell className="text-right font-bold p-2 text-xs sm:text-sm">{player.stats.totalPrizesWon || 0}</TableCell>}
+                                    {type === 'xp' && <TableCell className="text-right font-bold p-2 text-xs sm:text-sm">{player.stats.coins || 0}</TableCell>}
+                                    {type === 'wins' && <TableCell className="text-right font-bold p-2 text-xs sm:text-sm">{player.stats.totalPrizesWon || 0}</TableCell>}
+                                    {type === 'coins' && <TableCell className="text-right font-bold p-2 text-xs sm:text-sm">{player.stats.coins || 0}</TableCell>}
                                 </TableRow>
                             )
                         })
@@ -162,4 +163,3 @@ export default function LeaderboardPage() {
         </div>
     );
 }
-
