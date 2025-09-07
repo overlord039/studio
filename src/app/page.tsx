@@ -44,6 +44,8 @@ export default function HomePage() {
     router.push(path);
   };
 
+  const hasZeroCoins = currentUser && !loading && currentUser.stats.coins === 0;
+
   return (
     <>
     <div className="flex-grow flex flex-col items-center space-y-2 p-2">
@@ -75,8 +77,8 @@ export default function HomePage() {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/online') }}
             >
-            <CardContent className="flex flex-row md:flex-col items-center justify-center p-4 gap-3 text-center md:h-48 md:w-full">
-                <Globe className="h-6 w-6 md:h-12 md:w-12" />
+            <CardContent className={cn("flex flex-row md:flex-col items-center justify-center p-4 gap-3 text-center md:h-48 md:w-full", !hasZeroCoins && "p-6")}>
+                <Globe className={cn("h-6 w-6 md:h-12 md:w-12", !hasZeroCoins && "h-8 w-8")} />
                 <p className="text-lg md:text-2xl font-bold">Online</p>
             </CardContent>
             </Card>
@@ -88,8 +90,8 @@ export default function HomePage() {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/create-room') }}
             >
-            <CardContent className="flex flex-row md:flex-col items-center justify-center p-4 gap-3 text-center md:h-48 md:w-full">
-                <Users className="h-6 w-6 md:h-12 md:w-12" />
+            <CardContent className={cn("flex flex-row md:flex-col items-center justify-center p-4 gap-3 text-center md:h-48 md:w-full", !hasZeroCoins && "p-6")}>
+                <Users className={cn("h-6 w-6 md:h-12 md:w-12", !hasZeroCoins && "h-8 w-8")} />
                 <p className="text-lg md:text-2xl font-bold">Friends</p>
             </CardContent>
             </Card>
@@ -101,15 +103,15 @@ export default function HomePage() {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/play-with-computer') }}
             >
-            <CardContent className="flex flex-row md:flex-col items-center justify-center p-4 gap-3 text-center md:h-48 md:w-full">
-                <Bot className="h-6 w-6 md:h-12 md:w-12" />
+            <CardContent className={cn("flex flex-row md:flex-col items-center justify-center p-4 gap-3 text-center md:h-48 md:w-full", !hasZeroCoins && "p-6")}>
+                <Bot className={cn("h-6 w-6 md:h-12 md:w-12", !hasZeroCoins && "h-8 w-8")} />
                 <p className="text-lg md:text-2xl font-bold">Offline</p>
             </CardContent>
             </Card>
         </div>
         
       </div>
-      {currentUser && !loading && currentUser.stats.coins === 0 && (
+      {hasZeroCoins && (
         <Card className="w-full max-w-md bg-accent/20 border-accent/50 p-4 my-2">
           <CardContent className="p-0 flex flex-col items-center text-center space-y-3">
             <div className="flex items-center gap-2">
