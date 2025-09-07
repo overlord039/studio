@@ -167,14 +167,6 @@ export default function LeaderboardPage() {
                     </Tabs>
                 </CardContent>
             </Card>
-             <div className="mt-8 text-center">
-                <Link href="/" passHref>
-                    <Button variant="outline">
-                        <ArrowLeft className="mr-2 h-4 w-4"/>
-                        Back to Home
-                    </Button>
-                </Link>
-            </div>
         </div>
     );
 }
