@@ -30,6 +30,8 @@ const BORDER_COLORS = [
 
 
 export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMuted, onToggleMute, animationKey }: CalledNumberDisplayProps) {
+  // The first number in calledNumbers is the most recent (which is the current one).
+  // The history should be the numbers *before* the current one.
   const recentHistory = calledNumbers.slice(1, 11);
   const animationDuration = `${SERVER_CALL_INTERVAL / 1000}s`;
 

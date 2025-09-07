@@ -1310,7 +1310,7 @@ export default function GameRoomPage() {
           <div className="w-full max-w-md relative">
               <MemoizedCalledNumberDisplay 
                   currentNumber={roomData.currentNumber}
-                  calledNumbers={isOnlineGame ? [...roomData.calledNumbers].reverse() : roomData.calledNumbers}
+                  calledNumbers={roomData.calledNumbers}
                   isMuted={isVoiceMuted}
                   onToggleMute={() => setIsVoiceMuted(prev => !prev)}
                   animationKey={animationKey}
@@ -1375,7 +1375,7 @@ export default function GameRoomPage() {
                       <DialogTitle>Number Board</DialogTitle>
                   </DialogHeader>
                   <MemoizedLiveNumberBoard
-                      calledNumbers={isOnlineGame ? [...roomData.calledNumbers].reverse() : roomData.calledNumbers}
+                      calledNumbers={roomData.calledNumbers}
                       currentNumber={roomData.currentNumber}
                       remainingCount={NUMBERS_RANGE_MAX - roomData.calledNumbers.length}
                       calledCount={roomData.calledNumbers.length}
@@ -1395,7 +1395,7 @@ export default function GameRoomPage() {
                     <MemoizedHousieTicket
                       ticketIndex={index}
                       ticket={ticket}
-                      calledNumbers={isOnlineGame ? [...roomData.calledNumbers].reverse() : roomData.calledNumbers}
+                      calledNumbers={roomData.calledNumbers}
                       markedNumbers={markedNumbers}
                       onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
                       className="w-full max-w-md lg:max-w-lg"
