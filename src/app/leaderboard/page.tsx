@@ -103,10 +103,13 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                             const isCurrentUser = player.uid === currentUser?.uid;
                             return (
                                 <TableRow key={player.uid} className={cn(
-                                    isCurrentUser ? 'bg-primary/20' : '',
-                                    !isCurrentUser && index === 0 && 'bg-yellow-400/20',
-                                    !isCurrentUser && index === 1 && 'bg-gray-400/20',
-                                    !isCurrentUser && index === 2 && 'bg-orange-400/20',
+                                    isCurrentUser 
+                                      ? 'bg-primary/20 border-y-2 border-primary' 
+                                      : (
+                                        index === 0 ? 'bg-yellow-400/20' :
+                                        index === 1 ? 'bg-gray-400/20' :
+                                        index === 2 ? 'bg-orange-400/20' : ''
+                                      )
                                 )}>
                                     <TableCell className="w-12 text-center font-bold text-sm sm:text-lg p-2">
                                         {player.rank}
