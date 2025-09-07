@@ -47,9 +47,6 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
     <DialogContent className="max-w-md w-[90vw] p-0 overflow-hidden" onInteractOutside={(e) => { if (canClaimToday) e.preventDefault() }}>
       <div className="relative p-6">
         <DialogHeader className="text-center">
-          <div className="flex justify-center mb-2">
-              <Gift className="h-12 w-12 text-primary"/>
-          </div>
           <DialogTitle className="text-2xl">Daily Bonus</DialogTitle>
           <DialogDescription>
             Log in every day to earn rewards. Complete the week for a bonus!
