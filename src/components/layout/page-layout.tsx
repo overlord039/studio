@@ -251,7 +251,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                     <CardContent className="p-2 flex justify-around items-center">
                         <Button variant="ghost" className="flex-col h-auto text-white" onClick={() => handleFreeToolsNavigation('/number-caller')}>
                         <Speaker className="h-6 w-6 mb-1" />
-                        <span className="text-xs">Caller</span>
+                        <span className="text-xs">Number Caller</span>
                         </Button>
                         <Button variant="ghost" className="flex-col h-auto text-white" onClick={() => handleNavigateWithAuth('/leaderboard')}>
                         <Trophy className="h-6 w-6 mb-1" />
