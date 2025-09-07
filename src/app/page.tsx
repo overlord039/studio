@@ -77,7 +77,7 @@ export default function HomePage() {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/online') }}
             >
-            <CardContent className="flex flex-row md:flex-col items-center justify-center p-6 gap-3 text-center md:h-48 md:w-full">
+            <CardContent className="flex flex-row md:flex-col items-center justify-center p-6 gap-3 text-center md:h-48 md:w-full h-full">
                 <Globe className="h-8 w-8 md:h-12 md:w-12" />
                 <p className="text-lg md:text-2xl font-bold">Online</p>
             </CardContent>
@@ -90,7 +90,7 @@ export default function HomePage() {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/create-room') }}
             >
-            <CardContent className="flex flex-row md:flex-col items-center justify-center p-6 gap-3 text-center md:h-48 md:w-full">
+            <CardContent className="flex flex-row md:flex-col items-center justify-center p-6 gap-3 text-center md:h-48 md:w-full h-full">
                 <Users className="h-8 w-8 md:h-12 md:w-12" />
                 <p className="text-lg md:text-2xl font-bold">Friends</p>
             </CardContent>
@@ -103,32 +103,37 @@ export default function HomePage() {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/play-with-computer') }}
             >
-            <CardContent className="flex flex-row md:flex-col items-center justify-center p-6 gap-3 text-center md:h-48 md:w-full">
-                <Bot className="h-8 w-8 md:h-12 md:w-12" />
-                <p className="text-lg md:text-2xl font-bold">Offline</p>
-            </CardContent>
+            <CardContent className="flex flex-col items-center justify-center p-4 gap-2 text-center h-full">
+                {hasZeroCoins ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <Image src="/coin.png" alt="Coins" width={24} height={24} data-ai-hint="gold coin" />
+                      <p className="font-bold text-lg">You have 0 coins!</p>
+                    </div>
+                    <p className="text-sm">Play offline games to earn coins</p>
+                     <Button 
+                        onClick={(e) => {
+                            e.stopPropagation(); // Prevent card's onClick from firing
+                            handleNavigateWithAuth('/play-with-computer');
+                        }}
+                        variant="secondary"
+                        size="sm"
+                        className="mt-2 text-black"
+                    >
+                        Play Offline
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Bot className="h-8 w-8 md:h-12 md:w-12" />
+                    <p className="text-lg md:text-2xl font-bold">Offline</p>
+                  </>
+                )}
+              </CardContent>
             </Card>
         </div>
         
       </div>
-      {hasZeroCoins && (
-        <Card className="w-full max-w-md bg-accent/20 border-accent/50 p-4 my-2">
-          <CardContent className="p-0 flex flex-col items-center text-center space-y-3">
-            <div className="flex items-center gap-2">
-                <Image src="/coin.png" alt="Coins" width={24} height={24} />
-                <p className="font-bold text-lg">You have 0 coins!</p>
-            </div>
-            <p className="text-sm">Play offline games against bots to earn coins</p>
-            <Button 
-                onClick={() => handleNavigateWithAuth('/play-with-computer')}
-                variant="secondary"
-                size="sm"
-            >
-                Play Offline
-            </Button>
-          </CardContent>
-        </Card>
-      )}
     </div>
     </>
   );
