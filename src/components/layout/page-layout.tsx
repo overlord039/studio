@@ -11,7 +11,7 @@ import type { ReactNode } from 'react';
 import React, from 'react';
 import FeedbackForm from './feedback-form';
 import { Button } from '@/components/ui/button';
-import { Settings, MessageSquare, Calendar, Award, Shield, Badge as BadgeIcon, Medal, Trophy, Star, CheckCircle, X, Speaker, Calculator } from 'lucide-react';
+import { Settings, MessageSquare, Calendar, Award, Shield, Badge as BadgeIcon, Medal, Trophy, Star, CheckCircle, X, Speaker, Calculator, Home } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { SettingsModal } from './header';
 import DailyRewardDialog from '../rewards/daily-reward-dialog';
@@ -187,90 +187,74 @@ export default function PageLayout({ children }: { children: ReactNode }) {
         <>
             {showHeader && <Header />}
             <main className={mainClassName}>
-                 {showActionIcons && currentUser && (
-                    <div className="fixed top-20 right-4 z-40 flex flex-col items-center gap-2 md:gap-4">
-                        <div className="flex flex-col items-center gap-1">
-                            <Dialog open={isRewardDialogOpen} onOpenChange={setIsRewardDialogOpen}>
-                                <TooltipProvider>
-                                    <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <DialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-12 w-12 md:h-14 md:w-14 relative bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white">
-                                                {currentUser && canClaimReward && !isRewardDialogOpen && (
-                                                    <span className="absolute top-1 right-1 flex h-3 w-3">
-                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                                                    </span>
-                                                )}
-                                                <Calendar className="h-6 w-6 md:h-7 md:w-7" />
-                                            </Button>
-                                        </DialogTrigger>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="left"><p>Daily Bonus</p></TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                                {currentUser && (
-                                    <DailyRewardDialog 
-                                        user={currentUser} 
-                                        onClaim={handleClaimAndClose}
-                                    />
-                                )}
-                            </Dialog>
-                        </div>
-
-                         <div className="flex flex-col items-center gap-1">
-                            <Dialog>
-                                <TooltipProvider>
-                                    <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <DialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-12 w-12 md:h-14 md:w-14 bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white">
-                                                <Award className="h-6 w-6 md:h-7 md:w-7" />
-                                            </Button>
-                                        </DialogTrigger>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="left"><p>Achievements</p></TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                                <AchievementsDialog earnedBadges={new Set(currentUser.stats.badges || [])} stats={currentUser.stats} />
-                            </Dialog>
-                        </div>
-
-                        <div className="flex flex-col items-center gap-1">
-                            <TooltipProvider>
-                                <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-12 w-12 md:h-14 md:w-14 bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white"
-                                        onClick={() => handleNavigateWithAuth('/leaderboard')}
-                                    >
-                                        <Trophy className="h-6 w-6 md:h-7 md:w-7" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="left"><p>Leaderboard</p></TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </div>
-                    </div>
-                )}
                 {children}
             </main>
             <Toaster />
-            {showFooter && (
-                 <footer className="mt-auto px-4 pb-4 w-full max-w-md mx-auto sticky bottom-4 z-10">
+            {showFooter && currentUser && (
+                 <footer className="mt-auto px-2 pb-2 w-full max-w-lg mx-auto sticky bottom-2 z-10">
                     <Card className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-full shadow-lg">
-                    <CardContent className="p-2 flex justify-around items-center">
-                        <Button variant="ghost" className="flex-col h-auto text-white" onClick={() => handleFreeToolsNavigation('/number-caller')}>
-                        <Speaker className="h-6 w-6 mb-1" />
-                        <span className="text-xs">Number Caller</span>
+                    <CardContent className="p-1 flex justify-around items-center">
+                        <Dialog open={isRewardDialogOpen} onOpenChange={setIsRewardDialogOpen}>
+                            <TooltipProvider>
+                                <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <DialogTrigger asChild>
+                                        <Button variant="ghost" className="flex-col h-auto text-white rounded-full aspect-square">
+                                            {canClaimReward && !isRewardDialogOpen && (
+                                                <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                                                </span>
+                                            )}
+                                            <Calendar className="h-5 w-5 mb-0.5" />
+                                            <span className="text-[10px]">Daily</span>
+                                        </Button>
+                                    </DialogTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Daily Bonus</p></TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <DailyRewardDialog 
+                                user={currentUser} 
+                                onClaim={handleClaimAndClose}
+                            />
+                        </Dialog>
+                        <Dialog>
+                            <TooltipProvider>
+                                <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <DialogTrigger asChild>
+                                        <Button variant="ghost" className="flex-col h-auto text-white rounded-full aspect-square">
+                                            <Award className="h-5 w-5 mb-0.5" />
+                                            <span className="text-[10px]">Badges</span>
+                                        </Button>
+                                    </DialogTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Achievements</p></TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <AchievementsDialog earnedBadges={new Set(currentUser.stats.badges || [])} stats={currentUser.stats} />
+                        </Dialog>
+                        <Button variant="ghost" className="flex-col h-auto text-white rounded-full aspect-square" onClick={() => handleFreeToolsNavigation('/')}>
+                            <Home className="h-5 w-5 mb-0.5" />
+                            <span className="text-[10px]">Home</span>
                         </Button>
+                        <TooltipProvider>
+                            <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button 
+                                    variant="ghost" 
+                                    className="flex-col h-auto text-white rounded-full aspect-square"
+                                    onClick={() => handleNavigateWithAuth('/leaderboard')}
+                                >
+                                    <Trophy className="h-5 w-5 mb-0.5" />
+                                    <span className="text-[10px]">Leaders</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Leaderboard</p></TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                         <FeedbackForm />
-                        <Button variant="ghost" className="flex-col h-auto text-white" onClick={() => handleFreeToolsNavigation('/prize-calculator')}>
-                        <Calculator className="h-6 w-6 mb-1" />
-                        <span className="text-xs">Calculator</span>
-                        </Button>
                     </CardContent>
                     </Card>
                 </footer>
