@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useCallback } from 'react';
@@ -109,7 +110,7 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                                                 {badge && (
                                                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                                         <Image src={badge.icon} alt={badge.name} width={14} height={14} />
-                                                        <span>{badge.name}</span>
+                                                        
                                                     </div>
                                                 )}
                                             </div>
