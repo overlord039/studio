@@ -6,6 +6,27 @@ import type { User } from '@/types';
 
 export type RankingType = 'xp' | 'wins' | 'coins';
 
+// Helper function to sort the results with a secondary condition
+function sortLeaderboard(
+    players: any[],
+    primaryKey: 'totalPrizesWon' | 'coins' | 'level',
+    secondaryKey: 'level' | 'coins'
+) {
+    return players.sort((a, b) => {
+        const primaryA = a.stats[primaryKey] || 0;
+        const primaryB = b.stats[primaryKey] || 0;
+        
+        if (primaryA !== primaryB) {
+            return primaryB - primaryA;
+        }
+
+        const secondaryA = a.stats[secondaryKey] || 0;
+        const secondaryB = b.stats[secondaryKey] || 0;
+        return secondaryB - secondaryA;
+    });
+}
+
+
 export async function GET(request: NextRequest) {
     if (!db) {
         return NextResponse.json({ message: 'Firestore is not configured.' }, { status: 500 });
@@ -17,36 +38,48 @@ export async function GET(request: NextRequest) {
 
         const usersRef = collection(db, 'users');
         let q;
+        let players;
 
         switch (rankingType) {
             case 'wins':
                 q = query(
                     usersRef,
                     orderBy('stats.totalPrizesWon', 'desc'),
-                    limit(10)
+                    orderBy('stats.level', 'desc'), // Firestore requires index for this
+                    limit(50) // Fetch more to sort in backend
                 );
+                const winsSnapshot = await getDocs(q);
+                players = winsSnapshot.docs.map(doc => doc.data());
+                // No need to sort again if Firestore handles it
                 break;
             case 'coins':
                 q = query(
                     usersRef,
                     orderBy('stats.coins', 'desc'),
-                    limit(10)
+                    orderBy('stats.level', 'desc'), // Firestore requires index for this
+                    limit(50)
                 );
+                const coinsSnapshot = await getDocs(q);
+                players = coinsSnapshot.docs.map(doc => doc.data());
+                 // No need to sort again if Firestore handles it
                 break;
-            case 'xp':
+            case 'xp': // Top Players
             default:
                  q = query(
                     usersRef,
-                    orderBy('stats.level', 'desc'),
-                    limit(10)
+                    orderBy('stats.totalPrizesWon', 'desc'),
+                    orderBy('stats.coins', 'desc'),
+                    limit(50) // Firestore requires index
                 );
+                const xpSnapshot = await getDocs(q);
+                players = xpSnapshot.docs.map(doc => doc.data());
                 break;
         }
 
-        const querySnapshot = await getDocs(q);
 
-        const leaderboard = querySnapshot.docs.map((doc, index) => {
-            const data = doc.data() as User;
+        const top10Players = players.slice(0, 10);
+
+        const leaderboard = top10Players.map((data, index) => {
             // Only return necessary fields to keep payload small
             return {
                 rank: index + 1,
@@ -54,9 +87,9 @@ export async function GET(request: NextRequest) {
                 displayName: data.displayName,
                 photoURL: data.photoURL,
                 stats: {
-                    level: data.stats.level,
-                    xp: data.stats.xp,
-                    coins: data.stats.coins,
+                    level: data.stats.level || 0,
+                    xp: data.stats.xp || 0,
+                    coins: data.stats.coins || 0,
                     totalPrizesWon: data.stats.totalPrizesWon || 0,
                     badges: data.stats.badges || [],
                 }
@@ -67,8 +100,14 @@ export async function GET(request: NextRequest) {
 
     } catch (error) {
         console.error('Error fetching leaderboard:', error);
+        
+        let errorMessage = (error as Error).message;
+        if (errorMessage.includes('requires an index')) {
+             errorMessage = 'The leaderboard query needs a database index. Please create it in your Firebase console.';
+        }
+
         return NextResponse.json(
-            { success: false, message: (error as Error).message },
+            { success: false, message: errorMessage },
             { status: 500 }
         );
     }
