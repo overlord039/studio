@@ -61,16 +61,27 @@ export async function GET(request: NextRequest) {
                 players = coinsSnapshot.docs.map(doc => doc.data());
                 sortLeaderboard(players, 'coins', 'level');
                 break;
-            case 'xp': // Top Players
+            case 'xp': // Top Players - Normalized Score
             default:
-                 q = query(
-                    usersRef,
-                    orderBy('stats.totalPrizesWon', 'desc'),
-                    limit(50)
-                );
-                const xpSnapshot = await getDocs(q);
-                players = xpSnapshot.docs.map(doc => doc.data());
-                sortLeaderboard(players, 'totalPrizesWon', 'coins');
+                 const allUsersSnapshot = await getDocs(usersRef);
+                 const allPlayers = allUsersSnapshot.docs.map(doc => doc.data());
+                 
+                 const maxWins = Math.max(...allPlayers.map(p => p.stats?.totalPrizesWon || 0), 1);
+                 const maxCoins = Math.max(...allPlayers.map(p => p.stats?.coins || 0), 1);
+
+                 const alpha = 0.7; // Weight for wins
+                 const beta = 0.3;  // Weight for coins
+
+                 players = allPlayers.map(player => {
+                    const wins = player.stats?.totalPrizesWon || 0;
+                    const coins = player.stats?.coins || 0;
+
+                    const normalizedWins = wins / maxWins;
+                    const normalizedCoins = coins / maxCoins;
+
+                    const score = alpha * normalizedWins + beta * normalizedCoins;
+                    return { ...player, score };
+                 }).sort((a, b) => b.score - a.score);
                 break;
         }
 
