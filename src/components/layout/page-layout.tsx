@@ -226,7 +226,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                     <DialogTrigger asChild>
                                         <Button variant="ghost" className="flex-col h-auto text-white rounded-full aspect-square">
                                             <Award className="h-5 w-5 mb-0.5" />
-                                            <span className="text-[10px]">Badges</span>
+                                            <span className="text-[10px]">Achievements</span>
                                         </Button>
                                     </DialogTrigger>
                                 </TooltipTrigger>
@@ -241,13 +241,13 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                 <Button 
                                     variant="ghost" 
                                     className="flex-col h-auto text-white rounded-full aspect-square"
-                                    onClick={() => handleFreeToolsNavigation('/number-caller')}
+                                    onClick={() => handleNavigateWithAuth('/leaderboard')}
                                 >
-                                    <Speaker className="h-5 w-5 mb-0.5" />
-                                    <span className="text-[10px]">Caller</span>
+                                    <Trophy className="h-5 w-5 mb-0.5" />
+                                    <span className="text-[10px]">Leaders</span>
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent><p>Number Caller</p></TooltipContent>
+                            <TooltipContent><p>Leaderboard</p></TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
                         <TooltipProvider>
@@ -256,13 +256,13 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                 <Button 
                                     variant="ghost" 
                                     className="flex-col h-auto text-white rounded-full aspect-square"
-                                    onClick={() => handleNavigateWithAuth('/leaderboard')}
+                                    onClick={() => handleFreeToolsNavigation('/number-caller')}
                                 >
-                                    <Trophy className="h-5 w-5 mb-0.5" />
-                                    <span className="text-[10px]">Leaders</span>
+                                    <Speaker className="h-5 w-5 mb-0.5" />
+                                    <span className="text-[10px]">Caller</span>
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent><p>Leaderboard</p></TooltipContent>
+                            <TooltipContent><p>Number Caller</p></TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
                         <FeedbackForm />
