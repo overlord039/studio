@@ -107,8 +107,8 @@ export default function FeedbackForm() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" className="flex-col h-auto text-white">
-            <MessageSquare className="h-6 w-6 mb-1" />
+        <Button variant="ghost" className="h-auto text-white">
+            <MessageSquare className="h-5 w-5 mr-1" />
             <span className="text-[10px]">Feedback</span>
         </Button>
       </DialogTrigger>
