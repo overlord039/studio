@@ -26,14 +26,24 @@ export default function FeedbackForm() {
 
   useEffect(() => {
     if (currentUser && !currentUser.isGuest) {
-      const matchesPlayed = currentUser.stats?.matchesPlayed || 0;
-      const hasBeenPrompted = localStorage.getItem('feedbackPromptedAfter3Games');
-      const hasEverSubmitted = localStorage.getItem('feedbackSubmitted');
+        const matchesPlayed = currentUser.stats?.matchesPlayed || 0;
+        const hasSubmitted = localStorage.getItem('feedbackSubmitted');
+        const lastPromptedAt = parseInt(localStorage.getItem('feedbackLastPromptedAt') || '-1', 10);
 
-      if (matchesPlayed >= 3 && !hasBeenPrompted && !hasEverSubmitted) {
-        setOpen(true);
-        localStorage.setItem('feedbackPromptedAfter3Games', 'true');
-      }
+        if (hasSubmitted) {
+            return; // Never show again if they have submitted.
+        }
+
+        // Logic for the first-time prompt after 3 games
+        const shouldPromptForFirstTime = matchesPlayed === 3 && lastPromptedAt < 3;
+
+        // Logic for subsequent prompts every 10 games
+        const shouldPromptForRecurring = matchesPlayed > 3 && matchesPlayed % 10 === 0 && lastPromptedAt !== matchesPlayed;
+
+        if (shouldPromptForFirstTime || shouldPromptForRecurring) {
+            setOpen(true);
+            localStorage.setItem('feedbackLastPromptedAt', String(matchesPlayed));
+        }
     }
   }, [currentUser]);
 
