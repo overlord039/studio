@@ -8,7 +8,7 @@ import Footer from '@/components/layout/footer';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import type { ReactNode } from 'react';
-import React, { useState, useEffect } from 'react';
+import React, from 'react';
 import FeedbackForm from './feedback-form';
 import { Button } from '@/components/ui/button';
 import { Settings, MessageSquare, Calendar, Award, Shield, Badge as BadgeIcon, Medal, Trophy, Star, CheckCircle, X, Speaker, Calculator } from 'lucide-react';
@@ -121,10 +121,10 @@ export default function PageLayout({ children }: { children: ReactNode }) {
     const { toast } = useToast();
     const { playSound } = useSound();
 
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('general');
+    const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
+    const [activeTab, setActiveTab] = React.useState('general');
     
-    useEffect(() => {
+    React.useEffect(() => {
         const settingsParam = searchParams.get('settings');
         const tabParam = searchParams.get('tab');
 
@@ -271,10 +271,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                         <Speaker className="h-6 w-6 mb-1" />
                         <span className="text-xs">Number Caller</span>
                         </Button>
-                        <Button variant="ghost" className="flex-col h-auto text-white" onClick={() => handleNavigateWithAuth('/leaderboard')}>
-                        <Trophy className="h-6 w-6 mb-1" />
-                        <span className="text-xs">Leaderboard</span>
-                        </Button>
+                        <FeedbackForm />
                         <Button variant="ghost" className="flex-col h-auto text-white" onClick={() => handleFreeToolsNavigation('/prize-calculator')}>
                         <Calculator className="h-6 w-6 mb-1" />
                         <span className="text-xs">Calculator</span>

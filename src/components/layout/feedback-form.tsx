@@ -101,21 +101,12 @@ export default function FeedbackForm() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white">
-                  <MessageSquare className="h-6 w-6 md:h-7 md:w-7" />
-                  <span className="sr-only">Feedback</span>
-              </Button>
-            </DialogTrigger>
-          </TooltipTrigger>
-          <TooltipContent side="left">
-            <p>Feedback</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <DialogTrigger asChild>
+        <Button variant="ghost" className="flex-col h-auto text-white">
+            <MessageSquare className="h-6 w-6 mb-1" />
+            <span className="text-xs">Feedback</span>
+        </Button>
+      </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <div className="flex justify-center mb-1">
