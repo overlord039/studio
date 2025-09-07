@@ -142,9 +142,6 @@ export default function LeaderboardPage() {
         <div className="container mx-auto py-8">
             <Card className="shadow-lg">
                 <CardHeader className="text-center">
-                    <div className="flex justify-center items-center gap-2 text-primary mb-2">
-                        <Trophy className="h-10 w-10" />
-                    </div>
                     <CardTitle className="text-3xl font-bold">Leaderboard</CardTitle>
                     <CardDescription>See who's leading the pack in HousieHub!</CardDescription>
                 </CardHeader>
