@@ -241,8 +241,22 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                         </div>
 
                         <div className="flex flex-col items-center gap-1">
-                            <FeedbackForm />
-                            <span className="text-white text-[8px] md:text-[10px] font-bold uppercase tracking-wider bg-black/20 px-1.5 md:px-2 py-0.5 rounded-full">Feedback</span>
+                            <TooltipProvider>
+                                <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-10 w-10 md:h-12 md:w-12 bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white"
+                                        onClick={() => handleNavigateWithAuth('/leaderboard')}
+                                    >
+                                        <Trophy className="h-6 w-6 md:h-7 md:w-7" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="left"><p>Leaderboard</p></TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <span className="text-white text-[8px] md:text-[10px] font-bold uppercase tracking-wider bg-black/20 px-1.5 md:px-2 py-0.5 rounded-full">Leaders</span>
                         </div>
                     </div>
                 )}
