@@ -38,7 +38,6 @@ const LeaderboardRowSkeleton = () => (
             <div className="flex items-center gap-3">
                 <div className="space-y-1">
                     <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-24" />
                 </div>
             </div>
         </TableCell>
@@ -80,8 +79,8 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                     <TableRow>
                         <TableHead className="w-12 text-center">Rank</TableHead>
                         <TableHead>Player</TableHead>
-                        {type === 'xp' && <TableHead className="text-right">Total Wins</TableHead>}
-                        {type === 'xp' && <TableHead className="text-right" suppressHydrationWarning>Total Coins</TableHead>}
+                        {type === 'xp' && <TableHead className="text-right hidden sm:table-cell">Total Wins</TableHead>}
+                        {type === 'xp' && <TableHead className="text-right hidden sm:table-cell" suppressHydrationWarning>Total Coins</TableHead>}
                         {type === 'wins' && <TableHead className="text-right">Total Wins</TableHead>}
                         {type === 'coins' && <TableHead className="text-right">Total Coins</TableHead>}
                     </TableRow>
@@ -104,20 +103,15 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                                         {player.rank}
                                     </TableCell>
                                     <TableCell className="font-medium">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex flex-col">
-                                                <span className="font-semibold">{player.displayName}</span>
-                                                {badge && (
-                                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                        <Image src={badge.icon} alt={badge.name} width={14} height={14} />
-                                                        
-                                                    </div>
-                                                )}
-                                            </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold">{player.displayName}</span>
+                                            {badge && (
+                                                <Image src={badge.icon} alt={badge.name} width={16} height={16} />
+                                            )}
                                         </div>
                                     </TableCell>
-                                    {type === 'xp' && <TableCell className="text-right font-bold">{player.stats.totalPrizesWon || 0}</TableCell>}
-                                    {type === 'xp' && <TableCell className="text-right font-bold">{player.stats.coins || 0}</TableCell>}
+                                    {type === 'xp' && <TableCell className="text-right font-bold hidden sm:table-cell">{player.stats.totalPrizesWon || 0}</TableCell>}
+                                    {type === 'xp' && <TableCell className="text-right font-bold hidden sm:table-cell">{player.stats.coins || 0}</TableCell>}
                                     {type === 'wins' && <TableCell className="text-right font-bold">{player.stats.totalPrizesWon || 0}</TableCell>}
                                     {type === 'coins' && <TableCell className="text-right font-bold">{player.stats.coins || 0}</TableCell>}
                                 </TableRow>
@@ -168,3 +162,4 @@ export default function LeaderboardPage() {
         </div>
     );
 }
+
