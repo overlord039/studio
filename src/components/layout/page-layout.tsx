@@ -197,7 +197,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                     <Tooltip>
                                     <TooltipTrigger asChild>
                                         <DialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 relative bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white">
+                                            <Button variant="ghost" size="icon" className="h-12 w-12 md:h-14 md:w-14 relative bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white">
                                                 {currentUser && canClaimReward && !isRewardDialogOpen && (
                                                     <span className="absolute top-1 right-1 flex h-3 w-3">
                                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -227,7 +227,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                     <Tooltip>
                                     <TooltipTrigger asChild>
                                         <DialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white">
+                                            <Button variant="ghost" size="icon" className="h-12 w-12 md:h-14 md:w-14 bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white">
                                                 <Award className="h-6 w-6 md:h-7 md:w-7" />
                                             </Button>
                                         </DialogTrigger>
@@ -247,7 +247,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                     <Button 
                                         variant="ghost" 
                                         size="icon" 
-                                        className="h-10 w-10 md:h-12 md:w-12 bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white"
+                                        className="h-12 w-12 md:h-14 md:w-14 bg-black/30 backdrop-blur-sm border border-white/20 rounded-full text-white"
                                         onClick={() => handleNavigateWithAuth('/leaderboard')}
                                     >
                                         <Trophy className="h-6 w-6 md:h-7 md:w-7" />
