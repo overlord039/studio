@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -259,7 +258,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                     onClick={() => handleFreeToolsNavigation('/number-caller')}
                                 >
                                     <Speaker className="h-5 w-5" />
-                                    <span className="text-[10px] leading-tight">Caller</span>
+                                    <span className="text-[10px] leading-tight">Number Caller</span>
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent><p>Number Caller</p></TooltipContent>
