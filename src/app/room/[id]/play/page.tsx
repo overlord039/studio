@@ -211,6 +211,44 @@ export default function GameRoomPage() {
     utterance.pitch = 1.1;
     window.speechSynthesis.speak(utterance);
   }, [isVoiceMuted]);
+  
+  const handlePrizeClaimNotification = useCallback((newRoomData: Room) => {
+    if (!currentUser) return;
+    
+    const oldPrizeStatus = previousPrizeStatusRef.current;
+    const newPrizeStatus = newRoomData.prizeStatus;
+
+    if (oldPrizeStatus && newPrizeStatus && !newRoomData.isGameOver) {
+        const prizes = Object.keys(newPrizeStatus) as PrizeType[];
+        for (const prize of prizes) {
+            const newClaim = newPrizeStatus[prize];
+            const oldClaim = oldPrizeStatus[prize];
+            
+            const newClaimants = newClaim?.claimedBy ?? [];
+            const oldClaimants = oldClaim?.claimedBy ?? [];
+
+            if (newClaimants.length > oldClaimants.length) {
+                const oldClaimantIds = new Set(oldClaimants.map(c => c.id));
+                const newlyAddedClaimants = newClaimants.filter(c => !oldClaimantIds.has(c.id));
+
+                if (newlyAddedClaimants.length > 0) {
+                    playSound('win.wav');
+                    const claimantNames = newlyAddedClaimants
+                        .map(claimant => claimant.id === currentUser?.uid ? "You" : claimant.name)
+                        .join(', ');
+                    
+                    toast({
+                      title: "Game Update!",
+                      description: `🔔 ${claimantNames} claimed ${prize}!`
+                    });
+                    break; 
+                }
+            }
+        }
+    }
+    previousPrizeStatusRef.current = newPrizeStatus;
+  }, [currentUser, playSound, toast]);
+
 
   const fetchGameDetails = useCallback(async (isInitialLoad = false) => {
     if (roomDataRef.current?.isGameOver) {
@@ -252,43 +290,9 @@ export default function GameRoomPage() {
         return;
       }
       
-      const oldPrizeStatus = previousPrizeStatusRef.current;
-      const newPrizeStatus = data.prizeStatus;
-
-      if (oldPrizeStatus && newPrizeStatus && !data.isGameOver) {
-          const prizes = Object.keys(newPrizeStatus) as PrizeType[];
-          for (const prize of prizes) {
-              const newClaim = newPrizeStatus[prize];
-              const oldClaim = oldPrizeStatus[prize];
-
-              const newClaimants = newClaim?.claimedBy ?? [];
-              const oldClaimants = oldClaim?.claimedBy ?? [];
-
-              if (newClaimants.length > oldClaimants.length) {
-                  const oldClaimantIds = new Set(oldClaimants.map(c => c.id));
-                  const newlyAddedClaimants = newClaimants.filter(c => !oldClaimantIds.has(c.id));
-
-                  if (newlyAddedClaimants.length > 0) {
-                      playSound('win.wav');
-                      const claimantNames = newlyAddedClaimants
-                          .map(claimant => {
-                              if (claimant.id === currentUser?.uid) return "You";
-                              return claimant.name || claimant.id;
-                           })
-                          .join(', ');
-                      
-                      toast({
-                        title: "Game Update!",
-                        description: `🔔 ${claimantNames} claimed ${prize}!`
-                      });
-                      
-                      break; 
-                  }
-              }
-          }
-      }
+      handlePrizeClaimNotification(data as Room);
       setRoomData(data as Room);
-      previousPrizeStatusRef.current = data.prizeStatus;
+      
       const players = data.players || [];
       const me = players.find(p => p.id === currentUser.uid);
       if (me && me.tickets) {
@@ -324,7 +328,7 @@ export default function GameRoomPage() {
         setIsLoading(false);
       }
     }
-  }, [roomId, currentUser, searchParams, toast, playSound]);
+  }, [roomId, currentUser, searchParams, toast, playSound, handlePrizeClaimNotification]);
 
   // Firestore listener for Online games
     useEffect(() => {
@@ -397,46 +401,14 @@ export default function GameRoomPage() {
             totalPrizePool: (firestoreData.settings.ticketPrice || 0) * playersList.reduce((acc, p) => acc + p.tickets, 0)
         };
         
-        const oldPrizeStatus = previousPrizeStatusRef.current;
-        const newPrizeStatus = syntheticRoom.prizeStatus;
-
-        if (oldPrizeStatus && newPrizeStatus && !syntheticRoom.isGameOver) {
-            const prizes = Object.keys(newPrizeStatus) as PrizeType[];
-            for (const prize of prizes) {
-                const newClaim = newPrizeStatus[prize];
-                const oldClaim = oldPrizeStatus[prize];
-                
-                const newClaimants = newClaim?.claimedBy ?? [];
-                const oldClaimants = oldClaim?.claimedBy ?? [];
-
-                if (newClaimants.length > oldClaimants.length) {
-                    const oldClaimantIds = new Set(oldClaimants.map(c => c.id));
-                    const newlyAddedClaimants = newClaimants.filter(c => !oldClaimantIds.has(c.id));
-
-                    if (newlyAddedClaimants.length > 0) {
-                        playSound('win.wav');
-                        const claimantNames = newlyAddedClaimants
-                            .map(claimant => claimant.id === currentUser?.uid ? "You" : claimant.name)
-                            .join(', ');
-                        
-                        toast({
-                          title: "Game Update!",
-                          description: `🔔 ${claimantNames} claimed ${prize}!`
-                        });
-                        break; 
-                    }
-                }
-            }
-        }
-        
+        handlePrizeClaimNotification(syntheticRoom);
         setRoomData(syntheticRoom);
-        previousPrizeStatusRef.current = newPrizeStatus;
         setIsLoading(false);
     });
 
     return () => unsubRoom();
 
-}, [isOnlineGame, roomId, currentUser, db, myTickets.length, toast, playSound]);
+}, [isOnlineGame, roomId, currentUser, db, myTickets.length, toast, playSound, handlePrizeClaimNotification]);
 
   // Client-side "ticker" for all game modes, only for the host.
   useEffect(() => {
@@ -687,7 +659,7 @@ export default function GameRoomPage() {
       if (response.ok) {
          if (!isOnlineGame) {
             setRoomData(result as Room); 
-            previousPrizeStatusRef.current = (result as Room).prizeStatus;
+            handlePrizeClaimNotification(result as Room);
          }
       } else {
         throw new Error(result.message || `Failed to claim ${prizeType}.`);
