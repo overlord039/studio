@@ -207,7 +207,10 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                                 </span>
                                             )}
                                             <Calendar className="h-5 w-5 mb-0.5" />
-                                            <span className="text-[10px]">Daily Bonus</span>
+                                            <div className="text-[10px] leading-tight text-center">
+                                                <span>Daily</span>
+                                                <span>Bonus</span>
+                                            </div>
                                         </Button>
                                     </DialogTrigger>
                                 </TooltipTrigger>
