@@ -97,15 +97,15 @@ export default function HomePage() {
             </Card>
 
             <Card 
-            className="flex-1 bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover:-translate-y-1"
+            className="flex-1 bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer rounded-2xl shadow-lg transform hover-translate-y-1"
             onClick={() => handleNavigateWithAuth('/play-with-computer')}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleNavigateWithAuth('/play-with-computer') }}
             >
-            <CardContent className="flex flex-col items-center justify-center p-4 gap-2 text-center h-full">
+            <CardContent className="flex flex-row md:flex-col items-center justify-center p-6 gap-3 text-center md:h-48 md:w-full h-full">
                 {hasZeroCoins ? (
-                  <>
+                  <div className="flex flex-col items-center justify-center gap-2 text-center h-full">
                     <div className="flex items-center gap-2">
                       <Image src="/coin.png" alt="Coins" width={24} height={24} data-ai-hint="gold coin" />
                       <p className="font-bold text-lg">You have 0 coins!</p>
@@ -122,7 +122,7 @@ export default function HomePage() {
                     >
                         Play Offline
                     </Button>
-                  </>
+                  </div>
                 ) : (
                   <>
                     <Bot className="h-8 w-8 md:h-12 md:w-12" />
