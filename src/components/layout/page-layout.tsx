@@ -68,12 +68,12 @@ const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>
                                 </Dialog>
                            </div>
                            <div className="flex-grow space-y-1 w-full text-left">
-                                <div className="flex justify-between items-center">
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
                                     <CardTitle className={cn(
                                         "text-lg font-bold",
                                         hasBadge ? 'text-green-800 dark:text-green-200' : 'text-foreground'
                                     )}>{badgeDef.name}</CardTitle>
-                                    <div className="flex items-center gap-1.5 text-sm font-semibold text-amber-700 dark:text-amber-400 bg-amber-400/20 px-2 py-1 rounded-full w-fit">
+                                    <div className="flex items-center gap-1.5 text-sm font-semibold text-amber-700 dark:text-amber-400 bg-amber-400/20 px-2 py-1 rounded-full w-fit mt-1 sm:mt-0">
                                         <Image src="/coin.png" alt="Coin" width={16} height={16} />
                                         <span>Reward: {badgeDef.reward} Coins</span>
                                     </div>
@@ -207,7 +207,7 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                                 </span>
                                             )}
                                             <Calendar className="h-5 w-5 mb-0.5" />
-                                            <span className="text-[10px]">Daily</span>
+                                            <span className="text-[10px]">Daily Bonus</span>
                                         </Button>
                                     </DialogTrigger>
                                 </TooltipTrigger>
@@ -241,6 +241,21 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                 <Button 
                                     variant="ghost" 
                                     className="flex-col h-auto text-white rounded-full aspect-square"
+                                    onClick={() => handleFreeToolsNavigation('/number-caller')}
+                                >
+                                    <Speaker className="h-5 w-5 mb-0.5" />
+                                    <span className="text-[10px]">Caller</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Number Caller</p></TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                            <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button 
+                                    variant="ghost" 
+                                    className="flex-col h-auto text-white rounded-full aspect-square"
                                     onClick={() => handleNavigateWithAuth('/leaderboard')}
                                 >
                                     <Trophy className="h-5 w-5 mb-0.5" />
@@ -250,10 +265,6 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                             <TooltipContent><p>Leaderboard</p></TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
-                        <Button variant="ghost" className="flex-col h-auto text-white rounded-full aspect-square" onClick={() => handleFreeToolsNavigation('/number-caller')}>
-                            <Speaker className="h-5 w-5 mb-0.5" />
-                            <span className="text-[10px]">Caller</span>
-                        </Button>
                         <FeedbackForm />
                     </CardContent>
                     </Card>
