@@ -267,7 +267,6 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                             <TooltipContent><p>Leaderboard</p></TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
-                        <FeedbackForm />
                     </CardContent>
                     </Card>
                 </footer>
