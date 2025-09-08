@@ -83,7 +83,7 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
     }
     
     return (
-        <div className={cn("border overflow-hidden transition-all", isActive && "border-amber-400 shadow-md")}>
+        <div className={cn("border overflow-hidden", isActive && "border-amber-400 shadow-md")}>
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -122,10 +122,6 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                                     </TableCell>
                                     <TableCell className="font-medium p-2 text-xs sm:text-sm">
                                         <div className="flex items-center gap-2">
-                                             <Avatar className="h-10 w-10">
-                                                <AvatarImage src={player.photoURL || `https://placehold.co/48x48.png?text=${player.displayName?.substring(0,1)}`} alt={player.displayName || 'Player'} />
-                                                <AvatarFallback>{player.displayName?.substring(0, 2).toUpperCase()}</AvatarFallback>
-                                            </Avatar>
                                             <div className="flex flex-col">
                                                 <span className="font-semibold">{player.displayName}</span>
                                                 {badge && (
