@@ -174,18 +174,17 @@ export default function GameRoomPage() {
   const [isVoiceMuted, setIsVoiceMuted] = useState(false);
   const [newlyEarnedBadges, setNewlyEarnedBadges] = useState<Badge[]>([]);
 
-  const previousCurrentNumberRef = useRef<number | null>(null);
+  // State specifically for the display component
+  const [displayCurrentNumber, setDisplayCurrentNumber] = useState<number | null>(null);
+  const [displayCalledHistory, setDisplayCalledHistory] = useState<number[]>([]);
+  const [allCalledNumbersForBoard, setAllCalledNumbersForBoard] = useState<number[]>([]);
+
   const roomDataRef = useRef(roomData);
   const previousPrizeStatusRef = useRef<Room['prizeStatus'] | null>(null);
   const previousCallingModeRef = useRef<CallingMode | undefined>();
   const gameOverSoundPlayedRef = useRef(false);
   const statsUpdateInitiatedRef = useRef(false);
 
-  useEffect(() => {
-    if (roomData?.currentNumber !== previousCurrentNumberRef.current) {
-      setAnimationKey(prev => prev + 1);
-    }
-  }, [roomData?.currentNumber]);
 
   useEffect(() => {
     roomDataRef.current = roomData;
@@ -549,13 +548,26 @@ export default function GameRoomPage() {
   }, [isOnlineGame, roomData, currentUser, roomId, isLoading, playSound, toast, fetchGameDetails]);
 
 
-  // Announce new numbers
+  // Announce new numbers and update display state
   useEffect(() => {
-    if (roomData && roomData.currentNumber !== null && roomData.currentNumber !== previousCurrentNumberRef.current) {
+    if (roomData && roomData.currentNumber !== null && roomData.currentNumber !== displayCurrentNumber) {
+      // Announce the number
       announce(roomData.currentNumber);
-      previousCurrentNumberRef.current = roomData.currentNumber;
+      
+      // Update display state
+      setDisplayCalledHistory(prevHistory => {
+          if(displayCurrentNumber !== null) {
+              return [displayCurrentNumber, ...prevHistory];
+          }
+          return prevHistory;
+      });
+      setDisplayCurrentNumber(roomData.currentNumber);
+      setAllCalledNumbersForBoard(prevBoard => [roomData.currentNumber!, ...prevBoard]);
+      
+      // Trigger animation
+      setAnimationKey(prev => prev + 1);
     }
-  }, [roomData?.currentNumber, announce]);
+  }, [roomData?.currentNumber, announce, displayCurrentNumber]);
 
 
   const handleNumberClick = (ticketIndex: number, numberValue: number, rowIndex: number, colIndex: number) => {
@@ -566,7 +578,7 @@ export default function GameRoomPage() {
       return; 
     }
 
-    if (roomData.calledNumbers.includes(numberValue)) {
+    if (allCalledNumbersForBoard.includes(numberValue)) {
       playSound('marking number.wav');
       setMarkedNumbers(prev => {
         const newMarked = new Set(prev);
@@ -598,7 +610,7 @@ export default function GameRoomPage() {
     
     let isClaimValidAndMarked = false;
     let winningTicketIndex = -1;
-    const numbersToValidate = roomData.calledNumbers;
+    const numbersToValidate = allCalledNumbersForBoard;
 
     for (let i = 0; i < myTickets.length; i++) {
         const ticket = myTickets[i];
@@ -1074,6 +1086,8 @@ export default function GameRoomPage() {
     }
   };
 
+  const sortedCalledNumbers = [...allCalledNumbersForBoard].sort((a,b) => a - b);
+
 
   return (
     <>
@@ -1309,8 +1323,8 @@ export default function GameRoomPage() {
         <div className="flex flex-col items-center space-y-4">
           <div className="w-full max-w-md relative">
               <MemoizedCalledNumberDisplay 
-                  currentNumber={roomData.currentNumber}
-                  calledNumbers={roomData.calledNumbers}
+                  currentNumber={displayCurrentNumber}
+                  calledNumbers={displayCalledHistory}
                   isMuted={isVoiceMuted}
                   onToggleMute={() => setIsVoiceMuted(prev => !prev)}
                   animationKey={animationKey}
@@ -1375,10 +1389,10 @@ export default function GameRoomPage() {
                       <DialogTitle>Number Board</DialogTitle>
                   </DialogHeader>
                   <MemoizedLiveNumberBoard
-                      calledNumbers={roomData.calledNumbers}
-                      currentNumber={roomData.currentNumber}
-                      remainingCount={NUMBERS_RANGE_MAX - roomData.calledNumbers.length}
-                      calledCount={roomData.calledNumbers.length}
+                      calledNumbers={sortedCalledNumbers}
+                      currentNumber={displayCurrentNumber}
+                      remainingCount={NUMBERS_RANGE_MAX - sortedCalledNumbers.length}
+                      calledCount={sortedCalledNumbers.length}
                   />
                   </DialogContent>
               </Dialog>
@@ -1395,7 +1409,7 @@ export default function GameRoomPage() {
                     <MemoizedHousieTicket
                       ticketIndex={index}
                       ticket={ticket}
-                      calledNumbers={roomData.calledNumbers}
+                      calledNumbers={allCalledNumbersForBoard}
                       markedNumbers={markedNumbers}
                       onNumberClick={roomData.isGameOver ? undefined : (num, r, c) => handleNumberClick(index, num, r, c)}
                       className="w-full max-w-md lg:max-w-lg"

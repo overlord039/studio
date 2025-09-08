@@ -11,7 +11,7 @@ import { SERVER_CALL_INTERVAL } from '@/lib/constants';
 
 interface CalledNumberDisplayProps {
   currentNumber: number | null;
-  calledNumbers: number[];
+  calledNumbers: number[]; // This should be the history, NOT including the current number
   isMuted: boolean;
   onToggleMute: () => void;
   animationKey: number;
@@ -30,9 +30,8 @@ const BORDER_COLORS = [
 
 
 export default function CalledNumberDisplay({ currentNumber, calledNumbers, isMuted, onToggleMute, animationKey }: CalledNumberDisplayProps) {
-  // The first number in calledNumbers is the most recent (which is the current one).
-  // The history should be the numbers *before* the current one.
-  const recentHistory = calledNumbers.slice(1, 11);
+  // The calledNumbers prop is now purely history.
+  const recentHistory = calledNumbers.slice(0, 10);
   const animationDuration = `${SERVER_CALL_INTERVAL / 1000}s`;
 
   return (

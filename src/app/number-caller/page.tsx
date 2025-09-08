@@ -50,21 +50,27 @@ export default function NumberCallerPage() {
   }, [isVoiceMuted]);
 
   const callNextNumber = useCallback(() => {
-    setAvailableNumbers(prev => {
-        if (prev.length === 0) {
-          setIsAutoCalling(false);
-          toast({ title: "All numbers called!", description: "The game is over. Reset to start a new game." });
-          return prev;
-        }
+    if (availableNumbers.length === 0) {
+      setIsAutoCalling(false);
+      toast({ title: "All numbers called!", description: "The game is over. Reset to start a new game." });
+      return;
+    }
 
-        const [nextNumber, ...rest] = prev;
-        setCurrentNumber(nextNumber);
-        setCalledNumbers(called => [nextNumber, ...called]);
-        speakNumber(nextNumber);
-        setAnimationKey(k => k + 1);
-        return rest;
+    const [nextNumber, ...rest] = availableNumbers;
+    
+    setCalledNumbers(prev => {
+        if(currentNumber !== null) {
+            return [currentNumber, ...prev];
+        }
+        return prev;
     });
-  }, [speakNumber, toast]);
+
+    setCurrentNumber(nextNumber);
+    setAvailableNumbers(rest);
+    speakNumber(nextNumber);
+    setAnimationKey(k => k + 1);
+
+  }, [availableNumbers, currentNumber, speakNumber, toast]);
   
 
   const resetGame = () => {
@@ -99,7 +105,8 @@ export default function NumberCallerPage() {
     };
   }, [isAutoCalling, callNextNumber, autoCallSpeed]);
 
-  const sortedCalledNumbers = [...calledNumbers].sort((a,b) => a - b);
+  const allCalledNumbersForBoard = currentNumber !== null ? [currentNumber, ...calledNumbers] : calledNumbers;
+  const sortedCalledNumbers = [...allCalledNumbersForBoard].sort((a,b) => a - b);
 
   return (
     <div className="container mx-auto p-4 space-y-3 md:space-y-4">
