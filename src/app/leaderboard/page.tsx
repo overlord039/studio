@@ -16,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import type { RankingType } from '@/app/api/leaderboard/route';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -103,7 +102,12 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                             const isCurrentUser = player.uid === currentUser?.uid;
 
                             const getRankClass = () => {
-                                if (isCurrentUser && index > 2) return 'bg-primary/20 border-y-2 border-primary';
+                                if (isCurrentUser) {
+                                    if (index === 0) return 'bg-yellow-400/20';
+                                    if (index === 1) return 'bg-gray-400/20';
+                                    if (index === 2) return 'bg-orange-400/20';
+                                    return 'bg-primary/20 border-y-2 border-primary';
+                                }
                                 if (index === 0) return 'bg-yellow-400/20';
                                 if (index === 1) return 'bg-gray-400/20';
                                 if (index === 2) return 'bg-orange-400/20';
@@ -192,11 +196,33 @@ export default function LeaderboardPage() {
                 return null;
         }
     };
+
+    const TabButton = ({ tab, label }: { tab: RankingType, label: string }) => (
+        <button
+            onClick={() => setActiveTab(tab)}
+            className={cn(
+                "relative flex-1 py-3 text-sm sm:text-base font-bold transition-all duration-300 group",
+                activeTab === tab 
+                    ? "bg-accent text-accent-foreground" 
+                    : "bg-primary/80 text-primary-foreground hover:bg-primary"
+            )}
+        >
+            <span className="relative z-10">{label}</span>
+            <div
+                className={cn(
+                    "absolute inset-0 blur-md transition-opacity duration-300",
+                    activeTab === tab
+                        ? "bg-accent opacity-50"
+                        : "bg-primary opacity-0 group-hover:opacity-30"
+                )}
+            ></div>
+        </button>
+    );
     
     return (
         <div className="container mx-auto py-8">
             <Card className="shadow-lg">
-                <CardHeader className="text-center relative">
+                <CardHeader className="text-center relative p-4">
                     <Link href="/" passHref className="absolute top-2 left-2">
                         <Button variant="ghost" size="icon">
                             <ArrowLeft className="h-5 w-5" />
@@ -217,25 +243,18 @@ export default function LeaderboardPage() {
                         </DialogContent>
                     </Dialog>
                 </CardHeader>
-                <CardContent>
-                    <Tabs defaultValue="xp" className="w-full" onValueChange={(value) => setActiveTab(value as RankingType)}>
-                        <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="xp" className="data-[state=active]:border-b-2 data-[state=active]:border-accent">Top Players</TabsTrigger>
-                            <TabsTrigger value="wins" className="data-[state=active]:border-b-2 data-[state=active]:border-accent">Most Wins</TabsTrigger>
-                            <TabsTrigger value="coins" className="data-[state=active]:border-b-2 data-[state=active]:border-accent">Coin Masters</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="xp" className="mt-4">
-                            <LeaderboardTable type="xp" title="Top Players" isActive={activeTab === 'xp'} />
-                        </TabsContent>
-                        <TabsContent value="wins" className="mt-4">
-                           <LeaderboardTable type="wins" title="Most Wins" isActive={activeTab === 'wins'} />
-                        </TabsContent>
-                        <TabsContent value="coins" className="mt-4">
-                           <LeaderboardTable type="coins" title="Coin Masters" isActive={activeTab === 'coins'} />
-                        </TabsContent>
-                    </Tabs>
+                <div className="flex bg-muted rounded-t-lg overflow-hidden border-b-2 border-accent">
+                    <TabButton tab="xp" label="Top Players" />
+                    <TabButton tab="wins" label="Most Wins" />
+                    <TabButton tab="coins" label="Coin Masters" />
+                </div>
+                <CardContent className="p-4">
+                    {activeTab === 'xp' && <LeaderboardTable type="xp" title="Top Players" isActive={activeTab === 'xp'} />}
+                    {activeTab === 'wins' && <LeaderboardTable type="wins" title="Most Wins" isActive={activeTab === 'wins'} />}
+                    {activeTab === 'coins' && <LeaderboardTable type="coins" title="Coin Masters" isActive={activeTab === 'coins'} />}
                 </CardContent>
             </Card>
         </div>
     );
 }
+
