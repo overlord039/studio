@@ -43,6 +43,7 @@ const LeaderboardRowSkeleton = () => (
         <TableCell className="w-12 text-center p-2"><Skeleton className="h-5 w-5 rounded-full" /></TableCell>
         <TableCell className="font-medium p-2">
             <div className="flex items-center gap-2">
+                <Skeleton className="h-10 w-10 rounded-full" />
                 <div className="space-y-1">
                     <Skeleton className="h-4 w-24" />
                 </div>
@@ -81,7 +82,7 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
     }
     
     return (
-        <div className={cn("border rounded-lg transition-all", isActive && "border-accent shadow-md")}>
+        <div className={cn("border rounded-lg overflow-hidden transition-all", isActive && "border-amber-400 shadow-md")}>
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -120,10 +121,16 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                                     </TableCell>
                                     <TableCell className="font-medium p-2 text-xs sm:text-sm">
                                         <div className="flex items-center gap-2">
-                                            <span className="font-semibold">{player.displayName}</span>
-                                            {badge && (
-                                                <Image src={badge.icon} alt={badge.name} width={16} height={16} />
-                                            )}
+                                             <Avatar className="h-10 w-10">
+                                                <AvatarImage src={player.photoURL || `https://placehold.co/48x48.png?text=${player.displayName?.substring(0,1)}`} alt={player.displayName || 'Player'} />
+                                                <AvatarFallback>{player.displayName?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold">{player.displayName}</span>
+                                                {badge && (
+                                                    <Image src={badge.icon} alt={badge.name} width={16} height={16} />
+                                                )}
+                                            </div>
                                         </div>
                                     </TableCell>
                                     {type === 'xp' && <TableCell className="text-right font-bold p-2 text-xs sm:text-sm">{player.stats.totalPrizesWon || 0}</TableCell>}
@@ -243,12 +250,12 @@ export default function LeaderboardPage() {
                         </DialogContent>
                     </Dialog>
                 </CardHeader>
-                <div className="flex bg-muted rounded-t-lg overflow-hidden border-b-2 border-accent">
-                    <TabButton tab="xp" label="Top Players" />
-                    <TabButton tab="wins" label="Most Wins" />
-                    <TabButton tab="coins" label="Coin Masters" />
-                </div>
-                <CardContent className="p-4">
+                <CardContent className="p-0 sm:p-4">
+                    <div className="flex bg-muted rounded-t-lg overflow-hidden border-b-2 border-accent">
+                        <TabButton tab="xp" label="Top Players" />
+                        <TabButton tab="wins" label="Most Wins" />
+                        <TabButton tab="coins" label="Coin Masters" />
+                    </div>
                     {activeTab === 'xp' && <LeaderboardTable type="xp" title="Top Players" isActive={activeTab === 'xp'} />}
                     {activeTab === 'wins' && <LeaderboardTable type="wins" title="Most Wins" isActive={activeTab === 'wins'} />}
                     {activeTab === 'coins' && <LeaderboardTable type="coins" title="Coin Masters" isActive={activeTab === 'coins'} />}
@@ -257,4 +264,3 @@ export default function LeaderboardPage() {
         </div>
     );
 }
-
