@@ -83,7 +83,7 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
     }
     
     return (
-        <div className={cn("border rounded-lg overflow-hidden transition-all", isActive && "border-amber-400 shadow-md")}>
+        <div className={cn("border overflow-hidden transition-all", isActive && "border-amber-400 shadow-md")}>
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -252,7 +252,7 @@ export default function LeaderboardPage() {
                     </Dialog>
                 </CardHeader>
                 <CardContent className="p-0 sm:p-4">
-                    <div className="flex bg-muted rounded-t-lg overflow-hidden border-b-2 border-accent">
+                    <div className="flex bg-muted overflow-hidden border-b-2 border-accent">
                         <TabButton tab="xp" label="Top Players" />
                         <TabButton tab="wins" label="Most Wins" />
                         <TabButton tab="coins" label="Coin Masters" />
