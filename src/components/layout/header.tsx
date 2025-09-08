@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Settings, HelpCircle, X, Volume2, Music, Bell, Trash2, Info, Sun, Moon, Monitor, FileCode, MessageSquare, Gamepad2, UserPlus, LogIn, Ticket, CheckSquare, Trophy, Mail, Star } from 'lucide-react';
+import { Settings, HelpCircle, X, Volume2, Music, Bell, Trash2, Info, Sun, Moon, Monitor, FileCode, MessageSquare, Gamepad2, UserPlus, LogIn, Ticket, CheckSquare, Trophy, Mail, Star, LogOut } from 'lucide-react';
 import { useTheme } from "next-themes";
 import { useAuth } from '@/contexts/auth-context';
 import React, { useState, useEffect, useCallback } from 'react';
@@ -162,7 +162,11 @@ export const SettingsModal = ({ open, onOpenChange, activeTab, setActiveTab }: {
                                   <ThemeToggle />
                               </div>
                           </div>
-                          <div className="pt-8 border-t border-border/10">
+                           <div className="pt-8 border-t border-border/10 space-y-4">
+                              <Button onClick={logout} variant="outline" className="w-full">
+                                <LogOut className="mr-2 h-4 w-4" />
+                                Logout
+                              </Button>
                               <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                   <Button variant="destructive" className="w-full"><Trash2 className="mr-2"/> Delete Account</Button>
