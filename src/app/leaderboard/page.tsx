@@ -24,6 +24,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface LeaderboardPlayer extends User {
     rank: number;
