@@ -223,7 +223,7 @@ export default function LeaderboardPage() {
     
     return (
         <div className="container mx-auto py-8">
-            <Card className="shadow-lg">
+            <Card className="shadow-lg max-w-4xl mx-auto">
                 <CardHeader className="text-center relative p-4">
                     <Link href="/" passHref className="absolute top-2 left-2">
                         <Button variant="ghost" size="icon">
