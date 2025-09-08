@@ -83,7 +83,7 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
     }
     
     return (
-        <div className={cn("border overflow-hidden", isActive && "border-amber-400 shadow-md")}>
+        <div className={cn("border overflow-hidden rounded-b-lg", isActive ? "border-amber-400 shadow-md" : "border-border")}>
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -122,12 +122,10 @@ const LeaderboardTable = ({ type, title, isActive }: { type: RankingType, title:
                                     </TableCell>
                                     <TableCell className="font-medium p-2 text-xs sm:text-sm">
                                         <div className="flex items-center gap-2">
-                                            <div className="flex flex-col">
-                                                <span className="font-semibold">{player.displayName}</span>
-                                                {badge && (
-                                                    <Image src={badge.icon} alt={badge.name} width={16} height={16} />
-                                                )}
-                                            </div>
+                                            <span className="font-semibold">{player.displayName}</span>
+                                            {badge && (
+                                                <Image src={badge.icon} alt={badge.name} width={16} height={16} />
+                                            )}
                                         </div>
                                     </TableCell>
                                     {type === 'xp' && <TableCell className="text-right font-bold p-2 text-xs sm:text-sm">{player.stats.totalPrizesWon || 0}</TableCell>}
@@ -248,7 +246,7 @@ export default function LeaderboardPage() {
                     </Dialog>
                 </CardHeader>
                 <CardContent className="p-0 sm:p-4">
-                    <div className="flex bg-muted overflow-hidden border-b-2 border-accent">
+                    <div className="flex bg-muted overflow-hidden border-b-2 border-accent rounded-t-lg">
                         <TabButton tab="xp" label="Top Players" />
                         <TabButton tab="wins" label="Most Wins" />
                         <TabButton tab="coins" label="Coin Masters" />
