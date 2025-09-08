@@ -2,7 +2,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { db } from '@/lib/firebase/config';
-import { collection, query, where, getDocs, limit, doc, runTransaction, increment } from 'firestore';
+import { collection, query, where, getDocs, limit, doc, runTransaction, increment } from 'firebase/firestore';
 
 const USERNAME_CHANGE_COSTS = [0, 100, 500]; // Free, 100, 500
 
