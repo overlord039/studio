@@ -1,6 +1,7 @@
 
 
 
+
 import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid, CallingMode, OnlineGameTier } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { generateMultipleUniqueTickets } from '@/lib/housie';
@@ -125,18 +126,17 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
   if (room.isGameOver) return { error: "Game is over. Reset the room to start a new game." };
   
   const isBotGame = room.settings.gameMode && ['easy', 'medium', 'hard'].includes(room.settings.gameMode);
-
-  // For public/bot games, any server trigger can start it. For private, only host.
-  if (!room.settings.isPublic && !isBotGame && room.host.id !== hostId) {
+  const isFriendsGame = room.settings.gameMode === 'multiplayer';
+  
+  if (!isBotGame && room.host.id !== hostId) {
     return { error: `Only the host can start the game. Current host: ${room.host.name}, trying to start: ${hostId}` };
   }
 
   const playersWithTickets = room.players.filter(p => p.tickets.length > 0).length;
-  // For online games that are being auto-started, we might not have a ticketed player yet, so we allow it to proceed.
-  const minPlayersToStart = room.settings.gameMode === 'multiplayer' ? MIN_LOBBY_SIZE : 1;
-
-  if (playersWithTickets < minPlayersToStart) {
-     return { error: `Need at least ${minPlayersToStart} player(s) with tickets. Currently: ${playersWithTickets}` };
+  
+  // Enforce min players ONLY for friends mode (multiplayer)
+  if (isFriendsGame && playersWithTickets < MIN_LOBBY_SIZE) {
+     return { error: `Need at least ${MIN_LOBBY_SIZE} player(s) with tickets. Currently: ${playersWithTickets}` };
   }
   
   room.isGameStarted = true;

@@ -482,7 +482,8 @@ export default function LobbyPage() {
   const currentTotalPrizePool = gameSettings.ticketPrice * totalTicketsBoughtByPlayers;
   const finalPrizes = calculatePrizes(currentTotalPrizePool, gameSettings);
 
-  const minPlayersToStart = gameSettings.gameMode !== 'multiplayer' ? 1 : MIN_LOBBY_SIZE;
+  const minPlayersToStart = gameSettings.gameMode === 'multiplayer' ? MIN_LOBBY_SIZE : 1;
+  const canStartGame = roomData.players.filter(p => p.tickets.length > 0).length >= minPlayersToStart && doesCurrentUserHaveTickets;
 
   const showTicketSelectionUI = currentUser && !roomData.isGameStarted &&
     (!doesCurrentUserHaveTickets || isEditingTickets) &&
@@ -736,21 +737,15 @@ export default function LobbyPage() {
             <Button 
                 onClick={handleStartGame} 
                 className="w-full mt-2 md:mt-4 h-10 md:h-12 text-sm md:text-base" 
-                disabled={ 
-                    isJoiningOrUpdating || 
-                    roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart || 
-                    !doesCurrentUserHaveTickets // Host must have tickets
-                }
+                disabled={isJoiningOrUpdating || !canStartGame}
             >
               <Play className="mr-2 h-5 w-5" /> Start Game
             </Button>
           )}
 
-          {isCurrentUserHost && !roomData.isGameStarted && !roomData.isGameOver &&
-            (roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart || !doesCurrentUserHaveTickets) && (
+          {isCurrentUserHost && !roomData.isGameStarted && !roomData.isGameOver && !canStartGame && (
             <p className="text-center text-xs md:text-sm text-destructive mt-2">
-              {!doesCurrentUserHaveTickets ? "Host must confirm their tickets first. " : ""}
-              {roomData.players.filter(p => p.tickets.length > 0).length < minPlayersToStart && doesCurrentUserHaveTickets && `At least ${minPlayersToStart} player(s) must have tickets. `}
+              {!doesCurrentUserHaveTickets ? "You must confirm your tickets before starting. " : `Need at least ${minPlayersToStart} players with tickets to start.`}
             </p>
           )}
 
