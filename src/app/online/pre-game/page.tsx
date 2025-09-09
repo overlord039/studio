@@ -4,7 +4,7 @@
 import React, { useState, useEffect, Suspense, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
-import type { Room, PrizeType, GameSettings, OnlineGameTier, TierConfig, Player, FirestoreRoom, FirestorePlayer } from '@/types';
+import type { Room, PrizeType, GameSettings, OnlineGameTier, TierConfig, Player, FirestoreRoom, FirestorePlayer, User } from '@/types';
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, DEFAULT_GAME_SETTINGS, MIN_LOBBY_SIZE } from '@/lib/constants';
 import { Loader2, AlertTriangle, Gift, Users, Trophy, Bot, Ticket as TicketIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
