@@ -286,7 +286,7 @@ export default function LobbyPage() {
         return;
     }
 
-     const minPlayersRequired = roomData.settings.gameMode !== 'multiplayer' ? 1 : MIN_LOBBY_SIZE;
+     const minPlayersRequired = roomData.settings.gameMode === 'multiplayer' ? MIN_LOBBY_SIZE : 1;
      const playersWithTicketsCount = roomData.players.filter(p => p.tickets.length > 0).length;
 
      if (playersWithTicketsCount < minPlayersRequired) {
@@ -483,7 +483,7 @@ export default function LobbyPage() {
   const finalPrizes = calculatePrizes(currentTotalPrizePool, gameSettings);
 
   const minPlayersToStart = gameSettings.gameMode === 'multiplayer' ? MIN_LOBBY_SIZE : 1;
-  const canStartGame = roomData.players.filter(p => p.tickets.length > 0).length >= minPlayersToStart && doesCurrentUserHaveTickets;
+  const canStartGame = roomData.players.filter(p => p.tickets.length > 0).length >= minPlayersToStart;
 
   const showTicketSelectionUI = currentUser && !roomData.isGameStarted &&
     (!doesCurrentUserHaveTickets || isEditingTickets) &&
@@ -745,7 +745,7 @@ export default function LobbyPage() {
 
           {isCurrentUserHost && !roomData.isGameStarted && !roomData.isGameOver && !canStartGame && (
             <p className="text-center text-xs md:text-sm text-destructive mt-2">
-              {!doesCurrentUserHaveTickets ? "You must confirm your tickets before starting. " : `Need at least ${minPlayersToStart} players with tickets to start.`}
+              {`Need at least ${minPlayersToStart} players with tickets to start.`}
             </p>
           )}
 

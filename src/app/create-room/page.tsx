@@ -93,7 +93,7 @@ export default function CreateOrJoinRoomPage() {
       ticketPrice: ticketPrice,
       lobbySize: lobbySize,
       isPublic: false,
-      gameMode: gameType,
+      gameMode: 'multiplayer', // <-- FIX: Hardcode to 'multiplayer' for all friends games
     };
 
     try {

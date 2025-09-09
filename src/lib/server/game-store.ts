@@ -2,6 +2,7 @@
 
 
 
+
 import type { Room, Player, GameSettings, BackendPlayerInRoom, PrizeType, PrizeClaim, HousieTicketGrid, CallingMode, OnlineGameTier } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { generateMultipleUniqueTickets } from '@/lib/housie';
@@ -136,7 +137,7 @@ export function startGameInRoomStore(roomId: string, hostId: string): Room | { e
   
   // Enforce min players ONLY for friends mode (multiplayer)
   if (isFriendsGame && playersWithTickets < MIN_LOBBY_SIZE) {
-     return { error: `Need at least ${MIN_LOBBY_SIZE} player(s) with tickets. Currently: ${playersWithTickets}` };
+     return { error: `Need at least ${MIN_LOBBY_SIZE} players with tickets to start. Currently: ${playersWithTickets}` };
   }
   
   room.isGameStarted = true;
