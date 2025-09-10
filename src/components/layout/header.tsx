@@ -157,7 +157,7 @@ export const SettingsModal = ({ open, onOpenChange, activeTab, setActiveTab }: {
                               </div>
                           </div>
                            <div className="pt-8 border-t border-border/10 space-y-4">
-                              <Button onClick={logout} variant="destructive" className="w-full">
+                              <Button onClick={logout} variant="default" className="w-full">
                                 <LogOut className="mr-2 h-4 w-4" />
                                 Logout
                               </Button>
