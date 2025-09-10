@@ -55,12 +55,6 @@ export const SettingsModal = ({ open, onOpenChange, activeTab, setActiveTab }: {
     }
   };
 
-  const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg role="img" viewBox="0 0 24" xmlns="http://www.w3.org/2000/svg" {...props}>
-      <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.854 3.187-1.782 4.133-1.147 1.147-2.933 2.4-5.11 2.4-4.333 0-7.84-3.52-7.84-7.84s3.507-7.84 7.84-7.84c2.44 0 4.007 1.013 4.907 1.947l2.6-2.6C18.067.733 15.447 0 12.48 0 5.867 0 .333 5.393.333 12s5.534 12 12.147 12c3.553 0 6.227-1.173 8.24-3.253 2.133-2.133 2.84-5.24 2.84-7.667 0-.76-.053-1.467-.173-2.133H12.48z" />
-    </svg>
-  );
-
   const TabButton = ({ id, label, icon: Icon }: { id: string, label: string, icon: React.ElementType }) => (
     <Button
       variant="ghost"
@@ -195,14 +189,15 @@ export const SettingsModal = ({ open, onOpenChange, activeTab, setActiveTab }: {
                             <AccordionItem value="item-1">
                                 <AccordionTrigger><UserPlus className="mr-2 h-5 w-5 text-accent"/>1. Create an Account</AccordionTrigger>
                                 <AccordionContent className="text-base pl-8">
-                                Sign up with Google or Email to save your game stats and play across devices. You can also play as a Guest, but your data won't be saved if you clear your browser cache.
+                                Sign up with Google to save your game stats and play across devices. You can also play as a Guest, but your data won't be saved if you clear your browser cache.
                                 </AccordionContent>
                             </AccordionItem>
                              <AccordionItem value="item-2">
                                 <AccordionTrigger><Gamepad2 className="mr-2 h-5 w-5 text-accent"/>2. Choose a Game Mode</AccordionTrigger>
                                 <AccordionContent className="text-base pl-8 space-y-2">
+                                    <p><strong>Online:</strong> Join a public match against other players online.</p>
                                     <p><strong>Play with Friends:</strong> Create a private room and share the Room ID with your friends to play together.</p>
-                                    <p><strong>Play vs Computer:</strong> Practice your skills against bot players in Easy or Hard mode.</p>
+                                    <p><strong>Offline:</strong> Practice your skills against bot players in various difficulty modes.</p>
                                 </AccordionContent>
                             </AccordionItem>
                             <AccordionItem value="item-3">
@@ -229,17 +224,12 @@ export const SettingsModal = ({ open, onOpenChange, activeTab, setActiveTab }: {
 
                   {activeTab === 'developer-note' && (
                     <div className="text-center space-y-4 text-card-foreground/80">
-                      <h3 className="text-xl font-bold">🎉 Developer Note</h3>
-                      <p className="text-sm">
-                        Hi, I’m <span className="font-semibold text-primary">Durga Sankar</span>, the developer of this Housie platform.
-                      </p>
                       <p className="text-sm">
                         This is my original idea, built using AI tools to streamline development. My goal was simple: to help families and friends play Housie easily, whether they are near or far.
                       </p>
                       <p className="text-sm">
                         I believe technology should bring people closer, and this is my small step toward that goal.
                       </p>
-                      <p className="font-semibold text-lg pt-2">– Durga Sankar</p>
                       
                       <div className="border-t pt-4 space-y-2">
                         <p className="text-xs">
@@ -257,7 +247,7 @@ export const SettingsModal = ({ open, onOpenChange, activeTab, setActiveTab }: {
                   {activeTab === 'about' && (
                       <div className="flex flex-col items-center text-center space-y-8">
                            <div className="text-center">
-                              <p>Developed by</p>
+                              <p>Developed by Durga Sankar</p>
                            </div>
                           <Image src="/logonew.png" alt="HousieHub Logo" width={150} height={42} className="h-auto" />
                           

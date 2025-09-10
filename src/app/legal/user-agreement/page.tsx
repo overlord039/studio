@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -31,7 +32,7 @@ export default function UserAgreementPage() {
           <p>You must be at least 13 years old to use HousieHub. If under 18, you must have permission from a parent or guardian.</p>
 
           <h3 className="text-xl font-semibold text-foreground pt-4">3. User Accounts</h3>
-          <p>You may register using Google or as a guest. You agree to provide accurate and complete information. You are responsible for maintaining the confidentiality of your account.</p>
+          <p>You may register using Google. You agree to provide accurate and complete information. You are responsible for maintaining the confidentiality of your account.</p>
           
           <h3 className="text-xl font-semibold text-foreground pt-4">4. Gameplay & Usage</h3>
           <p>HousieHub allows you to purchase tickets and play housie games with others. We do not allow gambling with real money; prizes are within legal compliance as entry-fee-based rewards. You agree to play fairly and avoid cheating or manipulating the system.</p>
