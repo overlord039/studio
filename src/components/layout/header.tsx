@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from 'next/link';
@@ -24,7 +25,7 @@ import { getXpForNextLevel } from '@/lib/constants';
 export const SettingsModal = ({ open, onOpenChange, activeTab, setActiveTab }: { open: boolean, onOpenChange: (open: boolean) => void, activeTab: string; setActiveTab: (tab: string) => void; }) => {
   const { theme, setTheme } = useTheme();
   const { isSfxMuted, toggleSfxMute, isBgmEnabled, toggleBgm } = useSound();
-  const { logout } = useAuth();
+  const { logout, deleteAccount } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -169,12 +170,12 @@ export const SettingsModal = ({ open, onOpenChange, activeTab, setActiveTab }: {
                                   <AlertDialogHeader>
                                       <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                       <AlertDialogDesc>
-                                      This action cannot be undone. This will permanently delete your account and remove your data from our servers. This is not implemented in this mock application.
+                                      This action cannot be undone. This will permanently delete your account and remove your data from our servers.
                                       </AlertDialogDesc>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={logout} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+                                      <AlertDialogAction onClick={deleteAccount} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
                                   </AlertDialogFooter>
                                   </AlertDialogContent>
                               </AlertDialog>
@@ -425,3 +426,5 @@ export default function Header() {
     </header>
   );
 }
+
+    
