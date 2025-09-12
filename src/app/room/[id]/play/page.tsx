@@ -103,11 +103,6 @@ function isFirestoreRoom(data: any): data is FirestoreRoom {
     return data && typeof data.status === 'string';
 }
 
-function generateMultipleUniqueTickets(count: number): HousieTicketGrid[] {
-  const housieLib = require('@/lib/housie');
-  return housieLib.generateMultipleUniqueTickets(count);
-}
-
 function initializePrizeStatus(settings: GameSettings): Record<PrizeType, any> {
     const status: Record<PrizeType, any> = {} as Record<PrizeType, any>;
     const prizeFormat = settings.prizeFormat || DEFAULT_GAME_SETTINGS.prizeFormat;
@@ -161,8 +156,8 @@ export default function GameRoomPage() {
   const [roomData, setRoomData] = useState<Room | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isOnlineGame, setIsOnlineGame] = useState(false);
-  const [onlinePlayers, setOnlinePlayers] = useState<FirestorePlayer[]>([]);
+  const [isBotGame, setIsBotGame] = useState(false);
+  
   const [playerProfiles, setPlayerProfiles] = useState<Map<string, User>>(new Map());
 
   const [myTickets, setMyTickets] = useState<HousieTicketGrid[]>([]);
@@ -248,166 +243,94 @@ export default function GameRoomPage() {
     previousPrizeStatusRef.current = newPrizeStatus;
   }, [currentUser, playSound, toast]);
 
-
-  const fetchGameDetails = useCallback(async (isInitialLoad = false) => {
-    if (roomDataRef.current?.isGameOver) {
-      return;
-    }
-    const playerTicketsParam = searchParams.get('playerTickets');
-    if (!roomId || !currentUser?.uid) {
-      if (isInitialLoad) {
+  // Combined Firestore and In-Memory Game Listener
+  useEffect(() => {
+    if (!roomId || !db || !currentUser) {
         setError("Room ID or User not available for fetching game details.");
         setIsLoading(false);
-      }
-      return;
-    }
-
-    if (isInitialLoad) {
-      setIsLoading(true);
-      setError(null);
-    }
-
-    try {
-      const response = await fetch(`/api/rooms/${roomId}`);
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: `Failed to parse error response. Status: ${response.status}` }));
-        if (response.status === 404) {
-          setError("Room not found. It might have expired or never existed.");
-          if (isInitialLoad) setRoomData(null);
-        } else {
-          setError(errorData.message || `Failed to fetch room details: ${response.statusText}`);
-          if (isInitialLoad) setRoomData(null);
-        }
-        if (isInitialLoad) setIsLoading(false);
         return;
-      }
-      const data: Room | FirestoreRoom = await response.json();
-      
-      if (isFirestoreRoom(data)) {
-        setIsOnlineGame(true);
-        // Firestore listener will handle state updates for online games
-        return;
-      }
-      
-      handlePrizeClaimNotification(data as Room);
-      setRoomData(data as Room);
-      
-      const players = data.players || [];
-      const me = players.find(p => p.id === currentUser.uid);
-      if (me && me.tickets) {
-          setMyTickets(me.tickets);
-      } else if (isInitialLoad && (!me || !me.tickets || me.tickets.length === 0)) {
-          const playerTicketsParam = searchParams.get('playerTickets');
-          if (playerTicketsParam) {
-              const numTickets = parseInt(playerTicketsParam, 10);
-              if (numTickets === 0 && data.isGameStarted && !data.isGameOver) {
-                  if (!roomDataRef.current || !roomDataRef.current.isGameOver) { 
-                      toast({ title: 'Spectating', description: "You don't have any tickets for this game." });
-                  }
-              }
-          }
-          setMyTickets([]);
-      }
-
-    } catch (err) {
-      console.error("Error fetching game details:", err);
-      if (isInitialLoad || !roomDataRef.current) {
-        setError(`Failed to fetch game details: ${(err as Error).message}`);
-        if (isInitialLoad) setRoomData(null);
-      } else if (roomDataRef.current && !roomDataRef.current.isGameOver) {
-        toast({
-          title: "Game Update Failed",
-          description: "Could not fetch latest game details. Retrying...",
-          variant: "destructive",
-          duration: 2000,
-        });
-      }
-    } finally {
-      if (isInitialLoad) {
-        setIsLoading(false);
-      }
     }
-  }, [roomId, currentUser, searchParams, toast, playSound, handlePrizeClaimNotification]);
-
-  // Firestore listener for Online games
-    useEffect(() => {
-    if (!isOnlineGame || !roomId || !db || !currentUser) return;
 
     const roomDocRef = doc(db, 'rooms', roomId);
-    const playersColRef = collection(db, 'rooms', roomId, 'players');
 
-    const fetchPlayerProfiles = async (playerList: FirestorePlayer[]) => {
-      const newProfiles = new Map<string, User>();
-      for (const p of playerList) {
-          if (!playerProfiles.has(p.id)) {
-              try {
-                  const playerDoc = await getDoc(doc(db, 'users', p.id));
-                  if (playerDoc.exists()) {
-                      newProfiles.set(p.id, playerDoc.data() as User);
-                  }
-              } catch (e) {
-                  console.warn(`Could not fetch profile for player ${p.id}`, e);
-              }
-          } else {
-             newProfiles.set(p.id, playerProfiles.get(p.id)!);
-          }
-      }
-      setPlayerProfiles(new Map([...playerProfiles, ...newProfiles]));
-    };
+    // Initial fetch to determine game type
+    getDoc(roomDocRef).then(initialSnap => {
+        if (initialSnap.exists()) {
+            const data = initialSnap.data();
+            const gameMode = data.settings?.gameMode;
+            
+            if (gameMode === 'multiplayer' || gameMode === 'online') {
+                // Use Firestore for Friends (multiplayer) and Online modes
+                const unsub = onSnapshot(roomDocRef, async (docSnap) => {
+                    if (docSnap.exists()) {
+                        const firestoreData = docSnap.data() as FirestoreRoom & { calledNumbers?: number[], currentNumber?: number, prizeStatus?: any };
+                        
+                        const playersColRef = collection(db, "rooms", roomId, "players");
+                        const playersSnap = await getDocs(playersColRef);
+                        const playersList = playersSnap.docs.map(p => p.data() as BackendPlayerInRoom);
 
-    const unsubRoom = onSnapshot(roomDocRef, async (docSnap) => {
-        if (!docSnap.exists()) {
-            setError('Room has been deleted.');
-            setRoomData(null);
-            return;
+                        const isGameActive = firestoreData.status === 'in-progress';
+                        const isGameOver = firestoreData.status === 'finished';
+
+                        const syntheticRoom: Room = {
+                            id: firestoreData.id,
+                            host: firestoreData.host,
+                            players: playersList,
+                            settings: firestoreData.settings || DEFAULT_GAME_SETTINGS,
+                            createdAt: firestoreData.createdAt.toDate(),
+                            isGameStarted: isGameActive || isGameOver,
+                            isGameOver: isGameOver,
+                            currentNumber: firestoreData.currentNumber || null,
+                            calledNumbers: firestoreData.calledNumbers || [],
+                            numberPool: [], // Not used client-side for Firestore games
+                            prizeStatus: firestoreData.prizeStatus || initializePrizeStatus(firestoreData.settings),
+                            totalPrizePool: (firestoreData.settings.ticketPrice || 0) * playersList.reduce((acc, p) => acc + (p.tickets?.length || 0), 0)
+                        };
+                        
+                        handlePrizeClaimNotification(syntheticRoom);
+                        setRoomData(syntheticRoom);
+                        setIsLoading(false);
+                        
+                        // Set tickets if not already set
+                        const me = playersList.find(p => p.id === currentUser.uid);
+                        if(me && me.tickets) {
+                          setMyTickets(me.tickets);
+                        }
+
+                    } else {
+                        setError("This room no longer exists.");
+                    }
+                });
+                return unsub;
+            } else {
+                 // Use Polling for Bot games (easy, medium, hard)
+                 setIsBotGame(true);
+                 const fetchBotGame = async () => {
+                     try {
+                        const response = await fetch(`/api/rooms/${roomId}`);
+                        if (!response.ok) throw new Error("Room not found");
+                        const data: Room = await response.json();
+                        handlePrizeClaimNotification(data);
+                        setRoomData(data);
+                        const me = data.players.find(p => p.id === currentUser.uid);
+                        if (me && me.tickets) setMyTickets(me.tickets);
+                     } catch(e) {
+                         setError((e as Error).message);
+                     } finally {
+                        setIsLoading(false);
+                     }
+                 }
+                 fetchBotGame(); // Initial fetch
+                 const interval = setInterval(fetchBotGame, 3000);
+                 return () => clearInterval(interval);
+            }
+        } else {
+            setError("Room not found.");
+            setIsLoading(false);
         }
-        
-        const firestoreData = docSnap.data() as FirestoreRoom & { calledNumbers?: number[], currentNumber?: number, prizeStatus?: any };
-        
-        const playersSnap = await getDocs(playersColRef);
-        const playersList = playersSnap.docs.map(d => d.data() as FirestorePlayer);
-        setOnlinePlayers(playersList);
-        fetchPlayerProfiles(playersList);
-
-        const me = playersList.find(p => p.id === currentUser?.uid);
-        
-        if (me && me.tickets > 0 && myTickets.length === 0) {
-            setMyTickets(generateMultipleUniqueTickets(me.tickets));
-        }
-
-        const isGameActive = firestoreData.status === 'in-progress';
-        const isGameOver = firestoreData.status === 'finished';
-
-        const syntheticRoom: Room = {
-            id: firestoreData.id,
-            host: firestoreData.host,
-            players: playersList.map(p => ({
-                id: p.id,
-                name: p.name,
-                isBot: p.type === 'bot',
-                isHost: p.id === firestoreData.host.id,
-                tickets: [], 
-                confirmedTicketCost: (firestoreData.settings.ticketPrice || 0) * p.tickets,
-            })),
-            settings: firestoreData.settings || DEFAULT_GAME_SETTINGS,
-            createdAt: firestoreData.createdAt.toDate(),
-            isGameStarted: isGameActive || isGameOver,
-            isGameOver: isGameOver,
-            currentNumber: firestoreData.currentNumber || null,
-            calledNumbers: firestoreData.calledNumbers || [],
-            numberPool: [],
-            prizeStatus: firestoreData.prizeStatus || initializePrizeStatus(firestoreData.settings),
-            totalPrizePool: (firestoreData.settings.ticketPrice || 0) * playersList.reduce((acc, p) => acc + p.tickets, 0)
-        };
-        
-        handlePrizeClaimNotification(syntheticRoom);
-        setRoomData(syntheticRoom);
-        setIsLoading(false);
     });
 
-    return () => unsubRoom();
-
-}, [isOnlineGame, roomId, currentUser, db, myTickets.length, toast, playSound, handlePrizeClaimNotification]);
+  }, [roomId, currentUser, db, handlePrizeClaimNotification]);
 
   // Client-side "ticker" for all game modes, only for the host.
   useEffect(() => {
@@ -421,8 +344,8 @@ export default function GameRoomPage() {
     const intervalId = setInterval(() => {
         const currentRoom = roomDataRef.current;
         if (currentRoom && currentRoom.isGameStarted && !currentRoom.isGameOver) {
-            const endpoint = isOnlineGame ? '/api/online/call-number' : `/api/rooms/${currentRoom.id}/call-number`;
-            const body = isOnlineGame ? { roomId: currentRoom.id, hostId: currentUser.uid } : { hostId: currentUser.uid };
+            const endpoint = isBotGame ? `/api/rooms/${currentRoom.id}/call-number` : '/api/online/call-number';
+            const body = { roomId: currentRoom.id, hostId: currentUser.uid };
             
             fetch(endpoint, {
                 method: 'POST',
@@ -431,7 +354,7 @@ export default function GameRoomPage() {
             })
             .then(res => res.json())
             .then(data => {
-              if (data && !data.success && !isOnlineGame) { // Online game handles its own state
+              if (data && !data.success && isBotGame) {
                  setRoomData(data);
               }
             })
@@ -442,7 +365,7 @@ export default function GameRoomPage() {
     }, SERVER_CALL_INTERVAL);
 
     return () => clearInterval(intervalId);
-  }, [isOnlineGame, roomData, currentUser]);
+  }, [isBotGame, roomData, currentUser]);
 
 
   // This effect runs ONCE when the game is over to trigger the stat update for all game modes.
@@ -451,13 +374,13 @@ export default function GameRoomPage() {
         statsUpdateInitiatedRef.current = true; // Prevents re-running
         localStorage.removeItem(`markedNumbers-${roomId}-${currentUser.uid}`);
         
-        const isOnline = isOnlineGame; // Capture current state
-        const endpoint = isOnline ? `/api/online/update-stats` : `/api/rooms/${roomId}/update-stats`;
+        const endpoint = isBotGame ? `/api/rooms/${roomId}/update-stats` : `/api/online/update-stats`;
+        const body = { roomId, userId: currentUser.uid };
 
         fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roomId, userId: currentUser.uid }),
+            body: JSON.stringify(body),
         })
         .then(res => res.json())
         .then(data => {
@@ -480,7 +403,7 @@ export default function GameRoomPage() {
             });
         });
     }
-  }, [roomData?.isGameOver, currentUser, roomId, toast, triggerAnimation, isOnlineGame, fetchUser]);
+  }, [roomData?.isGameOver, currentUser, roomId, toast, triggerAnimation, isBotGame, fetchUser]);
 
   // This effect loads marked numbers from localStorage on mount
   useEffect(() => {
@@ -508,45 +431,6 @@ export default function GameRoomPage() {
         console.error("Failed to save marked numbers to local storage", e);
     }
   }, [markedNumbers, roomId, currentUser, roomData?.isGameOver]);
-
-  useEffect(() => {
-    if (currentUser && roomId && !authLoading) {
-      fetchGameDetails(true);
-    } else if (!authLoading && !currentUser) {
-      setIsLoading(false);
-      setError("Please log in to play or spectate.");
-    }
-  }, [currentUser, roomId, authLoading, fetchGameDetails]);
-
-  // Polling for game updates and handling notifications for changes
-  useEffect(() => {
-    // This effect is now only for non-online games with MANUAL mode.
-    // Auto modes (both online and offline) are handled by host-driven ticker.
-    if (!isOnlineGame && !isLoading && roomData && roomData.settings && !roomData.isGameOver) {
-      if (previousCallingModeRef.current && roomData.settings.callingMode !== previousCallingModeRef.current) {
-        playSound('notification.wav');
-        toast({
-            title: "Mode Switched by Host",
-            description: `Number calling is now ${roomData.settings.callingMode}.`
-        });
-      }
-      previousCallingModeRef.current = roomData?.settings.callingMode;
-
-      const isManualMode = roomData?.settings.callingMode === 'manual';
-      const isHost = roomData?.host.id === currentUser?.uid;
-
-      if(isManualMode && !isHost) {
-          const intervalId = setInterval(() => {
-            if (!document.hidden && roomDataRef.current && roomDataRef.current.isGameStarted && !roomDataRef.current.isGameOver) {
-              fetchGameDetails(false);
-            }
-          }, 7000); // Slower polling for non-hosts in manual mode
-
-          return () => clearInterval(intervalId);
-      }
-    }
-  }, [isOnlineGame, roomData, currentUser, roomId, isLoading, playSound, toast, fetchGameDetails]);
-
 
   // Announce new numbers and update display state
   useEffect(() => {
@@ -614,31 +498,40 @@ export default function GameRoomPage() {
 
     for (let i = 0; i < myTickets.length; i++) {
         const ticket = myTickets[i];
-        const housieLib = require('@/lib/housie');
+        
+        let isValid = false;
+        // Early 5 check is special, doesn't use housie library
+        if (prizeType === PRIZE_TYPES.EARLY_5) {
+            const markedAndCalledCount = ticket.flat().filter(num => num !== null && numbersToValidate.includes(num)).length;
+            if (markedAndCalledCount >= 5) {
+                isValid = true;
+            }
+        } else {
+            const housieLib = require('@/lib/housie');
+            isValid = housieLib.checkWinningCondition(ticket, numbersToValidate, prizeType);
+        }
 
-        if (housieLib.checkWinningCondition(ticket, numbersToValidate, prizeType)) {
+        if (isValid) {
             if (prizeType === PRIZE_TYPES.EARLY_5) {
-                let markedAndCalledCount = 0;
-                ticket.forEach((row, r) => {
+                let markedAndCalledCountOnThisTicket = 0;
+                 ticket.forEach((row, r) => {
                     row.forEach((num, c) => {
                         if (num !== null && numbersToValidate.includes(num)) {
                             if (markedNumbers.has(`${i}-${r}-${c}`)) {
-                                markedAndCalledCount++;
+                                markedAndCalledCountOnThisTicket++;
                             }
                         }
                     });
                 });
-
-                if (markedAndCalledCount >= 5) {
+                if (markedAndCalledCountOnThisTicket >= 5) {
                     isClaimValidAndMarked = true;
                     winningTicketIndex = i;
                     break;
                 }
             } else {
-                const prizeNumbers = getPrizeNumbersOnTicket(ticket, prizeType);
-                const areAllMarked = prizeNumbers.every(({ r, c }) => markedNumbers.has(`${i}-${r}-${c}`));
-                
-                if (areAllMarked) {
+                 const prizeNumbers = getPrizeNumbersOnTicket(ticket, prizeType);
+                 const areAllMarked = prizeNumbers.every(({ r, c }) => markedNumbers.has(`${i}-${r}-${c}`));
+                 if (areAllMarked) {
                     isClaimValidAndMarked = true;
                     winningTicketIndex = i;
                     break;
@@ -657,7 +550,7 @@ export default function GameRoomPage() {
         return;
     }
 
-    const endpoint = isOnlineGame ? `/api/online/claim-prize` : `/api/rooms/${roomId}/claim-prize`;
+    const endpoint = roomData.settings.gameMode === 'multiplayer' || roomData.settings.gameMode === 'online' ? `/api/online/claim-prize` : `/api/rooms/${roomId}/claim-prize`;
     
     try {
       const response = await fetch(endpoint, {
@@ -668,12 +561,7 @@ export default function GameRoomPage() {
 
       const result = await response.json();
 
-      if (response.ok) {
-         if (!isOnlineGame) {
-            setRoomData(result as Room); 
-            handlePrizeClaimNotification(result as Room);
-         }
-      } else {
+      if (!response.ok) {
         throw new Error(result.message || `Failed to claim ${prizeType}.`);
       }
     } catch (err) {
@@ -682,84 +570,10 @@ export default function GameRoomPage() {
     }
   };
 
-  const handleCallNextNumber = useCallback(async () => {
-    if (!currentUser || !roomData) return;
-    setIsCallingNextNumber(true);
-    try {
-      const response = await fetch(`/api/rooms/${roomId}/call-number`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostId: currentUser.uid }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to call next number.');
-      }
-      setRoomData(data);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: (error as Error).message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsCallingNextNumber(false);
-    }
-  }, [currentUser, roomData, roomId, toast]);
-
-  // Effect to call the first number automatically
-  useEffect(() => {
-    if (
-      currentUser &&
-      roomData &&
-      roomData.host?.id === currentUser.uid &&
-      roomData.isGameStarted &&
-      !roomData.isGameOver &&
-      roomData.calledNumbers?.length === 0
-    ) {
-      // Use a timeout to ensure the UI has mounted before the first call
-      const timer = setTimeout(() => {
-        handleCallNextNumber();
-      }, 500); // 500ms delay before first call
-      return () => clearTimeout(timer);
-    }
-  }, [roomData?.isGameStarted, roomData?.calledNumbers?.length, currentUser?.uid, roomData?.host?.id, handleCallNextNumber]);
-
-
-  const handleToggleCallingMode = async () => {
-    if (!currentUser || !isCurrentUserHost || !roomData || roomData.isGameOver || roomData.settings.gameMode === 'online') return;
-
-    setIsUpdatingMode(true);
-    const newMode = roomData.settings.callingMode === 'auto' ? 'manual' : 'auto';
-
-    try {
-        const response = await fetch(`/api/rooms/${roomId}/update-calling-mode`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ hostId: currentUser.uid, callingMode: newMode }),
-        });
-        const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.message || `Failed to switch to ${newMode} mode.`);
-        }
-        setRoomData(data);
-    } catch (error) {
-        toast({
-            title: "Error Switching Mode",
-            description: (error as Error).message,
-            variant: "destructive",
-        });
-    } finally {
-        setIsUpdatingMode(false);
-    }
-  };
-
   const isCurrentUserHost = roomData?.host?.id === currentUser?.uid;
 
   const handlePlayAgain = async () => {
     if (!currentUser || !roomData) return;
-
-    const isBotGame = roomData.settings.gameMode && ['easy', 'medium', 'hard'].includes(roomData.settings.gameMode);
     
     setIsResetting(true);
 
@@ -767,35 +581,36 @@ export default function GameRoomPage() {
         playSound('cards.mp3');
         router.push(`/play-with-computer`);
         return;
-    } else if (isOnlineGame) {
-        playSound('cards.mp3');
-        router.push(`/online`);
-        return;
-    } else { // It's a friends game
-      if (isCurrentUserHost) {
-        try {
-          const response = await fetch(`/api/rooms/${roomId}/reset`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ hostId: currentUser.uid }),
-          });
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "Failed to reset the game.");
-          }
-          router.push(`/room/${roomId}/lobby`);
-          playSound('notification.wav');
-          toast({ title: "New Game Ready!", description: "The lobby has been reset for all players." });
-        } catch (err) {
-          console.error("Error resetting game:", err);
-          toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
-          setIsResetting(false);
+    } else { // It's a friends or online game
+        if (roomData.settings.gameMode === 'online') {
+            playSound('cards.mp3');
+            router.push(`/online`);
+        } else { // Friends game
+            if (isCurrentUserHost) {
+                try {
+                    const response = await fetch(`/api/rooms/${roomId}/reset`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ hostId: currentUser.uid }),
+                    });
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || "Failed to reset the game.");
+                    }
+                    router.push(`/room/${roomId}/lobby`);
+                    playSound('notification.wav');
+                    toast({ title: "New Game Ready!", description: "The lobby has been reset for all players." });
+                } catch (err) {
+                    console.error("Error resetting game:", err);
+                    toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
+                    setIsResetting(false);
+                }
+            } else {
+                router.push(`/room/${roomId}/lobby`);
+                playSound('notification.wav');
+                toast({ title: "Returning to Lobby", description: "Waiting for host to start a new game." });
+            }
         }
-      } else {
-        router.push(`/room/${roomId}/lobby`);
-        playSound('notification.wav');
-        toast({ title: "Returning to Lobby", description: "Waiting for host to start a new game." });
-      }
     }
   };
 
@@ -805,6 +620,14 @@ export default function GameRoomPage() {
       return;
     }
     try {
+      if (roomData?.settings.gameMode === 'multiplayer' || roomData?.settings.gameMode === 'online') {
+          // No refund for online/friends games once started
+          if (roomData?.isGameStarted) {
+               // Just leave
+          } else {
+             // Logic to refund if lobby
+          }
+      }
       await fetch(`/api/rooms/${roomId}/leave`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -879,27 +702,25 @@ export default function GameRoomPage() {
     let totalWinnings = 0;
     let xpGained = 0;
     const currentUserPrizeNames: PrizeType[] = [];
-    const isOnlineGameMode = gameSettings.gameMode === 'online';
+    const isFriendsOrOnlineGame = roomData.settings.gameMode === 'multiplayer' || roomData.settings.gameMode === 'online';
 
     if (currentUser) {
-        const isBotGame = gameSettings.gameMode && ['easy', 'medium', 'hard'].includes(gameSettings.gameMode);
-        
-        xpGained += XP_PER_GAME_PARTICIPATION * (isOnlineGameMode ? XP_MODIFIER_ONLINE : 1);
+        xpGained += XP_PER_GAME_PARTICIPATION * (isFriendsOrOnlineGame ? XP_MODIFIER_ONLINE : 1);
 
         for (const prize in roomData.prizeStatus) {
             const castedPrize = prize as PrizeType;
             if (roomData.prizeStatus[castedPrize]?.claimedBy.some(c => c.id === currentUser.uid)) {
                 currentUserPrizeNames.push(castedPrize);
-                xpGained += (XP_PER_PRIZE_WIN[castedPrize] || 0) * (isOnlineGameMode ? XP_MODIFIER_ONLINE : 1);
+                xpGained += (XP_PER_PRIZE_WIN[castedPrize] || 0) * (isFriendsOrOnlineGame ? XP_MODIFIER_ONLINE : 1);
             }
         }
         
-        if (isBotGame) {
+        if (isBotGame && roomData.settings.gameMode) {
             currentUserPrizeNames.forEach(prize => {
-                totalWinnings += OFFLINE_COIN_REWARDS[gameSettings.gameMode as 'easy' | 'medium' | 'hard'][prize] || 0;
+                totalWinnings += OFFLINE_COIN_REWARDS[roomData.settings.gameMode as 'easy' | 'medium' | 'hard'][prize] || 0;
             });
             totalWinnings += PARTICIPATION_REWARD;
-        } else {
+        } else if (isFriendsOrOnlineGame) {
             currentUserPrizeNames.forEach(prize => {
                 const claimInfo = roomData.prizeStatus[prize];
                 if (claimInfo) {
@@ -921,7 +742,7 @@ export default function GameRoomPage() {
         }
     }
     
-    const playAgainButtonText = isOnlineGame ? "Find New Match" : (roomData.settings.gameMode === 'multiplayer' ? (isCurrentUserHost ? "New Game" : "To Lobby") : "Play Again");
+    const playAgainButtonText = isBotGame ? "Play Again" : "To Lobby";
     
     return (
       <>
@@ -1098,7 +919,6 @@ export default function GameRoomPage() {
                <div className="flex items-center gap-2 mb-1">
                   {(() => {
                     const { gameMode, tier } = roomData.settings;
-                    const isBotGame = gameMode && ['easy', 'medium', 'hard'].includes(gameMode);
 
                     if (isBotGame) {
                       return (
@@ -1256,7 +1076,7 @@ export default function GameRoomPage() {
                                   <ScrollArea className="h-40">
                                       <ul className="space-y-1 text-xs">
                                       {[...roomData.players].sort((a,b) => (a.isHost ? -1 : b.isHost ? 1 : 0)).map((player) => {
-                                         const playerTickets = isOnlineGame ? (onlinePlayers.find(p => p.id === player.id)?.tickets || 0) : (player.tickets?.length || 0);
+                                         const playerTickets = player.tickets?.length || 0;
                                          const ticketCost = playerTickets * gameSettings.ticketPrice;
                                          const playerProfile = playerProfiles.get(player.id);
                                          const badgeOrder = ['PLATINUM_PLAYER', 'GOLD_MASTER', 'SILVER_VETERAN', 'BRONZE_COMPETITOR', 'NOVICE'];
@@ -1331,10 +1151,17 @@ export default function GameRoomPage() {
               />
           </div>
 
-          {isCurrentUserHost && !isAutoCalling && !roomData.isGameOver && !isOnlineGame && (
+          {isCurrentUserHost && !isAutoCalling && !roomData.isGameOver && (
             <div className="w-full max-w-md">
               <Button 
-                  onClick={handleCallNextNumber}
+                  onClick={() => {
+                    const endpoint = isBotGame ? `/api/rooms/${roomId}/call-number` : `/api/online/call-number`;
+                    fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ roomId, hostId: currentUser.uid }),
+                    });
+                  }}
                   disabled={isCallingNextNumber || roomData.isGameOver}
                   className="w-full"
               >
