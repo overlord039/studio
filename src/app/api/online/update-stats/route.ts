@@ -7,6 +7,7 @@ import { doc, getDoc, runTransaction, collection, getDocs, increment, writeBatch
 import type { FirestoreRoom, FirestorePlayer, PrizeType, GameSettings, UserStats } from '@/types';
 import { PRIZE_DEFINITIONS, PRIZE_DISTRIBUTION_PERCENTAGES, getXpForNextLevel, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN, XP_MODIFIER_ONLINE, getCoinsForLevelUp } from '@/lib/constants';
 import { checkAndAwardBadges, type Badge } from '@/lib/badges';
+import { updateQuestProgress } from '@/lib/quests';
 
 // Helper function to calculate final prize distribution accurately
 function calculatePrizes(totalPool: number, settings: GameSettings): Record<PrizeType, number> {
@@ -163,6 +164,10 @@ export async function POST(request: NextRequest) {
         const badgeResult = checkAndAwardBadges(currentStats, prospectiveStats);
         statsUpdate['stats.badges'] = badgeResult.badgeNames;
         newlyEarnedBadges = badgeResult.newlyEarnedBadges;
+
+        // Daily Quest Update
+        const questUpdates = updateQuestProgress(currentStats, { prizesWon: prizesWonByPlayer });
+        Object.assign(statsUpdate, questUpdates);
         
         const totalCoinsEarned = coinsEarnedFromPrizes + coinsFromLevelUp + badgeResult.coinsAwarded;
         

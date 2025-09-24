@@ -9,6 +9,7 @@ import type { PrizeType, Room, UserStats, GameSettings } from '@/types';
 import { PRIZE_TYPES } from '@/types';
 import { PRIZE_DISTRIBUTION_PERCENTAGES, XP_PER_GAME_PARTICIPATION, XP_PER_PRIZE_WIN, getXpForNextLevel, PRIZE_DEFINITIONS, getCoinsForLevelUp } from '@/lib/constants';
 import { checkAndAwardBadges, type Badge } from '@/lib/badges';
+import { updateQuestProgress } from '@/lib/quests';
 
 // Define coin rewards for offline games
 const OFFLINE_COIN_REWARDS: Record<'easy' | 'medium' | 'hard', Record<PrizeType, number>> = {
@@ -194,6 +195,10 @@ export async function POST(
         const badgeResult = checkAndAwardBadges(currentStats, prospectiveStats);
         statsUpdate['stats.badges'] = badgeResult.badgeNames;
         newlyEarnedBadges = badgeResult.newlyEarnedBadges;
+
+        // Daily Quest Update
+        const questUpdates = updateQuestProgress(currentStats, { prizesWon: prizesWonByPlayer });
+        Object.assign(statsUpdate, questUpdates);
 
         const totalCoinsEarned = coinsFromPrizes + coinsFromLevelUp + badgeResult.coinsAwarded;
 

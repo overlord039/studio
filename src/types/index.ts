@@ -1,5 +1,15 @@
 
 
+export type QuestName = 'playGames' | 'winPrizes' | 'winFullHouse';
+
+export interface Quest {
+  progress: number;
+  target: number;
+  completed: boolean;
+  claimed: boolean;
+  reward: number;
+}
+
 export interface UserStats {
   matchesPlayed: number;
   prizesWon: Record<PrizeType, number>;
@@ -12,6 +22,10 @@ export interface UserStats {
   loginStreak?: number;
   lastClaimedDay?: number; // Day of the streak (1-7)
   badges?: string[]; // To store earned badge names
+  dailyQuests: {
+    lastReset: string; // ISO date string
+    quests: Record<QuestName, Quest>;
+  };
 }
 
 export interface User {

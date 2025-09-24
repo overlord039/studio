@@ -12,8 +12,8 @@ export interface BadgeCriterion {
 export interface Badge {
   name: string;
   description: string;
-  icon: string; // Changed from icon name to image path
-  reward: number; // Coins awarded for achieving the badge
+  icon: string; 
+  reward: number; 
   criteria: BadgeCriterion[];
   isAchieved: (stats: UserStats) => boolean;
 }
