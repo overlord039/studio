@@ -27,7 +27,7 @@ interface DailyRewardDialogProps {
   fetchUser: () => Promise<void>;
 }
 
-const QuestItem = ({ questName, user, fetchUser, icon }: { questName: QuestName, user: User, fetchUser: () => Promise<void>, icon: React.ReactNode }) => {
+const QuestItem = ({ questName, user, fetchUser }: { questName: QuestName, user: User, fetchUser: () => Promise<void> }) => {
     const { toast } = useToast();
     const [isClaiming, setIsClaiming] = useState(false);
     const { triggerAnimation } = useCoinAnimation();
@@ -65,7 +65,6 @@ const QuestItem = ({ questName, user, fetchUser, icon }: { questName: QuestName,
             questData.claimed ? "bg-green-600/10 border-green-500/30" : "bg-secondary/30"
         )}>
             <CardContent className="p-3 flex items-center gap-3">
-                <div className="flex-shrink-0 text-muted-foreground">{icon}</div>
                 <div className="flex-grow space-y-2">
                     <div className="flex justify-between items-start">
                         <p className="font-bold text-sm">{questDef.title}</p>
@@ -112,11 +111,7 @@ export default function DailyRewardDialog({ user, onClaim, fetchUser }: DailyRew
   const progressPercentage = (streak / 7) * 100;
   const quests = user.stats.dailyQuests?.quests;
   
-  const questOrder: { name: QuestName; icon: React.ReactNode }[] = [
-    { name: 'playGames', icon: <Smile className="h-6 w-6" /> },
-    { name: 'winPrizes', icon: <Target className="h-6 w-6" /> },
-    { name: 'winFullHouse', icon: <Skull className="h-6 w-6" /> },
-  ];
+  const questOrder: QuestName[] = ['playGames', 'winPrizes', 'winFullHouse'];
 
   const handleClaimAndAnimate = async () => {
       const result = await onClaim(nextDayToClaim);
@@ -178,13 +173,12 @@ export default function DailyRewardDialog({ user, onClaim, fetchUser }: DailyRew
             </TabsContent>
             <TabsContent value="quests" className="mt-4">
                  <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
-                    {quests ? questOrder.map(({ name, icon }) => (
+                    {quests ? questOrder.map((questName) => (
                         <QuestItem 
-                            key={name} 
-                            questName={name}
+                            key={questName} 
+                            questName={questName}
                             user={user} 
                             fetchUser={fetchUser}
-                            icon={icon}
                         />
                     )) : <p>Loading quests...</p>}
                 </div>

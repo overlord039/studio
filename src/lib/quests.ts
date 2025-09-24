@@ -13,21 +13,21 @@ export interface QuestDefinition {
 
 export const QUEST_DEFINITIONS: Record<QuestName, QuestDefinition> = {
     playGames: {
-        title: "Easy: Play 3 Games",
+        title: "Play 3 Games",
         description: "Complete 3 games in any mode.",
         target: 3,
         reward: 15,
         getProgress: () => 1, // Always increments by 1 per game
     },
     winPrizes: {
-        title: "Medium: Win 2 Prizes",
+        title: "Win 2 Prizes",
         description: "Win a total of 2 prizes across all games.",
         target: 2,
         reward: 25,
         getProgress: (gameResult) => gameResult.prizesWon.length,
     },
     winFullHouse: {
-        title: "Hard: Win a Full House",
+        title: "Win a Full House",
         description: "Achieve the ultimate prize, a Full House!",
         target: 1,
         reward: 50,
