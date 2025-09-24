@@ -18,6 +18,8 @@ import { db } from '@/lib/firebase/config';
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 interface DailyRewardDialogProps {
   user: User;
@@ -64,7 +66,7 @@ const QuestItem = ({ questName, user, fetchUser }: { questName: QuestName, user:
                     <div className="flex justify-between items-start">
                         <p className="font-bold text-sm">{questDef.title}</p>
                         <div className="flex items-center gap-1.5 font-semibold text-xs text-amber-700 dark:text-amber-400">
-                            <Image src="/coin.png" alt="Coin" width={14} height={14} />
+                            <Image src="/coin.png" alt="Coin" width={14} height={14} data-ai-hint="gold coin" />
                             <span>{questData.reward}</span>
                         </div>
                     </div>
@@ -121,52 +123,51 @@ export default function DailyRewardDialog({ user, onClaim, fetchUser }: DailyRew
   return (
     <DialogContent className="max-w-md w-[90vw] p-0 overflow-hidden">
       <div className="relative p-4 sm:p-6">
-        <DialogHeader className="text-center mb-4">
+        <DialogHeader className="text-center">
           <DialogTitle className="text-2xl">Daily Rewards</DialogTitle>
           <DialogDescription>
             Log in daily and complete quests to earn bonus coins!
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
-            {/* Daily Login Section */}
-            <div className="space-y-4">
-                <h3 className="font-bold text-center text-lg">Login Streak</h3>
-                <div className="grid grid-cols-4 gap-2">
-                {WEEKLY_REWARDS.slice(0, 4).map((reward, i) => (
-                    <RewardCard key={i} day={i + 1} reward={reward} lastClaimedDay={lastClaimedDay} streak={streak} />
-                ))}
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                {WEEKLY_REWARDS.slice(4).map((reward, i) => (
-                    <RewardCard key={i + 4} day={i + 5} reward={reward} lastClaimedDay={lastClaimedDay} streak={streak}/>
-                ))}
-                </div>
-
-                <div className="text-center p-3 bg-yellow-400/20 border-2 border-dashed border-yellow-500/50 rounded-lg space-y-2">
-                    <h4 className="font-bold flex items-center justify-center gap-2"><Star className="text-yellow-500"/> Perfect Week Bonus</h4>
-                    <div className="space-y-1">
-                        <Progress value={progressPercentage} className="h-2" variant="segmented" />
-                        <div className="flex justify-between text-xs font-medium text-muted-foreground px-1">
-                            <span>Streak: {streak} Day{streak === 1 ? '' : 's'}</span>
-                            <span>{streak} / 7</span>
-                        </div>
+        <Tabs defaultValue="login" className="w-full mt-4">
+            <TabsList className="grid w-full grid-cols-2 h-12">
+                <TabsTrigger value="login">Login Streak</TabsTrigger>
+                <TabsTrigger value="quests">Daily Quests</TabsTrigger>
+            </TabsList>
+            <TabsContent value="login" className="mt-4">
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                    <div className="grid grid-cols-4 gap-2">
+                    {WEEKLY_REWARDS.slice(0, 4).map((reward, i) => (
+                        <RewardCard key={i} day={i + 1} reward={reward} lastClaimedDay={lastClaimedDay} streak={streak} />
+                    ))}
                     </div>
-                    <p className="text-sm">Claim all 7 days for an extra <span className="font-bold">{PERFECT_STREAK_BONUS} coins!</span></p>
-                </div>
-                 {canClaimToday && (
-                    <Button onClick={handleClaimAndAnimate} className="w-full" size="lg">
-                        Claim Day {nextDayToClaim} Reward
-                    </Button>
-                )}
-            </div>
-            
-            <Separator />
+                    <div className="grid grid-cols-3 gap-2">
+                    {WEEKLY_REWARDS.slice(4).map((reward, i) => (
+                        <RewardCard key={i + 4} day={i + 5} reward={reward} lastClaimedDay={lastClaimedDay} streak={streak}/>
+                    ))}
+                    </div>
 
-            {/* Daily Quests Section */}
-            <div className="space-y-4">
-                <h3 className="font-bold text-center text-lg">Daily Quests</h3>
-                <div className="space-y-2">
+                    <div className="text-center p-3 bg-yellow-400/20 border-2 border-dashed border-yellow-500/50 rounded-lg space-y-2">
+                        <h4 className="font-bold flex items-center justify-center gap-2"><Star className="text-yellow-500"/> Perfect Week Bonus</h4>
+                        <div className="space-y-1">
+                            <Progress value={progressPercentage} className="h-2" variant="segmented" />
+                            <div className="flex justify-between text-xs font-medium text-muted-foreground px-1">
+                                <span>Streak: {streak} Day{streak === 1 ? '' : 's'}</span>
+                                <span>{streak} / 7</span>
+                            </div>
+                        </div>
+                        <p className="text-sm">Claim all 7 days for an extra <span className="font-bold">{PERFECT_STREAK_BONUS} coins!</span></p>
+                    </div>
+                    {canClaimToday && (
+                        <Button onClick={handleClaimAndAnimate} className="w-full" size="lg">
+                            Claim Day {nextDayToClaim} Reward
+                        </Button>
+                    )}
+                </div>
+            </TabsContent>
+            <TabsContent value="quests" className="mt-4">
+                 <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
                     {quests && Object.keys(quests).map(questKey => (
                         <QuestItem 
                             key={questKey} 
@@ -176,10 +177,10 @@ export default function DailyRewardDialog({ user, onClaim, fetchUser }: DailyRew
                         />
                     ))}
                 </div>
-            </div>
-        </div>
+            </TabsContent>
+        </Tabs>
 
-        <DialogFooter className="mt-6 sm:mt-4">
+        <DialogFooter className="mt-6 sm:mt-4 pt-4 border-t">
              <Button onClick={handleClose} variant="outline" className="w-full">
               {canClaimToday ? "Close" : (lastClaimedDay >= 7 ? "All rewards claimed!" : "Come back tomorrow!")}
             </Button>
@@ -215,7 +216,7 @@ const RewardCard = ({ day, reward, lastClaimedDay, streak }: { day: number, rewa
                 "text-xs font-semibold uppercase",
                 isClaimed ? "text-green-700 dark:text-green-300/80" : "text-muted-foreground"
             )}>Day {day}</p>
-            <Image src="/coin.png" alt="Coin" width={24} height={24} className="my-1"/>
+            <Image src="/coin.png" alt="Coin" width={24} height={24} className="my-1" data-ai-hint="gold coin" />
             <p className={cn(
                 "text-sm font-bold",
                 isNextToClaim ? "text-primary dark:text-primary-foreground" : isClaimed ? "" : "text-card-foreground"
