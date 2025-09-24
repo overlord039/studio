@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState } from 'react';
@@ -8,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import type { User } from '@/contexts/auth-context';
 import { WEEKLY_REWARDS, PERFECT_STREAK_BONUS } from '@/lib/rewards';
 import { cn } from '@/lib/utils';
-import { CheckCircle, Gift, Star, X, Loader2 } from 'lucide-react';
+import { CheckCircle, Gift, Star, X, Loader2, Smile, Target, Skull } from 'lucide-react';
 import { useAuth, useCoinAnimation } from '@/contexts/auth-context';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
@@ -27,7 +28,7 @@ interface DailyRewardDialogProps {
   fetchUser: () => Promise<void>;
 }
 
-const QuestItem = ({ questName, user, fetchUser }: { questName: QuestName, user: User, fetchUser: () => Promise<void> }) => {
+const QuestItem = ({ questName, user, fetchUser, icon }: { questName: QuestName, user: User, fetchUser: () => Promise<void>, icon: React.ReactNode }) => {
     const { toast } = useToast();
     const [isClaiming, setIsClaiming] = useState(false);
     const questData = user.stats.dailyQuests.quests[questName];
@@ -62,6 +63,7 @@ const QuestItem = ({ questName, user, fetchUser }: { questName: QuestName, user:
             questData.claimed ? "bg-green-600/10 border-green-500/30" : "bg-secondary/30"
         )}>
             <CardContent className="p-3 flex items-center gap-3">
+                <div className="flex-shrink-0 text-muted-foreground">{icon}</div>
                 <div className="flex-grow space-y-2">
                     <div className="flex justify-between items-start">
                         <p className="font-bold text-sm">{questDef.title}</p>
@@ -107,6 +109,12 @@ export default function DailyRewardDialog({ user, onClaim, fetchUser }: DailyRew
   const nextDayToClaim = lastClaimedDay + 1;
   const progressPercentage = (streak / 7) * 100;
   const quests = user.stats.dailyQuests?.quests;
+  
+  const questOrder: { name: QuestName; icon: React.ReactNode }[] = [
+    { name: 'playGames', icon: <Smile className="h-6 w-6" /> },
+    { name: 'winPrizes', icon: <Target className="h-6 w-6" /> },
+    { name: 'winFullHouse', icon: <Skull className="h-6 w-6" /> },
+  ];
 
   const handleClaimAndAnimate = async () => {
       const result = await onClaim(nextDayToClaim);
@@ -168,12 +176,13 @@ export default function DailyRewardDialog({ user, onClaim, fetchUser }: DailyRew
             </TabsContent>
             <TabsContent value="quests" className="mt-4">
                  <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
-                    {quests && Object.keys(quests).map(questKey => (
+                    {quests && questOrder.map(({ name, icon }) => (
                         <QuestItem 
-                            key={questKey} 
-                            questName={questKey as QuestName} 
+                            key={name} 
+                            questName={name}
                             user={user} 
-                            fetchUser={fetchUser} 
+                            fetchUser={fetchUser}
+                            icon={icon}
                         />
                     ))}
                 </div>
