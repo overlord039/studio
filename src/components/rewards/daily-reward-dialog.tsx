@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState } from 'react';
@@ -31,6 +30,8 @@ interface DailyRewardDialogProps {
 const QuestItem = ({ questName, user, fetchUser, icon }: { questName: QuestName, user: User, fetchUser: () => Promise<void>, icon: React.ReactNode }) => {
     const { toast } = useToast();
     const [isClaiming, setIsClaiming] = useState(false);
+    const { triggerAnimation } = useCoinAnimation();
+
     const questData = user.stats.dailyQuests.quests[questName];
     const questDef = QUEST_DEFINITIONS[questName];
     const progress = Math.min(100, (questData.progress / questData.target) * 100);
@@ -45,6 +46,7 @@ const QuestItem = ({ questName, user, fetchUser, icon }: { questName: QuestName,
                 'stats.coins': increment(questData.reward),
             });
             await fetchUser();
+            triggerAnimation(questData.reward);
             toast({
                 title: "Reward Claimed!",
                 description: `You earned ${questData.reward} coins for completing "${questDef.title}".`
@@ -176,7 +178,7 @@ export default function DailyRewardDialog({ user, onClaim, fetchUser }: DailyRew
             </TabsContent>
             <TabsContent value="quests" className="mt-4">
                  <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
-                    {quests && questOrder.map(({ name, icon }) => (
+                    {quests ? questOrder.map(({ name, icon }) => (
                         <QuestItem 
                             key={name} 
                             questName={name}
@@ -184,7 +186,7 @@ export default function DailyRewardDialog({ user, onClaim, fetchUser }: DailyRew
                             fetchUser={fetchUser}
                             icon={icon}
                         />
-                    ))}
+                    )) : <p>Loading quests...</p>}
                 </div>
             </TabsContent>
         </Tabs>

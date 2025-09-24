@@ -28,6 +28,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import Image from 'next/image';
 import { isSameDay, subDays, startOfDay } from 'date-fns';
 import { WEEKLY_REWARDS, PERFECT_STREAK_BONUS, getCoinsForLevelUp } from '@/lib/rewards';
+import { getUpdatedQuests, createDefaultQuests } from '@/lib/quests';
 import AnimatedCoin from '@/components/rewards/animated-coin';
 import { useRouter } from 'next/navigation';
 import LevelUpDialog from '@/components/rewards/level-up-dialog';
@@ -81,6 +82,10 @@ const createDefaultStats = (): UserStats => {
         loginStreak: 0,
         lastClaimedDay: 0,
         badges: [],
+        dailyQuests: {
+            lastReset: new Date(0).toISOString(),
+            quests: createDefaultQuests(),
+        }
     };
 };
 
@@ -211,56 +216,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
 
-  const checkDailyLogin = useCallback(async (user: User) => {
+  const checkDailyLoginAndQuests = useCallback(async (user: User) => {
     if (!db) return user;
     const today = startOfDay(new Date());
     const lastLoginDate = startOfDay(new Date(user.stats.lastLogin || 0));
 
-    if (isSameDay(today, lastLoginDate)) {
-        return user; // Already logged in today.
+    let updatedStats: UserStats = { ...user.stats };
+
+    if (!isSameDay(today, lastLoginDate)) {
+        const yesterday = subDays(today, 1);
+        const lastClaimed = user.stats.lastClaimedDay || 0;
+
+        let newStreak: number;
+        let newLastClaimedDay = lastClaimed;
+
+        if (isSameDay(lastLoginDate, yesterday)) {
+            newStreak = (user.stats.loginStreak || 0) + 1;
+        } else {
+            newStreak = 1;
+        }
+        
+        if (newLastClaimedDay >= 7) {
+            newLastClaimedDay = 0;
+        }
+
+        updatedStats.lastLogin = today.toISOString();
+        updatedStats.loginStreak = newStreak;
+        updatedStats.lastClaimedDay = newLastClaimedDay;
     }
     
-    const yesterday = subDays(today, 1);
-    const lastClaimed = user.stats.lastClaimedDay || 0;
-
-    let newStreak: number;
-    let newLastClaimedDay = lastClaimed;
-
-    if (isSameDay(lastLoginDate, yesterday)) {
-        newStreak = (user.stats.loginStreak || 0) + 1;
-    } else {
-        newStreak = 1; // Streak is broken, reset to 1
-        // **KEY CHANGE**: Do NOT reset `newLastClaimedDay`. Progress is paused, not reset.
-    }
-    
-    // If the reward cycle was completed, reset it for the new login.
-    if (newLastClaimedDay >= 7) {
-        newLastClaimedDay = 0;
-    }
-
-    const updates: { [key: string]: any } = { 
-        'stats.lastLogin': today.toISOString(),
-        'stats.loginStreak': newStreak,
-        'stats.lastClaimedDay': newLastClaimedDay,
-    };
+    // Always check for quest reset
+    updatedStats.dailyQuests = getUpdatedQuests(updatedStats);
     
     const userDocRef = doc(db, "users", user.uid);
     try {
-        await updateDoc(userDocRef, updates);
+        await updateDoc(userDocRef, { 'stats': updatedStats });
         
-        return { 
-            ...user, 
-            stats: { 
-                ...user.stats, 
-                loginStreak: newStreak, 
-                lastLogin: today.toISOString(),
-                lastClaimedDay: newLastClaimedDay
-            }
-        };
+        return { ...user, stats: updatedStats };
 
     } catch (error) {
-        console.error("Error updating daily login stats:", error);
-        return user;
+        console.error("Error updating daily login/quest stats:", error);
+        return user; // Return original user on error
     }
   }, []);
 
@@ -344,7 +340,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
 
                 if (userForLoginCheck) {
-                    const finalUser = await checkDailyLogin(userForLoginCheck);
+                    const finalUser = await checkDailyLoginAndQuests(userForLoginCheck);
 
                     // Check for level up
                     const prevUser = previousUserRef.current;
@@ -383,7 +379,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             userDocUnsubscribe();
         }
     };
-  }, [toast, checkDailyLogin]);
+  }, [toast, checkDailyLoginAndQuests]);
 
   const handleClaimReward = async (dayToClaim: number) => {
     if (!currentUser || !db) return null;
