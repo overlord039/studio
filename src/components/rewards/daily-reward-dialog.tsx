@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState } from 'react';
@@ -9,17 +8,94 @@ import { Button } from '@/components/ui/button';
 import type { User } from '@/contexts/auth-context';
 import { WEEKLY_REWARDS, PERFECT_STREAK_BONUS } from '@/lib/rewards';
 import { cn } from '@/lib/utils';
-import { CheckCircle, Gift, Star, X } from 'lucide-react';
+import { CheckCircle, Gift, Star, X, Loader2 } from 'lucide-react';
 import { useAuth, useCoinAnimation } from '@/contexts/auth-context';
-import AnimatedCoin from './animated-coin';
 import { Progress } from '@/components/ui/progress';
+import { Card, CardContent } from '@/components/ui/card';
+import { QUEST_DEFINITIONS } from '@/lib/quests';
+import type { QuestName } from '@/types';
+import { db } from '@/lib/firebase/config';
+import { doc, updateDoc, increment } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { Separator } from '../ui/separator';
 
 interface DailyRewardDialogProps {
   user: User;
   onClaim: (day: number) => Promise<{claimedAmount: number} | null>;
+  fetchUser: () => Promise<void>;
 }
 
-export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogProps) {
+const QuestItem = ({ questName, user, fetchUser }: { questName: QuestName, user: User, fetchUser: () => Promise<void> }) => {
+    const { toast } = useToast();
+    const [isClaiming, setIsClaiming] = useState(false);
+    const questData = user.stats.dailyQuests.quests[questName];
+    const questDef = QUEST_DEFINITIONS[questName];
+    const progress = Math.min(100, (questData.progress / questData.target) * 100);
+
+    const handleClaimQuest = async () => {
+        if (!user || !db || isClaiming || !questData.completed || questData.claimed) return;
+        setIsClaiming(true);
+        try {
+            const userDocRef = doc(db, 'users', user.uid);
+            await updateDoc(userDocRef, {
+                [`stats.dailyQuests.quests.${questName}.claimed`]: true,
+                'stats.coins': increment(questData.reward),
+            });
+            await fetchUser();
+            toast({
+                title: "Reward Claimed!",
+                description: `You earned ${questData.reward} coins for completing "${questDef.title}".`
+            });
+        } catch (error) {
+            console.error("Error claiming quest reward:", error);
+            toast({ title: "Error", description: "Could not claim your reward.", variant: "destructive" });
+        } finally {
+            setIsClaiming(false);
+        }
+    };
+    
+    return (
+        <Card className={cn(
+            "transition-all w-full",
+            questData.claimed ? "bg-green-600/10 border-green-500/30" : "bg-secondary/30"
+        )}>
+            <CardContent className="p-3 flex items-center gap-3">
+                <div className="flex-grow space-y-2">
+                    <div className="flex justify-between items-start">
+                        <p className="font-bold text-sm">{questDef.title}</p>
+                        <div className="flex items-center gap-1.5 font-semibold text-xs text-amber-700 dark:text-amber-400">
+                            <Image src="/coin.png" alt="Coin" width={14} height={14} />
+                            <span>{questData.reward}</span>
+                        </div>
+                    </div>
+                    <div className="space-y-1 pt-1">
+                        <Progress value={progress} className="h-1.5" />
+                        <p className="text-xs font-medium text-muted-foreground">{questData.progress} / {questData.target}</p>
+                    </div>
+                </div>
+                <div className="flex-shrink-0">
+                    {questData.claimed ? (
+                        <div className="flex flex-col items-center justify-center h-10 w-16 text-green-600">
+                            <CheckCircle className="h-5 w-5" />
+                            <span className="text-xs font-bold">Claimed</span>
+                        </div>
+                    ) : (
+                        <Button
+                            onClick={handleClaimQuest}
+                            disabled={!questData.completed || isClaiming}
+                            size="sm"
+                            className="h-10 w-16"
+                        >
+                            {isClaiming ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Claim'}
+                        </Button>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
+
+export default function DailyRewardDialog({ user, onClaim, fetchUser }: DailyRewardDialogProps) {
   const { setIsRewardDialogOpen } = useAuth();
   const { triggerAnimation } = useCoinAnimation();
   const streak = user.stats.loginStreak || 0;
@@ -28,14 +104,13 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
   const canClaimToday = streak > lastClaimedDay && lastClaimedDay < 7;
   const nextDayToClaim = lastClaimedDay + 1;
   const progressPercentage = (streak / 7) * 100;
+  const quests = user.stats.dailyQuests?.quests;
 
   const handleClaimAndAnimate = async () => {
       const result = await onClaim(nextDayToClaim);
       if (result && result.claimedAmount > 0) {
         triggerAnimation(result.claimedAmount);
-        setTimeout(() => {
-            handleClose();
-        }, 1500); // Close dialog after animation has a moment to start
+        // Do not close dialog automatically
       }
   };
 
@@ -44,57 +119,77 @@ export default function DailyRewardDialog({ user, onClaim }: DailyRewardDialogPr
   }
 
   return (
-    <DialogContent className="max-w-md w-[90vw] p-0 overflow-hidden" onInteractOutside={(e) => { if (canClaimToday) e.preventDefault() }}>
-      <div className="relative p-6">
-        <DialogHeader className="text-center">
-          <DialogTitle className="text-2xl">Daily Bonus</DialogTitle>
+    <DialogContent className="max-w-md w-[90vw] p-0 overflow-hidden">
+      <div className="relative p-4 sm:p-6">
+        <DialogHeader className="text-center mb-4">
+          <DialogTitle className="text-2xl">Daily Rewards</DialogTitle>
           <DialogDescription>
-            Log in every day to earn rewards. Complete the week for a bonus!
+            Log in daily and complete quests to earn bonus coins!
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-4 gap-2 my-6">
-          {WEEKLY_REWARDS.slice(0, 4).map((reward, i) => (
-            <RewardCard key={i} day={i + 1} reward={reward} lastClaimedDay={lastClaimedDay} streak={streak} />
-          ))}
-        </div>
-        <div className="grid grid-cols-3 gap-2 my-6">
-          {WEEKLY_REWARDS.slice(4).map((reward, i) => (
-            <RewardCard key={i + 4} day={i + 5} reward={reward} lastClaimedDay={lastClaimedDay} streak={streak}/>
-          ))}
-        </div>
+        <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+            {/* Daily Login Section */}
+            <div className="space-y-4">
+                <h3 className="font-bold text-center text-lg">Login Streak</h3>
+                <div className="grid grid-cols-4 gap-2">
+                {WEEKLY_REWARDS.slice(0, 4).map((reward, i) => (
+                    <RewardCard key={i} day={i + 1} reward={reward} lastClaimedDay={lastClaimedDay} streak={streak} />
+                ))}
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                {WEEKLY_REWARDS.slice(4).map((reward, i) => (
+                    <RewardCard key={i + 4} day={i + 5} reward={reward} lastClaimedDay={lastClaimedDay} streak={streak}/>
+                ))}
+                </div>
 
-        <div className="text-center p-3 bg-yellow-400/20 border-2 border-dashed border-yellow-500/50 rounded-lg space-y-2">
-          <h4 className="font-bold flex items-center justify-center gap-2"><Star className="text-yellow-500"/> Perfect Week Bonus</h4>
-            <div className="space-y-1">
-                <Progress value={progressPercentage} className="h-2" variant="segmented" />
-                <div className="flex justify-between text-xs font-medium text-muted-foreground px-1">
-                    <span>Streak: {streak} Day{streak === 1 ? '' : 's'}</span>
-                    <span>{streak} / 7</span>
+                <div className="text-center p-3 bg-yellow-400/20 border-2 border-dashed border-yellow-500/50 rounded-lg space-y-2">
+                    <h4 className="font-bold flex items-center justify-center gap-2"><Star className="text-yellow-500"/> Perfect Week Bonus</h4>
+                    <div className="space-y-1">
+                        <Progress value={progressPercentage} className="h-2" variant="segmented" />
+                        <div className="flex justify-between text-xs font-medium text-muted-foreground px-1">
+                            <span>Streak: {streak} Day{streak === 1 ? '' : 's'}</span>
+                            <span>{streak} / 7</span>
+                        </div>
+                    </div>
+                    <p className="text-sm">Claim all 7 days for an extra <span className="font-bold">{PERFECT_STREAK_BONUS} coins!</span></p>
+                </div>
+                 {canClaimToday && (
+                    <Button onClick={handleClaimAndAnimate} className="w-full" size="lg">
+                        Claim Day {nextDayToClaim} Reward
+                    </Button>
+                )}
+            </div>
+            
+            <Separator />
+
+            {/* Daily Quests Section */}
+            <div className="space-y-4">
+                <h3 className="font-bold text-center text-lg">Daily Quests</h3>
+                <div className="space-y-2">
+                    {quests && Object.keys(quests).map(questKey => (
+                        <QuestItem 
+                            key={questKey} 
+                            questName={questKey as QuestName} 
+                            user={user} 
+                            fetchUser={fetchUser} 
+                        />
+                    ))}
                 </div>
             </div>
-          <p className="text-sm">Claim all 7 days for an extra <span className="font-bold">{PERFECT_STREAK_BONUS} coins!</span></p>
         </div>
 
-        <DialogFooter className="mt-6">
-          {canClaimToday ? (
-            <Button onClick={handleClaimAndAnimate} className="w-full" size="lg">
-              Claim Day {nextDayToClaim} Reward
-            </Button>
-          ) : (
+        <DialogFooter className="mt-6 sm:mt-4">
              <Button onClick={handleClose} variant="outline" className="w-full">
-              {lastClaimedDay >= 7 ? "All rewards claimed for this cycle!" : "Come back tomorrow!"}
+              {canClaimToday ? "Close" : (lastClaimedDay >= 7 ? "All rewards claimed!" : "Come back tomorrow!")}
             </Button>
-          )}
         </DialogFooter>
       </div>
-       {!canClaimToday && (
-          <DialogClose asChild>
-              <button onClick={handleClose} className="absolute top-2 right-2 p-1 rounded-full hover:bg-muted">
-                  <X className="h-5 w-5"/>
-              </button>
-          </DialogClose>
-      )}
+      <DialogClose asChild>
+          <button onClick={handleClose} className="absolute top-2 right-2 p-1 rounded-full hover:bg-muted">
+              <X className="h-5 w-5"/>
+          </button>
+      </DialogClose>
     </DialogContent>
   );
 }

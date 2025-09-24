@@ -113,99 +113,6 @@ const AchievementsDialog = ({ earnedBadges, stats }: { earnedBadges: Set<string>
     </DialogContent>
 );
 
-const DailyQuestsDialog = ({ user, fetchUser }: { user: NonNullable<ReturnType<typeof useAuth>['currentUser']>, fetchUser: () => Promise<void>}) => {
-    const { toast } = useToast();
-    const [isClaiming, setIsClaiming] = React.useState<QuestName | null>(null);
-
-    const handleClaimQuest = async (questName: QuestName) => {
-        if (!user || !db || isClaiming) return;
-
-        const quest = user.stats.dailyQuests.quests[questName];
-        if (!quest.completed || quest.claimed) return;
-
-        setIsClaiming(questName);
-        try {
-            const userDocRef = doc(db, 'users', user.uid);
-            await updateDoc(userDocRef, {
-                [`stats.dailyQuests.quests.${questName}.claimed`]: true,
-                'stats.coins': increment(quest.reward),
-            });
-            await fetchUser(); // Re-fetch user data to update UI
-            toast({
-                title: "Reward Claimed!",
-                description: `You've earned ${quest.reward} coins for completing "${QUEST_DEFINITIONS[questName].title}".`
-            });
-        } catch (error) {
-            console.error("Error claiming quest reward:", error);
-            toast({ title: "Error", description: "Could not claim your reward. Please try again.", variant: "destructive" });
-        } finally {
-            setIsClaiming(null);
-        }
-    };
-
-    const quests = user.stats.dailyQuests?.quests;
-    if (!quests) return <DialogContent><p>Loading quests...</p></DialogContent>;
-
-    return (
-        <DialogContent className="max-w-md w-[95vw] md:w-full">
-            <DialogHeader>
-                <DialogTitle className="text-center text-2xl font-bold tracking-wider">Daily Quests</DialogTitle>
-                <DialogDescription className="text-center">Complete quests every day to earn bonus coins!</DialogDescription>
-                <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Close</span>
-                </DialogClose>
-            </DialogHeader>
-            <div className="space-y-4 py-4 max-h-[80vh] md:max-h-[70vh] overflow-y-auto scrollbar-hide">
-                {Object.entries(quests).map(([key, questData]) => {
-                    const questDef = QUEST_DEFINITIONS[key as QuestName];
-                    const progress = Math.min(100, (questData.progress / questData.target) * 100);
-
-                    return (
-                        <Card key={key} className={cn(
-                            "transition-all",
-                            questData.claimed ? "bg-green-600/10 border-green-500/30" : "bg-secondary/30"
-                        )}>
-                            <CardContent className="p-4 flex items-center gap-4">
-                                <div className="flex-grow space-y-2">
-                                    <div className="flex justify-between items-center">
-                                        <p className="font-bold">{questDef.title}</p>
-                                        <div className="flex items-center gap-1.5 font-semibold text-sm text-amber-700 dark:text-amber-400">
-                                            <Image src="/coin.png" alt="Coin" width={16} height={16} />
-                                            <span>{questData.reward}</span>
-                                        </div>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">{questDef.description}</p>
-                                    <div className="space-y-1 pt-1">
-                                        <Progress value={progress} className="h-1.5" />
-                                        <p className="text-xs font-medium text-muted-foreground">{questData.progress} / {questData.target}</p>
-                                    </div>
-                                </div>
-                                <div className="flex-shrink-0">
-                                    {questData.claimed ? (
-                                        <div className="flex flex-col items-center justify-center h-12 w-20 text-green-600">
-                                            <CheckCircle className="h-6 w-6" />
-                                            <span className="text-xs font-bold">Claimed</span>
-                                        </div>
-                                    ) : (
-                                        <Button
-                                            onClick={() => handleClaimQuest(key as QuestName)}
-                                            disabled={!questData.completed || isClaiming === key}
-                                            className="h-12 w-20"
-                                        >
-                                            {isClaiming === key ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Claim'}
-                                        </Button>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    );
-                })}
-            </div>
-        </DialogContent>
-    );
-};
-
 
 export default function PageLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
@@ -307,29 +214,14 @@ export default function PageLayout({ children }: { children: ReactNode }) {
                                         </Button>
                                     </DialogTrigger>
                                 </TooltipTrigger>
-                                <TooltipContent><p>Daily Bonus</p></TooltipContent>
+                                <TooltipContent><p>Daily Rewards</p></TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
                             <DailyRewardDialog 
                                 user={currentUser} 
                                 onClaim={handleClaimAndClose}
+                                fetchUser={fetchUser}
                             />
-                        </Dialog>
-                         <Dialog>
-                            <TooltipProvider>
-                                <Tooltip>
-                                <TooltipTrigger asChild>
-                                     <DialogTrigger asChild>
-                                        <Button variant="ghost" className="h-auto text-white p-2 flex flex-col w-14 rounded-md">
-                                            <CheckSquareIcon className="h-5 w-5" />
-                                            <span className="text-[10px] leading-tight">Quests</span>
-                                        </Button>
-                                    </DialogTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent><p>Daily Quests</p></TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                           <DailyQuestsDialog user={currentUser} fetchUser={fetchUser} />
                         </Dialog>
                         <Dialog>
                             <TooltipProvider>
