@@ -16,21 +16,21 @@ export const QUEST_DEFINITIONS: Record<QuestName, QuestDefinition> = {
         title: "Play 3 Games",
         description: "Complete 3 games in any mode.",
         target: 3,
-        reward: 15,
+        reward: 10,
         getProgress: () => 1, // Always increments by 1 per game
     },
     winPrizes: {
         title: "Win 2 Prizes",
         description: "Win a total of 2 prizes across all games.",
         target: 2,
-        reward: 25,
+        reward: 10,
         getProgress: (gameResult) => gameResult.prizesWon.length,
     },
     winFullHouse: {
         title: "Win a Full House",
         description: "Achieve the ultimate prize, a Full House!",
         target: 1,
-        reward: 50,
+        reward: 10,
         getProgress: (gameResult) => gameResult.prizesWon.filter(p => p === 'Full House').length,
     },
 };
